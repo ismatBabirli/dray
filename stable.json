@@ -1,23 +1,23 @@
 {
-  "version": "0.18.4",
-  "notes": "### Added\n\n- **fx is told Dray's rules**, which it had no way to learn before —\n  `fx acp` has no system-prompt surface at all, so they ride the first\n  prompt of a new session and the transcript still shows what you\n  wrote.\n- **fx's remaining tool calls are drawn as work** rather than as wire\n  names: a fetched page reports what it fetched, a search names its\n  pattern instead of the directory it scoped, and a run of subagents\n  lists its tasks rather than collapsing into a count.\n\n### Fixed\n\n- **The browser pane stays on screen under menus and dialogs.** Any\n  dropdown anywhere left it a hole; now it only hides where something\n  actually lands on it, behind a picture of the page.\n- **An error stays in the session it came from.** One session's\n  failure used to follow you into every other session and the new-task\n  composer.\n- **A new fx chat keeps a model that matches its provider**, rather\n  than sitting at \"Select Model\" after a provider switch.\n- **fx is drawn last in the agent list**, and ⌘⇧A steps the same\n  order.",
-  "pub_date": "2026-09-15T14:52:20.711Z",
+  "version": "0.18.5",
+  "notes": "### Fixed\n\n- **A screenshot no longer disturbs the page you are looking at.** An agent\n  sizing one used to leave the browser pane letterboxed for the rest of the\n  session, and taking one visibly reflowed the page on screen. The size an\n  agent asks for is capture-only now, and the view hides behind a still of\n  the page for the shot.",
+  "pub_date": "2026-09-15T17:55:35.942Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWhhVlFrZUZzQmVzVjdqQ1JHb1ROME43TWZLTnlJa1VyOHhyZUVsV2dDenphSzdPaWZHU2UwWDlkVEtMWmtobEtGZFF4aWswcWtiSE1DR1VqR0JUaXdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NDgzOTMyCWZpbGU6RHJheS5hcHAudGFyLmd6Clk4RmZxOHppZnVUTGMyZTVwMWFBNEk4NWJVZ2x2a0hMc2UzSkxmVUUxNTdzOXBZMkNPZk1vbHJkamtUVitGdUVZdFhVdG5DQ2tRUjZDVE9CN1U4ekNBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.18.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXFiVlRPRFNGUXB5a3RRSkdRck5rZVpoUEFwZW0zRXJYam5JT0xaSXBJT2JBNXFkTE5aNGt2TWhJMU5KaEpNSFdiK1hEeDZZbGN0TkVHSWpmVktUMGdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NDk0OTI5CWZpbGU6RHJheS5hcHAudGFyLmd6CnBXaGhDMVVrWGpQbmdNYkV0aGlvazQ0QUhiRFJiZUMreEptR1lzMVpqaWI3VXBZQ2N6NE96LzkvcWk1RTNCeXI3eUh5NXUwWnhsSTJJN005V3VrWEJ3PT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.18.5/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWhhVlFrZUZzQmVzVjdqQ1JHb1ROME43TWZLTnlJa1VyOHhyZUVsV2dDenphSzdPaWZHU2UwWDlkVEtMWmtobEtGZFF4aWswcWtiSE1DR1VqR0JUaXdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NDgzOTMyCWZpbGU6RHJheS5hcHAudGFyLmd6Clk4RmZxOHppZnVUTGMyZTVwMWFBNEk4NWJVZ2x2a0hMc2UzSkxmVUUxNTdzOXBZMkNPZk1vbHJkamtUVitGdUVZdFhVdG5DQ2tRUjZDVE9CN1U4ekNBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.18.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXFiVlRPRFNGUXB5a3RRSkdRck5rZVpoUEFwZW0zRXJYam5JT0xaSXBJT2JBNXFkTE5aNGt2TWhJMU5KaEpNSFdiK1hEeDZZbGN0TkVHSWpmVktUMGdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NDk0OTI5CWZpbGU6RHJheS5hcHAudGFyLmd6CnBXaGhDMVVrWGpQbmdNYkV0aGlvazQ0QUhiRFJiZUMreEptR1lzMVpqaWI3VXBZQ2N6NE96LzkvcWk1RTNCeXI3eUh5NXUwWnhsSTJJN005V3VrWEJ3PT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.18.5/Dray_universal.app.tar.gz"
     },
     "darwin-aarch64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWhhVlFrZUZzQmVzVjdqQ1JHb1ROME43TWZLTnlJa1VyOHhyZUVsV2dDenphSzdPaWZHU2UwWDlkVEtMWmtobEtGZFF4aWswcWtiSE1DR1VqR0JUaXdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NDgzOTMyCWZpbGU6RHJheS5hcHAudGFyLmd6Clk4RmZxOHppZnVUTGMyZTVwMWFBNEk4NWJVZ2x2a0hMc2UzSkxmVUUxNTdzOXBZMkNPZk1vbHJkamtUVitGdUVZdFhVdG5DQ2tRUjZDVE9CN1U4ekNBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.18.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXFiVlRPRFNGUXB5a3RRSkdRck5rZVpoUEFwZW0zRXJYam5JT0xaSXBJT2JBNXFkTE5aNGt2TWhJMU5KaEpNSFdiK1hEeDZZbGN0TkVHSWpmVktUMGdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NDk0OTI5CWZpbGU6RHJheS5hcHAudGFyLmd6CnBXaGhDMVVrWGpQbmdNYkV0aGlvazQ0QUhiRFJiZUMreEptR1lzMVpqaWI3VXBZQ2N6NE96LzkvcWk1RTNCeXI3eUh5NXUwWnhsSTJJN005V3VrWEJ3PT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.18.5/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWhhVlFrZUZzQmVzVjdqQ1JHb1ROME43TWZLTnlJa1VyOHhyZUVsV2dDenphSzdPaWZHU2UwWDlkVEtMWmtobEtGZFF4aWswcWtiSE1DR1VqR0JUaXdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NDgzOTMyCWZpbGU6RHJheS5hcHAudGFyLmd6Clk4RmZxOHppZnVUTGMyZTVwMWFBNEk4NWJVZ2x2a0hMc2UzSkxmVUUxNTdzOXBZMkNPZk1vbHJkamtUVitGdUVZdFhVdG5DQ2tRUjZDVE9CN1U4ekNBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.18.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXFiVlRPRFNGUXB5a3RRSkdRck5rZVpoUEFwZW0zRXJYam5JT0xaSXBJT2JBNXFkTE5aNGt2TWhJMU5KaEpNSFdiK1hEeDZZbGN0TkVHSWpmVktUMGdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NDk0OTI5CWZpbGU6RHJheS5hcHAudGFyLmd6CnBXaGhDMVVrWGpQbmdNYkV0aGlvazQ0QUhiRFJiZUMreEptR1lzMVpqaWI3VXBZQ2N6NE96LzkvcWk1RTNCeXI3eUh5NXUwWnhsSTJJN005V3VrWEJ3PT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.18.5/Dray_universal.app.tar.gz"
     }
   }
 }
