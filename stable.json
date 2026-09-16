@@ -1,23 +1,23 @@
 {
-  "version": "0.20.0",
-  "notes": "### Added\n\n- **The sidebar and the right panel drag wider.** Both were fixed\n  widths; each now holds at its default mid-drag so you can find it\n  back by feel, and the separator works from the keyboard too.\n- **The split view takes more than four panes.** The 2x2 cap is gone —\n  the screen decides — and digits 1-9 reach panes row by row. Dropping\n  a session onto an empty main column opens it.\n- **⌘W closes the thing you are looking at**: the Files view's file,\n  the Browser's tab, a split pane, then the panel's browser.\n- **The file list hides**, leaving its filter row and the code pane.\n- **fx sessions change provider mid-conversation.** It used to be\n  creation-time only, and a session whose provider had moved\n  underneath it could not be opened at all.\n\n### Changed\n\n- **A large file opens instantly in the Files view.** An 8000-line\n  lockfile switched tabs in ~56ms where it took up to 900ms.\n- **The PR panel costs a fraction of your GitHub rate limit.** Reading\n  a branch used to spend 11 API points per poll, which two Dray windows\n  could drain in an hour and leave every agent's own `gh` call failing.\n  It is 2 now.\n\n### Fixed\n\n- **fx keeps its working indicator up for the whole turn**, instead of\n  going dark while the model wrote its first message or worked behind a\n  finished one.\n- A newly opened file tab scrolls into view rather than sitting off the\n  end of the strip.",
-  "pub_date": "2026-09-16T08:19:27.348Z",
+  "version": "0.20.1",
+  "notes": "### Fixed\n\n- **The sidebar and the right panel can no longer be dragged over the\n  conversation.** Each now stops where the chat's own width begins,\n  whatever the window size and whatever the other pane is holding.\n- **A session header no longer overlaps itself** in a narrow column.\n- **The working indicator shows up when a queued prompt is handed\n  over**, instead of leaving the transcript looking dead until the\n  model spoke.\n\n### Changed\n\n- **The Changes panel says something useful when a turn changed\n  nothing**, with a way through to the Diff view.",
+  "pub_date": "2026-09-16T10:07:24.168Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVW1lYXVjZzNVdVBPaDBrWUcvbmEybTVaV2ZkSExkOHliVCtKVjZIUnZudnNtOU1NcXV0bmlqOHB0bkJZY29QZVpWV3VNdEVEUVFQMDE5SjV4bmtpS1FJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTQ2NzYwCWZpbGU6RHJheS5hcHAudGFyLmd6CngxY3Z5WmcrZEl3YXB5UlhwRFlwVUFpd3RkNEpaTlY0K1VoMGI5a2FQMk5FWENIRndSVkZNMXVFRHVrMmJQdHdMVlZHRGkrSkRwVHJyTEFLWjBrOUF3PT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.0/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWxnRzNNUUJLSUhNeEtqNU56bG1lbmdOOE1DeG9UTE1Ia2EzaDg1YnU3SVM4eFpkcWJ6Q1RUMGFlcVp4K2NRWmFyM3A5YzNjWTJnOEtJQzg2SDdnUnc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTUzMjM2CWZpbGU6RHJheS5hcHAudGFyLmd6CkdjVWtkamlUUVpmQ1pEOThTcktuK05iQ3c5Q2JjeDRoM0pNUFc5U2tPbklJZGhPSzd3eEQ5RTd2MnE1R1lSSmdSY1JNUTJtOGEwZ3VsTEZva0U0VURnPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.1/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVW1lYXVjZzNVdVBPaDBrWUcvbmEybTVaV2ZkSExkOHliVCtKVjZIUnZudnNtOU1NcXV0bmlqOHB0bkJZY29QZVpWV3VNdEVEUVFQMDE5SjV4bmtpS1FJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTQ2NzYwCWZpbGU6RHJheS5hcHAudGFyLmd6CngxY3Z5WmcrZEl3YXB5UlhwRFlwVUFpd3RkNEpaTlY0K1VoMGI5a2FQMk5FWENIRndSVkZNMXVFRHVrMmJQdHdMVlZHRGkrSkRwVHJyTEFLWjBrOUF3PT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.0/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWxnRzNNUUJLSUhNeEtqNU56bG1lbmdOOE1DeG9UTE1Ia2EzaDg1YnU3SVM4eFpkcWJ6Q1RUMGFlcVp4K2NRWmFyM3A5YzNjWTJnOEtJQzg2SDdnUnc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTUzMjM2CWZpbGU6RHJheS5hcHAudGFyLmd6CkdjVWtkamlUUVpmQ1pEOThTcktuK05iQ3c5Q2JjeDRoM0pNUFc5U2tPbklJZGhPSzd3eEQ5RTd2MnE1R1lSSmdSY1JNUTJtOGEwZ3VsTEZva0U0VURnPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.1/Dray_universal.app.tar.gz"
     },
     "darwin-aarch64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVW1lYXVjZzNVdVBPaDBrWUcvbmEybTVaV2ZkSExkOHliVCtKVjZIUnZudnNtOU1NcXV0bmlqOHB0bkJZY29QZVpWV3VNdEVEUVFQMDE5SjV4bmtpS1FJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTQ2NzYwCWZpbGU6RHJheS5hcHAudGFyLmd6CngxY3Z5WmcrZEl3YXB5UlhwRFlwVUFpd3RkNEpaTlY0K1VoMGI5a2FQMk5FWENIRndSVkZNMXVFRHVrMmJQdHdMVlZHRGkrSkRwVHJyTEFLWjBrOUF3PT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.0/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWxnRzNNUUJLSUhNeEtqNU56bG1lbmdOOE1DeG9UTE1Ia2EzaDg1YnU3SVM4eFpkcWJ6Q1RUMGFlcVp4K2NRWmFyM3A5YzNjWTJnOEtJQzg2SDdnUnc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTUzMjM2CWZpbGU6RHJheS5hcHAudGFyLmd6CkdjVWtkamlUUVpmQ1pEOThTcktuK05iQ3c5Q2JjeDRoM0pNUFc5U2tPbklJZGhPSzd3eEQ5RTd2MnE1R1lSSmdSY1JNUTJtOGEwZ3VsTEZva0U0VURnPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.1/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVW1lYXVjZzNVdVBPaDBrWUcvbmEybTVaV2ZkSExkOHliVCtKVjZIUnZudnNtOU1NcXV0bmlqOHB0bkJZY29QZVpWV3VNdEVEUVFQMDE5SjV4bmtpS1FJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTQ2NzYwCWZpbGU6RHJheS5hcHAudGFyLmd6CngxY3Z5WmcrZEl3YXB5UlhwRFlwVUFpd3RkNEpaTlY0K1VoMGI5a2FQMk5FWENIRndSVkZNMXVFRHVrMmJQdHdMVlZHRGkrSkRwVHJyTEFLWjBrOUF3PT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.0/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWxnRzNNUUJLSUhNeEtqNU56bG1lbmdOOE1DeG9UTE1Ia2EzaDg1YnU3SVM4eFpkcWJ6Q1RUMGFlcVp4K2NRWmFyM3A5YzNjWTJnOEtJQzg2SDdnUnc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTUzMjM2CWZpbGU6RHJheS5hcHAudGFyLmd6CkdjVWtkamlUUVpmQ1pEOThTcktuK05iQ3c5Q2JjeDRoM0pNUFc5U2tPbklJZGhPSzd3eEQ5RTd2MnE1R1lSSmdSY1JNUTJtOGEwZ3VsTEZva0U0VURnPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.1/Dray_universal.app.tar.gz"
     }
   }
 }
