@@ -1,23 +1,23 @@
 {
-  "version": "0.20.4",
-  "notes": "### Fixed\n\n- **The effort control on an fx gateway model now matches what the\n  model takes.** Dray reads each model's levels from the gateway's own\n  catalog, so a model with no reasoning levels — grok-4.6,\n  claude-sonnet-4 — draws no effort control instead of offering four\n  the model refuses.",
-  "pub_date": "2026-09-16T17:24:55.990Z",
+  "version": "0.20.5",
+  "notes": "### Fixed\n\n- **An fx session keeps its own provider's models.** Switching provider\n  in one session moved the model list under every other fx session, and\n  could repair a session's model onto the provider it had just left.",
+  "pub_date": "2026-09-17T06:17:16.559Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWcxdjhEb1dXeWhiK2dwK1c1cytxZlJoYUM2MTVYRnp0MjJyNUR5MVlPeXlCSGhxQkpnOTNmTjdMczZVWXVKQURXMmtGVXp3VVBRMTcyL2Z2cjBqTmd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTc5NDg4CWZpbGU6RHJheS5hcHAudGFyLmd6CmRSVkN6UytVaEt0eEptSWdVYjdYK1cvTk5mdTd3dURsT3RoaFUzSVRBb20rWk9FUmFZc0swWkRaVnFULzZrYmlJZVFvUUZRNExabERJSm9WdHNTVUNBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXZublpObW50c2YzdWsvd2xXTXdIZG5ad2NCaTJscGJFc21vdWwvY21qSGdMQWxtcW9JM28yc2tLNmU5by9GQnlmMmxPMnZyaE9DcjFIQ2p3amtJSVFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NjI1ODI4CWZpbGU6RHJheS5hcHAudGFyLmd6CnBIM2xhcm5hWEdiWVRpbm4rYWJFakc3SDhkWkxGejFZd0UxdWgwVlNFRXgrU0gyVUVDVkNKcW1UM2t0VHFuZTFuWG5DZ096ZjBKZVhqcE8yb0x6YURBPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.5/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWcxdjhEb1dXeWhiK2dwK1c1cytxZlJoYUM2MTVYRnp0MjJyNUR5MVlPeXlCSGhxQkpnOTNmTjdMczZVWXVKQURXMmtGVXp3VVBRMTcyL2Z2cjBqTmd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTc5NDg4CWZpbGU6RHJheS5hcHAudGFyLmd6CmRSVkN6UytVaEt0eEptSWdVYjdYK1cvTk5mdTd3dURsT3RoaFUzSVRBb20rWk9FUmFZc0swWkRaVnFULzZrYmlJZVFvUUZRNExabERJSm9WdHNTVUNBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXZublpObW50c2YzdWsvd2xXTXdIZG5ad2NCaTJscGJFc21vdWwvY21qSGdMQWxtcW9JM28yc2tLNmU5by9GQnlmMmxPMnZyaE9DcjFIQ2p3amtJSVFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NjI1ODI4CWZpbGU6RHJheS5hcHAudGFyLmd6CnBIM2xhcm5hWEdiWVRpbm4rYWJFakc3SDhkWkxGejFZd0UxdWgwVlNFRXgrU0gyVUVDVkNKcW1UM2t0VHFuZTFuWG5DZ096ZjBKZVhqcE8yb0x6YURBPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.5/Dray_universal.app.tar.gz"
     },
     "darwin-aarch64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWcxdjhEb1dXeWhiK2dwK1c1cytxZlJoYUM2MTVYRnp0MjJyNUR5MVlPeXlCSGhxQkpnOTNmTjdMczZVWXVKQURXMmtGVXp3VVBRMTcyL2Z2cjBqTmd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTc5NDg4CWZpbGU6RHJheS5hcHAudGFyLmd6CmRSVkN6UytVaEt0eEptSWdVYjdYK1cvTk5mdTd3dURsT3RoaFUzSVRBb20rWk9FUmFZc0swWkRaVnFULzZrYmlJZVFvUUZRNExabERJSm9WdHNTVUNBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXZublpObW50c2YzdWsvd2xXTXdIZG5ad2NCaTJscGJFc21vdWwvY21qSGdMQWxtcW9JM28yc2tLNmU5by9GQnlmMmxPMnZyaE9DcjFIQ2p3amtJSVFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NjI1ODI4CWZpbGU6RHJheS5hcHAudGFyLmd6CnBIM2xhcm5hWEdiWVRpbm4rYWJFakc3SDhkWkxGejFZd0UxdWgwVlNFRXgrU0gyVUVDVkNKcW1UM2t0VHFuZTFuWG5DZ096ZjBKZVhqcE8yb0x6YURBPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.5/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWcxdjhEb1dXeWhiK2dwK1c1cytxZlJoYUM2MTVYRnp0MjJyNUR5MVlPeXlCSGhxQkpnOTNmTjdMczZVWXVKQURXMmtGVXp3VVBRMTcyL2Z2cjBqTmd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NTc5NDg4CWZpbGU6RHJheS5hcHAudGFyLmd6CmRSVkN6UytVaEt0eEptSWdVYjdYK1cvTk5mdTd3dURsT3RoaFUzSVRBb20rWk9FUmFZc0swWkRaVnFULzZrYmlJZVFvUUZRNExabERJSm9WdHNTVUNBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXZublpObW50c2YzdWsvd2xXTXdIZG5ad2NCaTJscGJFc21vdWwvY21qSGdMQWxtcW9JM28yc2tLNmU5by9GQnlmMmxPMnZyaE9DcjFIQ2p3amtJSVFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NjI1ODI4CWZpbGU6RHJheS5hcHAudGFyLmd6CnBIM2xhcm5hWEdiWVRpbm4rYWJFakc3SDhkWkxGejFZd0UxdWgwVlNFRXgrU0gyVUVDVkNKcW1UM2t0VHFuZTFuWG5DZ096ZjBKZVhqcE8yb0x6YURBPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.20.5/Dray_universal.app.tar.gz"
     }
   }
 }
