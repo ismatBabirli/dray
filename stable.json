@@ -1,23 +1,23 @@
 {
-  "version": "0.22.0",
-  "notes": "### Added\n\n- **The crew: a conversation's spawned sessions beside it.** A column of\n  the sessions the selected one started, a strip each, so a fan-out is\n  read and answered without leaving the conversation that made it.\n  Clicking a strip focuses it and the one composer follows. ⌘⇧C toggles\n  it; ⌘-click a row to anchor a crew of its own.\n- **Accounts, in settings.** Which account each agent runs as — Claude\n  Code, Codex, pi and fx — asked of the CLIs themselves, with the\n  identity, the auth method and whether the login still works. Signing\n  in opens a terminal and runs the command for you; Codex and pi also\n  take a key straight from the form. Dray stores no agent credential.\n- **Settings groups moved to a rail.** Seven tabs across the top wrapped\n  onto a second line; down the side they are one list.\n\n### Changed\n\n- **Placed tags are chips in the composer.** A session tag no longer puts\n  36 characters of uuid in your sentence, a file mention shows its name\n  and a glyph, and an issue tag shows the title rather than the\n  identifier. What gets sent is unchanged.\n- **Browser sits before Diff in the view tabs**, so it takes ⌘⌥2 and Diff\n  ⌘⌥3.\n- **A long user message is clamped to twenty lines.** A pasted stack\n  trace or file no longer buries the answer it asked for. Click to open\n  it; nothing is truncated.",
-  "pub_date": "2026-09-20T12:01:35.527Z",
+  "version": "0.22.1",
+  "notes": "### Fixed\n\n- **The right pane follows the crew, not each row's own memory.** It\n  opened and shut row by row through a fan-out; it is one arrangement, so\n  it answers under the anchor. From the sidebar or a chord the session\n  answers for itself again.\n- **Arriving at a long transcript lands at the bottom.** Backfill could\n  drop the follow pin mid-way. A drag or a wheel up still wins at once.\n- **Show more is readable on a filled bubble in light mode.**",
+  "pub_date": "2026-09-20T13:25:11.225Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVW5NSU96VHlsdGlHaFJOemM5T0ZsS2RQWVFIVDgxdTNBOVRVSFBFTFcwOHRGVTlKR05rVUNPMWhDKytzR3RnbUtkdjlBUnhVYkN1b1VNWkNQdUtURkFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTA1Njg4CWZpbGU6RHJheS5hcHAudGFyLmd6CmxTVE05aTY5VDFBa0czWENBUXBVTFh0R0h5YWMwOHFKT3B3NHNCeHluM0dwMytLaGhYdXZZUG5FU2pESkoza0ZLOUFjT1VYRzh6dDdWZk9GS0w3Z0JBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.0/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWhwa1JkUjZTQk1DT0ZhTVZOUFVuREVFd281RTNNeEhQU0c5MmJSQUsvYWN2MGVuc3o5WkVKR3pVaDQxaG5iemJvN2FrVHRDL2pzbllEblB6WEVLcXc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTEwNzA0CWZpbGU6RHJheS5hcHAudGFyLmd6CklZaUkrOWRxeWJmVWl3Y0hsNlJxUUN2R3FrMWN3NlJpMWVMM0cva0U5YTJnamc2dDFKcGZnNm0wOVBMWDN5MnM5SkJ2UFhOSThTM0dhYnJxSyswYkFRPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.1/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVW5NSU96VHlsdGlHaFJOemM5T0ZsS2RQWVFIVDgxdTNBOVRVSFBFTFcwOHRGVTlKR05rVUNPMWhDKytzR3RnbUtkdjlBUnhVYkN1b1VNWkNQdUtURkFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTA1Njg4CWZpbGU6RHJheS5hcHAudGFyLmd6CmxTVE05aTY5VDFBa0czWENBUXBVTFh0R0h5YWMwOHFKT3B3NHNCeHluM0dwMytLaGhYdXZZUG5FU2pESkoza0ZLOUFjT1VYRzh6dDdWZk9GS0w3Z0JBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.0/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWhwa1JkUjZTQk1DT0ZhTVZOUFVuREVFd281RTNNeEhQU0c5MmJSQUsvYWN2MGVuc3o5WkVKR3pVaDQxaG5iemJvN2FrVHRDL2pzbllEblB6WEVLcXc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTEwNzA0CWZpbGU6RHJheS5hcHAudGFyLmd6CklZaUkrOWRxeWJmVWl3Y0hsNlJxUUN2R3FrMWN3NlJpMWVMM0cva0U5YTJnamc2dDFKcGZnNm0wOVBMWDN5MnM5SkJ2UFhOSThTM0dhYnJxSyswYkFRPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.1/Dray_universal.app.tar.gz"
     },
     "darwin-aarch64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVW5NSU96VHlsdGlHaFJOemM5T0ZsS2RQWVFIVDgxdTNBOVRVSFBFTFcwOHRGVTlKR05rVUNPMWhDKytzR3RnbUtkdjlBUnhVYkN1b1VNWkNQdUtURkFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTA1Njg4CWZpbGU6RHJheS5hcHAudGFyLmd6CmxTVE05aTY5VDFBa0czWENBUXBVTFh0R0h5YWMwOHFKT3B3NHNCeHluM0dwMytLaGhYdXZZUG5FU2pESkoza0ZLOUFjT1VYRzh6dDdWZk9GS0w3Z0JBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.0/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWhwa1JkUjZTQk1DT0ZhTVZOUFVuREVFd281RTNNeEhQU0c5MmJSQUsvYWN2MGVuc3o5WkVKR3pVaDQxaG5iemJvN2FrVHRDL2pzbllEblB6WEVLcXc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTEwNzA0CWZpbGU6RHJheS5hcHAudGFyLmd6CklZaUkrOWRxeWJmVWl3Y0hsNlJxUUN2R3FrMWN3NlJpMWVMM0cva0U5YTJnamc2dDFKcGZnNm0wOVBMWDN5MnM5SkJ2UFhOSThTM0dhYnJxSyswYkFRPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.1/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVW5NSU96VHlsdGlHaFJOemM5T0ZsS2RQWVFIVDgxdTNBOVRVSFBFTFcwOHRGVTlKR05rVUNPMWhDKytzR3RnbUtkdjlBUnhVYkN1b1VNWkNQdUtURkFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTA1Njg4CWZpbGU6RHJheS5hcHAudGFyLmd6CmxTVE05aTY5VDFBa0czWENBUXBVTFh0R0h5YWMwOHFKT3B3NHNCeHluM0dwMytLaGhYdXZZUG5FU2pESkoza0ZLOUFjT1VYRzh6dDdWZk9GS0w3Z0JBPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.0/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWhwa1JkUjZTQk1DT0ZhTVZOUFVuREVFd281RTNNeEhQU0c5MmJSQUsvYWN2MGVuc3o5WkVKR3pVaDQxaG5iemJvN2FrVHRDL2pzbllEblB6WEVLcXc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTEwNzA0CWZpbGU6RHJheS5hcHAudGFyLmd6CklZaUkrOWRxeWJmVWl3Y0hsNlJxUUN2R3FrMWN3NlJpMWVMM0cva0U5YTJnamc2dDFKcGZnNm0wOVBMWDN5MnM5SkJ2UFhOSThTM0dhYnJxSyswYkFRPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.1/Dray_universal.app.tar.gz"
     }
   }
 }
