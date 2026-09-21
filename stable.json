@@ -1,23 +1,23 @@
 {
-  "version": "0.22.3",
-  "notes": "### Added\n\n- **Chat input is a font size you can set**, in Appearance beside the\n  other three. It had been stuck at the browser default; it now matches\n  the transcript it feeds.\n\n### Fixed\n\n- **A crew child asking permission draws its card in the column**\n  rather than raising a notice over a session already on screen.\n- **A request arriving as a session loads is no longer lost.** It could\n  leave the row lit yellow over an empty transcript, with nothing to\n  answer — a permission request is never written to the log, so that\n  was the only copy.",
-  "pub_date": "2026-09-21T05:43:23.965Z",
+  "version": "0.22.4",
+  "notes": "### Fixed\n\n- **A long permission option no longer runs off the card.** A rule\n  carrying its own subject — \"Always allow mkdir -p /tmp/thing\" — wraps\n  instead of overflowing the crew column's right edge.",
+  "pub_date": "2026-09-21T06:33:56.685Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWljbU0rVklRVEdLNWd5MWtJdzRNVXBKdzZGT2c1K29yeDVwTElSYnBEOFBSRHlXSXNSNCtlMFZBSmZ1NktPZk1ublhtM0ZOTnhVNG5vSmx0SWtRMlEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTY5Mzk3CWZpbGU6RHJheS5hcHAudGFyLmd6ClRCd0p2UWFOaWljU0Y2UDZhZDlOT2FranExR2I0TjRVVVNkWDZ4S09BZlNLT0RodWo3UFhETHB0UmJHa3BJUmtBWlJSK3VlaVVWZmtKb0I4Uk92VUF3PT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.3/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXN0bGFjUjlWU3dkZnl5YWVIOS9rTEF2WDYwR2QxMGNJN3NIOE81Ky8yTi9rMEo1TmY2TUpoL3JLNWhZV0RlRXdqUzFkbWNsNk9pUFdjNVIvYUx5R1FRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTcyNDI5CWZpbGU6RHJheS5hcHAudGFyLmd6Cmp2aWNEWlJXUTFSWUh6WU1DckNPTU56eFE5dFJ5WDgwNGtMRUR4YXp3NVZlQUdXSnk3QWtabXFCYTZGZzc2bGlIcFF4TTMwMTFGaHhWQm5ZU1JSYkRBPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.4/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWljbU0rVklRVEdLNWd5MWtJdzRNVXBKdzZGT2c1K29yeDVwTElSYnBEOFBSRHlXSXNSNCtlMFZBSmZ1NktPZk1ublhtM0ZOTnhVNG5vSmx0SWtRMlEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTY5Mzk3CWZpbGU6RHJheS5hcHAudGFyLmd6ClRCd0p2UWFOaWljU0Y2UDZhZDlOT2FranExR2I0TjRVVVNkWDZ4S09BZlNLT0RodWo3UFhETHB0UmJHa3BJUmtBWlJSK3VlaVVWZmtKb0I4Uk92VUF3PT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.3/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXN0bGFjUjlWU3dkZnl5YWVIOS9rTEF2WDYwR2QxMGNJN3NIOE81Ky8yTi9rMEo1TmY2TUpoL3JLNWhZV0RlRXdqUzFkbWNsNk9pUFdjNVIvYUx5R1FRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTcyNDI5CWZpbGU6RHJheS5hcHAudGFyLmd6Cmp2aWNEWlJXUTFSWUh6WU1DckNPTU56eFE5dFJ5WDgwNGtMRUR4YXp3NVZlQUdXSnk3QWtabXFCYTZGZzc2bGlIcFF4TTMwMTFGaHhWQm5ZU1JSYkRBPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.4/Dray_universal.app.tar.gz"
     },
     "darwin-aarch64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWljbU0rVklRVEdLNWd5MWtJdzRNVXBKdzZGT2c1K29yeDVwTElSYnBEOFBSRHlXSXNSNCtlMFZBSmZ1NktPZk1ublhtM0ZOTnhVNG5vSmx0SWtRMlEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTY5Mzk3CWZpbGU6RHJheS5hcHAudGFyLmd6ClRCd0p2UWFOaWljU0Y2UDZhZDlOT2FranExR2I0TjRVVVNkWDZ4S09BZlNLT0RodWo3UFhETHB0UmJHa3BJUmtBWlJSK3VlaVVWZmtKb0I4Uk92VUF3PT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.3/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXN0bGFjUjlWU3dkZnl5YWVIOS9rTEF2WDYwR2QxMGNJN3NIOE81Ky8yTi9rMEo1TmY2TUpoL3JLNWhZV0RlRXdqUzFkbWNsNk9pUFdjNVIvYUx5R1FRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTcyNDI5CWZpbGU6RHJheS5hcHAudGFyLmd6Cmp2aWNEWlJXUTFSWUh6WU1DckNPTU56eFE5dFJ5WDgwNGtMRUR4YXp3NVZlQUdXSnk3QWtabXFCYTZGZzc2bGlIcFF4TTMwMTFGaHhWQm5ZU1JSYkRBPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.4/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVWljbU0rVklRVEdLNWd5MWtJdzRNVXBKdzZGT2c1K29yeDVwTElSYnBEOFBSRHlXSXNSNCtlMFZBSmZ1NktPZk1ublhtM0ZOTnhVNG5vSmx0SWtRMlEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTY5Mzk3CWZpbGU6RHJheS5hcHAudGFyLmd6ClRCd0p2UWFOaWljU0Y2UDZhZDlOT2FranExR2I0TjRVVVNkWDZ4S09BZlNLT0RodWo3UFhETHB0UmJHa3BJUmtBWlJSK3VlaVVWZmtKb0I4Uk92VUF3PT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.3/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXN0bGFjUjlWU3dkZnl5YWVIOS9rTEF2WDYwR2QxMGNJN3NIOE81Ky8yTi9rMEo1TmY2TUpoL3JLNWhZV0RlRXdqUzFkbWNsNk9pUFdjNVIvYUx5R1FRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5OTcyNDI5CWZpbGU6RHJheS5hcHAudGFyLmd6Cmp2aWNEWlJXUTFSWUh6WU1DckNPTU56eFE5dFJ5WDgwNGtMRUR4YXp3NVZlQUdXSnk3QWtabXFCYTZGZzc2bGlIcFF4TTMwMTFGaHhWQm5ZU1JSYkRBPT0K",
+      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.22.4/Dray_universal.app.tar.gz"
     }
   }
 }
