@@ -22,8 +22,8 @@ use crate::{
 };
 use anyhow::{bail, Context, Result};
 use dray_proto::{
-    encode_line, CreateSession, Envelope, IssueLink, LinkIssues, ListSessions, Request, Response,
-    SendMessage, SessionSummary, MAX_LINE, PROTOCOL_VERSION,
+    encode_line, CreateSession, Envelope, IssueInput, IssueLink, LinkIssues, ListSessions, Request,
+    Response, SendMessage, SessionSummary, MAX_LINE, PROTOCOL_VERSION,
 };
 use std::path::Path;
 use tauri::{AppHandle, Emitter, Manager};
@@ -43,6 +43,26 @@ use tokio::{
 /// `handleSelectSessionIndexItem` already loads it whole from disk at that
 /// point.
 pub const SESSION_CREATED: &str = "session_created";
+
+/// Emitted when `dray issue link` or `dray issue unlink` changes what a session
+/// is tagged with, so the panel's Issue tab appears, redraws or goes away
+/// without a reselect.
+///
+/// This socket is the one channel that reaches Rust without the frontend
+/// asking, so a link made over it was invisible until the next send answered
+/// with `SendOutcome.issues` — see #256. The *whole* list rides along rather
+/// than a delta, which is the rule that answer already follows: re-tagging
+/// replaces an entry rather than appending one.
+pub const ISSUES_CHANGED: &str = "issues_changed";
+
+/// The payload of [`ISSUES_CHANGED`].
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+#[ts(export, export_to = "events.ts")]
+#[serde(rename_all = "camelCase")]
+pub struct IssuesChangedEvent {
+    pub session_id: String,
+    pub issues: Vec<IssueRef>,
+}
 
 /// A spawned session may spawn; its children may not. Walked off
 /// `parent_session_id` rather than stored as a number, so there is no depth
@@ -223,7 +243,7 @@ async fn dispatch(request: Request, app: &AppHandle) -> Result<Response> {
         Request::CreateSession(create) => create_session(create, app).await,
         Request::ListSessions(list) => list_sessions(list).await,
         Request::SendMessage(send) => send_message(send, app).await,
-        Request::LinkIssues(link) => link_issues(link).await,
+        Request::LinkIssues(link) => link_issues(link, app).await,
         Request::Browser(browser) => browse(browser).await,
     }
 }
@@ -260,7 +280,7 @@ async fn browse(request: dray_proto::BrowserRequest) -> Result<Response> {
 /// what it believed. One that fails stops the run: a partial tagging reported
 /// as a success is the shape of failure this protocol exists to avoid, and the
 /// ones already applied are on the session the answer names.
-async fn link_issues(link: LinkIssues) -> Result<Response> {
+async fn link_issues(link: LinkIssues, app: &AppHandle) -> Result<Response> {
     if link.issues.is_empty() {
         bail!("name at least one issue, like DRA-53");
     }
@@ -272,32 +292,37 @@ async fn link_issues(link: LinkIssues) -> Result<Response> {
         .with_context(|| format!("no session {}", link.session_id))?;
 
     let mut linked = Vec::new();
+    let mut applied = 0usize;
+    let mut failure = None;
     for input in &link.issues {
-        let identifier = issues::parse_identifier(&input.identifier)
-            .with_context(|| format!("{} is not an issue identifier", input.identifier))?;
+        match apply_issue(&link, input).await {
+            Ok(list) => {
+                linked = list;
+                applied += 1;
+            }
+            Err(e) => {
+                failure = Some(e);
+                break;
+            }
+        }
+    }
 
-        linked = if link.unlink {
-            store::unlink_session_issue(&link.session_id, &identifier).await?
-        } else {
-            store::link_session_issue(
-                &link.session_id,
-                IssueRef {
-                    // By shape: `dray issue link` asks the tracker nothing, so
-                    // the identifier is the only thing that can say which one
-                    // this belongs to — `owner/repo#12` is GitHub's.
-                    tracker: IssueTracker::of(&identifier),
-                    // No tracker call, so no stable tracker id to record. The
-                    // identifier stands in: `unlink_session_issue` already
-                    // matches on either, so a link made here is removable by
-                    // the panel's button and by `dray issue unlink` alike.
-                    id: identifier.clone(),
-                    identifier,
-                    title: input.title.clone().unwrap_or_default(),
-                    url: input.url.clone().unwrap_or_default(),
-                },
-            )
-            .await?
-        };
+    // Announced before the failure is returned, since each issue is its own
+    // index write: one that landed is on the session whatever the next one
+    // did, and leaving it unannounced is the very staleness this event exists
+    // to remove. `linked` is the whole list as of the last write that worked,
+    // so it needs no assembling — but it is only *news* if something wrote,
+    // and an empty list is real news when the last link was the one removed.
+    if applied > 0 {
+        app.emit(
+            ISSUES_CHANGED,
+            &IssuesChangedEvent { session_id: link.session_id.clone(), issues: linked.clone() },
+        )
+        .ok();
+    }
+
+    if let Some(e) = failure {
+        return Err(e);
     }
 
     Ok(Response::Linked {
@@ -310,6 +335,38 @@ async fn link_issues(link: LinkIssues) -> Result<Response> {
             })
             .collect(),
     })
+}
+
+/// One issue applied to one session, answering the session's whole list.
+///
+/// Split out of [`link_issues`] so the loop there can keep hold of a failure
+/// instead of returning through it — the writes before it have already landed.
+async fn apply_issue(link: &LinkIssues, input: &IssueInput) -> Result<Vec<IssueRef>> {
+    let identifier = issues::parse_identifier(&input.identifier)
+        .with_context(|| format!("{} is not an issue identifier", input.identifier))?;
+
+    if link.unlink {
+        store::unlink_session_issue(&link.session_id, &identifier).await
+    } else {
+        store::link_session_issue(
+            &link.session_id,
+            IssueRef {
+                // By shape: `dray issue link` asks the tracker nothing, so
+                // the identifier is the only thing that can say which one
+                // this belongs to — `owner/repo#12` is GitHub's.
+                tracker: IssueTracker::of(&identifier),
+                // No tracker call, so no stable tracker id to record. The
+                // identifier stands in: `unlink_session_issue` already
+                // matches on either, so a link made here is removable by
+                // the panel's button and by `dray issue unlink` alike.
+                id: identifier.clone(),
+                identifier,
+                title: input.title.clone().unwrap_or_default(),
+                url: input.url.clone().unwrap_or_default(),
+            },
+        )
+        .await
+    }
 }
 
 async fn create_session(create: CreateSession, app: &AppHandle) -> Result<Response> {
