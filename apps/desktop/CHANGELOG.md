@@ -5,6 +5,24 @@ The release job reads the matching section into the GitHub release notes and the
 updater carries it, so this file is what a release says about itself — not a
 second description of it. GitHub's generated commit list is appended below it.
 
+## 0.23.1
+
+### Added
+
+- **A Grok Build session forks**, in a new worktree or in place, like
+  every other harness. A session whose worktree has been removed is
+  refused at the press rather than failing on its first send.
+
+### Fixed
+
+- **Settling or deleting a Grok session is instant.** It spent about
+  four seconds waiting for a goodbye the agent never answers. Nothing
+  is lost — its history is written as the turn goes, not on exit.
+- **An issue linked by an agent shows up straight away.** The Issue tab
+  waited for the next message, a reselect or a restart.
+- **A session whose very first message fails no longer leaves processes
+  behind**, the agent's own children included.
+
 ## 0.23.0
 
 ### Added
