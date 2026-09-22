@@ -5,6 +5,14 @@ The release job reads the matching section into the GitHub release notes and the
 updater carries it, so this file is what a release says about itself — not a
 second description of it. GitHub's generated commit list is appended below it.
 
+## 0.23.2
+
+### Added
+
+- **Opus 5.5 is in the model picker**, as Claude Code's Opus. Opus 5
+  stays reachable under More models, fast mode included, for anyone
+  who wants to stay on it.
+
 ## 0.23.1
 
 ### Added
