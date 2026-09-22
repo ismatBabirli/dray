@@ -1227,6 +1227,41 @@ impl SessionManager {
             }
         }
 
+        // **grok addresses a conversation by session id *and directory*, so
+        // "can this be forked" is a question only grok's own store answers.**
+        // Dray's index stops naming the right directory the moment a worktree
+        // is removed — `cwd` is rewritten to the project root, where grok never
+        // put anything — and `worktree_removed` cannot stand in for the
+        // question either, being set from a *shape* whose own false positive is
+        // a project-root session that never moved. So the store is asked, which
+        // both refuses the sessions grok has genuinely lost and keeps the ones
+        // a flag would have refused wrongly.
+        //
+        // Asked *here*, with everything else that has to be known before a row
+        // exists. Left to the first send it is the exact failure the `forkable`
+        // check above is placed early to avoid: log copied, entry appended, and
+        // a sidebar row holding a whole conversation that can never be carried
+        // on, failing identically on every retry.
+        //
+        // **A store this build cannot read is not a refusal.** `Err` means no
+        // store or a layout that moved, and refusing on it would take fork away
+        // from every grok session at once the day grok rearranges its files —
+        // where letting it through costs, at worst, the late failure this is
+        // here to avoid. `fork_conversation` reads the same answer again for
+        // the address itself.
+        //
+        // grok's alone. Claude Code finds its transcript by scanning
+        // `~/.claude/projects` for `<id>.jsonl` and pi's resume handle is a
+        // file copied by id, so neither is addressed by directory.
+        if parent.harness == Harness::Grok
+            && matches!(crate::harness::grok::stored_cwd(session_id).await, Ok(None))
+        {
+            bail!(
+                "grok has no record of this conversation — it files one under the directory it \
+                 ran in, and that directory is gone"
+            );
+        }
+
         // Resolved against the project rather than the parent's own name, so a
         // fork of a fork can't collide with the tree it came from — and against
         // the index as well as disk, since a fork's tree does not exist until
@@ -1749,16 +1784,14 @@ impl Session {
                 .await
             }
             Harness::Grok => {
-                // The same two refusals fx and pi take, for the same reasons:
-                // grok's `-w` makes a Grove copy under `~/.grok/worktrees` on a
-                // layout of its own, so Dray makes the tree here as it does for
-                // them; and grok's fork is real but eager and needs a child to
-                // make the call on, which no fork path here arranges.
+                // The same refusal fx and pi take, for the same reason: grok's
+                // `-w` makes a Grove copy under `~/.grok/worktrees` on a layout
+                // of its own, so Dray makes the tree here as it does for them.
+                // A name arriving anyway is a caller that skipped that, and a
+                // session silently running in the wrong tree is worth refusing
+                // outright.
                 if worktree_name.is_some() {
                     bail!("grok cannot create a worktree — it has to be made first");
-                }
-                if fork_from.is_some() {
-                    bail!("grok sessions cannot be forked yet");
                 }
 
                 crate::harness::grok::init(
@@ -1773,6 +1806,7 @@ impl Session {
                     cwd,
                     session_cwd,
                     is_new_session,
+                    fork_from,
                     app,
                 )
                 .await
@@ -3578,6 +3612,7 @@ mod tests {
             "the fixture runs its turn out with both tasks outstanding, which is the case that was refused"
         );
     }
+
 
     /// Only a finished-and-unread session clears on read; selecting a running
     /// one must not stop it reading as busy. Unread is the same rule mirrored:

@@ -100,6 +100,10 @@ pub async fn init(
     cwd: &str,
     session_cwd: &str,
     is_new_session: bool,
+    // The session this one is a fork of, on a fork's first send and never
+    // again. grok's fork is one eager request rather than a spawn flag, so
+    // this child makes it before resuming — see `fork_conversation`.
+    fork_from: Option<&str>,
     app: &AppHandle,
 ) -> Result<Session> {
     // Ahead of the spawn: everything between the spawn and the kill-wrapped
@@ -218,8 +222,15 @@ pub async fn init(
         }
     });
 
-    let answer = match open_session(&client, session_id, session_cwd, permission_mode, is_new_session)
-        .await
+    let answer = match open_session(
+        &client,
+        session_id,
+        session_cwd,
+        permission_mode,
+        is_new_session,
+        fork_from,
+    )
+    .await
     {
         Ok(answer) => answer,
         Err(error) => {
@@ -302,10 +313,18 @@ async fn open_session(
     session_cwd: &str,
     mode: ApprovalPolicy,
     is_new_session: bool,
+    fork_from: Option<&str>,
 ) -> Result<Value> {
     client
         .request("initialize", probe::handshake_params())
         .await?;
+
+    // The CLI's half of a fork, and it falls through into the resume below —
+    // a fork's first send is a resume, of a session that did not exist until
+    // the line above it.
+    if let Some(parent) = fork_from {
+        fork_conversation(client, parent, session_id, session_cwd).await?;
+    }
 
     // The stance rides the resume too, since a stance change replaces the child
     // and a respawn is a *resume* — sent on creation alone it never reaches the
@@ -358,6 +377,203 @@ async fn open_session(
     );
 
     Ok(answer)
+}
+
+/// The directory grok filed `session_id` under, read out of grok's own store.
+///
+/// **Asked rather than inferred, and that is the whole point of it.** grok
+/// addresses a conversation by session id *and* directory, and Dray's index
+/// stops naming the right directory the moment a worktree is removed — `cwd`
+/// is rewritten to the project root, where grok never put anything. Guessing
+/// from `branch` was the first shape and it is a guess: that field is kept for
+/// the PR tab, and a renamed branch makes it a **wrong** address rather than an
+/// absent one, which fails exactly like a right one until the send. Refusing on
+/// `worktree_removed` was the second, and over-refused — `mark_relocated` sets
+/// that flag from a *shape* and its own doc names the false positive, an
+/// ordinary project-root session sitting on a `worktree-` branch, whose `cwd`
+/// never moved and whose conversation grok can still find.
+///
+/// The store answers both exactly. `<GROK_HOME>/sessions/<cwd-encoded>/<id>/`
+/// is the layout, so the directory holding `<id>` **is** the address, and
+/// reading it back needs only percent-*decoding*, which is unambiguous —
+/// encoding is the direction with a character set to get wrong.
+///
+/// Three answers, and the third is what keeps this safe: `Ok(Some)` is the
+/// address, `Ok(None)` is grok looked at and has no record, and `Err` is "could
+/// not look" — no store, or a layout this build does not recognise. A caller
+/// must not refuse on `Err`, or a grok that moved its store would take fork
+/// away from every session at once.
+pub async fn stored_cwd(session_id: &str) -> Result<Option<String>> {
+    let home = match std::env::var("GROK_HOME") {
+        Ok(home) if !home.is_empty() => std::path::PathBuf::from(home),
+        _ => dirs_home().context("no home directory")?.join(".grok"),
+    };
+
+    stored_cwd_under(&home.join("sessions"), session_id).await
+}
+
+/// The scan itself, taking the store root so a test can build one — the same
+/// split `mark_relocated` makes to be testable without a real `index.json`.
+async fn stored_cwd_under(
+    sessions: &std::path::Path,
+    session_id: &str,
+) -> Result<Option<String>> {
+    let mut entries = tokio::fs::read_dir(sessions)
+        .await
+        .context("couldn't read grok's session store")?;
+
+    while let Some(entry) = entries.next_entry().await? {
+        // `session_search.sqlite` sits beside the directories, so the check is
+        // on the child rather than on this entry being a directory — one probe
+        // instead of two, and a file cannot hold a session id anyway.
+        if !tokio::fs::try_exists(entry.path().join(session_id))
+            .await
+            .unwrap_or(false)
+        {
+            continue;
+        }
+        return Ok(Some(decode_store_dir(&entry.file_name().to_string_lossy())));
+    }
+
+    Ok(None)
+}
+
+/// The reader's home directory, by the one route that does not need a crate.
+fn dirs_home() -> Option<std::path::PathBuf> {
+    std::env::var_os("HOME").map(std::path::PathBuf::from)
+}
+
+/// Percent-decodes one of grok's session-store directory names back into the
+/// path it stands for.
+///
+/// Hand-rolled for the reason `is_upload`'s host check next door is: the whole
+/// job is a dozen lines and the decode direction has no character set to
+/// disagree about — `%XX` or a literal byte, nothing else. grok leaves `.`,
+/// `-` and `_` unescaped and escapes `/` as `%2F`, but nothing here depends on
+/// which set it chose, which is exactly why this reads rather than reproduces
+/// it.
+///
+/// A stray `%` not followed by two hex digits is kept verbatim rather than
+/// dropped: this names a directory that already exists, so the only useful
+/// failure is one that still round-trips.
+fn decode_store_dir(name: &str) -> String {
+    let bytes = name.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+
+    while i < bytes.len() {
+        let pair = (i + 2 < bytes.len())
+            .then(|| std::str::from_utf8(&bytes[i + 1..i + 3]).ok())
+            .flatten()
+            .filter(|_| bytes[i] == b'%')
+            .and_then(|hex| u8::from_str_radix(hex, 16).ok());
+
+        match pair {
+            Some(byte) => {
+                out.push(byte);
+                i += 3;
+            }
+            None => {
+                out.push(bytes[i]);
+                i += 1;
+            }
+        }
+    }
+
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+/// What `_x.ai/session/fork` takes. Its own function because every one of the
+/// four names is measured off the wire and a wrong one fails *at the fork*,
+/// with `-32602 missing field`, on a send the reader has already made.
+///
+/// `sourceCwd` is required and is not a formality: grok stores a session under
+/// `<GROK_HOME>/sessions/<cwd-encoded>/<id>/`, so the pair is the address. Every
+/// other key tried was swallowed with no error — `worktree`, `useWorktree`,
+/// `sessionKind`, `sourceWorkspaceDir` — so there is no worktree flag to reach
+/// for and none of them is a way to check this call was understood.
+fn fork_params(parent: &str, source_cwd: &str, session_id: &str, session_cwd: &str) -> Value {
+    json!({
+        "sourceSessionId": parent,
+        "sourceCwd": source_cwd,
+        "newCwd": session_cwd,
+        "newSessionId": session_id,
+    })
+}
+
+/// Copies the parent's conversation onto this session, grok-side.
+///
+/// **The copy is made inside the request**, which is what makes this eager
+/// where Claude Code's `--fork-session` is a spawn flag — and it needs no
+/// session open on this child at all: it reads the parent off grok's own store,
+/// in 0.07s, including a parent whose child is alive in another process and
+/// finished a turn a moment before. So the send that was going to spawn a child
+/// anyway is the cheapest place it can happen.
+///
+/// The resume that follows is what this build wants and `session/load` is what
+/// it must not become: **`load` replays the copied conversation as
+/// `session/update`s** and `resume` sends nothing but `available_commands_update`,
+/// so a load would draw the parent's turns a second time under Dray's own
+/// copied log. Measured both ways.
+///
+/// `sourceCwd` comes off the parent's index entry rather than being handed
+/// down: the whole call is one harness's, and the address is a fact about the
+/// parent that only the index holds. **The one way that entry is known to be
+/// the wrong address is refused before this is ever reached** — a relocated
+/// session's `cwd` has been rewritten to the project root, which is not where
+/// grok filed it, and `SessionManager::fork` turns that into a refusal at the
+/// press rather than a failure here on the first send.
+///
+/// What is left is a wrong id or an address wrong for a reason nothing here
+/// predicted, and the two answer *identically*: `-32603` carrying
+/// `No such file or directory (os error 2)`, naming neither the session nor
+/// the path, which in the composer's error slot says nothing a reader could
+/// act on. The context names both and diagnoses neither — `to_string` on an
+/// `anyhow` chain prints the outermost alone, so it is what the reader gets,
+/// and a sentence claiming the session is missing would be a guess on any
+/// other failure. `newCwd` is not the half that can fail — the call takes a directory
+/// that does not exist and does not create one, so the tree `send_msg` makes
+/// is for the spawn's own `chdir` rather than for this.
+async fn fork_conversation(
+    client: &RpcClient,
+    parent: &str,
+    session_id: &str,
+    session_cwd: &str,
+) -> Result<()> {
+    // grok's own answer first, the index second. They agree for every session
+    // that still has the tree it ran in, and where they differ grok is right by
+    // construction — the store is what the address addresses.
+    let source_cwd = match stored_cwd(parent).await {
+        Ok(Some(cwd)) => cwd,
+        _ => crate::store::get_session_index_item(parent)
+            .await?
+            .map(|item| item.cwd)
+            .with_context(|| format!("can't fork {parent} — Dray has no record of it"))?,
+    };
+
+    let answer = client
+        .request(
+            "_x.ai/session/fork",
+            fork_params(parent, &source_cwd, session_id, session_cwd),
+        )
+        .await
+        .with_context(|| format!("couldn't fork grok session {parent} in {source_cwd}"))?;
+
+    // Same guard `session/new` takes one function down, and for the same
+    // reason: grok honouring Dray's id is what makes the index entry the resume
+    // handle. Unchecked, a grok that stopped honouring it would leave the
+    // resume below failing with "no such session" — about an id this call had
+    // silently declined to use.
+    let minted = answer
+        .get("newSessionId")
+        .and_then(Value::as_str)
+        .context("_x.ai/session/fork answered with no session id")?;
+    anyhow::ensure!(
+        minted == session_id,
+        "grok forked into session {minted} rather than the id Dray chose — this build cannot resume it"
+    );
+
+    Ok(())
 }
 
 /// Dray's stance as the `_meta` key grok reads it from, or `None` for the
@@ -1015,5 +1231,108 @@ mod tests {
         // agent actually has.
         assert!(SYSTEM_PROMPT.contains("spawn_subagent"));
         assert!(SYSTEM_PROMPT.contains("ask_user_question"));
+    }
+
+    /// Four names read off the wire, and a wrong one fails only when a reader
+    /// forks — `-32602 missing field \`sourceCwd\``, on a send already made.
+    /// Nothing in the reply distinguishes a key grok understood from one it
+    /// swallowed, so this is the only place the spelling can be held.
+    ///
+    /// `newCwd` is what the two menu items differ by and the only reason this
+    /// takes both directories: forking in place addresses the fork to the
+    /// parent's own, and forking into a worktree to the tree `send_msg` made a
+    /// moment earlier. Both measured.
+    #[test]
+    fn the_fork_names_both_directories_and_the_id_dray_chose() {
+        let here = fork_params("parent", "/repo", "child", "/repo");
+        assert_eq!(here["sourceSessionId"], "parent");
+        assert_eq!(here["sourceCwd"], "/repo");
+        assert_eq!(here["newSessionId"], "child");
+        assert_eq!(here["newCwd"], "/repo");
+
+        let tree = fork_params("parent", "/repo", "child", "/repo/.claude/worktrees/x");
+        assert_eq!(tree["sourceCwd"], "/repo");
+        assert_eq!(tree["newCwd"], "/repo/.claude/worktrees/x");
+
+        // Nothing else goes over. `worktree`, `useWorktree`, `sessionKind` and
+        // `sourceWorkspaceDir` were all accepted with no error and no effect,
+        // so an extra key here would read as doing something.
+        assert_eq!(tree.as_object().expect("an object").len(), 4);
+    }
+
+    /// The decode is what turns grok's store into an answer about addresses,
+    /// so it is held against names read off a real one.
+    ///
+    /// grok escapes `/` and leaves `.`, `-` and `_` alone, and **nothing here
+    /// may come to depend on that set** — the whole reason this reads the
+    /// directory rather than reproducing the encoder is that the encoder's
+    /// character set is grok's to change and the decode's is not.
+    #[test]
+    fn a_store_directory_decodes_to_the_path_it_stands_for() {
+        assert_eq!(
+            decode_store_dir(
+                "%2FUsers%2Fyogesh%2FDocuments%2Fade%2F.claude%2Fworktrees%2Fgentle-emerald-harbor"
+            ),
+            "/Users/yogesh/Documents/ade/.claude/worktrees/gentle-emerald-harbor"
+        );
+        assert_eq!(decode_store_dir("%2Ftmp%2Fgrok-probe%2Fws5"), "/tmp/grok-probe/ws5");
+        // Lower-case hex and a space, neither seen in a capture and both legal.
+        assert_eq!(decode_store_dir("%2fa%20b"), "/a b");
+
+        // A `%` that opens nothing is kept, since this names a directory that
+        // exists: the only useful failure is one that still round-trips.
+        for stray in ["100%", "%zz", "%2", "%"] {
+            assert_eq!(decode_store_dir(stray), stray);
+        }
+    }
+
+    /// The three answers, against a store built to look like grok's.
+    ///
+    /// `Err` is the one worth pinning: a store that is not there reads as
+    /// "could not look", never as "no record", because `SessionManager::fork`
+    /// refuses on the second and a grok that rearranged its files would
+    /// otherwise take Fork away from every session at once.
+    #[tokio::test]
+    async fn the_store_answers_where_a_session_was_filed() {
+        let root = std::env::temp_dir().join(format!("dray-grokstore-{}", uuid::Uuid::now_v7()));
+        let sessions = root.join("sessions");
+        let filed = "/Users/x/Documents/ade/.claude/worktrees/gentle-emerald-harbor";
+        let encoded = "%2FUsers%2Fx%2FDocuments%2Fade%2F.claude%2Fworktrees%2Fgentle-emerald-harbor";
+
+        assert!(
+            stored_cwd_under(&sessions, "any").await.is_err(),
+            "a store that cannot be read is not a store with no record in it"
+        );
+
+        std::fs::create_dir_all(sessions.join(encoded).join("the-id")).expect("a store");
+        // The sqlite file grok keeps beside the directories, which the scan
+        // walks straight past.
+        std::fs::write(sessions.join("session_search.sqlite"), b"").expect("a file");
+
+        assert_eq!(
+            stored_cwd_under(&sessions, "the-id").await.expect("readable"),
+            Some(filed.to_string())
+        );
+        assert_eq!(
+            stored_cwd_under(&sessions, "another-id").await.expect("readable"),
+            None,
+            "looked, and grok holds nothing under that id"
+        );
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    /// grok's fork is the eager one and still rides the first send, which is
+    /// the whole of the shape. The call needs a child; the send was spawning
+    /// one anyway; forking when the reader asks would spawn a second, with its
+    /// MCP servers, for a row that may never be sent to.
+    #[test]
+    fn the_fork_call_rides_the_first_send() {
+        let caps = crate::harness::Harness::Grok.caps();
+        assert!(caps.forkable);
+        assert!(
+            caps.fork_needs_cli,
+            "the copy happens in a request, so a spawn is what carries it"
+        );
     }
 }
