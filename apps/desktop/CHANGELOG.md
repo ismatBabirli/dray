@@ -5,6 +5,32 @@ The release job reads the matching section into the GitHub release notes and the
 updater carries it, so this file is what a release says about itself — not a
 second description of it. GitHub's generated commit list is appended below it.
 
+## 0.23.3
+
+### Added
+
+- **The new-task page says when your agent's CLI has an update**, with
+  an Update button that runs the CLI's own updater in place. pi and fx
+  wait for their running sessions to finish first.
+- **The `dray` CLI updates itself alongside the app**, on the first
+  launch of each new version, so agents stop hitting "run `dray
+  update`". A machine without `dray` gets nothing installed.
+- **Shortcuts can be unbound** from Settings → Shortcuts.
+- **GPT-6 Sol and Luna are in the Codex picker**, with 6 Astra, 6 Sol
+  and 5.6 Sol at the top.
+
+### Changed
+
+- **Views moved to ⌘1–⌘4 and split-view panes to ⌘⌥1–⌘⌥9.** Custom
+  bindings are kept.
+
+### Fixed
+
+- **A CLI installed globally with pnpm 11 is found.**
+- **The composer no longer draws a horizontal scrollbar** on a line
+  that fills its width.
+- **The Grok account row drops the raw team id.**
+
 ## 0.23.2
 
 ### Added
