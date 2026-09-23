@@ -5,6 +5,20 @@ The release job reads the matching section into the GitHub release notes and the
 updater carries it, so this file is what a release says about itself — not a
 second description of it. GitHub's generated commit list is appended below it.
 
+## 0.23.6
+
+### Fixed
+
+- **Codex, fx and grok no longer hang on a permission question after a
+  restart of the agent.** The sidebar turned yellow and the sound
+  played, but no card appeared to answer.
+- **Model, effort and mode picks stick to their session.** Leaving a
+  session keeps unsent picks, and picks inside one no longer change the
+  new-task defaults.
+- **A pick made mid-turn applies to the prompt you queue behind it.**
+  Codex locks these controls mid-turn instead, since it can't honour them.
+- **pi switches model and effort without restarting the agent.**
+
 ## 0.23.5
 
 ### Added
