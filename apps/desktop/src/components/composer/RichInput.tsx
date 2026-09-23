@@ -93,6 +93,8 @@ type Props = {
   onChange: (value: string, caret: number) => void;
   onCaretChange: (caret: number) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
+  /// Asked before a paste lands as text; `true` means it was taken as files.
+  onPasteFiles?: () => Promise<boolean>;
   placeholder?: string;
   className?: string;
   /// Rows before it stops growing and starts scrolling.
@@ -129,6 +131,7 @@ export default function RichInput({
   onChange,
   onCaretChange,
   onKeyDown,
+  onPasteFiles,
   placeholder,
   className,
   maxRows = 10,
@@ -141,6 +144,7 @@ export default function RichInput({
   const domValue = useRef("");
   const signature = useRef("");
   const focused = useRef(false);
+  const pasting = useRef(Promise.resolve());
   /// Bumped on blur, purely to re-run the effect below.
   ///
   /// A blurred box has no run being edited, so the tag the caret was sitting in
@@ -284,9 +288,23 @@ export default function RichInput({
       // Plain text only. The default would paste somebody else's markup into a
       // tree whose every element means something here, and a pasted `<span>`
       // carrying `data-tag` would be a chip addressing a session at random.
+      // The clipboard is asked about files on every paste, not only where the
+      // webview lists some: a copied file's `text/plain` is its name, which
+      // would otherwise land in the prompt. So the text lands a round trip
+      // late — chained, so two pastes keep their order, and at the paste-time
+      // selection unless the draft moved meanwhile.
       onPaste={(event) => {
         event.preventDefault();
-        drop(ref.current, event.clipboardData.getData("text/plain"), onChange);
+        const text = event.clipboardData.getData("text/plain");
+        const el = ref.current;
+        if (!onPasteFiles || !el) return drop(el, text, onChange);
+
+        const before = { value: readValue(el), at: selectionRange(el) };
+        pasting.current = pasting.current
+          .then(onPasteFiles)
+          .then((took) => {
+            if (!took) drop(ref.current, text, onChange, before);
+          });
       }}
       // Tauri intercepts a *file* drop before the webview sees it, so what
       // reaches here is text from another app — which would arrive as markup for
@@ -338,12 +356,15 @@ function drop(
   el: HTMLElement | null,
   text: string,
   onChange: (value: string, caret: number) => void,
+  // A selection taken earlier, honoured only while the draft still reads as
+  // it did then.
+  before?: { value: string; at: { start: number; end: number } | null },
 ): void {
   if (!el || !text) return;
 
-  const at = selectionRange(el);
+  const value = readValue(el);
+  const at = before?.value === value && before.at ? before.at : selectionRange(el);
   if (!at) return;
 
-  const value = readValue(el);
   onChange(value.slice(0, at.start) + text + value.slice(at.end), at.start + text.length);
 }

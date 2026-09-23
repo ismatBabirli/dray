@@ -654,6 +654,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             send_msg,
             attachments::read_attachments,
+            attachments::paste_attachments,
             list_models,
             refresh_models,
             set_fx_provider,
