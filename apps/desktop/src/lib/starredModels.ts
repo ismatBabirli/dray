@@ -7,23 +7,37 @@ import type { Harness, Model, ModelId } from "@/types/events";
 /// the reader and not about any session: it has to be true in the composer
 /// before a session exists, and it must not travel with a session handed to
 /// somebody else.
-export const STARRED_MODELS_KEY = "ade.starredModels";
-
-/// Harnesses whose picker draws the shortlist rather than the whole list.
 ///
-/// pi and fx, and not as a preference. Their lists are *discovered* — every
-/// model the reader's providers serve, 247 on fx's gateway — so they have no
-/// bound, and a menu of everything is a menu nobody reads. Claude Code and
-/// Codex each ship a handful of models Dray names itself, where a shortlist
-/// would be one more thing to set up before the picker works at all.
-const SHORTLISTED: Harness[] = ["pi", "fx"];
+/// **Keyed by harness**, because ids repeat across them — the grok harness and
+/// fx's grok provider both serve `grok-4.6` — and one flat list let starring a
+/// model in one picker change the other, and made one's seeding skip the
+/// other's as "already set up".
+export const STARRED_MODELS_KEY = "ade.starredModelsByHarness";
 
-export function usesShortlist(harness: Harness): boolean {
-  return SHORTLISTED.includes(harness);
+/// The flat list pi and fx shared before stars were keyed. Read as their stars
+/// until each writes its own entry, so nobody's shortlist resets on upgrade.
+const LEGACY_STARS_KEY = "ade.starredModels";
+
+export type StarsByHarness = Partial<Record<Harness, ModelId[]>>;
+
+/// One harness's stars out of the keyed map.
+export function starsFor(map: StarsByHarness, harness: Harness): ModelId[] {
+  const own = map[harness];
+  if (own) return own;
+  return harness === "pi" || harness === "fx"
+    ? readLocalStorage<ModelId[]>(LEGACY_STARS_KEY, [])
+    : [];
 }
 
-/// Which fx providers have had their defaults seeded, so it happens once each.
-export const FX_STARS_SEEDED_KEY = "ade.fxStarsSeeded";
+/// Which harnesses and fx providers have had their defaults seeded, so it
+/// happens once each. The storage key predates the other harnesses joining.
+export const STARS_SEEDED_KEY = "ade.fxStarsSeeded";
+
+/// The marker a seed is recorded under. fx seeds per provider, the rest per
+/// harness — prefixed, since fx has providers named `codex` and `grok` too.
+export function seedKey(harness: Harness, provider: string): string {
+  return harness === "fx" ? provider : `harness:${harness}`;
+}
 
 /// What fx's picker opens on, per provider, before the reader has starred
 /// anything there.
@@ -40,14 +54,20 @@ const FX_DEFAULT_STARS: Record<string, string[]> = {
   grok: ["grok-4.6"],
 };
 
-/// The default stars for `provider`, narrowed to models it actually serves.
+/// The default stars for a harness, narrowed to models it actually serves.
+///
+/// Claude Code, Codex and grok star every row not marked `secondary` — the
+/// short list Dray names. pi seeds nothing: its list is whatever the reader's
+/// providers serve, and Dray has no opinion on which of them to work with.
 ///
 /// A needle matches a whole id or its last segment: the gateway names a model
 /// `openai/gpt-5.6-sol` where fx's own providers name the same thing
 /// `gpt-5.6-sol`, so one needle answers for both. A needle naming nothing in
 /// the list — fx renamed it, or the account cannot reach it — seeds nothing,
 /// which is the same state as before this existed.
-export function defaultStars(provider: string, models: Model[]): ModelId[] {
+export function defaultStars(harness: Harness, provider: string, models: Model[]): ModelId[] {
+  if (harness === "pi") return [];
+  if (harness !== "fx") return models.filter((m) => !m.secondary).map((m) => m.id);
   const needles = FX_DEFAULT_STARS[provider] ?? [];
   return models
     .filter((m) => needles.some((n) => m.id === n || m.id.endsWith(`/${n}`)))
@@ -74,44 +94,15 @@ export function shortlist(
   return models.filter((m) => stars.has(m.id) || m.id === current);
 }
 
-/// The rows the picker draws at its top level, which is **also exactly what
-/// Shift+Tab cycles**. One function because they are one list: the chord and
-/// the menu disagreeing means a press lands on a model the menu never offered,
-/// which is what it did on pi — the menu drew the reader's shortlist while the
-/// chord walked every model every logged-in provider serves.
+/// [`shortlist`] for Shift+Tab, which cycles exactly what the picker draws — a
+/// press landing on a model the menu never offered is the bug sharing prevents.
 ///
-/// The two harnesses answer the same question differently and both are here:
-/// pi bounds an unbounded discovered list by what the reader starred, where
-/// Claude Code and Codex bound a written one by `secondary`.
-export function topLevel(
-  models: Model[],
-  starred: ModelId[],
-  harness: Harness,
-  current: ModelId,
-): Model[] {
-  return usesShortlist(harness)
-    ? shortlist(models, starred, current)
-    : models.filter((m) => !m.secondary);
-}
-
-/// What the picker folds into "More models". Empty for a shortlisted harness,
-/// whose own overflow is the library dialog rather than a submenu.
-export function underMore(models: Model[], harness: Harness): Model[] {
-  return usesShortlist(harness) ? [] : models.filter((m) => m.secondary);
-}
-
-/// [`topLevel`] for a caller with no `starred` state of its own.
-///
-/// The stars are read at the moment of the press rather than held, which is
-/// the point: a second `useLocalStorage` copy in `App` would drift from the
-/// picker's the first time the library dialog wrote one, and a chord reading a
-/// stale shortlist is the bug this exists to fix, not a different one.
-export function cycledModels(
-  models: Model[],
-  harness: Harness,
-  current: ModelId,
-): Model[] {
-  return topLevel(models, readLocalStorage<ModelId[]>(STARRED_MODELS_KEY, []), harness, current);
+/// The stars are read at the moment of the press rather than held: a second
+/// `useLocalStorage` copy in `App` would drift from the picker's the first time
+/// the library dialog wrote one.
+export function cycledModels(models: Model[], harness: Harness, current: ModelId): Model[] {
+  const map = readLocalStorage<StarsByHarness>(STARRED_MODELS_KEY, {});
+  return shortlist(models, starsFor(map, harness), current);
 }
 
 /// The models grouped under their provider, in the order the list arrived in.
