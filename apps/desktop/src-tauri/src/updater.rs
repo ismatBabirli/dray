@@ -5,7 +5,10 @@
 //! so switching it needs no rebuild — the config endpoint is only the fallback
 //! for a caller that names no channel.
 
+use std::path::PathBuf;
+use std::process::Stdio;
 use std::sync::Mutex;
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -13,7 +16,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_updater::{Update, UpdaterExt};
 use ts_rs::TS;
 
-use crate::analytics;
+use crate::{analytics, binpath, store::get_home_app_dir};
 
 const STABLE_MANIFEST: &str = "https://monorepo-labs.github.io/dray/stable.json";
 const BETA_MANIFEST: &str = "https://monorepo-labs.github.io/dray/beta.json";
@@ -298,6 +301,93 @@ fn bundle_of(exe: &std::path::Path) -> Option<&std::path::Path> {
     exe.ancestors()
         .nth(3)
         .filter(|p| p.extension().is_some_and(|e| e == "app"))
+}
+
+/// Runs the installed CLI's own `dray update` on the first launch of a new app
+/// version, so an app that bumped `PROTOCOL_VERSION` does not leave every
+/// agent's `dray` call refused until somebody updates it by hand.
+///
+/// `dray update` decides whether anything is newer, so nothing here compares
+/// versions. Only a CLI already installed is touched: the app still installs
+/// nothing. Dev and debug builds skip it, since the CLI on disk belongs to the
+/// release app. The version is recorded only once that is answered, so a launch
+/// with no network tries again next time.
+///
+/// The marker is its own file rather than a field on `settings.json`: that file
+/// is rewritten whole, and a second app instance (the `open -n` relaunch is
+/// one) writing a marker from a stale read would undo the reader's settings.
+pub async fn sync_cli() {
+    if tauri::is_dev() || cfg!(debug_assertions) {
+        return;
+    }
+    let version = env!("CARGO_PKG_VERSION");
+    let Ok(marker) = get_home_app_dir().await.map(|dir| dir.join("cli-synced")) else {
+        return;
+    };
+    if tokio::fs::read_to_string(&marker)
+        .await
+        .is_ok_and(|synced| synced.trim() == version)
+    {
+        return;
+    }
+
+    if let Some(dray) = installed_cli().await {
+        let child = tokio::process::Command::new(&dray)
+            .arg("update")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn();
+        let mut child = match child {
+            Ok(child) => child,
+            Err(e) => {
+                eprintln!("[cli sync] could not run {}: {e}", dray.display());
+                return;
+            }
+        };
+        match tokio::time::timeout(CLI_UPDATE_TIMEOUT, child.wait()).await {
+            Ok(Ok(status)) if status.success() => {}
+            Ok(Ok(status)) => {
+                eprintln!("[cli sync] dray update failed ({status})");
+                return;
+            }
+            Ok(Err(e)) => {
+                eprintln!("[cli sync] dray update did not finish: {e}");
+                return;
+            }
+            // The installer is `sh` running curl under `dray`, so killing the
+            // child alone leaves the download running.
+            Err(_) => {
+                if let Some(root) = child.id() {
+                    crate::local_servers::kill_descendants(root).await;
+                }
+                let _ = child.kill().await;
+                eprintln!("[cli sync] dray update timed out");
+                return;
+            }
+        }
+    }
+
+    if let Err(e) = tokio::fs::write(&marker, version).await {
+        eprintln!("[cli sync] could not record the version: {e}");
+    }
+}
+
+/// Generous: a slow link pulling a few MB, plus the skill write.
+const CLI_UPDATE_TIMEOUT: Duration = Duration::from_secs(300);
+
+/// The `dray` on disk, only where it answers `--version` the way Dray's CLI
+/// does — the name is generic enough for something else on `PATH` to carry it,
+/// and this is about to be run with `update`.
+async fn installed_cli() -> Option<PathBuf> {
+    let dray = binpath::dray().await?;
+    let out = tokio::process::Command::new(&dray)
+        .arg("--version")
+        .stdin(Stdio::null())
+        .kill_on_drop(true)
+        .output();
+    let out = tokio::time::timeout(Duration::from_secs(5), out).await.ok()?.ok()?;
+    (out.status.success() && out.stdout.starts_with(b"dray ")).then_some(dray)
 }
 
 fn emit_status(app: &AppHandle, status: UpdateStatus) {
