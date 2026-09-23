@@ -1,23 +1,23 @@
 {
-  "version": "0.23.4",
-  "notes": "### Changed\n\n- **Settings is a full-window page** instead of a dialog. Open\n  transcripts stay as they were underneath.\n- **Backspace unbinds a shortcut** while recording one in Settings →\n  Shortcuts.\n- **⌘⌥T cycles themes.**\n- **Downloads and updates come from a faster mirror.** GitHub's release\n  CDN was taking minutes for some people.\n\n### Fixed\n\n- **Picking a dark-only theme no longer forgets your light-mode choice.**\n- **The Accounts tab shows the last reading while it re-reads**, rather\n  than a spinner every visit.",
-  "pub_date": "2026-09-23T07:47:37.548Z",
+  "version": "0.23.5",
+  "notes": "### Added\n\n- **Paste images and files into the composer.** A copied file arrives as\n  an attachment, the same as dropping it in.\n- **Zoom the whole app with ⌘= / ⌘- / ⌘0.** This replaces the per-area\n  font sizes in Settings, which reset on this update.\n- **Every harness uses your own model shortlist.** Star the models you\n  want at the top of the picker; Shift+Tab cycles them.\n- **Switch a harness off** in Settings → Accounts to hide it from the\n  picker. Sessions already on it keep working.\n\n### Fixed\n\n- **Links in chat are underlined again**, and bare domains like\n  `drayhq.com/docs` or `localhost:3000` are links now, in your messages\n  and the agent's.\n- **An expanded shell row shows the whole command**, not just the\n  one-line summary.\n- **The browser pane stays put when the app is zoomed.**",
+  "pub_date": "2026-09-23T10:40:22.676Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXNvU0NnS3dWWmk5TDF6c2VwdU16SW9GZDV5OXltQnF5dWFIUjRyVFF1QzEvNmZsaWJrU05PSG1rbmxNWi9XVHJDVFE5MzFTYlcrRFBlMWxPakZrU1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQ5NjQ4CWZpbGU6RHJheS5hcHAudGFyLmd6Ci96YVlwcDkyVkRyNHdxNDZWQ3cvZ0gwYTZFQlc3RVpYanJkT3VMUXUyaHBNcyt0MTA5MDd4NFAxWUt4STZ2STUxMTdtZDBRVGx0cTJHc3RtRVV3RURRPT0K",
-      "url": "https://downloads.drayhq.com/v0.23.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXI0K1NnZDhJZGNlNE9uTlhpOWVyZDUrbzg4R1RIbDNlZmJEb1BwVHlKci8xTHlYTGtpWWJzNzBkR291d2lYQlBoeC9XSGw3RGNiNUhhelVlT1ZtQXdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTYwMDE1CWZpbGU6RHJheS5hcHAudGFyLmd6CnQ5N2d6QWpFZnhqbmhqNVN4bUpvOUl5b2J5STBlelRFMjdKZDVYMER5UVVpVEQwaTB3NmdtYWFxV0RGNDhySURjWC9sZnd3dzNrQ0VSTmd5YTlmVEFRPT0K",
+      "url": "https://downloads.drayhq.com/v0.23.5/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXNvU0NnS3dWWmk5TDF6c2VwdU16SW9GZDV5OXltQnF5dWFIUjRyVFF1QzEvNmZsaWJrU05PSG1rbmxNWi9XVHJDVFE5MzFTYlcrRFBlMWxPakZrU1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQ5NjQ4CWZpbGU6RHJheS5hcHAudGFyLmd6Ci96YVlwcDkyVkRyNHdxNDZWQ3cvZ0gwYTZFQlc3RVpYanJkT3VMUXUyaHBNcyt0MTA5MDd4NFAxWUt4STZ2STUxMTdtZDBRVGx0cTJHc3RtRVV3RURRPT0K",
-      "url": "https://downloads.drayhq.com/v0.23.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXI0K1NnZDhJZGNlNE9uTlhpOWVyZDUrbzg4R1RIbDNlZmJEb1BwVHlKci8xTHlYTGtpWWJzNzBkR291d2lYQlBoeC9XSGw3RGNiNUhhelVlT1ZtQXdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTYwMDE1CWZpbGU6RHJheS5hcHAudGFyLmd6CnQ5N2d6QWpFZnhqbmhqNVN4bUpvOUl5b2J5STBlelRFMjdKZDVYMER5UVVpVEQwaTB3NmdtYWFxV0RGNDhySURjWC9sZnd3dzNrQ0VSTmd5YTlmVEFRPT0K",
+      "url": "https://downloads.drayhq.com/v0.23.5/Dray_universal.app.tar.gz"
     },
     "darwin-aarch64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXNvU0NnS3dWWmk5TDF6c2VwdU16SW9GZDV5OXltQnF5dWFIUjRyVFF1QzEvNmZsaWJrU05PSG1rbmxNWi9XVHJDVFE5MzFTYlcrRFBlMWxPakZrU1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQ5NjQ4CWZpbGU6RHJheS5hcHAudGFyLmd6Ci96YVlwcDkyVkRyNHdxNDZWQ3cvZ0gwYTZFQlc3RVpYanJkT3VMUXUyaHBNcyt0MTA5MDd4NFAxWUt4STZ2STUxMTdtZDBRVGx0cTJHc3RtRVV3RURRPT0K",
-      "url": "https://downloads.drayhq.com/v0.23.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXI0K1NnZDhJZGNlNE9uTlhpOWVyZDUrbzg4R1RIbDNlZmJEb1BwVHlKci8xTHlYTGtpWWJzNzBkR291d2lYQlBoeC9XSGw3RGNiNUhhelVlT1ZtQXdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTYwMDE1CWZpbGU6RHJheS5hcHAudGFyLmd6CnQ5N2d6QWpFZnhqbmhqNVN4bUpvOUl5b2J5STBlelRFMjdKZDVYMER5UVVpVEQwaTB3NmdtYWFxV0RGNDhySURjWC9sZnd3dzNrQ0VSTmd5YTlmVEFRPT0K",
+      "url": "https://downloads.drayhq.com/v0.23.5/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXNvU0NnS3dWWmk5TDF6c2VwdU16SW9GZDV5OXltQnF5dWFIUjRyVFF1QzEvNmZsaWJrU05PSG1rbmxNWi9XVHJDVFE5MzFTYlcrRFBlMWxPakZrU1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQ5NjQ4CWZpbGU6RHJheS5hcHAudGFyLmd6Ci96YVlwcDkyVkRyNHdxNDZWQ3cvZ0gwYTZFQlc3RVpYanJkT3VMUXUyaHBNcyt0MTA5MDd4NFAxWUt4STZ2STUxMTdtZDBRVGx0cTJHc3RtRVV3RURRPT0K",
-      "url": "https://downloads.drayhq.com/v0.23.4/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXI0K1NnZDhJZGNlNE9uTlhpOWVyZDUrbzg4R1RIbDNlZmJEb1BwVHlKci8xTHlYTGtpWWJzNzBkR291d2lYQlBoeC9XSGw3RGNiNUhhelVlT1ZtQXdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTYwMDE1CWZpbGU6RHJheS5hcHAudGFyLmd6CnQ5N2d6QWpFZnhqbmhqNVN4bUpvOUl5b2J5STBlelRFMjdKZDVYMER5UVVpVEQwaTB3NmdtYWFxV0RGNDhySURjWC9sZnd3dzNrQ0VSTmd5YTlmVEFRPT0K",
+      "url": "https://downloads.drayhq.com/v0.23.5/Dray_universal.app.tar.gz"
     }
   }
 }
