@@ -5,6 +5,28 @@ The release job reads the matching section into the GitHub release notes and the
 updater carries it, so this file is what a release says about itself — not a
 second description of it. GitHub's generated commit list is appended below it.
 
+## 0.23.5
+
+### Added
+
+- **Paste images and files into the composer.** A copied file arrives as
+  an attachment, the same as dropping it in.
+- **Zoom the whole app with ⌘= / ⌘- / ⌘0.** This replaces the per-area
+  font sizes in Settings, which reset on this update.
+- **Every harness uses your own model shortlist.** Star the models you
+  want at the top of the picker; Shift+Tab cycles them.
+- **Switch a harness off** in Settings → Accounts to hide it from the
+  picker. Sessions already on it keep working.
+
+### Fixed
+
+- **Links in chat are underlined again**, and bare domains like
+  `drayhq.com/docs` or `localhost:3000` are links now, in your messages
+  and the agent's.
+- **An expanded shell row shows the whole command**, not just the
+  one-line summary.
+- **The browser pane stays put when the app is zoomed.**
+
 ## 0.23.4
 
 ### Changed

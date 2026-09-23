@@ -1127,13 +1127,13 @@ provider: string,
  */
 acceptsImages: boolean, 
 /**
- * Drawn under the picker's "More models" submenu rather than at the top
- * level, and skipped by Shift+Tab.
+ * Left out of the picker's default shortlist, so off until the reader
+ * turns it on under "Shortlist models".
  *
- * The chord cycles the list in order, which only works while the list is
- * short — so this is what keeps it short as pinned and older models are
- * added. A reader who picks one from the submenu keeps it: the flag
- * decides where a row is *drawn*, never what may be run.
+ * Shift+Tab cycles the shortlist in order, which only works while it is
+ * short — so this is what keeps a fresh install's short as pinned and
+ * older models are added. The flag decides what is *drawn* by default,
+ * never what may be run. The frontend reads it once, at seeding.
  */
 secondary: boolean, 
 /**
