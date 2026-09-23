@@ -119,9 +119,63 @@ pub struct FxSession {
     /// before the send, so `seq` still at 0 means no prompt was ever
     /// delivered and the rules cannot have gone with one.
     preamble: Arc<AtomicBool>,
+    /// Settings a send made while a prompt was open, held for the turn the
+    /// queue opens. fx refuses every config change mid-prompt
+    /// (`-32600 Prompt already in progress`, measured), and its queued
+    /// prompt is the *next* turn, so that turn is where the pick belongs.
+    deferred: Arc<std::sync::Mutex<Option<DeferredControls>>>,
+    /// What a deferred apply actually put the child on. The flush runs off the
+    /// `Session`, so the next send catches its record up from here before
+    /// comparing anything against it — or a later pick matching the stale
+    /// record would be skipped as no change.
+    applied: Arc<std::sync::Mutex<Option<AppliedControls>>>,
+}
+
+/// What a mid-turn send asked for; `None` where it named no model or level.
+#[derive(Clone, Debug, Default)]
+pub struct DeferredControls {
+    pub model: Option<Model>,
+    pub effort: Option<Effort>,
+    pub mode: ApprovalPolicy,
+}
+
+/// What a deferred apply left the child on, each field `None` where it was not
+/// asked to move.
+#[derive(Clone, Debug, Default)]
+pub struct AppliedControls {
+    pub model: Option<crate::models::ModelId>,
+    pub effort: Option<Effort>,
+    pub mode: Option<ApprovalPolicy>,
 }
 
 impl FxSession {
+    /// Holds a mid-turn send's settings for the flush; the newest send wins.
+    pub fn defer_controls(&self, controls: DeferredControls) {
+        *self.deferred.lock().expect("fx deferred poisoned") = Some(controls);
+    }
+
+    /// Takes what was deferred, leaving nothing behind.
+    pub fn take_deferred(&self) -> Option<DeferredControls> {
+        self.deferred.lock().expect("fx deferred poisoned").take()
+    }
+
+    /// Records what a deferred apply landed on, merged over any earlier record
+    /// the `Session` has not caught up on yet.
+    pub fn record_applied(&self, landed: AppliedControls) {
+        let mut slot = self.applied.lock().expect("fx applied poisoned");
+        let prev = slot.take().unwrap_or_default();
+        *slot = Some(AppliedControls {
+            model: landed.model.or(prev.model),
+            effort: landed.effort.or(prev.effort),
+            mode: landed.mode.or(prev.mode),
+        });
+    }
+
+    /// Takes the record for the `Session` to catch up on.
+    pub fn take_applied(&self) -> Option<AppliedControls> {
+        self.applied.lock().expect("fx applied poisoned").take()
+    }
+
     /// The active model's ladder, or `None` where fx has not said.
     fn efforts(&self) -> Option<Vec<Effort>> {
         self.efforts.lock().expect("fx efforts poisoned").clone()
@@ -298,6 +352,8 @@ pub async fn init(
         provider: Arc::new(std::sync::Mutex::new(None)),
         model: Arc::new(std::sync::Mutex::new(None)),
         preamble: Arc::new(AtomicBool::new(owes_preamble(is_new_session, seq_start))),
+        deferred: Arc::default(),
+        applied: Arc::default(),
     };
     note_config(&session, &config, None, app);
 
@@ -1347,7 +1403,9 @@ mod tests {
                 provider: Arc::new(std::sync::Mutex::new(None)),
                 model: Arc::new(std::sync::Mutex::new(None)),
                 preamble: Arc::new(AtomicBool::new(false)),
-            },
+                deferred: Arc::default(),
+                applied: Arc::default(),
+                    },
             rx,
         )
     }
