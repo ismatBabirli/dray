@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+
+import { describe, expect, it, vi } from "vitest";
 
 import {
   DEFAULT_THEME,
@@ -7,6 +9,8 @@ import {
   hasLightMode,
   keepsGlassInFullscreen,
   modeFor,
+  readStoredTheme,
+  resolvedModeFor,
   type ThemeName,
 } from "./theme";
 
@@ -101,6 +105,36 @@ describe("modeFor", () => {
     for (const t of THEMES.filter((t) => hasLightMode(t.id))) {
       expect(modeFor(t.id, "light")).toBe("light");
     }
+  });
+});
+
+describe("chosen mode", () => {
+  // The stored mode is the reader's and a dark-only theme only *draws* dark over
+  // it, so the pre-paint script has to know which themes those are. It cannot
+  // import this module; this holds the two lists together.
+  it("pre-paint script names exactly the dark-only themes", () => {
+    const html = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
+    const listed = /var darkOnly = \[([^\]]*)\]/.exec(html)?.[1];
+    expect(listed, "index.html lost its darkOnly list").toBeDefined();
+    const ids = [...listed!.matchAll(/"([^"]+)"/g)].map((m) => m[1]).sort();
+    expect(ids).toEqual(THEMES.filter((t) => !hasLightMode(t.id)).map((t) => t.id).sort());
+  });
+
+  // The read feeds `applyTheme`, which writes it back — forced here, a light
+  // reader launching into Cobalt2 would be stored dark for good.
+  it("reads a dark-only theme's mode back as chosen", () => {
+    const stored: Record<string, string> = { "ade.theme": "cobalt2", "ade.mode": "light" };
+    vi.stubGlobal("localStorage", { getItem: (k: string) => stored[k] ?? null });
+    try {
+      expect(readStoredTheme()).toEqual({ name: "cobalt2", mode: "light" });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("draws a dark-only theme dark whatever the reader chose", () => {
+    expect(resolvedModeFor("cobalt2", "light")).toBe("dark");
+    expect(resolvedModeFor(DEFAULT_THEME, "light")).toBe("light");
   });
 });
 
