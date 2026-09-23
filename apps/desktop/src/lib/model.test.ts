@@ -38,6 +38,13 @@ describe("usableModel", () => {
     expect(usableModel(CLAUDE, "gpt55" as never, "claude_code")).toBe("opus");
   });
 
+  /// A Codex not yet updated lists no GPT-6 Sol, so the default it cannot run
+  /// gives way to the list's head, which the backend ranks 6 Astra.
+  it("does not default a Codex to a model it does not list", () => {
+    const older = [model("gpt6_astra"), model("gpt56_sol")];
+    expect(usableModel(older, "gpt-6-sol" as never, "codex")).toBe("gpt6_astra");
+  });
+
   /// The list arrives a beat after the harness does, and blanking the pick in
   /// that frame would look like the picker forgetting what it was set to.
   it("leaves the pick alone until the list lands", () => {
@@ -57,12 +64,12 @@ describe("rememberedModel", () => {
 
   it("defaults a harness nobody has picked in", () => {
     expect(rememberedModel({ codex: "gpt55" }, "claude_code")).toBe("opus");
-    expect(rememberedModel({}, "codex")).toBe("gpt56_sol");
+    expect(rememberedModel({}, "codex")).toBe("gpt-6-sol");
   });
 
   /// A pick under one harness must not reach the other's default.
   it("does not let one harness's pick answer for the other", () => {
-    expect(rememberedModel({ claude_code: "haiku" }, "codex")).toBe("gpt56_sol");
+    expect(rememberedModel({ claude_code: "haiku" }, "codex")).toBe("gpt-6-sol");
   });
 });
 
