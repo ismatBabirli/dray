@@ -5,6 +5,24 @@ The release job reads the matching section into the GitHub release notes and the
 updater carries it, so this file is what a release says about itself — not a
 second description of it. GitHub's generated commit list is appended below it.
 
+## 0.23.4
+
+### Changed
+
+- **Settings is a full-window page** instead of a dialog. Open
+  transcripts stay as they were underneath.
+- **Backspace unbinds a shortcut** while recording one in Settings →
+  Shortcuts.
+- **⌘⌥T cycles themes.**
+- **Downloads and updates come from a faster mirror.** GitHub's release
+  CDN was taking minutes for some people.
+
+### Fixed
+
+- **Picking a dark-only theme no longer forgets your light-mode choice.**
+- **The Accounts tab shows the last reading while it re-reads**, rather
+  than a spinner every visit.
+
 ## 0.23.3
 
 ### Added
