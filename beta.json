@@ -1,23 +1,23 @@
 {
-  "version": "0.23.3",
-  "notes": "### Added\n\n- **The new-task page says when your agent's CLI has an update**, with\n  an Update button that runs the CLI's own updater in place. pi and fx\n  wait for their running sessions to finish first.\n- **The `dray` CLI updates itself alongside the app**, on the first\n  launch of each new version, so agents stop hitting \"run `dray\n  update`\". A machine without `dray` gets nothing installed.\n- **Shortcuts can be unbound** from Settings → Shortcuts.\n- **GPT-6 Sol and Luna are in the Codex picker**, with 6 Astra, 6 Sol\n  and 5.6 Sol at the top.\n\n### Changed\n\n- **Views moved to ⌘1–⌘4 and split-view panes to ⌘⌥1–⌘⌥9.** Custom\n  bindings are kept.\n\n### Fixed\n\n- **A CLI installed globally with pnpm 11 is found.**\n- **The composer no longer draws a horizontal scrollbar** on a line\n  that fills its width.\n- **The Grok account row drops the raw team id.**",
-  "pub_date": "2026-09-23T05:07:16.690Z",
+  "version": "0.23.4",
+  "notes": "### Changed\n\n- **Settings is a full-window page** instead of a dialog. Open\n  transcripts stay as they were underneath.\n- **Backspace unbinds a shortcut** while recording one in Settings →\n  Shortcuts.\n- **⌘⌥T cycles themes.**\n- **Downloads and updates come from a faster mirror.** GitHub's release\n  CDN was taking minutes for some people.\n\n### Fixed\n\n- **Picking a dark-only theme no longer forgets your light-mode choice.**\n- **The Accounts tab shows the last reading while it re-reads**, rather\n  than a spinner every visit.",
+  "pub_date": "2026-09-23T07:47:37.548Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXBTdE1HWEh4VkpXdDM4N3lmbWJ4bHVtV2FuTmRYcVJQQUhvV3FwWDAyM2UraXFrbjBHbE9GSUpZSS9qNytOK0w4cStjaFpCOXJ4V1RIZmJxTHk5NUFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQwMDI4CWZpbGU6RHJheS5hcHAudGFyLmd6CmxoWFcrdGxzS1lqbWdlbUsrT2xDY0xtVXh2RkJjNTNwTTZ5cnErNXZ5cENlVEJ2L3U2YU9OaVh1YVVOMStwNXJ1UldyYytOd2Zyalc4VzBvbGRtbURRPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.23.3/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXNvU0NnS3dWWmk5TDF6c2VwdU16SW9GZDV5OXltQnF5dWFIUjRyVFF1QzEvNmZsaWJrU05PSG1rbmxNWi9XVHJDVFE5MzFTYlcrRFBlMWxPakZrU1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQ5NjQ4CWZpbGU6RHJheS5hcHAudGFyLmd6Ci96YVlwcDkyVkRyNHdxNDZWQ3cvZ0gwYTZFQlc3RVpYanJkT3VMUXUyaHBNcyt0MTA5MDd4NFAxWUt4STZ2STUxMTdtZDBRVGx0cTJHc3RtRVV3RURRPT0K",
+      "url": "https://downloads.drayhq.com/v0.23.4/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXBTdE1HWEh4VkpXdDM4N3lmbWJ4bHVtV2FuTmRYcVJQQUhvV3FwWDAyM2UraXFrbjBHbE9GSUpZSS9qNytOK0w4cStjaFpCOXJ4V1RIZmJxTHk5NUFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQwMDI4CWZpbGU6RHJheS5hcHAudGFyLmd6CmxoWFcrdGxzS1lqbWdlbUsrT2xDY0xtVXh2RkJjNTNwTTZ5cnErNXZ5cENlVEJ2L3U2YU9OaVh1YVVOMStwNXJ1UldyYytOd2Zyalc4VzBvbGRtbURRPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.23.3/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXNvU0NnS3dWWmk5TDF6c2VwdU16SW9GZDV5OXltQnF5dWFIUjRyVFF1QzEvNmZsaWJrU05PSG1rbmxNWi9XVHJDVFE5MzFTYlcrRFBlMWxPakZrU1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQ5NjQ4CWZpbGU6RHJheS5hcHAudGFyLmd6Ci96YVlwcDkyVkRyNHdxNDZWQ3cvZ0gwYTZFQlc3RVpYanJkT3VMUXUyaHBNcyt0MTA5MDd4NFAxWUt4STZ2STUxMTdtZDBRVGx0cTJHc3RtRVV3RURRPT0K",
+      "url": "https://downloads.drayhq.com/v0.23.4/Dray_universal.app.tar.gz"
     },
     "darwin-aarch64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXBTdE1HWEh4VkpXdDM4N3lmbWJ4bHVtV2FuTmRYcVJQQUhvV3FwWDAyM2UraXFrbjBHbE9GSUpZSS9qNytOK0w4cStjaFpCOXJ4V1RIZmJxTHk5NUFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQwMDI4CWZpbGU6RHJheS5hcHAudGFyLmd6CmxoWFcrdGxzS1lqbWdlbUsrT2xDY0xtVXh2RkJjNTNwTTZ5cnErNXZ5cENlVEJ2L3U2YU9OaVh1YVVOMStwNXJ1UldyYytOd2Zyalc4VzBvbGRtbURRPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.23.3/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXNvU0NnS3dWWmk5TDF6c2VwdU16SW9GZDV5OXltQnF5dWFIUjRyVFF1QzEvNmZsaWJrU05PSG1rbmxNWi9XVHJDVFE5MzFTYlcrRFBlMWxPakZrU1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQ5NjQ4CWZpbGU6RHJheS5hcHAudGFyLmd6Ci96YVlwcDkyVkRyNHdxNDZWQ3cvZ0gwYTZFQlc3RVpYanJkT3VMUXUyaHBNcyt0MTA5MDd4NFAxWUt4STZ2STUxMTdtZDBRVGx0cTJHc3RtRVV3RURRPT0K",
+      "url": "https://downloads.drayhq.com/v0.23.4/Dray_universal.app.tar.gz"
     },
     "darwin-x86_64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXBTdE1HWEh4VkpXdDM4N3lmbWJ4bHVtV2FuTmRYcVJQQUhvV3FwWDAyM2UraXFrbjBHbE9GSUpZSS9qNytOK0w4cStjaFpCOXJ4V1RIZmJxTHk5NUFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQwMDI4CWZpbGU6RHJheS5hcHAudGFyLmd6CmxoWFcrdGxzS1lqbWdlbUsrT2xDY0xtVXh2RkJjNTNwTTZ5cnErNXZ5cENlVEJ2L3U2YU9OaVh1YVVOMStwNXJ1UldyYytOd2Zyalc4VzBvbGRtbURRPT0K",
-      "url": "https://github.com/monorepo-labs/dray/releases/download/v0.23.3/Dray_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRcVZJUXEzQlQwVXNvU0NnS3dWWmk5TDF6c2VwdU16SW9GZDV5OXltQnF5dWFIUjRyVFF1QzEvNmZsaWJrU05PSG1rbmxNWi9XVHJDVFE5MzFTYlcrRFBlMWxPakZrU1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwMTQ5NjQ4CWZpbGU6RHJheS5hcHAudGFyLmd6Ci96YVlwcDkyVkRyNHdxNDZWQ3cvZ0gwYTZFQlc3RVpYanJkT3VMUXUyaHBNcyt0MTA5MDd4NFAxWUt4STZ2STUxMTdtZDBRVGx0cTJHc3RtRVV3RURRPT0K",
+      "url": "https://downloads.drayhq.com/v0.23.4/Dray_universal.app.tar.gz"
     }
   }
 }
