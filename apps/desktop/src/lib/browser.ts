@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 
 import { channel } from "@/lib/channel";
 import type { ChromiumStatus } from "@/types/events";
+import { zoomLevel } from "@/lib/zoom";
 
 /// The in-app browser's frontend half: tabs per session as the backend
 /// reports them, and the one rule about who presents the native view.
@@ -448,12 +449,14 @@ function present() {
     // The picture stays until the view is back over it, or the pane is a
     // hole for the round trip.
     const held = snapshot;
+    // DOM rects are CSS pixels and the native view is placed in window points.
+    const z = zoomLevel();
     void invoke("browser_layout", {
       sessionId: winner.sessionId,
-      x: r.left,
-      y: r.top,
-      width: r.width,
-      height: r.height,
+      x: r.left * z,
+      y: r.top * z,
+      width: r.width * z,
+      height: r.height * z,
       visible: true,
     })
       .catch(() => undefined)
