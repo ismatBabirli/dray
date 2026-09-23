@@ -110,6 +110,11 @@ loginCommand: string,
 loginHint: string | null, };
 
 /**
+ * One agent's answer. `update` is `None` where it is current or not installed.
+ */
+export type AgentCheck = { harness: Harness, update: AgentUpdate | null, };
+
+/**
  * One normalized event: an envelope (who, when, what order, which conversation)
  * wrapping a [`payload`](Self::payload) (what happened).
  */
@@ -362,6 +367,8 @@ reason: string | null, } | { "type": "context_compacted",
  * `manual` or `auto`.
  */
 trigger: string | null, preTokens: number | null, postTokens: number | null, durationMs: number | null, } | { "type": "error", source: ErrorSource, message: string, fatal: boolean, } | { "type": "unknown", harnessType: string, } | { "type": "unrecognized" };
+
+export type AgentUpdate = { harness: Harness, label: string, current: string, latest: string, };
 
 /**
  * What is on disk.

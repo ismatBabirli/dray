@@ -100,6 +100,8 @@ import { useSessionIssues } from "@/hooks/useIssues";
 import { useSessions } from "@/hooks/useSessions";
 import { useAgentAvailability, useMissingAgent } from "@/hooks/useAgentAvailability";
 import AgentMissingNotice from "@/components/composer/AgentMissingNotice";
+import AgentUpdateLine from "@/components/composer/AgentUpdateLine";
+import { useAgentUpdates } from "@/hooks/useAgentUpdates";
 import LoginExpiredNotice from "@/components/composer/LoginExpiredNotice";
 import type { IssueRef, SessionIndexItem, WorktreeDisposition } from "@/types/events";
 import { useSlashCommands } from "@/hooks/useSlashCommands";
@@ -211,6 +213,25 @@ function App() {
   // while the first read is out and null when it is installed — both mean
   // there is nothing to say, so the composer sends as it always did.
   const missingAgent = useMissingAgent(harness);
+  // Held on a new task for every agent, so the session starts on the new
+  // version. A live session only for pi and fx, whose update overwrites files
+  // its child reads; the other three install beside the running binary.
+  // Keyed on the running update alone, never on the update list, which a
+  // check landing mid-update may already have cleared.
+  const agentUpdates = useAgentUpdates();
+  const agentLabel = useAgentAvailability()?.find((a) => a.harness === harness)?.label ?? harness;
+  const sendHeld =
+    agentUpdates.running === harness &&
+    (!selectedSessionId || harness === "pi" || harness === "fx")
+      ? `Updating ${agentLabel}. Send once it finishes.`
+      : null;
+  // A new CLI version can ship new models, and every list but Claude's table is
+  // cached for the life of the process.
+  const updatedHarness = agentUpdates.done;
+  useEffect(() => {
+    if (updatedHarness) refreshModels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fires on a landed update alone
+  }, [updatedHarness]);
 
   // The turn that died for want of a login, and whether the reader has already
   // been handed the cure for that one. Held by event id rather than by session:
@@ -2415,7 +2436,7 @@ function App() {
               // Straight out as a prompt, exactly as if it had been typed. A
               // turn already running queues it, like any other send.
               onSend={(prompt) => void handleSendMsg(prompt)}
-              disabled={!selectedSessionId}
+              disabled={!selectedSessionId || !!sendHeld}
             />
           }
           // Only on a new task. An agent is fixed at creation, so a live
@@ -2431,6 +2452,23 @@ function App() {
                 onHandled={() => setLoginHandled(authTurn)}
               />
             ) : null
+          }
+          held={sendHeld}
+          agentUpdate={
+            !selectedSessionId && (
+              <AgentUpdateLine
+                harness={harness}
+                // pi and fx overwrite files a live child reads; the other three
+                // install beside it, so only these two wait on a running turn.
+                waiting={
+                  (harness === "pi" || harness === "fx") &&
+                  sessionIndexItems.some(
+                    (s) =>
+                      s.harness === harness && statusBySession[s.sessionId] === "in_progress",
+                  )
+                }
+              />
+            )
           }
           toolbar={
             <ComposerToolbar
