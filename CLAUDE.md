@@ -78,6 +78,8 @@ cd apps/desktop && pnpm tauri dev
 
 That = real entry point. `pnpm tauri` = shim ([scripts/tauri.mjs](apps/desktop/scripts/tauri.mjs)) merging `tauri.dev.conf.json` into `dev` subcommand only, so dev app carry own name and icon and `build` untouched.
 
+**Never wait for the dev app to come up.** Start `pnpm tauri dev` as one background Bash, hand over to the reader, and stop — no `until`/`sleep` loop on its log, no second task watching the first. The dev task is a server and never ends, and a cold compile is minutes, so a wait is either a turn spent sleeping or a task nobody can close. A failed compile exits the task and the harness reports it on its own. Need a look at the log anyway? Read it once, and grep what sits past cargo's colour codes: Tauri run cargo with `--color always`, so `` Running\x1b[0m `target/debug/dray` `` never matches ``Running ` `` — `` `target/debug/dray` `` and `could not compile` do.
+
 **Shim also pick dev port, and it only side that can.** Vite and Tauri have to agree on one, and both start from here — so shim ask the OS for a free one (`listen(0)`), hand it to Vite as `DRAY_DEV_PORT` and to Tauri as second `--config` carrying `build.devUrl`. Fixed 1420 was hard failure before, which = one worktree's dev build refusing to start because another's already running. `strictPort: true` **stay** on Vite side: port already known free, and Vite wandering off it leave Tauri loading URL nothing serve.
 
 - `pnpm dev` — frontend only, port 1420 unless `DRAY_DEV_PORT` say otherwise. `invoke` do nothing in plain browser, so only useful for pure-CSS/layout work.
