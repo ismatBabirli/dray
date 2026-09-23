@@ -1,6 +1,7 @@
 import { defaultRehypePlugins, type StreamdownProps } from "streamdown";
 
 import { findPromptPaths, isFilePath, isRelativePath, splitLocator } from "@/lib/filePath";
+import { findBareUrls } from "@/lib/highlight";
 
 // `rehype-harden` drops the href of any link it cannot resolve, which is right,
 // and then writes " [blocked]" into the prose beside it, which is not: two
@@ -60,6 +61,44 @@ export function wrapCells(node: HastNode) {
   }
 }
 
+/// Turns every bare host in prose into a link, by the rule a user message's
+/// bubble uses ([findBareUrls]), since GFM autolinks only a scheme or `www.`.
+/// Before the path pass, which then leaves the anchor alone, and before
+/// harden, which vets its href like any other.
+function rehypeBareUrls() {
+  return (tree: HastNode) => linkBareUrls(tree);
+}
+
+const NOT_LINKABLE = new Set(["pre", "code", "a", "script", "style"]);
+
+export function linkBareUrls(node: HastNode) {
+  if (!node.children) return;
+  node.children = node.children.flatMap((child): HastNode[] => {
+    if (child.type === "element") {
+      if (!NOT_LINKABLE.has(child.tagName ?? "")) linkBareUrls(child);
+      return [child];
+    }
+    const value = child.type === "text" ? child.value : undefined;
+    const matches = value ? findBareUrls(value) : [];
+    if (!value || matches.length === 0) return [child];
+
+    const parts: HastNode[] = [];
+    let at = 0;
+    for (const { start, end, href } of matches) {
+      if (start > at) parts.push({ type: "text", value: value.slice(at, start) });
+      parts.push({
+        type: "element",
+        tagName: "a",
+        properties: { href },
+        children: [{ type: "text", value: value.slice(start, end) }],
+      });
+      at = end;
+    }
+    if (at < value.length) parts.push({ type: "text", value: value.slice(at) });
+    return parts;
+  });
+}
+
 /// Streamdown's own rehype pipeline, with harden told to block a link by
 /// unwrapping it rather than by annotating the text around it, and every table
 /// cell given the block its width cap rides on. Cell wrapping sits after
@@ -68,6 +107,7 @@ export const REHYPE_PLUGINS = [
   defaultRehypePlugins.raw,
   defaultRehypePlugins.sanitize,
   rehypeTableCells,
+  rehypeBareUrls,
   HARDEN,
 ] as StreamdownProps["rehypePlugins"];
 
@@ -236,6 +276,7 @@ export const REHYPE_PLUGINS_WITH_FILE_PATHS = [
   defaultRehypePlugins.raw,
   defaultRehypePlugins.sanitize,
   rehypeTableCells,
+  rehypeBareUrls,
   rehypeFilePaths,
   HARDEN,
 ] as StreamdownProps["rehypePlugins"];
