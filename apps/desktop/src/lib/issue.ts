@@ -211,7 +211,7 @@ export function trackerOf(identifier: string): IssueTracker {
 ///
 /// Started first and settled last — the order work moves through, which is also
 /// the order attention should reach it in.
-const GROUPS: { key: IssueStateKind; label: string }[] = [
+export const GROUPS: { key: IssueStateKind; label: string }[] = [
   { key: "started", label: "In Progress" },
   { key: "triage", label: "Triage" },
   { key: "unstarted", label: "Todo" },
@@ -237,27 +237,6 @@ type IssueGrouping = {
   label: string;
   issues: Issue[];
 };
-
-/// What the three kinds a GitHub issue can be in are called there.
-///
-/// The *kinds* are shared — a GitHub issue folds onto `unstarted`, `completed`
-/// and `canceled`, which is what lets one page group both trackers — but the
-/// words are not: a GitHub issue is Open or Closed, never "Todo" or "Done", and
-/// a heading in the wrong vocabulary reads as the app describing some other
-/// tracker's workspace. Only the three that occur; nothing else can arrive.
-/// What a heading calls a state kind.
-///
-/// Exported because the settled headings are drawn without going through
-/// `groupIssues` — they exist before their rows have been read, which is the
-/// whole of how they cost a round trip only when opened.
-///
-/// **Linear's vocabulary, and only Linear's, because only Linear groups.** A
-/// GitHub list is drawn flat under a two-way switch: it has two states where
-/// this names six, so a heading there was the switch's own answer repeated over
-/// the rows it had already picked.
-export function groupLabel(kind: IssueStateKind): string {
-  return GROUPS.find((group) => group.key === kind)?.label ?? "Other";
-}
 
 /// `issues` bucketed by state, with empty buckets dropped.
 ///
