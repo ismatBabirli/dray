@@ -5,6 +5,26 @@ The release job reads the matching section into the GitHub release notes and the
 updater carries it, so this file is what a release says about itself — not a
 second description of it. GitHub's generated commit list is appended below it.
 
+## 0.23.7
+
+### Changed
+
+- **Faster everywhere.** Streaming a reply no longer redraws the whole
+  app per token, long sessions open on their newest turns and load the
+  rest as you scroll, and the app starts sooner.
+- **Quieter in the background.** An idle Dray barely touches the CPU:
+  PR checks pause while the window is hidden, the browser stops ticking
+  when no tab is open, and git is no longer run on every agent event.
+- **One busy session no longer stalls the others.** Restarting an agent
+  in one session used to hold up Stop and sends everywhere else.
+
+### Fixed
+
+- **The window opens at the size and place you left it.**
+- **The crew column fits a narrow window.** When there is no room beside
+  the chat it starts hidden, and ⌘⇧C draws it under the transcript.
+- **Background task rows no longer scroll under the Stop all bar.**
+
 ## 0.23.6
 
 ### Fixed
