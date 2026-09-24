@@ -51,9 +51,9 @@ export default function ChangesView({
   /// selection and its rendered diffs survive, but a hidden view must not keep
   /// snapshotting the working tree on every event.
   active: boolean;
-  /// Moves at the end of a turn. Re-reads HEAD and the commit lists.
+  /// Moves at the end of a turn. Re-reads the commit lists.
   revision: string;
-  /// Moves as tools finish, too. Re-reads the uncommitted diff.
+  /// Moves as tools finish, too. Re-reads HEAD and the uncommitted diff.
   writeRevision: string;
   busy: boolean;
 }) {
@@ -74,7 +74,10 @@ export default function ChangesView({
   const [commitPath, setCommitPath] = useState<string | null>(null);
   const [branchPath, setBranchPath] = useState<string | null>(null);
 
-  const head = useHeadTree(cwd, revision, active);
+  // On every tool result, not the turn's end: an agent committing mid-turn
+  // moves HEAD, and a stale baseline would list the commit as uncommitted.
+  // One `rev-parse`, so it can afford the finer signal the diff is throttled on.
+  const head = useHeadTree(cwd, writeRevision, active);
 
   // Both run on `active` alone rather than on the tab they belong to, because
   // the default below reads them both: gating them on the tab they choose is

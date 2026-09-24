@@ -160,7 +160,7 @@ export function useChanges(
   const lastRead = useRef(0);
   // The key and revision the last read was issued for. Equal to the current
   // pair means nothing that could move the answer has happened since, so a
-  // reopen or a turn *starting* costs no snapshot.
+  // turn *starting* costs no snapshot.
   const readFor = useRef<string | null>(null);
 
   const read = useCallback(async () => {
@@ -195,7 +195,12 @@ export function useChanges(
   }, [cwd, baseline, head, key]);
 
   useEffect(() => {
-    if (!key || !active) return;
+    // Forgotten while hidden, so reopening always re-reads: the reader's own
+    // editor moves the tree without any tool finishing.
+    if (!key || !active) {
+      readFor.current = null;
+      return;
+    }
     const mark = `${key}\0${revision}`;
 
     // Nothing on screen and nothing already fetching: read now, since waiting
