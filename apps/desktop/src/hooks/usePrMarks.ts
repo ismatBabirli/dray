@@ -303,9 +303,8 @@ export function usePrMarks(repoPaths: string[]) {
     if (!openKey || !focused) return;
 
     const targets = openKey.split("\n");
-    if (returned && targets.some((path) => Date.now() - (fetchedAt.get(path) ?? 0) >= OPEN_POLL_MS)) {
-      void load(true, targets);
-    }
+    const stale = targets.filter((path) => Date.now() - (fetchedAt.get(path) ?? 0) >= OPEN_POLL_MS);
+    if (returned && stale.length > 0) void load(true, stale);
     const id = setInterval(() => void load(true, targets), OPEN_POLL_MS);
     return () => clearInterval(id);
   }, [openKey, focused, load]);

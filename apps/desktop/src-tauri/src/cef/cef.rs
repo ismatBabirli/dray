@@ -26,7 +26,7 @@ use objc2_foundation::{MainThreadMarker, NSPoint, NSRect, NSSize};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{mpsc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
@@ -376,18 +376,24 @@ unsafe fn patch_nsapp(app: &NSApplication) {
 
 static PUMP: OnceLock<mpsc::Sender<i64>> = OnceLock::new();
 
-/// Until when the pump's safety net runs with no browser alive. Creating one
-/// leaves work Chromium never asks for again — measured: without the net, not
-/// one tab opened — so a create holds the net up until its tab lands in `TABS`.
-static NET_UNTIL: Mutex<Option<Instant>> = Mutex::new(None);
+/// Browsers asked for and not yet handed back by `on_after_created`. Creating
+/// one leaves work Chromium never asks for again — measured: without the
+/// pump's safety net, not one tab opened — so the net runs while any is out.
+/// Counted rather than timed, since a create under load has no upper bound.
+static CREATING: AtomicUsize = AtomicUsize::new(0);
 
-/// Holds the safety net up through a browser's creation, and wakes the pump
-/// in case it is asleep with nothing alive.
-fn pump_through_create() {
-    *NET_UNTIL.lock().unwrap() = Some(Instant::now() + Duration::from_secs(10));
+/// Counts a browser creation in, and wakes the pump in case it is asleep with
+/// nothing alive.
+fn creation_started() {
+    CREATING.fetch_add(1, Ordering::SeqCst);
     if let Some(tx) = PUMP.get() {
         let _ = tx.send(0);
     }
+}
+
+/// Counts one out: handed back, or refused before it began.
+fn creation_ended() {
+    let _ = CREATING.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1));
 }
 
 /// CEF asks for work through `on_schedule_message_pump_work(delay)`. A thread
@@ -411,8 +417,7 @@ fn start_pump(app: AppHandle) {
             let mut due: Option<Instant> = None;
             let mut ran = Instant::now();
             loop {
-                let creating = NET_UNTIL.lock().unwrap().is_some_and(|at| at > Instant::now());
-                let live = creating || !TABS.lock().unwrap().is_empty();
+                let live = CREATING.load(Ordering::SeqCst) > 0 || !TABS.lock().unwrap().is_empty();
                 let net = live.then(|| ran + NET);
                 let wake = match (due, net) {
                     (Some(a), Some(b)) => Some(a.min(b)),
@@ -590,7 +595,7 @@ fn create_tab(session: &str, url: &str, activate: bool) -> Result<(), String> {
     let info = child_window_info()?;
     let mut client = DrayClient::new(session.to_string(), activate);
     let mut context = context_for(session);
-    pump_through_create();
+    creation_started();
     let ok = browser_host_create_browser(
         Some(&info),
         Some(&mut client),
@@ -602,6 +607,7 @@ fn create_tab(session: &str, url: &str, activate: bool) -> Result<(), String> {
     if ok == 1 {
         Ok(())
     } else {
+        creation_ended();
         Err("could not create the browser".into())
     }
 }
@@ -751,6 +757,8 @@ wrap_life_span_handler! {
                 None => tabs.push(tab),
             }
             drop(tabs);
+            // After the tab is in `TABS`, so the pump's net never lapses between.
+            creation_ended();
             if self.activate || active_id(&self.session).is_none() {
                 set_active(&self.session, Some(id));
             }
@@ -785,6 +793,7 @@ wrap_life_span_handler! {
             let Ok(info) = child_window_info() else { return 1 };
             *window_info = info;
             *client = Some(DrayClient::new(self.session.clone(), true));
+            creation_started();
             0
         }
 
