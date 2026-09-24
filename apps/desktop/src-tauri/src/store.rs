@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
@@ -186,7 +189,16 @@ static INDEX_LOCK: Mutex<()> = Mutex::const_new(());
 /// `~/.dray`, creating it if this is the first run. If `~/.automedon` exists
 /// from before the app's rename and `~/.dray` doesn't yet, the old directory
 /// is moved into place so a rename never orphans a user's session history.
+///
+/// The migration and chmod run once per process: this ran on every persisted
+/// event. Subdirectories still `create_dir_all` per call, so one deleted while
+/// the app runs comes back on the next write.
 pub async fn get_home_app_dir() -> Result<PathBuf> {
+    static DIR: tokio::sync::OnceCell<PathBuf> = tokio::sync::OnceCell::const_new();
+    DIR.get_or_try_init(make_home_app_dir).await.cloned()
+}
+
+async fn make_home_app_dir() -> Result<PathBuf> {
     let home = std::env::home_dir().context("could not resolve home directory")?;
     let path = home.join(".dray");
 
@@ -311,12 +323,63 @@ pub async fn delete_pi_session_file(session_id: &str) -> Result<()> {
 /// Reads and parses `index.json`. Missing or empty file reads as no sessions,
 /// not an error.
 pub async fn read_index() -> Result<Vec<SessionIndexItem>> {
-    let path = get_sessions_dir().await?.join("index.json");
-    let mut items: Vec<SessionIndexItem> = read_json(&path).await?;
+    Ok(cached_index().await?.as_ref().clone())
+}
+
+/// One version of `index.json`. Every write lands by rename, so each is a new
+/// inode; mtime and length also catch the file edited in place.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct IndexStamp {
+    dev: u64,
+    ino: u64,
+    mtime: std::time::SystemTime,
+    len: u64,
+}
+
+impl IndexStamp {
+    fn of(meta: &std::fs::Metadata) -> Option<Self> {
+        use std::os::unix::fs::MetadataExt;
+        Some(Self { dev: meta.dev(), ino: meta.ino(), mtime: meta.modified().ok()?, len: meta.len() })
+    }
+}
+
+/// The index as last read or written, beside the stamp of the file it came from.
+static INDEX_CACHE: std::sync::Mutex<Option<(IndexStamp, Arc<Vec<SessionIndexItem>>)>> =
+    std::sync::Mutex::new(None);
+
+/// The parsed index, from memory while the file has not moved.
+///
+/// **A cache of the file, never the truth in its place.** A second Dray build
+/// sharing `~/.dray` writes this file too, and a copy that ignored its writes
+/// would erase them on the next whole-file rewrite here. So every read still
+/// asks the file — one `stat` — and parses only when it changed, which is what
+/// a parse per `get_session_index_item` used to cost on every send and status
+/// change (~600 entries, 370KB).
+async fn cached_index() -> Result<Arc<Vec<SessionIndexItem>>> {
+    cached_index_at(&get_sessions_dir().await?.join("index.json")).await
+}
+
+async fn cached_index_at(path: &Path) -> Result<Arc<Vec<SessionIndexItem>>> {
+    // Stamped before the read, so a file replaced between the two is cached
+    // under the older stamp — which costs a re-read, never a stale answer.
+    let stamp = fs::metadata(path).await.ok().and_then(|m| IndexStamp::of(&m));
+    if let Some(stamp) = stamp {
+        if let Some((cached, items)) = &*INDEX_CACHE.lock().unwrap() {
+            if *cached == stamp {
+                return Ok(items.clone());
+            }
+        }
+    }
+
+    let mut items: Vec<SessionIndexItem> = read_json(path).await?;
     // The one place the on-disk spelling of effort becomes the real one; every
     // reader above this reads `effort` and nothing else.
     items.iter_mut().for_each(decode_effort);
+    let items = Arc::new(items);
 
+    if let Some(stamp) = stamp {
+        *INDEX_CACHE.lock().unwrap() = Some((stamp, items.clone()));
+    }
     Ok(items)
 }
 
@@ -372,11 +435,19 @@ pub fn write_private_atomic(path: &Path, contents: &[u8]) -> std::io::Result<()>
 /// sees a torn file: the index parses as one `Vec`, and a half-written one
 /// reads as no sessions at all.
 pub async fn write_atomic(path: &Path, contents: impl AsRef<[u8]>) -> Result<()> {
+    write_atomic_stamped(path, contents).await.map(|_| ())
+}
+
+/// [`write_atomic`], answering with the stamp of the file it put in place. Read
+/// off the temp file before the rename, which keeps inode and mtime: stamping
+/// the path afterwards could stamp another build's write that landed between.
+async fn write_atomic_stamped(path: &Path, contents: impl AsRef<[u8]>) -> Result<Option<IndexStamp>> {
     let tmp = path.with_extension("json.tmp");
 
     fs::write(&tmp, contents)
         .await
         .with_context(|| format!("could not write {}", tmp.display()))?;
+    let stamp = fs::metadata(&tmp).await.ok().and_then(|m| IndexStamp::of(&m));
 
     if let Err(e) = fs::rename(&tmp, path).await {
         // Or the next write inherits a stale temp file it never wrote.
@@ -384,7 +455,7 @@ pub async fn write_atomic(path: &Path, contents: impl AsRef<[u8]>) -> Result<()>
         return Err(e).with_context(|| format!("could not replace {}", path.display()));
     }
 
-    Ok(())
+    Ok(stamp)
 }
 
 /// The index filtered to one side of `archived` — the sidebar shows exactly one
@@ -394,8 +465,8 @@ pub async fn write_atomic(path: &Path, contents: impl AsRef<[u8]>) -> Result<()>
 pub async fn list_session_index_items(
     archived: bool,
 ) -> Result<Vec<SessionIndexItem>, Fail> {
-    let items = read_index().await?;
-    Ok(items.into_iter().filter(|i| i.archived == archived).collect())
+    let items = cached_index().await?;
+    Ok(items.iter().filter(|i| i.archived == archived).cloned().collect())
 }
 
 /// The repo root for an entry whose `cwd` is gone, or `None` where none of the
@@ -803,12 +874,12 @@ pub async fn append_session_index_item(session: SessionIndexItem) -> Result<()> 
     let mut sessions = read_index().await?;
     sessions.push(session);
 
-    write_session_index(&sessions).await
+    write_session_index(sessions).await
 }
 
-/// Bumps `modified`, and the settable per-session fields when they changed.
-/// Callers hold the live session's values, so an unchanged send skips the
-/// rewrite entirely — the whole index is serialized on every write.
+/// Records the settable per-session fields, writing only when one changed —
+/// the whole index is serialized on every write, and an unchanged send is the
+/// ordinary case. `modified` is left to the `InProgress` the send publishes.
 pub async fn touch_session_index_item(
     session_id: &str,
     model: ModelId,
@@ -816,8 +887,7 @@ pub async fn touch_session_index_item(
     permission_mode: ApprovalPolicy,
     fast: bool,
 ) -> Result<()> {
-    update_item(session_id, |item| {
-        item.modified = now_rfc3339();
+    edit_item(session_id, |item| {
         // An unset pick means "no explicit model" — the truth for a new session,
         // but touching an existing one it must not *erase* a model already recorded.
         // fx's model list is its active provider's and global, so switching provider
@@ -825,12 +895,16 @@ pub async fn touch_session_index_item(
         // out-of-list pick to the unset sentinel; persisting that here would lose
         // the real model and make a later resume omit `--model` and run the new
         // provider's default. Only a real pick overwrites.
-        if !model.is_unset() {
-            item.model = model;
-        }
+        let model = if model.is_unset() { item.model.clone() } else { model };
+        let changed = item.model != model
+            || item.effort != effort
+            || item.permission_mode != permission_mode
+            || item.fast != fast;
+        item.model = model;
         item.effort = effort;
         item.permission_mode = permission_mode;
         item.fast = fast;
+        ((), changed)
     })
     .await?;
     Ok(())
@@ -973,7 +1047,7 @@ pub async fn delete_session(session_id: &str) -> Result<bool> {
         if sessions.len() == before {
             false
         } else {
-            write_session_index(&sessions).await?;
+            write_session_index(sessions).await?;
             true
         }
     };
@@ -991,16 +1065,16 @@ pub async fn delete_session(session_id: &str) -> Result<bool> {
 /// Sets one entry's status. Returns the entry as written, or `None` if the id
 /// is unknown.
 ///
-/// Only completion bumps `modified`: the field means "last activity", and the
-/// agent finishing is activity. `InProgress` is already covered by the send's
-/// touch, and clearing the unread mark is a read, not activity.
+/// Starting and finishing bump `modified`: the field means "last activity".
+/// Starting is the send's bump too, folded in here so a turn costs one index
+/// write fewer. Clearing the unread mark is a read, not activity.
 pub async fn set_session_status(
     session_id: &str,
     status: SessionStatus,
 ) -> Result<Option<SessionIndexItem>> {
     update_item(session_id, |item| {
         item.status = status;
-        if status == SessionStatus::Completed {
+        if status != SessionStatus::Idle {
             item.modified = now_rfc3339();
         }
         item.clone()
@@ -1089,7 +1163,7 @@ pub async fn backfill_removed_worktrees() -> Result<()> {
     // `cwd` is not would relocate a session whose tree is merely unreachable,
     // costing it the flag below rather than anything destructive.
     if mark_relocated(&mut sessions, |dir| Path::new(dir).is_dir()) {
-        write_session_index(&sessions).await?;
+        write_session_index(sessions).await?;
     }
 
     Ok(())
@@ -1142,7 +1216,7 @@ pub async fn reset_in_progress_sessions() -> Result<()> {
     }
 
     if changed {
-        write_session_index(&sessions).await?;
+        write_session_index(sessions).await?;
     }
 
     Ok(())
@@ -1247,10 +1321,13 @@ fn decode_effort(item: &mut SessionIndexItem) {
 
 /// Caller must hold `INDEX_LOCK`: this rewrites the whole file, so a concurrent
 /// writer would drop the other's entry.
-async fn write_session_index(sessions: &[SessionIndexItem]) -> Result<()> {
+async fn write_session_index(sessions: Vec<SessionIndexItem>) -> Result<()> {
     let path = get_sessions_dir().await?.join("index.json");
     let encoded: Vec<SessionIndexItem> = sessions.iter().map(encode_effort).collect();
-    write_atomic(&path, serde_json::to_string(&encoded)?).await
+    let stamp = write_atomic_stamped(&path, serde_json::to_string(&encoded)?).await?;
+    // What was just written is what the next read would parse back.
+    *INDEX_CACHE.lock().unwrap() = stamp.map(|stamp| (stamp, Arc::new(sessions)));
+    Ok(())
 }
 
 /// Edits one entry under `INDEX_LOCK` and writes the index back. `None` for an
@@ -1259,6 +1336,15 @@ async fn update_item<R>(
     session_id: &str,
     f: impl FnOnce(&mut SessionIndexItem) -> R,
 ) -> Result<Option<R>> {
+    edit_item(session_id, |item| (f(item), true)).await
+}
+
+/// [`update_item`] whose edit also answers whether to write at all, for an
+/// edit that often changes nothing.
+async fn edit_item<R>(
+    session_id: &str,
+    f: impl FnOnce(&mut SessionIndexItem) -> (R, bool),
+) -> Result<Option<R>> {
     let _guard = INDEX_LOCK.lock().await;
 
     let mut sessions = read_index().await?;
@@ -1266,17 +1352,19 @@ async fn update_item<R>(
         return Ok(None);
     };
 
-    let out = f(item);
-    write_session_index(&sessions).await?;
+    let (out, changed) = f(item);
+    if changed {
+        write_session_index(sessions).await?;
+    }
 
     Ok(Some(out))
 }
 
 /// Looks up one session's index entry by id.
 pub async fn get_session_index_item(session_id: &str) -> Result<Option<SessionIndexItem>> {
-    let items = read_index().await?;
+    let items = cached_index().await?;
 
-    Ok(items.into_iter().find(|i| i.session_id == session_id))
+    Ok(items.iter().find(|i| i.session_id == session_id).cloned())
 }
 
 /// `None` means the id isn't in the index. An indexed session with no log yet
@@ -1550,6 +1638,42 @@ pub async fn get_session_path(session_id: &str) -> Result<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Another build replacing the index must be read back, or the next
+    /// whole-file rewrite here erases what it wrote.
+    #[tokio::test]
+    async fn the_index_cache_sees_a_file_replaced_under_it() {
+        let dir = std::env::temp_dir().join(format!("dray-index-{}", Uuid::now_v7()));
+        fs::create_dir_all(&dir).await.unwrap();
+        let path = dir.join("index.json");
+        let item = |id: &str| {
+            SessionIndexItem::new(
+                id,
+                Harness::ClaudeCode,
+                "/p",
+                "/p",
+                None,
+                None,
+                "hi",
+                ModelId::new("opus"),
+                None,
+                ApprovalPolicy::Auto,
+                false,
+                None,
+            )
+        };
+
+        write_atomic(&path, serde_json::to_string(&[item("a")]).unwrap()).await.unwrap();
+        let first = cached_index_at(&path).await.unwrap();
+        assert!(Arc::ptr_eq(&first, &cached_index_at(&path).await.unwrap()), "unchanged file re-parsed");
+
+        write_atomic(&path, serde_json::to_string(&[item("a"), item("b")]).unwrap()).await.unwrap();
+        let ids: Vec<String> =
+            cached_index_at(&path).await.unwrap().iter().map(|i| i.session_id.clone()).collect();
+        assert_eq!(ids, ["a", "b"]);
+
+        fs::remove_dir_all(&dir).await.unwrap();
+    }
 
     /// A redraw loop runs inside one millisecond, where v7's counter bytes hold
     /// still — so the name must be drawn from the random tail, or every retry
