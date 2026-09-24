@@ -79,7 +79,13 @@ export async function startSurveys(): Promise<void> {
   }
 
   if (!posthog) {
-    const sdk = (await import("posthog-js")).default;
+    let sdk: PostHog;
+    try {
+      sdk = (await import("posthog-js")).default;
+    } catch (e) {
+      console.error("[surveys]", e);
+      return;
+    }
     // The import is a second await, and the same rule holds across it.
     if (mine !== generation) return;
     posthog = sdk;

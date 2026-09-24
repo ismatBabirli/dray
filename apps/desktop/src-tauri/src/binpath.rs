@@ -16,7 +16,7 @@ use std::ffi::OsString;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{OnceLock, RwLock};
 use tokio::process::Command;
 use tokio::sync::OnceCell;
@@ -114,6 +114,7 @@ pub fn forget_gh() {
     let mut slot = GH_PATH.write().unwrap();
     *slot = None;
     GH_GENERATION.fetch_add(1, Ordering::Release);
+    LOGIN_PATH_STALE.store(true, Ordering::Release);
 }
 
 /// The absolute path to a `codex` that can actually speak app-server.
@@ -502,7 +503,15 @@ fn find_versioned(root: &Path, depth: usize, layouts: &[&str], bin: &str) -> Opt
 /// Looks for `bin` on the user's login-shell `PATH`, which is the only way to
 /// see one built by rc files the app never sourced.
 async fn login_shell_which(bin: &str) -> Option<PathBuf> {
-    let path = LOGIN_PATH.get_or_init(login_shell_path).await.as_ref()?;
+    // Held across the shell, so callers arriving mid-read wait for it.
+    let mut slot = LOGIN_PATH.lock().await;
+    if LOGIN_PATH_STALE.swap(false, Ordering::AcqRel) {
+        *slot = None;
+    }
+    if slot.is_none() {
+        *slot = Some(login_shell_path().await);
+    }
+    let path = slot.as_ref()?.as_ref()?;
     std::env::split_paths(path)
         .map(|dir| dir.join(bin))
         .find(|candidate| is_executable(candidate))
@@ -510,10 +519,11 @@ async fn login_shell_which(bin: &str) -> Option<PathBuf> {
 
 /// The login shell's `PATH`, read once for every binary. A shell per binary
 /// was several of them from a Dock launch, each reading the whole rc chain.
-///
-/// [`forget_gh`] leaves it alone: an install lands in a directory, and the
-/// directories are searched afresh on every call.
-static LOGIN_PATH: OnceCell<Option<OsString>> = OnceCell::const_new();
+static LOGIN_PATH: tokio::sync::Mutex<Option<Option<OsString>>> =
+    tokio::sync::Mutex::const_new(None);
+/// Set by [`forget_gh`]: an install that also added its directory to the
+/// reader's rc files is only found by reading the `PATH` again.
+static LOGIN_PATH_STALE: AtomicBool = AtomicBool::new(false);
 
 /// `-l` matters more than it looks: without it zsh reads `.zshrc` only, and a
 /// `PATH` exported from `.zprofile` — where the installers write it — stays
@@ -523,8 +533,9 @@ async fn login_shell_path() -> Option<OsString> {
 
     let output = Command::new(shell)
         // Behind a marker, since an rc file is free to print on its own.
-        // `printenv` rather than `$PATH`, which fish expands as a list.
-        .args(["-l", "-c", "echo __DRAY_PATH__; printenv PATH"])
+        // `printenv` rather than `$PATH`, which fish expands as a list, and by
+        // absolute path, since the `PATH` being read need not hold it.
+        .args(["-l", "-c", "echo __DRAY_PATH__; /usr/bin/printenv PATH"])
         .stdin(Stdio::null())
         .stderr(Stdio::null())
         .output()
