@@ -60,9 +60,10 @@ import type {
   IssueState,
   IssueStateKind,
   IssueTracker,
+  LinearFilter,
   TrackerAccount,
 } from "@/types/events";
-import { workspaceName } from "@/lib/linearWorkspace";
+import { sameFilter, toSaved, workspaceName, type RepoFilter } from "@/lib/linearWorkspace";
 
 /// The page's search field. Named so ⌘⇧F can reach it — the same trick the
 /// sidebar's own field uses, and for the same reason: the chord has to be able
@@ -157,6 +158,9 @@ export default function IssuesView({
   projectWorkspace = null,
   project = null,
   onAddWorkspace,
+  repoFilter = null,
+  repoName = null,
+  onSaveRepoFilter,
 }: {
   /// The page is the thing on screen. Hidden pages do not read, for the reason
   /// the right panel's own `active` exists.
@@ -190,6 +194,13 @@ export default function IssuesView({
   projectWorkspace?: string | null;
   /// Opens wherever another Linear workspace is added.
   onAddWorkspace?: () => void;
+  /// What the composer's repo opens its issues narrowed to, if it saved a
+  /// filter. Applied only while the page is on that repo's workspace.
+  repoFilter?: RepoFilter | null;
+  /// The composer's repo, named in the filter menu's save and clear rows.
+  repoName?: string | null;
+  /// Saves the page's current narrowing as that repo's default, or clears it.
+  onSaveRepoFilter?: (filter: LinearFilter | null) => void;
   /// The composer's project, which a workspace picked on the menu belongs to.
   project?: string | null;
 }) {
@@ -227,9 +238,18 @@ export default function IssuesView({
       ? viewing
       : null;
   const workspace = viewed ? viewed.id : projectWorkspace;
+  /// Whether the page is on the repo's own workspace — the only one its saved
+  /// filter means anything in, and so the only one it can be saved from.
+  const onRepoWorkspace = tracker === "linear" && workspace === projectWorkspace;
 
   const { issues, settled, filters, query, setQuery, loading, loaded, unavailable, refresh } =
-    useIssues(active && !needsConnecting, tracker, workspace, project);
+    useIssues(
+      active && !needsConnecting,
+      tracker,
+      workspace,
+      project,
+      onRepoWorkspace ? repoFilter : null,
+    );
 
   // Kept current rather than set once: `refresh` is re-made whenever the hook
   // re-runs, and a handle captured at mount would close over a stale one.
@@ -393,7 +413,28 @@ export default function IssuesView({
             />
           )}
 
-          <FilterMenu query={query} filters={filters} tracker={tracker} onChange={set} />
+          <FilterMenu
+            query={query}
+            filters={filters}
+            tracker={tracker}
+            onChange={set}
+            save={
+              onRepoWorkspace && workspace && repoName && onSaveRepoFilter
+                ? {
+                    repoName,
+                    saved: repoFilter,
+                    onSave: (filter) =>
+                      onSaveRepoFilter(
+                        toSaved(
+                          filter,
+                          workspace,
+                          filters?.teams.find((t) => t.id === filter?.teamId)?.name ?? null,
+                        ),
+                      ),
+                  }
+                : undefined
+            }
+          />
 
           {/* Last, and it narrows nothing — same corner and same chord as the
               right panel's, which is the point: the chord means "re-read what I
@@ -1080,11 +1121,19 @@ function FilterMenu({
   filters,
   tracker,
   onChange,
+  save,
 }: {
   query: IssueQuery;
-  filters: { teams: IssueGroup[]; projects: IssueGroup[] } | null;
+  filters: { teams: IssueGroup[]; projects: IssueGroup[]; labels: IssueLabel[] } | null;
   tracker: IssueTracker;
   onChange: (patch: Partial<IssueQuery>) => void;
+  /// The composer's repo and the default it saved, where the page is on that
+  /// repo's workspace. Absent otherwise, and the save rows go with it.
+  save?: {
+    repoName: string;
+    saved: RepoFilter | null;
+    onSave: (filter: RepoFilter | null) => void;
+  };
 }) {
   const github = tracker === "github";
 
@@ -1095,12 +1144,22 @@ function FilterMenu({
   // against a different object. So the trigger does not draw there.
   const teams = !github && filters && filters.teams.length > 1 ? filters.teams : [];
   const projects = !github && filters && filters.projects.length > 1 ? filters.projects : [];
-  const narrowed = !!query.teamId || !!query.projectId;
+  // One label is still a choice, unlike one team: narrowing to it drops every
+  // issue that does not carry it. GitHub's labels have their own menu.
+  const labels = !github && filters ? filters.labels : [];
+  const narrowed = !!query.teamId || !!query.projectId || query.labels.length > 0;
+
+  /// What this page would save as the repo's default: team and labels, never a
+  /// Linear project — those end, and a repo pinned to one reads empty after.
+  const current: RepoFilter = { teamId: query.teamId, labels: query.labels };
+  const canSave =
+    !!save && (!!current.teamId || current.labels.length > 0) && !sameFilter(current, save.saved);
+  const canClear = !!save?.saved;
 
   // Nothing left to narrow by. A trigger that opens an empty menu is worse than
   // no trigger, and a single-team workspace is the ordinary case here — as is
   // GitHub, whose two controls both stand on the row.
-  if (!teams.length && !projects.length) return null;
+  if (!teams.length && !projects.length && !labels.length && !canClear) return null;
 
   return (
     <DropdownMenu>
@@ -1119,7 +1178,8 @@ function FilterMenu({
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-56">
+      {/* Scrolls: a workspace's labels can run to dozens. */}
+      <DropdownMenuContent align="end" className="max-h-[70vh] w-56 overflow-y-auto">
         {teams.length > 0 && (
           <>
             <DropdownMenuLabel>Team</DropdownMenuLabel>
@@ -1163,6 +1223,57 @@ function FilterMenu({
                 {project.name}
               </DropdownMenuCheckboxItem>
             ))}
+          </>
+        )}
+
+        {labels.length > 0 && (
+          <>
+            {(teams.length > 0 || projects.length > 0) && <DropdownMenuSeparator />}
+            <DropdownMenuLabel>Labels</DropdownMenuLabel>
+            <DropdownMenuCheckboxItem
+              checked={query.labels.length === 0}
+              onCheckedChange={() => onChange({ labels: [] })}
+            >
+              Any label
+            </DropdownMenuCheckboxItem>
+            {labels.map((label) => (
+              <DropdownMenuCheckboxItem
+                key={label.name}
+                checked={query.labels.includes(label.name)}
+                // Several at once, matching any — so the menu stays open for
+                // the next tick rather than closing after each.
+                onSelect={(e) => e.preventDefault()}
+                onCheckedChange={(on) =>
+                  onChange({
+                    labels: on
+                      ? [...query.labels, label.name]
+                      : query.labels.filter((name) => name !== label.name),
+                  })
+                }
+              >
+                {/* The chip's own dot, so a pale colour is lifted on the
+                    light theme and a missing one still draws — the GitHub
+                    label menu's reading. */}
+                <IssueLabelChip label={label} dot />
+                <span className="truncate">{label.name}</span>
+              </DropdownMenuCheckboxItem>
+            ))}
+          </>
+        )}
+
+        {save && (canSave || canClear) && (
+          <>
+            <DropdownMenuSeparator />
+            {canSave && (
+              <DropdownMenuItem onSelect={() => save.onSave(current)}>
+                Save as default for {save.repoName}
+              </DropdownMenuItem>
+            )}
+            {canClear && (
+              <DropdownMenuItem onSelect={() => save.onSave(null)}>
+                Clear {save.repoName}'s default
+              </DropdownMenuItem>
+            )}
           </>
         )}
       </DropdownMenuContent>

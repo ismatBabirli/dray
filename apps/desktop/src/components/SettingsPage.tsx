@@ -97,6 +97,7 @@ export default function SettingsPage({
   startNamingSpace,
   onSetProjectSpace,
   onSetProjectLinearWorkspace,
+  onClearProjectLinearFilter,
   onRemoveProject,
   onCreateSpace,
   onRenameSpace,
@@ -130,6 +131,8 @@ export default function SettingsPage({
   onSetProjectSpace: (path: string, space: string | null) => void;
   /// Pins a project to a Linear workspace, or clears its own pin with `null`.
   onSetProjectLinearWorkspace: (path: string, workspace: string | null) => void;
+  /// Forgets a repo's saved Linear issue filter.
+  onClearProjectLinearFilter: (path: string) => void;
   onRemoveProject: (path: string) => void;
   onCreateSpace: (name: string) => void;
   onRenameSpace: (from: string, to: string) => void;
@@ -226,6 +229,7 @@ export default function SettingsPage({
               projects={projects}
               spaces={spaces}
               onSetProjectWorkspace={onSetProjectLinearWorkspace}
+              onClearProjectFilter={onClearProjectLinearFilter}
             />
           </>
         ),

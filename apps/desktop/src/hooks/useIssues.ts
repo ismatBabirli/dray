@@ -10,6 +10,7 @@ import {
   trackerOf,
 } from "@/lib/issue";
 import { readIssueRepo, setIssueRepo } from "@/lib/issueTracker";
+import { sameFilter, type RepoFilter } from "@/lib/linearWorkspace";
 
 import type {
   Issue,
@@ -73,6 +74,8 @@ const keyOf = (query: IssueQuery) =>
     teamId: query.teamId ?? "",
     projectId: query.projectId ?? "",
     label: query.label ?? "",
+    // Sorted: which order the labels were ticked in asks nothing different.
+    labels: [...query.labels].sort().join("\n"),
     settled: query.settled,
   });
 
@@ -483,16 +486,23 @@ export function asUnavailable(e: unknown): IssueUnavailable {
 /// reader's own stored pick rather than left null: a number is only addressable
 /// within a repository, so a null there is not "every repo" but "nothing to
 /// read", which is what the page's own empty state says.
-const defaultQuery = (tracker: IssueQuery["tracker"], workspace: string | null): IssueQuery => ({
+const defaultQuery = (
+  tracker: IssueQuery["tracker"],
+  workspace: string | null,
+  repoFilter: RepoFilter | null = null,
+): IssueQuery => ({
   tracker,
   text: null,
   // The default is the useful one: what this person is meant to be working on.
   scope: "assigned",
-  teamId: tracker === "github" ? readIssueRepo() : null,
+  // Under Linear, the repo's saved team where it has one: a default, which the
+  // filter menu clears like any other pick.
+  teamId: tracker === "github" ? readIssueRepo() : (repoFilter?.teamId ?? null),
   projectId: null,
   label: null,
   settled: false,
   workspace: tracker === "linear" ? workspace : null,
+  labels: tracker === "linear" ? (repoFilter?.labels ?? []) : [],
 });
 
 /// One list read, cached and debounced. The page runs two of these.
@@ -627,9 +637,17 @@ export function useIssues(
   /// where both read one workspace: a narrowing made for one repo is not the
   /// next repo's.
   project: string | null = null,
+  /// What the current repo's list opens narrowed to, if it saved a filter.
+  repoFilter: RepoFilter | null = null,
 ) {
-  const [query, setQuery] = useState<IssueQuery>(() => defaultQuery(tracker, workspace));
+  const [query, setQuery] = useState<IssueQuery>(() =>
+    defaultQuery(tracker, workspace, repoFilter),
+  );
   const [filters, setFilters] = useState<IssueFilters | null>(null);
+  /// The repo default the query was last opened on. A *different* default is
+  /// a different repo — or a default just saved — and the page moves to it; the
+  /// reader's own narrowing is left alone until then.
+  const [openedOn, setOpenedOn] = useState<RepoFilter | null>(repoFilter);
   const [openedFor, setOpenedFor] = useState(project);
 
   // A tracker switch is a different workspace, so both the narrowing and the
@@ -641,15 +659,25 @@ export function useIssues(
   // is a frame behind, and that frame reads Linear's list under GitHub's chip.
   const wantedWorkspace = tracker === "linear" ? workspace : null;
   if (query.tracker !== tracker || query.workspace !== wantedWorkspace) {
-    setQuery(defaultQuery(tracker, workspace));
+    setQuery(defaultQuery(tracker, workspace, repoFilter));
     setFilters(null);
     setOpenedFor(project);
+    setOpenedOn(repoFilter);
   } else if (openedFor !== project) {
     setOpenedFor(project);
-    // Linear's alone. Same workspace, so the filter options still hold; only
-    // the narrowing was the previous repo's. GitHub's list is a repository the
-    // reader picked on the page, which a project change says nothing about.
-    if (tracker === "linear") setQuery(defaultQuery(tracker, workspace));
+    setOpenedOn(repoFilter);
+    // Linear's alone: another repo, even one reading this workspace, opens on
+    // its own default, never the previous repo's narrowing, search or project
+    // filter — the options still hold, being the workspace's. GitHub's list is
+    // a repository the reader picked on the page, which a project change says
+    // nothing about.
+    if (tracker === "linear") setQuery(defaultQuery(tracker, workspace, repoFilter));
+  } else if (!sameFilter(openedOn, repoFilter)) {
+    setOpenedOn(repoFilter);
+    // A default just saved from what is on screen already describes it, and
+    // resetting there would throw away the search text for nothing.
+    const onScreen = { teamId: query.teamId, labels: query.labels };
+    if (!sameFilter(onScreen, repoFilter)) setQuery(defaultQuery(tracker, workspace, repoFilter));
   }
   /// Bumped to force a read the query alone would not trigger — the refresh
   /// button, and a connection that just changed under the page. It is what

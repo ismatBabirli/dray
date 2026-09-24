@@ -28,7 +28,7 @@ import { isProvisional, nextMainSeq, provisionalId, retireOldestProvisional } fr
 import { playNotification } from "@/lib/sound";
 import { activeSpace, allowedInSpace, SPACE_KEY, SPACE_LIST_KEY } from "@/lib/space";
 import { FIRST_MOUNT } from "@/lib/turnWindow";
-import { AgentEvent, ApprovalPolicy, Attachment, BackgroundTask, BranchList, Effort, Harness, ImageRef, IssueRef, IssuesChangedEvent, Model, ModelId, Project, QueuedMessage, SendOutcome, SessionIndexItem, SessionPage, SessionSnapshot, SessionStatus, SessionStatusEvent, SessionTitleEvent } from "../types/events";
+import { AgentEvent, ApprovalPolicy, Attachment, BackgroundTask, BranchList, Effort, Harness, ImageRef, IssueRef, IssuesChangedEvent, LinearFilter, Model, ModelId, Project, QueuedMessage, SendOutcome, SessionIndexItem, SessionPage, SessionSnapshot, SessionStatus, SessionStatusEvent, SessionTitleEvent } from "../types/events";
 
 const DEFAULT_EFFORT: Effort = "high";
 
@@ -512,6 +512,16 @@ const reloadProjects = () => {
 const setProjectLinearWorkspace = async (path: string, workspace: string | null) => {
   try {
     setProjects(await invoke<Project[]>("set_project_linear_workspace", { path, workspace }));
+  } catch (e) {
+    setError(String(e));
+  }
+};
+
+// Saves the filter a repo's issue list opens narrowed to, or clears it with
+// `null`. The issues page's filter menu is the only caller.
+const setProjectLinearFilter = async (path: string, filter: LinearFilter | null) => {
+  try {
+    setProjects(await invoke<Project[]>("set_project_linear_filter", { path, filter }));
   } catch (e) {
     setError(String(e));
   }
@@ -2671,6 +2681,6 @@ const contextUsage: { used: number; max: number } | null = (() => {
   return used !== null && max !== null ? { used, max } : null;
 })();
 
-return {harness, setHarness, sessions, selectedSessionId, selectedSession, sessionIndexItems, statusBySession, askingSessions, archivedShown, archivedRequested: showArchived, setShowArchived, models, refreshModels, reloadModels, seedFxModels, loadingModels, modelId, effort, fast, setFast, fastNote, permissionMode, projects, projectPath, branches, branch, useWorktree, busy, working, backgroundTasks, liveTaskIds, tasksBySession, compacting, apiRetry, contextUsage, error, setError, handleModelChange, setPermissionMode, handleAttachProject, handleSelectProject, handleRemoveProject, setProjectSpace, setProjectLinearWorkspace, reloadProjects, retagSpace, canAnnounce, handleSelectBranch, pendingBranch, setPendingBranch, runCheckout, setUseWorktree, handleSendMsg, handleInterrupt, handleStopTask, queuedMessages, handleCancelQueued, handleRespondPermission, handleAnswerQuestions, handleSelectSessionIndexItem, handleNewSession, markSessionUnread, setSessionFlags, forkSession, unlinkIssue, detachSession, deleteSession, removeWorktree, ensureLoaded, setOnScreen, setCrewSeen, paneState, indexSide};
+return {harness, setHarness, sessions, selectedSessionId, selectedSession, sessionIndexItems, statusBySession, askingSessions, archivedShown, archivedRequested: showArchived, setShowArchived, models, refreshModels, reloadModels, seedFxModels, loadingModels, modelId, effort, fast, setFast, fastNote, permissionMode, projects, projectPath, branches, branch, useWorktree, busy, working, backgroundTasks, liveTaskIds, tasksBySession, compacting, apiRetry, contextUsage, error, setError, handleModelChange, setPermissionMode, handleAttachProject, handleSelectProject, handleRemoveProject, setProjectSpace, setProjectLinearWorkspace, setProjectLinearFilter, reloadProjects, retagSpace, canAnnounce, handleSelectBranch, pendingBranch, setPendingBranch, runCheckout, setUseWorktree, handleSendMsg, handleInterrupt, handleStopTask, queuedMessages, handleCancelQueued, handleRespondPermission, handleAnswerQuestions, handleSelectSessionIndexItem, handleNewSession, markSessionUnread, setSessionFlags, forkSession, unlinkIssue, detachSession, deleteSession, removeWorktree, ensureLoaded, setOnScreen, setCrewSeen, paneState, indexSide};
 
 }

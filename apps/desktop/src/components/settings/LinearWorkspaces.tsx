@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, X } from "lucide-react";
 
 import LinearIcon from "@/components/LinearIcon";
 import { CancelOrConfirm } from "@/components/settings/InRowConfirm";
@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import type { useIntegrations } from "@/hooks/useIntegrations";
 import { linearWorkspaces, workspaceFor, workspaceName } from "@/lib/linearWorkspace";
 import { displayPath } from "@/lib/space";
-import type { Project, TrackerAccount } from "@/types/events";
+import type { LinearFilter, Project, TrackerAccount } from "@/types/events";
 
 /// The connected Linear workspaces, and which one each Space and project reads.
 ///
@@ -31,11 +31,15 @@ export default function LinearWorkspaces({
   projects,
   spaces,
   onSetProjectWorkspace,
+  onClearProjectFilter,
 }: {
   integrations: ReturnType<typeof useIntegrations>;
   projects: Project[];
   spaces: string[];
   onSetProjectWorkspace: (path: string, workspace: string | null) => void;
+  /// Forgets a repo's saved issue filter. Saving happens on the issues page,
+  /// where the filters are.
+  onClearProjectFilter: (path: string) => void;
 }) {
   const { busy, error, connect, disconnect, makeDefault, pinSpace } = integrations;
   const workspaces = linearWorkspaces(integrations.integrations);
@@ -154,39 +158,70 @@ export default function LinearWorkspaces({
         </div>
       )}
 
-      {choosing && projects.length > 0 && (
+      {/* With one workspace there is no pin to choose, but a saved filter is
+          still worth seeing and clearing — so those projects list alone. */}
+      {projects.some((p) => choosing || p.linearFilter) && (
         <div className="flex flex-col gap-3">
           <h2 className="text-ui font-medium text-muted-foreground">Projects</h2>
-          {projects.map((project) => {
-            // What the project would read with no pin of its own, which is
-            // what its first menu item has to name.
-            const inherited = workspaceFor({ space: project.space }, pins, workspaces);
-            const inheritLabel =
-              inherited.from === "space"
-                ? `From ${project.space} (${workspaceName(workspaces, inherited.id)})`
-                : `Default (${defaultName})`;
+          {projects
+            .filter((p) => choosing || p.linearFilter)
+            .map((project) => {
+              // What the project would read with no pin of its own, which is
+              // what its first menu item has to name.
+              const inherited = workspaceFor({ space: project.space }, pins, workspaces);
+              const inheritLabel =
+                inherited.from === "space"
+                  ? `From ${project.space} (${workspaceName(workspaces, inherited.id)})`
+                  : `Default (${defaultName})`;
 
-            return (
-              <div key={project.path} className="flex items-center justify-between gap-4">
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-ui font-medium">{project.name}</span>
-                  <span className="truncate text-ui text-muted-foreground">
-                    {displayPath(project.path)}
-                  </span>
+              return (
+                <div key={project.path} className="flex items-center justify-between gap-4">
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-ui font-medium">{project.name}</span>
+                    <span className="truncate text-ui text-muted-foreground">
+                      {displayPath(project.path)}
+                    </span>
+                    {project.linearFilter && (
+                      <span className="flex min-w-0 items-center gap-1 text-ui text-muted-foreground">
+                        <span className="truncate">
+                          Issues open on {describeFilter(project.linearFilter)}
+                          {choosing &&
+                            ` in ${workspaceName(workspaces, project.linearFilter.workspace)}`}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={`Clear ${project.name}'s issue filter`}
+                          onClick={() => onClearProjectFilter(project.path)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <X />
+                        </Button>
+                      </span>
+                    )}
+                  </div>
+                  {choosing && (
+                    <WorkspaceMenu
+                      workspaces={workspaces}
+                      value={project.linearWorkspace ?? null}
+                      inherit={inheritLabel}
+                      onChange={(next) => onSetProjectWorkspace(project.path, next)}
+                    />
+                  )}
                 </div>
-                <WorkspaceMenu
-                  workspaces={workspaces}
-                  value={project.linearWorkspace ?? null}
-                  inherit={inheritLabel}
-                  onChange={(next) => onSetProjectWorkspace(project.path, next)}
-                />
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
       )}
     </div>
   );
+}
+
+/// A saved filter in words: "Mobile · iOS, Android".
+function describeFilter(filter: LinearFilter): string {
+  const team = filter.teamId ? (filter.teamName ?? "a team") : null;
+  const labels = filter.labels.join(", ");
+  return [team, labels].filter(Boolean).join(" · ");
 }
 
 function WorkspaceRow({

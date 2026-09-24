@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { projectForPath, workspaceFor, workspaceName } from "@/lib/linearWorkspace";
+import {
+  filterFor,
+  projectForPath,
+  sameFilter,
+  toSaved,
+  workspaceFor,
+  workspaceName,
+} from "@/lib/linearWorkspace";
 import type { TrackerAccount } from "@/types/events";
 
 const account = (id: string, name: string): TrackerAccount => ({
@@ -57,6 +64,38 @@ describe("linear workspace pins", () => {
     expect(workspaceName(workspaces, "jango")).toBe("JangoAI");
     expect(workspaceName(workspaces, null)).toBe("Acme");
     expect(workspaceName(workspaces, "gone")).toBe("gone");
+  });
+});
+
+describe("a repo's saved filter", () => {
+  const saved = { workspace: "jango", teamId: "t1", teamName: "Mobile", labels: ["iOS"] };
+
+  it("applies only in the workspace it was saved in", () => {
+    expect(filterFor({ linearFilter: saved }, "jango")).toEqual({ teamId: "t1", labels: ["iOS"] });
+    expect(filterFor({ linearFilter: saved }, "acme")).toBeNull();
+    expect(filterFor({ linearFilter: saved }, null)).toBeNull();
+    expect(filterFor({}, "jango")).toBeNull();
+  });
+
+  it("compares labels as a set", () => {
+    expect(
+      sameFilter(
+        { teamId: null, labels: ["Web", "Backend"] },
+        { teamId: null, labels: ["Backend", "Web"] },
+      ),
+    ).toBe(true);
+    expect(sameFilter({ teamId: "t1", labels: [] }, { teamId: null, labels: [] })).toBe(false);
+    expect(sameFilter(null, { teamId: null, labels: [] })).toBe(true);
+  });
+
+  it("saves nothing for a filter that narrows nothing", () => {
+    expect(toSaved({ teamId: null, labels: [] }, "jango", null)).toBeNull();
+    expect(toSaved({ teamId: null, labels: ["iOS"] }, "jango", "Mobile")).toEqual({
+      workspace: "jango",
+      teamId: undefined,
+      teamName: undefined,
+      labels: ["iOS"],
+    });
   });
 });
 

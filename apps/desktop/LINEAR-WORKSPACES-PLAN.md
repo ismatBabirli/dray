@@ -284,11 +284,73 @@ Roughly 30 files. About 4–6 days by hand; one PR, one commit per step.
 
 ## Out of scope, on purpose
 
-- A default *team* per project (e.g. `jangoai-ios` → the iOS team). CLAUDE.md
-  rejects project ↔ team mapping; a workspace pin is the coarser half of that
-  and a separate question.
+- A default *team* per project in this PR. It is the follow-up below, as its
+  own PR, since CLAUDE.md rejects project ↔ team mapping and the maintainer
+  may take one without the other.
 - OAuth sign-in. Keys stay the only way in; OAuth is its own project.
 - A merged list across workspaces (decision 5).
 - `dray --workspace` (decision 12).
 - Workspace logos. `logoUrl` is available, but the settings row draws no
   images today.
+
+## Follow-up: a default filter per repo
+
+**Built.** A second PR on top of the first (branch `feat/linear-repo-filters`). Several
+repos can read one workspace — `jangoai-ios`, `jangoai-android` and
+`jangoai-monorepo` — and without a finer pin `#` in the iOS repo offers the
+Android and backend work too.
+
+### What Linear recommends
+
+| Fact | Source |
+|---|---|
+| A team is a group of people who work together; "keeping everyone on one team is the simplest approach" for small teams. | [teams](https://linear.app/docs/teams) |
+| A project has an outcome and an end date, ideally 1–3 weeks. An issue belongs to one project; completed projects auto-archive. | [projects](https://linear.app/docs/projects), [method](https://linear.app/method/scope-projects) |
+| Labels are the cross-cutting category. Workspace labels serve every team; a label group is single-select. | [labels](https://linear.app/docs/labels) |
+| Tools that route a Linear issue to a repo read a label first (Cursor's `repo` group, Cyrus), then the project or team. | [Cursor](https://cursor.com/docs/integrations/linear), [Cyrus](https://www.atcyrus.com/docs/labels-and-routing) |
+
+So a repo maps to **labels** for a solo developer, to a **team plus labels**
+for a small company, and **never to a Linear project**, which goes stale when
+it completes.
+
+### Decisions
+
+F1. **A repo pins an optional team and optional labels, never a Linear
+    project.** Labels match *any* (OR): `jangoai-monorepo` pins Backend, Web
+    and Landing.
+F2. **Per Dray project only, not per Space.** A Space holds repos of different
+    platforms, which is the whole reason for the pin.
+F3. **Tied to one workspace.** `Project.linear_filter = { workspace, team_id,
+    labels }`, `#[serde(default, skip_serializing_if)]`. Ignored while the
+    project reads another workspace, since a team id names nothing there.
+F4. **A default, not a limit.** The issues page and the `#` picker open
+    narrowed, and one click clears it. Tag resolution is untouched: `#DRM-32`
+    still resolves across the whole workspace.
+F5. **Set where the filters are.** The issues page's filter menu gains **Save
+    as default for `<project>`** and **Clear `<project>`'s default**, drawn only
+    while the page is on the project's own workspace. Settings shows the saved
+    filter under the project's workspace menu, with a clear button. No second
+    filter picker in Settings.
+F6. **Labels by name.** Linear treats same-named team labels as one label in its
+    UI but not in its API, so the filter is `labels: { some: { name: { in } } }`
+    over names. Label groups (`isGroup`) and retired labels are left out of
+    the menu, since neither can be put on a new issue.
+F7. **Linear gains a label section in the filter menu**, multi-select, where
+    before it had team and project only. `IssueQuery.labels: Vec<String>` is
+    Linear's; GitHub keeps its single `label`.
+F8. **The picker says when it is narrowed.** "Nothing assigned to you" under a
+    pinned filter would read as the workspace being empty, so the note names
+    the narrowing.
+
+### Build
+
+- Rust: `linear.rs` reads labels in `FILTERS` and filters on them in
+  `build_filter`; `IssueQuery.labels`; `Project.linear_filter` and
+  `set_project_linear_filter` in `projects.rs`; clearing a workspace clears
+  filters naming it.
+- TS: `filterFor(project, workspace)` in `linearWorkspace.ts`, beside
+  `workspaceFor`; `useIssues` and `useIssueSearch` take the default and reset
+  to it when the project changes; `FilterMenu` label section plus save/clear;
+  Settings shows the saved filter.
+- Tests: `build_filter` with labels; a project written before the field; the
+  filter ignored under another workspace; save/clear round trip.

@@ -6,7 +6,7 @@
 /// other, so both are pinned by test and must not drift: a picker offering one
 /// workspace's issues while the send resolves the tag in another is a wrong
 /// link that reads exactly like a right one.
-import type { IntegrationsView, Project, TrackerAccount } from "@/types/events";
+import type { IntegrationsView, LinearFilter, Project, TrackerAccount } from "@/types/events";
 
 /// Where a project's workspace came from, which the Settings row says out loud
 /// so a reader can see why a project reads what it reads.
@@ -42,6 +42,48 @@ export function workspaceFor(
   if (connected(space)) return { id: space, from: "space" };
 
   return { id: workspaces[0]?.workspaceId ?? null, from: "default" };
+}
+
+/// What a repo's issue list opens narrowed to: a team, labels, or both.
+export type RepoFilter = { teamId: string | null; labels: string[] };
+
+/// The project's saved filter, **only while it reads the workspace the filter
+/// was saved in**. A team id names nothing in any other workspace, so a
+/// project re-pinned elsewhere opens un-narrowed rather than onto an empty list.
+export function filterFor(
+  project: Pick<Project, "linearFilter"> | null,
+  workspace: string | null,
+): RepoFilter | null {
+  const saved = project?.linearFilter;
+  if (!saved || !workspace || saved.workspace !== workspace) return null;
+
+  const filter = { teamId: saved.teamId ?? null, labels: saved.labels };
+  return filter.teamId || filter.labels.length > 0 ? filter : null;
+}
+
+/// Whether two filters narrow the same way. Label order is the reader's
+/// clicking order and means nothing.
+export function sameFilter(a: RepoFilter | null, b: RepoFilter | null): boolean {
+  const norm = (f: RepoFilter | null) =>
+    JSON.stringify({ teamId: f?.teamId ?? null, labels: [...(f?.labels ?? [])].sort() });
+  return norm(a) === norm(b);
+}
+
+/// The saved form of `filter`, for `set_project_linear_filter`. `null` where it
+/// narrows nothing, which is how a default is cleared.
+export function toSaved(
+  filter: RepoFilter | null,
+  workspace: string,
+  teamName: string | null,
+): LinearFilter | null {
+  if (!filter || (!filter.teamId && filter.labels.length === 0)) return null;
+
+  return {
+    workspace,
+    teamId: filter.teamId ?? undefined,
+    teamName: filter.teamId ? (teamName ?? undefined) : undefined,
+    labels: filter.labels,
+  };
 }
 
 /// The attached project a path sits in: the longest project path it is under,

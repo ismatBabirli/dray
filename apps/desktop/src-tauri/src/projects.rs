@@ -35,10 +35,44 @@ pub struct Project {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub linear_workspace: Option<String>,
+    /// What the issue list opens narrowed to for this repo: a Linear team,
+    /// labels, or both. A default and never a limit — one click clears it, and
+    /// tags still resolve across the whole workspace.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub linear_filter: Option<LinearFilter>,
     /// Doubles as the sort key and the "which project was last open" answer:
     /// selecting a project *is* what makes it most recent, so a separate
     /// `last_selected` pointer would be a second place to keep the same fact.
     pub last_selected: String,
+}
+
+/// A repo's default narrowing inside one Linear workspace.
+///
+/// **Never a Linear project**: those are scoped to weeks and archive themselves
+/// on completion, so a repo pinned to one reads empty a month later. A team is
+/// who does the work and labels are what it is about, and both outlast any one
+/// piece of it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "events.ts")]
+#[serde(rename_all = "camelCase")]
+pub struct LinearFilter {
+    /// The workspace (`organization.id`) the team and labels belong to. The
+    /// filter is ignored while the project reads any other: a team id names
+    /// nothing outside its own workspace.
+    pub workspace: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub team_id: Option<String>,
+    /// The team's name as of saving, so Settings can say which team without a
+    /// read. A copy that can go stale, the bargain `IssueRef::title` makes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub team_name: Option<String>,
+    /// Label names, matching any. By name for the reason `IssueQuery::labels`
+    /// gives.
+    #[serde(default)]
+    pub labels: Vec<String>,
 }
 
 static PROJECTS_LOCK: Mutex<()> = Mutex::const_new(());
@@ -94,6 +128,7 @@ pub async fn add_project(path: &str) -> Result<Vec<Project>, Fail> {
             path,
             space: None,
             linear_workspace: None,
+            linear_filter: None,
             last_selected: now,
         }),
     }
@@ -174,9 +209,30 @@ pub async fn set_project_linear_workspace(
     Ok(projects)
 }
 
-/// Clears every project's pin to a workspace being disconnected, so a
-/// reconnect later starts from the default rather than reviving pins the reader
-/// saw go.
+/// Saves a repo's default Linear filter, or clears it with `None`. A filter
+/// narrowing to nothing is the same as none, so it is stored as none.
+#[tauri::command]
+pub async fn set_project_linear_filter(
+    path: &str,
+    filter: Option<LinearFilter>,
+) -> Result<Vec<Project>, Fail> {
+    let _guard = PROJECTS_LOCK.lock().await;
+    let mut projects = list_projects().await?;
+
+    let Some(i) = projects.iter().position(|p| p.path == path) else {
+        return Ok(projects);
+    };
+
+    projects[i].linear_filter =
+        filter.filter(|f| f.team_id.as_deref().is_some_and(|t| !t.is_empty()) || !f.labels.is_empty());
+    write_projects(&projects).await?;
+
+    Ok(projects)
+}
+
+/// Clears every project's pin and filter to a workspace being disconnected, so
+/// a reconnect later starts from the default rather than reviving pins the
+/// reader saw go.
 pub async fn clear_linear_workspace(workspace: &str) -> Result<()> {
     let _guard = PROJECTS_LOCK.lock().await;
     let mut projects = list_projects().await?;
@@ -185,6 +241,10 @@ pub async fn clear_linear_workspace(workspace: &str) -> Result<()> {
     for project in &mut projects {
         if project.linear_workspace.as_deref() == Some(workspace) {
             project.linear_workspace = None;
+            cleared = true;
+        }
+        if project.linear_filter.as_ref().is_some_and(|f| f.workspace == workspace) {
+            project.linear_filter = None;
             cleared = true;
         }
     }
@@ -328,8 +388,28 @@ mod tests {
             name: path.into(),
             space: space.map(Into::into),
             linear_workspace: None,
+            linear_filter: None,
             last_selected: "2026-08-01T00:00:00Z".into(),
         }
+    }
+
+    #[test]
+    fn a_saved_filter_round_trips_and_an_old_project_has_none() {
+        let old: Project = serde_json::from_str(
+            r#"{"path":"/a","name":"a","lastSelected":"2026-08-01T00:00:00Z"}"#,
+        )
+        .unwrap();
+        assert_eq!(old.linear_filter, None);
+
+        let filter = LinearFilter {
+            workspace: "org-1".into(),
+            team_id: None,
+            team_name: None,
+            labels: vec!["iOS".into()],
+        };
+        let json = serde_json::to_string(&filter).unwrap();
+        assert_eq!(json, r#"{"workspace":"org-1","labels":["iOS"]}"#);
+        assert_eq!(serde_json::from_str::<LinearFilter>(&json).unwrap(), filter);
     }
 
     #[test]

@@ -708,6 +708,7 @@ pub fn run() {
             projects::set_last_selected_project,
             projects::set_project_space,
             projects::set_project_linear_workspace,
+            projects::set_project_linear_filter,
             projects::retag_space,
             git::list_branches,
             git::checkout_branch,

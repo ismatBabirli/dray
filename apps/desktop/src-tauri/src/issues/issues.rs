@@ -343,6 +343,12 @@ pub struct IssueQuery {
     /// id, since that is what `gh issue list --label` takes and what a label is
     /// addressed by on GitHub.
     pub label: Option<String>,
+    /// Linear labels by name, matching an issue carrying **any** of them — a
+    /// repo pinned to Backend, Web and Landing lists all three. Linear's alone:
+    /// GitHub narrows by the single `label` above. By name rather than id,
+    /// since Linear files one label per team under a shared name and its API,
+    /// unlike its UI, does not fold them together.
+    pub labels: Vec<String>,
     /// Which half of the workspace to read: the unfinished issues, or the done
     /// and cancelled ones.
     ///
@@ -2297,6 +2303,7 @@ mod tests {
             name: "p".into(),
             space: space.map(Into::into),
             linear_workspace: pin.map(Into::into),
+            linear_filter: None,
             last_selected: "2026-09-24T00:00:00Z".into(),
         }
     }

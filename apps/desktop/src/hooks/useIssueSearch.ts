@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { cachedIssues, ISSUE_LIST_LIMIT, rememberIssues } from "@/hooks/useIssues";
 import { filterIssues, issueGeneration } from "@/lib/issue";
 
+import type { RepoFilter } from "@/lib/linearWorkspace";
 import type { Issue, IssueQuery, IssueTracker } from "@/types/events";
 
 /// How deep the picker's list goes. The backend ranks by priority, so this is
@@ -44,17 +45,20 @@ const queryFor = (
   tracker: IssueTracker,
   repo: string | null,
   workspace: string | null,
+  repoFilter: RepoFilter | null,
 ): IssueQuery => ({
   tracker,
   text: text || null,
   scope: tracker === "github" ? "all" : "assigned",
-  teamId: tracker === "github" ? repo : null,
+  // Under Linear, the repo's saved team: the picker opens where the page does.
+  teamId: tracker === "github" ? repo : (repoFilter?.teamId ?? null),
   projectId: null,
   label: null,
   settled: false,
   // The workspace this session's project reads, so a tag picked here is one the
   // send resolves in the same place. Under GitHub, nothing.
   workspace: tracker === "linear" ? workspace : null,
+  labels: tracker === "linear" ? (repoFilter?.labels ?? []) : [],
 });
 
 /// What an empty picker says, in terms of why it is empty.
@@ -63,11 +67,19 @@ const queryFor = (
 /// reader unable to tell a repository this app cannot find from one that simply
 /// has no open issues — the first is fixed by switching tracker, the second by
 /// nothing at all.
-function emptyNote(github: boolean, repo: string | null | undefined, query: string): string {
+function emptyNote(
+  github: boolean,
+  repo: string | null | undefined,
+  query: string,
+  narrowed: boolean,
+): string {
   if (github && repo === null) return "No GitHub repository here.";
-  if (query.trim()) return "No issue matches that.";
+  // Said outright under a repo's saved filter: the plain sentence would read
+  // as the workspace having nothing, when the filter is what is empty.
+  if (query.trim()) return narrowed ? "No issue matches that in this repo's filter." : "No issue matches that.";
 
-  return github ? "No open issues in this repository." : "Nothing assigned to you.";
+  if (github) return "No open issues in this repository.";
+  return narrowed ? "Nothing assigned to you in this repo's filter." : "Nothing assigned to you.";
 }
 
 /// `owner/repo` per directory, for the life of the process.
@@ -110,7 +122,11 @@ export function useIssueSearch(
   cwd: string | null = null,
   /// The Linear workspace the session's project reads, `null` for the default.
   workspace: string | null = null,
+  /// What the session's repo narrows its issues to, if it saved a filter.
+  repoFilter: RepoFilter | null = null,
 ): { issues: Issue[]; loading: boolean; emptyNote?: string } {
+  // A value the effect below can depend on: the object is fresh every render.
+  const filterKey = JSON.stringify(repoFilter);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(false);
   /// The session's own repository under GitHub, once it has been asked for.
@@ -141,7 +157,7 @@ export function useIssueSearch(
   /// that just moved.
   // Keyed on the workspace too: moving to a session whose project reads another
   // Linear workspace is the same switch one level down.
-  const shownKey = `${tracker}:${workspace ?? ""}`;
+  const shownKey = `${tracker}:${workspace ?? ""}:${filterKey}`;
   const [shownTracker, setShownTracker] = useState(shownKey);
 
   if (shownTracker !== shownKey) {
@@ -196,8 +212,10 @@ export function useIssueSearch(
     // Either is on screen for the frame the keystroke lands in, which is the
     // whole point — the read below then replaces it, since Linear matches
     // descriptions and this cannot.
-    const exact = cachedIssues(queryFor(query, tracker, repo ?? null, workspace));
-    const base = query ? cachedIssues(queryFor("", tracker, repo ?? null, workspace)) : undefined;
+    const exact = cachedIssues(queryFor(query, tracker, repo ?? null, workspace, repoFilter));
+    const base = query
+      ? cachedIssues(queryFor("", tracker, repo ?? null, workspace, repoFilter))
+      : undefined;
     const painted = exact?.issues ?? (base && filterIssues(base.issues, query));
     if (painted) {
       setIssues(painted.slice(0, LIMIT));
@@ -219,7 +237,7 @@ export function useIssueSearch(
 
     setLoading(true);
 
-    const asked = queryFor(query, tracker, repo ?? null, workspace);
+    const asked = queryFor(query, tracker, repo ?? null, workspace, repoFilter);
 
     const run = () => {
       invoke<Issue[]>("list_issues", { query: asked, limit: ISSUE_LIST_LIMIT })
@@ -253,7 +271,9 @@ export function useIssueSearch(
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query, tracker, repo, github, workspace]);
+    // `repoFilter` is read through `filterKey`, its value.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, tracker, repo, github, workspace, filterKey]);
 
   return {
     issues,
@@ -269,6 +289,6 @@ export function useIssueSearch(
     emptyNote:
       query === null || loading || issues.length > 0
         ? undefined
-        : emptyNote(github, repo, query),
+        : emptyNote(github, repo, query, !github && repoFilter !== null),
   };
 }

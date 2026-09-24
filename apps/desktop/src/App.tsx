@@ -85,7 +85,13 @@ import DictateControl from "@/components/composer/DictateControl";
 import AppShell from "@/components/layout/AppShell";
 import SessionHeader from "@/components/layout/SessionHeader";
 import { offersFast } from "@/lib/fastMode";
-import { linearWorkspaces, projectForPath, workspaceFor, workspaceName } from "@/lib/linearWorkspace";
+import {
+  filterFor,
+  linearWorkspaces,
+  projectForPath,
+  workspaceFor,
+  workspaceName,
+} from "@/lib/linearWorkspace";
 import { lockedMidTurn } from "@/lib/liveControls";
 import { nextEffort } from "@/components/composer/ModelSelector";
 import { nextHarness } from "@/lib/model";
@@ -190,6 +196,7 @@ function App() {
     handleRemoveProject,
     setProjectSpace,
     setProjectLinearWorkspace,
+    setProjectLinearFilter,
     reloadProjects,
     retagSpace,
     canAnnounce,
@@ -1270,6 +1277,15 @@ function App() {
       ).id,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [projects, composerProject, integrations.integrations],
+  );
+  /// The composer's project itself, for the filter it saved and its name.
+  const composerProjectEntry = projectForPath(projects, composerProject);
+  /// What that project's issues open narrowed to: its saved team and labels,
+  /// while it reads the workspace they were saved in.
+  const composerRepoFilter = useMemo(
+    () => filterFor(composerProjectEntry, composerLinearWorkspace),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [composerProjectEntry?.linearFilter, composerLinearWorkspace],
   );
   const composerSessions = useMemo(
     () =>
@@ -2483,6 +2499,7 @@ function App() {
           commandsLoading={slashCommandsLoading}
           cwd={composerCwd}
           linearWorkspace={composerLinearWorkspace}
+          repoFilter={composerRepoFilter}
           onStop={handleInterrupt}
           onCancelQueued={handleCancelQueued}
           onCancelRecording={() => {
@@ -2636,6 +2653,13 @@ function App() {
           projectWorkspace={composerLinearWorkspace}
           project={composerProject ?? null}
           onAddWorkspace={openLinearSettings}
+          repoFilter={composerRepoFilter}
+          repoName={composerProjectEntry?.name ?? null}
+          onSaveRepoFilter={
+            composerProjectEntry
+              ? (filter) => setProjectLinearFilter(composerProjectEntry.path, filter)
+              : undefined
+          }
         />
         </MountOnce>
       </TabBody>
@@ -2783,6 +2807,7 @@ function App() {
       startNamingSpace={namingSpace}
       onSetProjectSpace={setProjectSpace}
       onSetProjectLinearWorkspace={setProjectLinearWorkspace}
+      onClearProjectLinearFilter={(path) => setProjectLinearFilter(path, null)}
       onRemoveProject={handleRemoveProject}
       onCreateSpace={createSpace}
       onRenameSpace={renameSpace}

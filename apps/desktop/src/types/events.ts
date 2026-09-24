@@ -1024,6 +1024,14 @@ teamId: string | null, projectId: string | null,
  */
 label: string | null, 
 /**
+ * Linear labels by name, matching an issue carrying **any** of them — a
+ * repo pinned to Backend, Web and Landing lists all three. Linear's alone:
+ * GitHub narrows by the single `label` above. By name rather than id,
+ * since Linear files one label per team under a shared name and its API,
+ * unlike its UI, does not fold them together.
+ */
+labels: Array<string>, 
+/**
  * Which half of the workspace to read: the unfinished issues, or the done
  * and cancelled ones.
  *
@@ -1125,6 +1133,32 @@ export type IssueUnavailable = { "kind": "not_connected" } | { "kind": "unauthor
  * The payload of [`ISSUES_CHANGED`].
  */
 export type IssuesChangedEvent = { sessionId: string, issues: Array<IssueRef>, };
+
+/**
+ * A repo's default narrowing inside one Linear workspace.
+ *
+ * **Never a Linear project**: those are scoped to weeks and archive themselves
+ * on completion, so a repo pinned to one reads empty a month later. A team is
+ * who does the work and labels are what it is about, and both outlast any one
+ * piece of it.
+ */
+export type LinearFilter = { 
+/**
+ * The workspace (`organization.id`) the team and labels belong to. The
+ * filter is ignored while the project reads any other: a team id names
+ * nothing outside its own workspace.
+ */
+workspace: string, teamId?: string, 
+/**
+ * The team's name as of saving, so Settings can say which team without a
+ * read. A copy that can go stale, the bargain `IssueRef::title` makes.
+ */
+teamName?: string, 
+/**
+ * Label names, matching any. By name for the reason `IssueQuery::labels`
+ * gives.
+ */
+labels: Array<string>, };
 
 /**
  * Shared with the harness parsers rather than duplicated — the wire shape
@@ -1423,6 +1457,12 @@ space: string | null,
  * else, the same kind of record `space` is.
  */
 linearWorkspace?: string, 
+/**
+ * What the issue list opens narrowed to for this repo: a Linear team,
+ * labels, or both. A default and never a limit — one click clears it, and
+ * tags still resolve across the whole workspace.
+ */
+linearFilter?: LinearFilter, 
 /**
  * Doubles as the sort key and the "which project was last open" answer:
  * selecting a project *is* what makes it most recent, so a separate

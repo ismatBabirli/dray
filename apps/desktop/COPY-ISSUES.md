@@ -224,12 +224,25 @@ there is a firehose, one repository's open issues is exactly the useful list.
 > Search issues
 
 **Filter menu** (behind the sliders icon; hidden entirely when there is nothing
-left to narrow by — a team or project list with one entry is not offered)
+left to narrow by — a team or project list with one entry is not offered, where
+one label still is, since narrowing to it drops every issue without it)
 
 > Team
 > All teams
 > Project
 > All projects
+> Labels
+> Any label
+
+Labels match **any** of those ticked, and the menu stays open between ticks.
+
+**Saving a repo's default**, below the rest, drawn only while the page is on the
+composer's repo's own workspace — the only one its team and labels mean
+anything in. Never a Linear project: those end, and a repo pinned to one reads
+empty a month later.
+
+> Save as default for {jangoai-ios}
+> Clear {jangoai-ios}'s default
 
 **Under GitHub this menu is not drawn at all.** Both of that tracker's controls
 stand on the row itself (below): the repository *is* the list rather than a
@@ -245,9 +258,9 @@ until one is picked, then that label's own colour as a dot beside its name
 
 Labels belong to the *repository*, so the options are re-read whenever the
 repository pick moves, and a repository pick clears the label with it. Drawn
-only where the repository has labels. Linear has labels too and is deliberately
-not offered them: its narrowings are team and project, and a third axis would be
-a control added to the tracker that needs it least.
+only where the repository has labels. Linear's labels live in the filter menu
+instead (Labels, above), several at once, since a repo pinned to a platform is
+most often pinned by label.
 
 **State switch**, on the left beside the scope chips, GitHub only — the same
 track-and-thumb switch the trackers use, with words rather than glyphs
@@ -420,6 +433,12 @@ that *does* have issues.
 > No open issues in this repository.
 > Nothing assigned to you.
 > No issue matches that.
+
+**Under a repo's saved filter** the last two say so, or the plain sentence would
+read as the workspace having nothing when it is the filter that is empty
+
+> Nothing assigned to you in this repo's filter.
+> No issue matches that in this repo's filter.
 
 Three different facts and four sentences, because collapsing them would leave
 the reader unable to tell a repository this app cannot find from one that simply
@@ -661,6 +680,13 @@ says what the project reads with no pin of its own, and from where
 > Projects
 > From {Jango AI} ({JangoAI})
 > Default ({Acme})
+
+**A repo's saved filter**, under its path — listed even with one workspace,
+since it is still worth seeing and clearing. Saved on the Issues page, where the
+filters are, so there is no second picker here
+
+> Issues open on {Mobile} · {iOS, Android} in {JangoAI}
+> Clear {jangoai-ios}'s issue filter
 
 ---
 
