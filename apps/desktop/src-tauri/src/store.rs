@@ -190,8 +190,9 @@ static INDEX_LOCK: Mutex<()> = Mutex::const_new(());
 /// from before the app's rename and `~/.dray` doesn't yet, the old directory
 /// is moved into place so a rename never orphans a user's session history.
 ///
-/// Resolved once per process: it ran on every persisted event, and the
-/// migration, mkdir and chmod each cost a syscall every time.
+/// The migration and chmod run once per process: this ran on every persisted
+/// event. Subdirectories still `create_dir_all` per call, so one deleted while
+/// the app runs comes back on the next write.
 pub async fn get_home_app_dir() -> Result<PathBuf> {
     static DIR: tokio::sync::OnceCell<PathBuf> = tokio::sync::OnceCell::const_new();
     DIR.get_or_try_init(make_home_app_dir).await.cloned()
@@ -247,11 +248,9 @@ pub async fn app_subdir(name: &str) -> Result<PathBuf> {
     Ok(path)
 }
 
-/// `~/.dray/sessions`, created once per process — every persisted event and
-/// index read comes through here.
+/// `~/.dray/sessions`, creating it if needed.
 pub async fn get_sessions_dir() -> Result<PathBuf> {
-    static DIR: tokio::sync::OnceCell<PathBuf> = tokio::sync::OnceCell::const_new();
-    DIR.get_or_try_init(|| app_subdir("sessions")).await.cloned()
+    app_subdir("sessions").await
 }
 
 /// `~/.dray/pi-sessions`, creating it if needed.
@@ -331,6 +330,7 @@ pub async fn read_index() -> Result<Vec<SessionIndexItem>> {
 /// inode; mtime and length also catch the file edited in place.
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct IndexStamp {
+    dev: u64,
     ino: u64,
     mtime: std::time::SystemTime,
     len: u64,
@@ -339,7 +339,7 @@ struct IndexStamp {
 impl IndexStamp {
     fn of(meta: &std::fs::Metadata) -> Option<Self> {
         use std::os::unix::fs::MetadataExt;
-        Some(Self { ino: meta.ino(), mtime: meta.modified().ok()?, len: meta.len() })
+        Some(Self { dev: meta.dev(), ino: meta.ino(), mtime: meta.modified().ok()?, len: meta.len() })
     }
 }
 
@@ -356,10 +356,13 @@ static INDEX_CACHE: std::sync::Mutex<Option<(IndexStamp, Arc<Vec<SessionIndexIte
 /// a parse per `get_session_index_item` used to cost on every send and status
 /// change (~600 entries, 370KB).
 async fn cached_index() -> Result<Arc<Vec<SessionIndexItem>>> {
-    let path = get_sessions_dir().await?.join("index.json");
+    cached_index_at(&get_sessions_dir().await?.join("index.json")).await
+}
+
+async fn cached_index_at(path: &Path) -> Result<Arc<Vec<SessionIndexItem>>> {
     // Stamped before the read, so a file replaced between the two is cached
     // under the older stamp — which costs a re-read, never a stale answer.
-    let stamp = fs::metadata(&path).await.ok().and_then(|m| IndexStamp::of(&m));
+    let stamp = fs::metadata(path).await.ok().and_then(|m| IndexStamp::of(&m));
     if let Some(stamp) = stamp {
         if let Some((cached, items)) = &*INDEX_CACHE.lock().unwrap() {
             if *cached == stamp {
@@ -368,7 +371,7 @@ async fn cached_index() -> Result<Arc<Vec<SessionIndexItem>>> {
         }
     }
 
-    let mut items: Vec<SessionIndexItem> = read_json(&path).await?;
+    let mut items: Vec<SessionIndexItem> = read_json(path).await?;
     // The one place the on-disk spelling of effort becomes the real one; every
     // reader above this reads `effort` and nothing else.
     items.iter_mut().for_each(decode_effort);
@@ -1635,6 +1638,42 @@ pub async fn get_session_path(session_id: &str) -> Result<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Another build replacing the index must be read back, or the next
+    /// whole-file rewrite here erases what it wrote.
+    #[tokio::test]
+    async fn the_index_cache_sees_a_file_replaced_under_it() {
+        let dir = std::env::temp_dir().join(format!("dray-index-{}", Uuid::now_v7()));
+        fs::create_dir_all(&dir).await.unwrap();
+        let path = dir.join("index.json");
+        let item = |id: &str| {
+            SessionIndexItem::new(
+                id,
+                Harness::ClaudeCode,
+                "/p",
+                "/p",
+                None,
+                None,
+                "hi",
+                ModelId::new("opus"),
+                None,
+                ApprovalPolicy::Auto,
+                false,
+                None,
+            )
+        };
+
+        write_atomic(&path, serde_json::to_string(&[item("a")]).unwrap()).await.unwrap();
+        let first = cached_index_at(&path).await.unwrap();
+        assert!(Arc::ptr_eq(&first, &cached_index_at(&path).await.unwrap()), "unchanged file re-parsed");
+
+        write_atomic(&path, serde_json::to_string(&[item("a"), item("b")]).unwrap()).await.unwrap();
+        let ids: Vec<String> =
+            cached_index_at(&path).await.unwrap().iter().map(|i| i.session_id.clone()).collect();
+        assert_eq!(ids, ["a", "b"]);
+
+        fs::remove_dir_all(&dir).await.unwrap();
+    }
 
     /// A redraw loop runs inside one millisecond, where v7's counter bytes hold
     /// still — so the name must be drawn from the random tail, or every retry
