@@ -1573,6 +1573,7 @@ const deleteSession = async (sessionId: string) => {
   setWorkingBySession(({ [sessionId]: _, ...rest }) => rest);
   setTasksBySession(({ [sessionId]: _, ...rest }) => rest);
   setQueuedBySession(({ [sessionId]: _, ...rest }) => rest);
+  deletedRef.current.add(sessionId);
   forgetDocs(sessionId);
   forgetOpenFiles(sessionId);
 
@@ -2126,6 +2127,7 @@ const setCrewSeen = (ids: string[]) => {
 /// One read per session however many ask at once, so a hover's prefetch and
 /// the click that follows share it rather than landing twice.
 const tailReads = useRef(new Map<string, Promise<boolean>>());
+const deletedRef = useRef(new Set<string>());
 const loadTail = (sessionId: string): Promise<boolean> => {
   const running = tailReads.current.get(sessionId);
   if (running) return running;
@@ -2135,6 +2137,8 @@ const loadTail = (sessionId: string): Promise<boolean> => {
   })
     .then((snapshot) => {
       if (!snapshot) return false;
+      // A read outlived by a delete must not put the transcript back.
+      if (deletedRef.current.has(sessionId)) return false;
       // Stamped as touched, so the count cap takes the least recently used
       // transcript rather than the one a hover just warmed for its click.
       lastViewedRef.current.set(sessionId, Date.now());
@@ -2163,8 +2167,12 @@ const ensureLoaded = async (sessionId: string) => {
 /// sorted by `seq`, which a Claude Code subagent numbers from 0. Dropped where
 /// the session was evicted or re-read meanwhile, since its `olderBefore` then
 /// no longer names where this page ends.
+///
+/// A failed read is tried again after a pause, a few times, since the
+/// transcript asks only when its window moves and would otherwise sit short of
+/// its first turn for as long as it stays loaded.
 const pageReads = useRef(new Set<string>());
-const loadOlder = async (sessionId: string) => {
+const loadOlder = async (sessionId: string, attempt = 0) => {
   const before = sessionsRef.current.find((s) => s.sessionId === sessionId)?.olderBefore;
   if (before == null || pageReads.current.has(sessionId)) return;
   pageReads.current.add(sessionId);
@@ -2184,6 +2192,9 @@ const loadOlder = async (sessionId: string) => {
     );
   } catch (e) {
     console.error("failed to load older turns", e);
+    if (attempt < OLDER_PAGE_RETRIES) {
+      setTimeout(() => void loadOlder(sessionId, attempt + 1), 1000 * 2 ** attempt);
+    }
   } finally {
     pageReads.current.delete(sessionId);
   }
@@ -2203,6 +2214,7 @@ useEffect(() => {
 
 /// Turns per page read above a transcript's tail.
 const OLDER_PAGE_TURNS = 16;
+const OLDER_PAGE_RETRIES = 3;
 
 /// How long a loaded transcript may sit unviewed before it is dropped.
 const IDLE_EVICT_MS = 10 * 60 * 1000;

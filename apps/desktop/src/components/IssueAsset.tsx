@@ -37,7 +37,7 @@ const cache = new Map<string, Cached>();
 const inFlight = new Map<string, Promise<IssueAsset | null>>();
 
 /// Screenshots are base64 in memory, so the cache is held to a byte budget,
-/// least recently written going first — `useChanges`' bargain. Without it every
+/// least recently used going first — `useChanges`' bargain. Without it every
 /// generation's reads stayed for the life of the app.
 const ASSET_BYTES_BUDGET = 32 * 1024 * 1024;
 let assetBytes = 0;
@@ -59,10 +59,14 @@ function remember(url: string, entry: Cached) {
   }
 }
 
-/// The entry for `url` if one was read under the generation now current.
+/// The entry for `url` if one was read under the generation now current. A hit
+/// moves it to the back, so the budget drops the least recently *used*.
 function cached(url: string): Cached | undefined {
   const entry = cache.get(url);
-  return entry && entry.generation === issueGeneration() ? entry : undefined;
+  if (!entry || entry.generation !== issueGeneration()) return undefined;
+  cache.delete(url);
+  cache.set(url, entry);
+  return entry;
 }
 
 function load(url: string): Promise<IssueAsset | null> {
