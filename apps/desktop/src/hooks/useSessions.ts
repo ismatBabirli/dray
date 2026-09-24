@@ -2,7 +2,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useState, useEffect, useMemo, useRef } from "react";
+import { flushSync } from "react-dom";
 import { restoreAttachments } from "@/hooks/useAttachments";
+import { appendStreamingText, peekStreamingBlock, retireStreamingBlock, startStreamingBlock, type StreamingBlock } from "@/hooks/useStreamingBlock";
 import { useComposerPrefs, type EffortByModel } from "@/hooks/useComposerPrefs";
 import { forgetDocs } from "@/hooks/useDocs";
 import { useDockBadge } from "@/hooks/useDockBadge";
@@ -122,21 +124,6 @@ export type ApiRetryState = {
   reason: string | null;
 };
 
-export type StreamingBlock = {
-    index: number,
-    type: "text" | "thinking" | "tool_use" | null
-    /// Accumulated deltas. Prose for a text or thinking block; for a `tool_use`
-    /// one it is the raw `input_json_delta` stream, which is a prefix of a JSON
-    /// object rather than anything renderable — see [streamingCall](../lib/streaming.ts).
-    text: string,
-    /// Both set only on a `tool_use` block, from the `block_start` that opens it.
-    /// The name is what the preview row renders before any argument has arrived;
-    /// `callId` is the tool_use id, which the committed `tool_call_started`
-    /// repeats as its `callId` and is matched on to retire this preview.
-    name: string | null,
-    callId: string | null,
-}
-
 /// Sessions whose worktree removal has been asked for and not refused.
 ///
 /// Module-level rather than a ref because it guards a write to disk, not a
@@ -151,7 +138,6 @@ const NO_TASKS: ReadonlySet<string> = new Set();
 /// on the hook's return are this, spread.
 export type PaneState = {
   session: SessionSnapshot | null;
-  streamingBlock: StreamingBlock | null;
   busy: boolean;
   working: Working | null;
   backgroundTaskCount: number;
@@ -216,8 +202,6 @@ export function useSessions() {
 
     const [sessions, setSessions] = useState<SessionSnapshot[]>([]);
     const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-    // sessionId → the one in-flight block (CLI streams start→deltas→stop serially).
-    const [streamingContentBlock, setStreamingContentBlock] = useState<Record<string, StreamingBlock | null>>({});
     const [sessionIndexItems, setSessionIndexItems] = useState<SessionIndexItem[]>([]);
     // Which side of the archived split the sidebar is showing. Not persisted:
     // archived is the exception view, so every launch starts on the active list.
@@ -1568,7 +1552,7 @@ const deleteSession = async (sessionId: string) => {
 
   setSessionIndexItems((prev) => prev.filter((i) => i.sessionId !== sessionId));
   setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
-  setStreamingContentBlock(({ [sessionId]: _, ...rest }) => rest);
+  retireStreamingBlock(sessionId);
   setStatusBySession(({ [sessionId]: _, ...rest }) => rest);
   setWorkingBySession(({ [sessionId]: _, ...rest }) => rest);
   setTasksBySession(({ [sessionId]: _, ...rest }) => rest);
@@ -1734,7 +1718,31 @@ useEffect(() => {
       const agentEvent = event.payload;
 
         if (agentEvent.payload.type != "delta") {
-            setSessions((prev) => {
+            // The committed event supersedes its preview, and it arrives one
+            // line *before* `block_stop` — so waiting for the stop leaves both
+            // on screen for a frame, the preview shoved down by the event that
+            // just replaced it. Text and reasoning match on the block index;
+            // `tool_call_started` carries no `BlockRef` — the mapper builds it
+            // from the committed `assistant` message rather than from the
+            // stream — so it matches on the tool_use id the two do share. Index
+            // alone for the first: the CLI runs one block at a time, but a
+            // stale preview from an earlier message would share indices.
+            const payload = agentEvent.payload;
+            const supersedes =
+              (payload.type === "assistant_text" || payload.type === "reasoning") && payload.block
+                ? (b: StreamingBlock) => b.index === payload.block!.index
+                : payload.type === "tool_call_started"
+                  ? (b: StreamingBlock) => b.callId === payload.callId
+                  : null;
+            const preview = supersedes && peekStreamingBlock(agentEvent.sessionId);
+            const retiring = !!preview && supersedes(preview);
+
+            // The preview lives outside React now, so the two writes no longer
+            // batch on their own: its retirement renders synchronously while
+            // this commit waits for the scheduler, which could paint a frame
+            // with neither. `flushSync` puts both in one render again, and only
+            // on the few events a turn that actually retire something.
+            const commit = () => setSessions((prev) => {
             // Held rather than dropped where the session is not here yet. See
             // `earlyEvents`: its child streams before its row exists.
             if (!prev.some((s) => s.sessionId === agentEvent.sessionId)) {
@@ -1750,6 +1758,14 @@ useEffect(() => {
                 : s,
             );
             });
+            if (retiring) {
+              flushSync(() => {
+                commit();
+                retireStreamingBlock(agentEvent.sessionId);
+              });
+            } else {
+              commit();
+            }
 
             // A held prompt reached the CLI, so the pending row it was drawn as
             // gives way to the real one now in the transcript. Matched by
@@ -1764,41 +1780,6 @@ useEffect(() => {
                 const cur = prev[agentEvent.sessionId];
                 if (!cur?.length) return prev;
                 return { ...prev, [agentEvent.sessionId]: cur.slice(1) };
-              });
-            }
-
-            // The committed event supersedes its preview, and it arrives one
-            // line *before* `block_stop` — so waiting for the stop leaves both
-            // on screen for a frame, the preview shoved down by the event that
-            // just replaced it. Retiring the preview here puts both writes in
-            // one listener call, which React batches into a single render.
-            const streamingBlockRef =
-              (agentEvent.payload.type === "assistant_text" ||
-                agentEvent.payload.type === "reasoning") &&
-              agentEvent.payload.block;
-
-            if (streamingBlockRef) {
-              setStreamingContentBlock((prev) => {
-                const cur = prev[agentEvent.sessionId];
-                // Index alone: the CLI runs one block at a time, but a stale
-                // preview from an earlier message would share indices.
-                if (!cur || cur.index !== streamingBlockRef.index) return prev;
-                return { ...prev, [agentEvent.sessionId]: null };
-              });
-            }
-
-            // `tool_call_started` carries no `BlockRef` — the mapper builds it
-            // from the committed `assistant` message rather than from the stream
-            // — so the preview is retired on the tool_use id the two do share.
-            // Here rather than on `block_stop` for the same reason as above: the
-            // stop lands ~20ms later, and waiting for it draws both rows for a
-            // frame with the preview shoved down by its own replacement.
-            if (agentEvent.payload.type === "tool_call_started") {
-              const { callId } = agentEvent.payload;
-              setStreamingContentBlock((prev) => {
-                const cur = prev[agentEvent.sessionId];
-                if (!cur || cur.callId !== callId) return prev;
-                return { ...prev, [agentEvent.sessionId]: null };
               });
             }
 
@@ -1976,9 +1957,7 @@ useEffect(() => {
                 // The block announces its kind up front — this is the only
                 // frame that knows thinking from text, since thinking deltas
                 // arrive as plain text_delta afterwards.
-                setStreamingContentBlock((prev) => ({
-                  ...prev,
-                  [sessionId]: {
+                startStreamingBlock(sessionId, {
                     index: payload.block.index,
                     text: "",
                     type: payload.blockType.type,
@@ -1988,36 +1967,13 @@ useEffect(() => {
                     // for the committed event that arrives at the end.
                     name: payload.blockType.type === "tool_use" ? payload.blockType.name : null,
                     callId: payload.blockType.type === "tool_use" ? payload.blockType.id : null,
-                  },
-                }));
+                });
             } else if (payload.delta == "text_delta") {
-                setStreamingContentBlock((prev) => {
-                  const cur = prev[sessionId];
-                  if (!cur || cur.index !== payload.block.index) return prev;
-                  return {
-                    ...prev,
-                    // Deltas append; the type stays what block_start declared.
-                    // Stamping "text" here is what used to make streamed
-                    // thinking render as assistant prose until it committed.
-                    [sessionId]: { ...cur, type: cur.type ?? "text", text: cur.text + payload.text },
-                  };
-                });
+                appendStreamingText(sessionId, payload.block.index, payload.text);
             } else if (payload.delta == "input_delta") {
-                setStreamingContentBlock((prev) => {
-                  const cur = prev[sessionId];
-                  if (!cur || cur.index !== payload.block.index) return prev;
-                  return {
-                    ...prev,
-                    [sessionId]: {
-                      ...cur,
-                      text: cur.text + payload.partialJson,
-                    },
-                  };
-                });
-            } else if (payload.delta == "block_stop") {
-                setStreamingContentBlock((prev) => ({ ...prev, [sessionId]: null }));
+                appendStreamingText(sessionId, payload.block.index, payload.partialJson);
             } else {
-                setStreamingContentBlock((prev) => ({ ...prev, [sessionId]: null }));
+                retireStreamingBlock(sessionId);
             }
         }
 
@@ -2637,7 +2593,6 @@ const paneState = (sessionId: string): PaneState => {
   const paneBusy = status === "in_progress";
   return {
     session,
-    streamingBlock: streamingContentBlock[sessionId] ?? null,
     busy: paneBusy,
     working: paneBusy ? workingBySession[sessionId] ?? null : null,
     backgroundTaskCount: tasksBySession[sessionId]?.length ?? 0,
