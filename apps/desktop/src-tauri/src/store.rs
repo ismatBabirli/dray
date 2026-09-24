@@ -179,6 +179,8 @@ pub struct SessionSnapshot {
     #[ts(flatten)]
     pub index_item: SessionIndexItem,
     pub events: Vec<AgentEvent>,
+    /// Where the log's unread older part ends, when `events` is only its tail.
+    pub older_before: Option<u64>,
 }
 
 static INDEX_LOCK: Mutex<()> = Mutex::const_new(());
@@ -1282,15 +1284,164 @@ pub async fn get_session_index_item(session_id: &str) -> Result<Option<SessionIn
 /// `None` means the id isn't in the index. An indexed session with no log yet
 /// is normal — it was written before its process spawned — and yields empty
 /// `events` rather than `None`.
+///
+/// `turns` asks for the newest that many turns alone, read off the end of the
+/// log, with `older_before` saying where the rest begins. Opening a long
+/// session is otherwise the whole log parsed twice — here and by the
+/// webview's `JSON.parse`, the dearer half at ~400ms for a 21MB log — for a
+/// transcript that draws its newest eight turns first anyway.
 #[tauri::command]
-pub async fn get_session_by_id(session_id: &str) -> Result<Option<SessionSnapshot>, Fail> {
+pub async fn get_session_by_id(
+    session_id: &str,
+    turns: Option<u32>,
+) -> Result<Option<SessionSnapshot>, Fail> {
     let Some(index_item) = get_session_index_item(session_id).await? else {
         return Ok(None);
     };
 
-    let events = list_session_events(session_id).await?;
+    let page = match turns {
+        Some(turns) => read_session_page(session_id, None, turns).await?,
+        None => SessionPage {
+            events: list_session_events(session_id).await?,
+            older_before: None,
+        },
+    };
 
-    Ok(Some(SessionSnapshot { index_item, events }))
+    Ok(Some(SessionSnapshot {
+        index_item,
+        events: page.events,
+        older_before: page.older_before,
+    }))
+}
+
+/// The `turns` turns written before byte `before`, for paging a transcript
+/// opened with `get_session_by_id`'s `turns` back to its first prompt.
+#[tauri::command]
+pub async fn get_session_page(
+    session_id: &str,
+    before: u64,
+    turns: u32,
+) -> Result<SessionPage, Fail> {
+    Ok(read_session_page(session_id, Some(before), turns).await?)
+}
+
+/// Events from one stretch of a session's log, and the byte offset the
+/// stretch starts at — `None` once it reaches the top. An offset stays valid
+/// for the life of the file, since the log is only ever appended to.
+#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[ts(export, export_to = "events.ts")]
+#[serde(rename_all = "camelCase")]
+pub struct SessionPage {
+    pub events: Vec<AgentEvent>,
+    pub older_before: Option<u64>,
+}
+
+/// Reads the newest `turns` turns ending at byte `end` (the file's end where
+/// `None`), backwards in doubling chunks, so only the lines returned are ever
+/// parsed as events.
+async fn read_session_page(session_id: &str, end: Option<u64>, turns: u32) -> Result<SessionPage> {
+    let path = get_session_path(session_id).await?;
+    let mut file = match fs::File::open(&path).await {
+        Ok(file) => file,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(SessionPage { events: Vec::new(), older_before: None })
+        }
+        Err(e) => return Err(e).context("could not open session file"),
+    };
+    let len = file.metadata().await?.len();
+
+    read_page(&mut file, end.map_or(len, |end| end.min(len)), turns, 256 * 1024).await
+}
+
+async fn read_page(
+    file: &mut (impl tokio::io::AsyncRead + tokio::io::AsyncSeek + Unpin),
+    end: u64,
+    turns: u32,
+    mut chunk: u64,
+) -> Result<SessionPage> {
+    use std::io::SeekFrom;
+    use tokio::io::{AsyncReadExt, AsyncSeekExt};
+
+    let mut start = end;
+    let mut buf = Vec::new();
+    let cut = loop {
+        let from = start.saturating_sub(chunk);
+        let mut head = vec![0; (start - from) as usize];
+        file.seek(SeekFrom::Start(from)).await?;
+        file.read_exact(&mut head).await?;
+        head.extend_from_slice(&buf);
+        buf = head;
+        start = from;
+        chunk *= 2;
+        if let Some(cut) = turn_cut(&buf, start == 0, turns.max(1)) {
+            break cut;
+        }
+        if start == 0 {
+            break 0;
+        }
+    };
+
+    let events = std::str::from_utf8(&buf[cut..])
+        .context("malformed session file")?
+        .lines()
+        .map(serde_json::from_str::<AgentEvent>)
+        .collect::<Result<Vec<_>, _>>()
+        .context("malformed session file")?;
+    let begins = start + cut as u64;
+
+    Ok(SessionPage { events, older_before: (begins > 0).then_some(begins) })
+}
+
+/// Where in `buf` the `turns`-th newest turn opens, walking lines from the end.
+/// `None` until that many are in hand: the first line is only known whole where
+/// `at_top` says `buf` starts the file.
+fn turn_cut(buf: &[u8], at_top: bool, turns: u32) -> Option<usize> {
+    let mut found = 0;
+    let mut end = buf.len();
+    while end > 0 {
+        let body_end = if buf[end - 1] == b'\n' { end - 1 } else { end };
+        let start = match buf[..body_end].iter().rposition(|&b| b == b'\n') {
+            Some(newline) => newline + 1,
+            None if at_top => 0,
+            None => return None,
+        };
+        if opens_turn(&buf[start..body_end]) {
+            found += 1;
+            if found == turns {
+                return Some(start);
+            }
+        }
+        end = start;
+    }
+    None
+}
+
+/// A main-thread prompt that is not queued — the cut `buildTranscript` makes,
+/// since a queued prompt folds into the turn it was typed into.
+///
+/// The substring test does the work and only a hit is parsed: a quote inside a
+/// JSON string is always escaped, so it can only match the log's own structure.
+fn opens_turn(line: &[u8]) -> bool {
+    #[derive(Deserialize)]
+    struct Line {
+        subagent: Option<serde::de::IgnoredAny>,
+        payload: Payload,
+    }
+    #[derive(Deserialize)]
+    struct Payload {
+        #[serde(rename = "type")]
+        kind: String,
+        #[serde(default)]
+        queued: bool,
+    }
+
+    let Ok(line) = std::str::from_utf8(line) else {
+        return false;
+    };
+    line.contains(r#""type":"user_message""#)
+        && serde_json::from_str::<Line>(line).is_ok_and(|line| {
+            line.subagent.is_none() && line.payload.kind == "user_message" && !line.payload.queued
+        })
 }
 
 /// Replays a session's `.jsonl` log into its full event list. Missing file
@@ -2512,6 +2663,7 @@ mod tests {
         let json = serde_json::to_value(SessionSnapshot {
             index_item: item,
             events: vec![],
+            older_before: None,
         })
         .unwrap();
 
@@ -2555,5 +2707,80 @@ mod tests {
         );
 
         assert_eq!(max_seq(""), None);
+    }
+}
+
+#[cfg(test)]
+mod page_tests {
+    use super::*;
+
+    fn line(seq: u64, subagent: bool, payload: Value) -> String {
+        let mut event = serde_json::json!({
+            "id": format!("e{seq}"), "sessionId": "s", "harness": "claude_code",
+            "seq": seq, "ts": "t", "turnId": null, "subagent": null, "payload": payload,
+        });
+        if subagent {
+            event["subagent"] = serde_json::json!({ "id": "call", "label": null });
+        }
+        format!("{event}\n")
+    }
+
+    fn prompt(seq: u64, queued: bool) -> String {
+        line(seq, false, serde_json::json!({
+            "type": "user_message", "text": "hi \"type\":\"user_message\"", "images": [],
+            "issues": [], "baseline": null, "queued": queued, "from": null, "cwd": null,
+        }))
+    }
+
+    fn text(seq: u64, subagent: bool) -> String {
+        line(seq, subagent, serde_json::json!({ "type": "assistant_text", "text": "x".repeat(40) }))
+    }
+
+    /// A queued prompt and a subagent's prompt cut no turn, matching
+    /// `buildTranscript`; neither does a prompt's text quoting the marker.
+    #[test]
+    fn cuts_where_the_transcript_does() {
+        let lines = [
+            prompt(0, false),
+            text(1, false),
+            prompt(2, true),
+            line(3, true, serde_json::from_str::<Value>(&prompt(3, false)).unwrap()["payload"].clone()),
+            prompt(4, false),
+            text(5, false),
+        ];
+        let buf = lines.concat();
+        let at = |i: usize| lines[..i].iter().map(String::len).sum::<usize>();
+
+        assert_eq!(turn_cut(buf.as_bytes(), true, 1), Some(at(4)));
+        assert_eq!(turn_cut(buf.as_bytes(), true, 2), Some(0));
+        assert_eq!(turn_cut(buf.as_bytes(), true, 3), None);
+        // Not the top of the file, so the first line may be a fragment.
+        assert_eq!(turn_cut(&buf.as_bytes()[1..], false, 2), None);
+    }
+
+    /// Pages walked back from the end, through chunks far smaller than a line,
+    /// put the whole log back together in order and stop at the top.
+    #[tokio::test]
+    async fn pages_back_to_the_first_prompt() {
+        let log: String = (0..5u64).flat_map(|t| [prompt(t * 2, false), text(t * 2 + 1, t == 2)]).collect();
+        let mut file = std::io::Cursor::new(log.clone().into_bytes());
+
+        let mut seqs = Vec::new();
+        let mut end = log.len() as u64;
+        let mut pages = 0;
+        loop {
+            let page = read_page(&mut file, end, 2, 7).await.unwrap();
+            pages += 1;
+            let mut these: Vec<u64> = page.events.iter().map(|e| e.seq).collect();
+            these.extend(seqs);
+            seqs = these;
+            match page.older_before {
+                Some(before) => end = before,
+                None => break,
+            }
+        }
+
+        assert_eq!(pages, 3);
+        assert_eq!(seqs, (0..10).collect::<Vec<_>>());
     }
 }

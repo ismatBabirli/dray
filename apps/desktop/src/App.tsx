@@ -1116,8 +1116,10 @@ function App() {
   useEffect(() => {
     // Waiting on the transcript, not just the id: `sessionTodos` reads an empty
     // event list as `null` while one loads, so seeding before it lands would
-    // record "no list" and then read the real one as news.
-    if (!selectedSession) return;
+    // record "no list" and then read the real one as news. The same for a
+    // transcript still paging its older turns in: the list those carry would
+    // read as a new one arriving.
+    if (!selectedSession || selectedSession.olderBefore != null) return;
     const seen = seenTodosRef.current;
     const previous = seen.get(selectedSession.sessionId);
     seen.set(selectedSession.sessionId, sessionTodos);
@@ -2167,6 +2169,7 @@ function App() {
           // full view was ⌘-clicking it over in the crew, or clicking away to
           // another row and back.
           onSelect={(sessionId) => goToSession(() => void selectAndLeaveCrew(sessionId))}
+          onPrefetch={(sessionId) => void ensureLoaded(sessionId)}
           groups={spaceGroups}
           onDropSession={dropSession}
           splitLearned={splitLearned}

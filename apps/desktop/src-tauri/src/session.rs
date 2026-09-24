@@ -774,6 +774,7 @@ impl SessionManager {
                 snapshot: Some(SessionSnapshot {
                     index_item: item,
                     events,
+                    older_before: None,
                 }),
                 queued: None,
             });
@@ -1263,6 +1264,7 @@ impl SessionManager {
         Ok(SessionSnapshot {
             index_item: item,
             events,
+            older_before: None,
         })
     }
 
