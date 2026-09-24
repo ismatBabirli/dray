@@ -26,12 +26,17 @@ function set(next: boolean) {
 
 try {
   const win = getCurrentWindow();
+  let heard = false;
   void win
-    .onFocusChanged(({ payload }) => set(payload))
+    .onFocusChanged(({ payload }) => {
+      heard = true;
+      set(payload);
+    })
     .catch(useDomEvents);
   // The document can report no focus while the window already has it, and no
-  // change event would ever correct that; the window's own answer does.
-  void win.isFocused().then(set, () => undefined);
+  // change event would ever correct that; the window's own answer does —
+  // unless an event landed first, which is newer than this answer.
+  void win.isFocused().then((now) => heard || set(now), () => undefined);
 } catch {
   // `getCurrentWindow` reads a global the plain browser doesn't have, so this
   // throws rather than rejecting under `pnpm dev`.
