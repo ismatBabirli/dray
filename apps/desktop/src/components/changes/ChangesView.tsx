@@ -43,13 +43,19 @@ export default function ChangesView({
   cwd,
   active,
   revision,
+  writeRevision,
+  busy,
 }: {
   cwd: string;
   /// False while another view is showing. The component stays mounted so its
   /// selection and its rendered diffs survive, but a hidden view must not keep
   /// snapshotting the working tree on every event.
   active: boolean;
+  /// Moves at the end of a turn. Re-reads HEAD and the commit lists.
   revision: string;
+  /// Moves as tools finish, too. Re-reads the uncommitted diff.
+  writeRevision: string;
+  busy: boolean;
 }) {
   // `null` is "the reader never picked", the rule `panelTab` reads by: a hand
   // pick wins from there on, and until there is one the derived default stands.
@@ -81,7 +87,7 @@ export default function ChangesView({
   // The uncommitted range is HEAD's tree against the working tree as it stands,
   // which `changes_since` snapshots to answer. A commit moves HEAD, so the key
   // rolls onto the new baseline on its own — nothing has to invalidate a cache.
-  const working = useChanges(cwd, head.tree, null, revision, active);
+  const working = useChanges(cwd, head.tree, null, writeRevision, active, busy);
   const branchLog = useCommitLog(cwd, revision, active, "log_branch_commits");
 
   const workingFiles = working.changes?.files ?? NO_FILES;
@@ -134,6 +140,7 @@ export default function ChangesView({
     openCommit?.sha ?? null,
     "",
     active && !!openCommit,
+    false,
   );
 
   const commitFiles = commitChanges.changes?.files ?? NO_FILES;

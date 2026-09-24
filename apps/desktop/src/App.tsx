@@ -115,7 +115,7 @@ import { issueTag, rememberIssueTitle, setIssueOpener } from "@/lib/issue";
 import { authFailedTurn } from "@/lib/auth";
 import { basename } from "@/lib/format";
 import { focusComposer, focusComposerEnd } from "@/lib/composerFocus";
-import { changeRange, turnChangedTree } from "@/lib/changes";
+import { changeRange, lastToolResult, turnChangedTree } from "@/lib/changes";
 import { usePlan } from "@/lib/plan";
 import { currentTodos, startsNewList, type Todo } from "@/lib/todos";
 import { prBadgeCount, sessionBranch } from "@/lib/pr";
@@ -1278,12 +1278,14 @@ function App() {
   // session's: switching from a running session to an idle one drops it without
   // any turn having ended.
   const lastTurn = useRef({ sessionId: selectedSessionId, busy });
+  const [turnsEnded, setTurnsEnded] = useState(0);
   useEffect(() => {
     const prev = lastTurn.current;
     lastTurn.current = { sessionId: selectedSessionId, busy };
     if (prev.sessionId !== selectedSessionId || !prev.busy || busy) return;
     pullRequests.refresh();
     prMarks.refresh();
+    setTurnsEnded((n) => n + 1);
   }, [selectedSessionId, busy, pullRequests.refresh, prMarks.refresh]);
 
   // A doc arriving on screen is re-read, because the watcher behind `DocsPanel`
@@ -1336,10 +1338,17 @@ function App() {
     togglePanel();
   };
 
-  // What tells the panel to re-read — a cache key, not a count. The event total
-  // moves as a turn's writes land, and `busy` covers the turn ending, where the
-  // final file write and the closing event can arrive in either order.
-  const revision = `${selectedSession?.events.length ?? 0}:${busy}`;
+  // What tells the git-backed views to re-read — cache keys, not counts. The
+  // tree, the commit logs and the file list move at a turn's end, since what an
+  // agent commits or creates mid-turn can wait for it; a working-tree diff also
+  // moves as each tool finishes, which is the only kind of event that writes.
+  // Keyed on every event, a 20-tool turn cost ~200 `git` spawns per view.
+  const turnRevision = String(turnsEnded);
+  const lastTool = useMemo(
+    () => lastToolResult(selectedSession?.events ?? []),
+    [selectedSession?.events],
+  );
+  const writeRevision = `${lastTool}:${turnsEnded}`;
 
   // Both panel bodies are presentational, and their hooks live here for the
   // same reason: the tab row needs what they know before either tab is opened —
@@ -1349,8 +1358,9 @@ function App() {
     selectedSession?.cwd ?? "",
     baseline,
     head,
-    revision,
+    writeRevision,
     panelShown && activeTab === "changes",
+    busy,
   );
 
   // One button, so the tab decides what it re-reads. Subagents has nothing to
@@ -2614,8 +2624,10 @@ function App() {
           <ChangesView
             key={selectedSession.sessionId}
             cwd={selectedSession.cwd}
-            active={viewTab === "changes"}
-            revision={revision}
+            active={!issuesOpen && viewTab === "changes"}
+            revision={turnRevision}
+            writeRevision={writeRevision}
+            busy={busy}
           />
         </TabBody>
       )}
@@ -2641,7 +2653,7 @@ function App() {
             sessionId={selectedSession.sessionId}
             cwd={selectedSession.cwd}
             active={!issuesOpen && viewTab === "files"}
-            revision={revision}
+            revision={turnRevision}
           />
         </TabBody>
       )}
