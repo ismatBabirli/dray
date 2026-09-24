@@ -44,7 +44,7 @@ describe("streamingCodePlugin", () => {
 
     vi.advanceTimersByTime(200);
     expect(calls).toEqual([code]);
-    expect(colours(delivered[0])).toEqual(["red", "red", "red"]);
+    expect(colours(delivered.at(-1)!)).toEqual(["red", "red", "red"]);
     expect(colours(ask(streaming, code))).toEqual(["red", "red", "red"]);
   });
 
@@ -58,5 +58,22 @@ describe("streamingCodePlugin", () => {
 
     // `b` may have been a partial line, so only `a` is final.
     expect(colours(ask(streaming, "a\nbc\nd"))).toEqual(["red", "inherit", "inherit"]);
+  });
+
+  it("still answers a fence whose text a later fence starts with", () => {
+    vi.useFakeTimers();
+    const { plugin, calls } = fakeBase();
+    const streaming = streamingCodePlugin(plugin);
+    const first: Result[] = [];
+    const second: Result[] = [];
+
+    ask(streaming, "npm i", (r) => first.push(r));
+    ask(streaming, "npm i\nnpm run dev", (r) => second.push(r));
+    vi.advanceTimersByTime(200);
+
+    expect(calls).toEqual(["npm i\nnpm run dev"]);
+    expect(first[0].tokens.map((line) => line[0].content)).toEqual(["npm i"]);
+    expect(colours(first[0])).toEqual(["red"]);
+    expect(colours(second[0])).toEqual(["red", "red"]);
   });
 });
