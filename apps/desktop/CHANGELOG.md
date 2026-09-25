@@ -5,6 +5,31 @@ The release job reads the matching section into the GitHub release notes and the
 updater carries it, so this file is what a release says about itself — not a
 second description of it. GitHub's generated commit list is appended below it.
 
+## 0.24.0
+
+### Added
+
+- **Agents can record the browser.** `dray browser record start` and
+  `record stop` save an MP4 that plays inline in chat, so checking a
+  feature is watching a video. Typing, hover and animation are captured.
+  Needs `dray` 0.6.0, which updates itself.
+- **Device sizes in the browser.** Pick a device from the icon's menu,
+  set a responsive size and save it, rotate any device. MacBook Pro 14
+  and 16, 1080p and 4K are new presets.
+- **⌘R reloads the browser page and ⌘T opens a new tab.**
+- **The Files view plays videos** (mp4, m4v, mov, webm).
+- **Drag to reorder projects and spaces** in Settings → Spaces. The
+  sidebar and the composer's project picker now keep that order.
+
+### Fixed
+
+- **fx lists the newest Codex and grok models**, read from fx itself.
+- **Browser tabs show their favicons** again.
+- **`/compact` on a resumed Claude Code session stays busy** until it
+  actually finishes.
+- **A file the Files view can't show says why**, instead of "Not text".
+- **Answering a card in the crew column keeps you on the parent session.**
+
 ## 0.23.7
 
 ### Changed
