@@ -34,6 +34,7 @@ import {
   closeTab,
   describePick,
   isRecording,
+  navigate,
   openInBrowser,
   setPendingTab,
   setPickHandler,
@@ -2006,6 +2007,10 @@ function App() {
   // Safe to take despite being the webview's reload, because `useHotkey` claims
   // every chord it matches — and the app has no Reload menu item, which on
   // macOS would swallow the key before the webview ever saw it.
+  //
+  // The browser reloads its page. A press inside the page never gets here —
+  // Chromium has the key, and cef.rs reloads there.
+  const browserShown = fullBrowserOpen || (panelShown && activeTab === "browser");
   useHotkey("panel.refresh", () => {
     // "Re-read what I am looking at", the same rule the session case follows:
     // the pane wins where one is open, and the list has it otherwise.
@@ -2013,7 +2018,20 @@ function App() {
       if (pickedIssue) return pickedIssueData.refresh();
       return issuesRefreshRef.current?.();
     }
+    if (browserShown && selectedSessionId) {
+      if (!pendingBrowserTab && browserTabs?.some((tab) => tab.active)) {
+        void navigate(selectedSessionId, "reload");
+      }
+      return;
+    }
     if (panelShown) panelRefresh?.onRefresh();
+  });
+  // ⌘T, the chord every browser gives a new tab. Bound only while the browser
+  // is on screen, so it stays free everywhere else.
+  useHotkey("browser.newTab", () => {
+    if (selectedSessionId && !isRecording(selectedSessionId)) setPendingTab(selectedSessionId, true);
+  }, {
+    enabled: browserShown && !!selectedSessionId,
   });
   // ⌘S writes the doc on screen. Unregistered rather than a no-op off that tab:
   // `useHotkey` claims every chord it matches, and ⌘S is the browser's own save
