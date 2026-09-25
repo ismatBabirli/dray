@@ -388,8 +388,8 @@ function splitPinned(
 /// inside it. Ordering on the newest session read well for one screenshot and
 /// badly in use: every reply to any session lifted its whole project over the
 /// others, so headings the eye had learned the position of moved while a turn
-/// was running. The project list only reorders when a project is *selected*,
-/// which is the reader's own act. A project no longer attached still has
+/// was running. The project list only reorders when the reader moves a project
+/// in Settings. A project no longer attached still has
 /// sessions to draw, so it keeps first-appearance order after the attached
 /// ones.
 ///
@@ -853,6 +853,10 @@ function DevBadge() {
   );
 }
 
+/// The sidebar's floor, and the width the crew counts on it holding when it
+/// judges whether there is room to stand beside the chat.
+export const SIDEBAR_MIN = 240;
+
 export default function Sidebar({
   items,
   search,
@@ -897,13 +901,13 @@ export default function Sidebar({
   onOpenSettings,
 }: SidebarProps) {
   const fullscreen = useFullscreen();
-  // 240 is `w-60`, the width this opened at before it could be dragged — and
+  // `SIDEBAR_MIN` is `w-60`, the width this opened at before it could be dragged — and
   // its floor as well as its default: narrower, the rows' timestamps and marks
   // start eating the title they sit beside, so this only ever widens.
   const { style, handle } = useResizable({
     storageKey: "ade.sidebarWidth",
-    initial: 240,
-    min: 240,
+    initial: SIDEBAR_MIN,
+    min: SIDEBAR_MIN,
     edge: "right",
     label: "Resize the sidebar",
     // Dropped while collapsed, which is not an unmount: this component returns

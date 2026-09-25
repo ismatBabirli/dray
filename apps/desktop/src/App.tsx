@@ -33,6 +33,7 @@ import {
   clearOpenError,
   closeTab,
   describePick,
+  isRecording,
   openInBrowser,
   setPendingTab,
   setPickHandler,
@@ -51,20 +52,27 @@ import { handoffActions } from "@/lib/handoff";
 import { prTabVisible, usePullRequest } from "@/hooks/usePullRequest";
 import RightPanel, {
   MountOnce,
+  PANEL_MIN,
   PanelToggle,
   TabBody,
   tabOrder,
   type PanelTab,
 } from "@/components/RightPanel";
-import { useChatColumnFloor } from "@/components/ResizeHandle";
+import {
+  CHAT_MIN,
+  useChatColumnFloor,
+  usePaneWidth,
+  useViewportWidth,
+} from "@/components/ResizeHandle";
 import Sidebar, {
+  SIDEBAR_MIN,
   SEARCH_INPUT_ID,
   SidebarToggle,
   filterSessions,
   sessionUnits,
   sortSessions,
 } from "@/components/Sidebar";
-import Crew, { CREW_W } from "@/components/Crew";
+import Crew, { CREW_W, CrewHint } from "@/components/Crew";
 import SplitView, { DragGhost, DropZone, type PaneChat } from "@/components/SplitView";
 import { DROP_ATTR, useSessionDrag, type DropTarget } from "@/lib/dragSession";
 import {
@@ -198,6 +206,7 @@ function App() {
     setProjectLinearWorkspace,
     setProjectLinearFilter,
     reloadProjects,
+    moveProject,
     retagSpace,
     canAnnounce,
     handleSelectBranch,
@@ -721,8 +730,24 @@ function App() {
   // leaving on the one gesture that is supposed to stay inside it.
   const crewExists = crew.length > 0 && !groupOf(spaceGroups, crewAnchorId);
   const crewAvailable = crewExists && !issuesOpen && viewTab === "chat";
+  // **Beside the chat only where it fits, judged on minimums alone.** The
+  // crew never gives width back, so on a narrow window it crushed the sidebar
+  // to a sliver. Measured off the sidebar's *drawn* width this would chase
+  // itself — the crew's floor is what clamps that width — so it reads the
+  // floor. Where it does not fit it starts hidden and ⌘⇧C stacks it under the
+  // transcript instead; an explicit toggle outranks the default either way.
+  // The panel counts as the crew would leave it — under the anchor's key, see
+  // `panelKey` below — since reading `panelOpen` itself would loop back here.
+  // The sidebar counts at its drawn width, since the panel yields to it and a
+  // widened sidebar would otherwise leave the panel a sliver; floored at its
+  // minimum, because narrowing the window clamps that width under it.
+  const crewPanelOpen = !!(crewAnchorId && panelOpens[crewAnchorId]) && !issuesOpen;
+  const sidebarW = Math.max(SIDEBAR_MIN, usePaneWidth("sidebar"));
+  const crewBeside =
+    useViewportWidth() >=
+    CHAT_MIN + CREW_W + (collapsed ? 0 : sidebarW) + (crewPanelOpen ? PANEL_MIN : 0);
   const [crewHiddenBy, setCrewHiddenBy] = useState<Record<string, boolean>>({});
-  const crewHidden = !!(crewAnchorId && crewHiddenBy[crewAnchorId]);
+  const crewHidden = !!crewAnchorId && (crewHiddenBy[crewAnchorId] ?? !crewBeside);
   const crewUp = crewExists && !crewHidden;
   const crewDrawn = crewAvailable && !crewHidden;
 
@@ -790,7 +815,7 @@ function App() {
   // What the main column is actually showing. With a crew up that is the
   // anchor, which `crewExists` has already established is in no group.
   const mainGroup = crewUp ? null : activeGroup;
-  useChatColumnFloor(!mainGroup, crewDrawn ? CREW_W : 0);
+  useChatColumnFloor(!mainGroup, crewDrawn && crewBeside ? CREW_W : 0);
 
   const toggleCrew = () => {
     if (crewAnchorId) setCrewHiddenBy((prev) => ({ ...prev, [crewAnchorId]: !crewHidden }));
@@ -1987,7 +2012,7 @@ function App() {
   // arbitration — bar the last arm, which is the reader on Chat with the
   // browser beside it in the panel and no grid to close a pane out of.
   const closeBrowserTab = () => {
-    if (!selectedSessionId) return;
+    if (!selectedSessionId || isRecording(selectedSessionId)) return;
     // The pending tab has no browser behind it, so it is dropped rather than
     // closed — and it is what the reader is looking at while it is up.
     if (pendingBrowserTab) return setPendingTab(selectedSessionId, false);
@@ -2204,9 +2229,11 @@ function App() {
       // about a repository rather than about a conversation, and a split is
       // already several conversations side by side, where a crew beside one
       // pane of it would be a third arrangement of the same column.
+      crewStacked={!crewBeside}
       crew={
         crewDrawn ? (
           <Crew
+            stacked={!crewBeside}
             rows={crew}
             open={crewOpen}
             selectedId={selectedSessionId}
@@ -2219,6 +2246,8 @@ function App() {
             active={!issuesOpen && viewTab === "chat"}
             chat={paneChat}
           />
+        ) : crewAvailable && !crewBeside ? (
+          <CrewHint />
         ) : undefined
       }
       sidebar={
@@ -2813,6 +2842,7 @@ function App() {
       onRenameSpace={renameSpace}
       onRemoveSpace={removeSpace}
       onMoveSpace={moveSpaceBy}
+      onMoveProject={moveProject}
       autoHideSidebar={autoHideSidebar}
       onAutoHideSidebarChange={setAutoHideSidebar}
       integrations={integrations}
