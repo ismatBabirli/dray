@@ -716,7 +716,7 @@ export type FileBody = { "kind": "text", text: string, } | { "kind": "image",
  * the attachments directory and must stay scoped, so a file anywhere
  * else has no URL the webview can fetch.
  */
-dataUrl: string, };
+dataUrl: string, } | { "kind": "video", path: string, };
 
 export type FileChange = "add" | "update" | "delete";
 
@@ -1424,9 +1424,9 @@ space: string | null,
  */
 linearWorkspace?: string, 
 /**
- * Doubles as the sort key and the "which project was last open" answer:
- * selecting a project *is* what makes it most recent, so a separate
- * `last_selected` pointer would be a second place to keep the same fact.
+ * Which project launch reopens, and nothing else. It was the sort key too,
+ * which moved every picker's rows on each pick; order is now the file's
+ * own, set by the reader in Settings.
  */
 lastSelected: string, };
 
