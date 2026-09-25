@@ -14,9 +14,15 @@ File give Claude Code (claude.ai/code) guidance for work with code in this repo.
 
 **Status = open or closed, and the PR is what close it.** `Fixes #123` in the PR body, which GitHub read on merge. Body = the only slot: worktree branch is `worktree-<name>` minted by the CLI and carry no id, unlike the tracker this replaced. **Exception: work pushed straight to `main`.** No PR = nothing to read, so `gh issue close` yourself.
 
-**PR nobody need review carry `no-review` label.** Copy tweak, doc, prompt wording, config. Add at open (`gh pr create --label no-review`), since review fire on open. Anything touching behaviour = no label.
+**PR nobody need review carry `no-review` label and get no reviewer.** Copy tweak, doc, prompt wording, config. Anything touching behaviour = reviewed.
 
-**Default road = work → PR → stop.** Greptile review every PR on open, so spawn no reviewer session. Open ready, not draft — Greptile skip draft, so a draft sit unreviewed till somebody ping `@greptile review` by hand.
+**Default road = work → test → ponytail review → draft PR → Codex review.** No Greptile any more (credits gone).
+
+1. Do the work, then test it for real — run it, not just compile it.
+2. Run the `ponytail:ponytail-review` skill on the diff and apply what holds up. Changed anything? Test again — a cut that looked redundant is the easiest way to break what step 1 proved.
+3. Commit, push, open the PR as **draft**.
+4. Spawn one Codex reviewer on the branch: `dray new --harness codex --model gpt-6-sol --effort medium --from <this session id> "<brief>"`. Brief is self-contained — PR link, what changed and why, where bugs could hide — and ends by telling it to `dray send` its findings back to this session with file:line and a concrete failure each.
+5. Fix what is real, test, push, `dray send` the reviewer to look again. **Five rounds max**, then report what is left. Committing and pushing inside this loop needs no fresh ask.
 
 **One repo, `monorepo-labs/dray`. Assign every issue to `yogesharc`.** `gh issue create --repo monorepo-labs/dray --assignee yogesharc`.
 
@@ -712,8 +718,10 @@ Order is load-bearing at both ends: unlock before remove because the lock refuse
 
 **`dray browser record start` / `record stop [name]` films the active tab to an MP4, so the reader verifies by watching** ([recording.rs](apps/desktop/src-tauri/src/recording.rs), `RECORDING` in [automation.rs](apps/desktop/src-tauri/src/cef/automation.rs)). No new crate and no ffmpeg:
 
-- **Frames are `Page.startScreencast` JPEGs, muxed by hand into a Photo-JPEG `.mov`**, then `/usr/bin/avconvert` turns that into H.264. Gaps are capped at 1s in `stts`, so an agent thinking for a minute costs a second of video. **Apple's decoder wants 4:2:0 JPEGs**; a 4:4:4 frame answers "Cannot Decode".
-- **The recorded view is parked off-screen at the recording size, never hidden** (`parked`, `apply_layout`): a hidden `NSView` paints nothing and a screencast only sends what was painted. **`disable-backgrounding-occluded-windows` is load-bearing** for the same reason, or a covered Dray window records zero frames.
+- **Frames are `Page.captureScreenshot` JPEGs asked for on a 33ms clock (`film`), muxed by hand into a Photo-JPEG `.mov`**, then `/usr/bin/avconvert` turns that into H.264. **Not `Page.startScreencast`**: this CEF build sends a screencast frame only when scroll offset or size changes, so typing, hover and animation never reached the video (measured: one frame in 4s with rAF at 62/s). A capture forces a fresh frame; captures run back to back, so 2x lands near 20fps, not 30. A frame identical to the last is dropped and gaps are capped at 1s in `stts`, so an agent thinking for a minute costs a second of video — unless a caret is blinking. **Apple's decoder wants 4:2:0 JPEGs**; a 4:4:4 frame answers "Cannot Decode".
+- **Always filmed at 2x device pixels** (`RECORD_SCALE`), with no flag: 1x blurs text, and avconvert's preset holds the bitrate at ~1.8Mbps whatever the resolution, so 2x cost 5% more file in the test. Layout stays at the viewport's CSS size, so an iPhone SE recording is a phone at 750×1334, not a tablet.
+- **The recorded view is parked off-screen at the recording size, never hidden** (`parked`, `apply_layout`): a hidden `NSView` runs no `requestAnimationFrame`, so a page animated from script films frozen. A covered Dray window still throttles rAF to ~12/s despite `disable-backgrounding-occluded-windows`, so script animation films choppier behind another window.
+- **`type` and `fill` key text in a character at a time while the tab is recorded** (`TYPE_BUDGET`, ≤70ms a character, 4s at most), since one `Input.insertText` films as a paste. Unrecorded, it stays one call. **The page blurs between verbs**: `apply_layout` takes first responder off the parked view, or the reader's own keystrokes would land in the recorded page — so a focus ring drops out for the gap between two verbs.
 - **One recording per session, any number across sessions**, keyed by session. Screenshots still work mid-recording: the recorded tab is paused for the shot rather than refused.
 - **The pane holds the shutter for the whole recording and draws `RecordingNotice` over the still**, since the page is laid out at the recording's size, not the pane's. The reader cannot change tabs meanwhile, because the agent's next verb goes to whichever tab is active. The agent's own tab verbs stay open, since a flow may cross tabs.
 - Files land in `~/.dray/browser{,-dev}/recordings/<session>/`, deleted with the session, and the asset scope covers them. A recording path in the agent's reply renders as an inline `VideoPlayer`.
