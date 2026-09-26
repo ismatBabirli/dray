@@ -2443,6 +2443,7 @@ function App() {
             tabs={tabs}
             refresh={panelRefresh}
             cwd={shownSession.cwd}
+            widthKey={shownSession.sessionId}
           >
             <TabBody active={activeTab === "changes"}>
               <MountOnce when={panelShown && activeTab === "changes"}>
