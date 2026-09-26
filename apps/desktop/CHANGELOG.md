@@ -5,6 +5,14 @@ The release job reads the matching section into the GitHub release notes and the
 updater carries it, so this file is what a release says about itself — not a
 second description of it. GitHub's generated commit list is appended below it.
 
+## 0.25.1
+
+### Fixed
+
+- **The browser follows its pane when the side panel is on the left.**
+  Collapsing or resizing the sidebar left the page drawn where the
+  pane used to be.
+
 ## 0.25.0
 
 ### Added
