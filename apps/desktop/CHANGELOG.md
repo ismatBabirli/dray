@@ -5,6 +5,37 @@ The release job reads the matching section into the GitHub release notes and the
 updater carries it, so this file is what a release says about itself — not a
 second description of it. GitHub's generated commit list is appended below it.
 
+## 0.25.0
+
+### Added
+
+- **Hidden sessions for reviews.** A session started with `dray new
+  --hidden` stays out of the sidebar and shows only in the crew beside
+  the session that started it. Right-click it there to show it in the
+  sidebar. Agents hide review sessions by default. Needs `dray` 0.7.0,
+  which updates itself.
+- **The side panel can sit on the left.** Settings › Appearance ›
+  Panel side.
+- **The side panel remembers its width per session.**
+- **Drag to reorder tabs** in the Browser and Files views.
+- **Grok Build takes a message mid-turn** into the turn it is running,
+  instead of holding it until the turn ends.
+
+### Changed
+
+- **On a 14" screen with the side panel open, the crew sits under the
+  chat** instead of squeezing in beside it.
+
+### Fixed
+
+- **Leaving the Browser view gives the side panel back** if arriving
+  there closed it.
+- **A session opened from a notice moves the sidebar's project filter**
+  so its row is visible.
+- **Merging a PR keeps the panel on the PR tab.**
+- **Tooltips no longer stick** after closing the project or permission
+  menu.
+
 ## 0.24.0
 
 ### Added
