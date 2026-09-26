@@ -51,6 +51,7 @@ Options:
 | `--from <session\|ref>` | Start the worktree on existing work instead of `origin/<default>`. |
 | `--issue <ID>` | The issue this work is against, like `DRA-53`. Repeat for several. |
 | `--fast` | Run at the agent's faster tier, which spends more usage. Inherits this session's when the harness is the same — see *Fast mode*. |
+| `--hidden` | Keep the session out of the sidebar — see *Hidden sessions*. |
 
 ### Fast mode
 
@@ -205,6 +206,24 @@ Three things to know:
 The line `dray new` prints says what it resolved: `Started "…" in worktree
 calm-owl, based on worktree-brisk-jade`. Worth reading back when you passed a
 session id, since the branch that id resolved to is something only the app knew.
+
+### Hidden sessions
+
+```bash
+dray new --hidden --from <session-id> "Review the work on this branch and send your findings back to <session-id>"
+```
+
+`--hidden` keeps the session out of the sidebar; it shows only in the crew
+beside this session.
+
+**Hide review sessions by default.** A review session checks work already done
+— a code or PR review, a second opinion on a diff — and sends its findings back
+to you rather than making changes of its own. Follow the user where they have
+said otherwise, in this conversation, `CLAUDE.md`, `AGENTS.md` or memory. Where
+nothing says, pass `--hidden` and tell the user in one line that the reviewer is
+in the crew beside this session, and that they can have you record a preference
+in `CLAUDE.md`, `AGENTS.md` or memory. Every other session stays in the sidebar
+unless the user asks.
 
 ## Listing sessions
 

@@ -140,3 +140,38 @@ export function crewAnchor(
 export function crewSeen(rows: CrewRow[], drawn: boolean): string[] {
   return drawn ? rows.map((r) => r.item.sessionId) : [];
 }
+
+/// The sidebar's list: everything but a hidden session whose parent is here to
+/// draw it in a crew. A hidden one whose parent is missing stays listed, since
+/// out of the sidebar it would be reachable from nowhere. Settled ones too:
+/// unsettling the parent brings them back to its crew.
+export function inSidebar(items: SessionIndexItem[]): SessionIndexItem[] {
+  const ids = new Set(items.map((i) => i.sessionId));
+  return items.filter((i) => !(i.hidden && i.parentSessionId && ids.has(i.parentSessionId)));
+}
+
+/// `asking` with every hidden asker's ancestors added, for the sidebar. A hidden
+/// session has no row there, so a card it raised would otherwise leave its
+/// parent looking idle and the session blocked with nobody told.
+export function withHiddenAsks(
+  items: SessionIndexItem[],
+  asking: ReadonlySet<string>,
+): Set<string> {
+  const byId = new Map(items.map((i) => [i.sessionId, i]));
+  const out = new Set(asking);
+  for (const id of asking) {
+    let at = byId.get(id);
+    // `out` doubles as the cycle guard: a parent already marked stops the walk.
+    while (at?.hidden && at.parentSessionId && !out.has(at.parentSessionId)) {
+      out.add(at.parentSessionId);
+      at = byId.get(at.parentSessionId);
+    }
+  }
+  return out;
+}
+
+/// The hidden sessions `parentId` started directly. Settle, delete and worktree
+/// removal carry on to these, since nothing else on screen can reach them.
+export function hiddenChildren(items: SessionIndexItem[], parentId: string): SessionIndexItem[] {
+  return items.filter((i) => i.hidden && i.parentSessionId === parentId && i.sessionId !== parentId);
+}

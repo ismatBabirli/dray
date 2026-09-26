@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useSyncExternalStore } from "react";
 
+import { readLocalStorage } from "@/hooks/useLocalStorage";
 import { channel } from "@/lib/channel";
 import type { ChromiumStatus } from "@/types/events";
 import { zoomLevel } from "@/lib/zoom";
@@ -211,6 +212,23 @@ export function activateTab(sessionId: string, id: number) {
   return invoke("browser_activate", { sessionId, id });
 }
 
+/// Moves a tab to place `to` in its session's strip.
+///
+/// The reply's *order* is applied before this resolves, since the strip drops
+/// its drawn order then and the `browser_tabs` event saying the same thing can
+/// land after the reply. Order alone, over the tabs already held: which tabs
+/// exist is the events' to say, since the reply may be older or newer than the
+/// last one to land. A held tab the reply lacks goes last until one does.
+export function moveTab(sessionId: string, id: number, to: number) {
+  return invoke<BrowserTab[]>("browser_move", { sessionId, id, to }).then((reply) => {
+    const place = new Map(reply.map((t, i) => [t.id, i]));
+    const held = tabsBySession.get(sessionId) ?? [];
+    const rank = (t: BrowserTab) => place.get(t.id) ?? reply.length;
+    tabsBySession.set(sessionId, [...held].sort((a, b) => rank(a) - rank(b)));
+    notify();
+  });
+}
+
 export function closeTab(sessionId: string, id: number) {
   return invoke("browser_close", { sessionId, id });
 }
@@ -338,9 +356,14 @@ export function listLocalServers(sessionId: string) {
 
 // --- Device viewport ---------------------------------------------------------
 
+/// `preset` is a device id, a built-in one or a saved one.
 export type Viewport = { preset: string; width: number; height: number };
 
-export const VIEWPORT_PRESETS: readonly { id: string; label: string; width: number; height: number }[] = [
+export type Device = { id: string; label: string; width: number; height: number };
+
+/// The MacBook Pro sizes are macOS's default scaled resolution, the one a
+/// page actually lays out at, not the panel's pixel count.
+export const VIEWPORT_PRESETS: readonly Device[] = [
   { id: "iphone-se", label: "iPhone SE", width: 375, height: 667 },
   { id: "iphone-15", label: "iPhone 15", width: 393, height: 852 },
   { id: "pixel-8", label: "Pixel 8", width: 412, height: 915 },
@@ -348,7 +371,45 @@ export const VIEWPORT_PRESETS: readonly { id: string; label: string; width: numb
   { id: "ipad-air", label: "iPad Air", width: 820, height: 1180 },
   { id: "laptop", label: "Laptop", width: 1280, height: 800 },
   { id: "desktop", label: "Desktop", width: 1440, height: 900 },
+  { id: "macbook-pro-14", label: "MacBook Pro 14", width: 1512, height: 982 },
+  { id: "macbook-pro-16", label: "MacBook Pro 16", width: 1728, height: 1117 },
+  { id: "1080p", label: "1080p", width: 1920, height: 1080 },
+  { id: "4k", label: "4K", width: 3840, height: 2160 },
 ];
+
+/// The reader's saved sizes. A module store rather than `useLocalStorage`,
+/// since the panel and the full view each mount the pane and a per-component
+/// copy would miss a size saved in the other.
+const DEVICES_KEY = "ade.browserDevices";
+let customDevices: Device[] = readLocalStorage<Device[]>(DEVICES_KEY, []);
+
+function storeDevices(next: Device[]) {
+  customDevices = next;
+  localStorage.setItem(DEVICES_KEY, JSON.stringify(next));
+  notify();
+}
+
+export function useCustomDevices(): Device[] {
+  return useSyncExternalStore(subscribe, () => customDevices);
+}
+
+/// A blank name saves under its size.
+export function saveCustomDevice(name: string, width: number, height: number): Device {
+  const device = {
+    id: `custom-${crypto.randomUUID()}`,
+    label: name.trim() || `${width} × ${height}`,
+    width,
+    height,
+  };
+  storeDevices([...customDevices, device]);
+  return device;
+}
+
+export function removeCustomDevice(id: string) {
+  // Another session may still be on it, which would leave a size the menu cannot name.
+  for (const [session, v] of viewportBySession) if (v.preset === id) viewportBySession.delete(session);
+  storeDevices(customDevices.filter((d) => d.id !== id));
+}
 
 const viewportBySession = new Map<string, Viewport>();
 
@@ -356,10 +417,26 @@ export function useViewport(sessionId: string): Viewport | null {
   return useSyncExternalStore(subscribe, () => viewportBySession.get(sessionId) ?? null);
 }
 
-/// `null` is the responsive default: the page fills the pane.
+/// `null` is the default: the page fills the pane. Any pick leaves
+/// responsive mode, which is a pick of its own.
 export function setViewport(sessionId: string, viewport: Viewport | null) {
   if (viewport) viewportBySession.set(sessionId, viewport);
   else viewportBySession.delete(sessionId);
+  responsiveSessions.delete(sessionId);
+  notify();
+}
+
+/// Responsive mode: the page fills the pane as it does by default, with the
+/// bar up showing its live size so it can be saved as a device.
+const responsiveSessions = new Set<string>();
+
+export function useResponsive(sessionId: string): boolean {
+  return useSyncExternalStore(subscribe, () => responsiveSessions.has(sessionId));
+}
+
+export function setResponsive(sessionId: string) {
+  viewportBySession.delete(sessionId);
+  responsiveSessions.add(sessionId);
   notify();
 }
 

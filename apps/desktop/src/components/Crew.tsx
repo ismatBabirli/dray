@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Blobatar } from "@blobatar/react";
 import { idle, surprised } from "blobatar/expression";
-import { CircleDashed, MousePointerClick } from "lucide-react";
+import { CircleDashed, Eye, MousePointerClick } from "lucide-react";
 
 import Chat from "@/components/Chat";
 import { Button } from "@/components/ui/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import PermissionRequest from "@/components/chat/PermissionRequest";
 import QuestionRequest from "@/components/chat/QuestionRequest";
 import Orb from "@/components/Orb";
@@ -32,6 +38,8 @@ import type { AgentEvent, PrMark } from "@/types/events";
 /// sessions with somewhere to answer them, beside the conversation that started
 /// them.
 export const CREW_W = 320;
+/** Widest window on which an open right panel stacks the crew: a 14" MacBook. */
+export const CREW_STACK_WITH_PANEL_W = 1512;
 
 type CrewProps = {
   rows: CrewRow[];
@@ -51,6 +59,8 @@ type CrewProps = {
   /// one. The only way *out* of the arrangement from inside it — everything
   /// else here keeps the conversation that started these on the left.
   onOpenInMain: (sessionId: string) => void;
+  /// Right-click on a hidden row: list it in the sidebar too.
+  onShowInSidebar: (sessionId: string) => void;
   /// A draft is standing in the selected session, so every other transcript
   /// gives way. The split grid's own rule, read off the same store, and the
   /// *emptiness* alone — subscribing to the text would rerender every mounted
@@ -94,12 +104,13 @@ export default function Crew({
   onToggle,
   onFocus,
   onOpenInMain,
+  onShowInSidebar,
   composing,
   active,
   chat,
   stacked = false,
 }: CrewProps) {
-  return (
+  const list = (
     // **An edge, not a divider, and the ramp is what makes it one.** A flat
     // border is what a split draws between two places to work, and this is one
     // place with a list beside it — which is why there was none here at all for
@@ -124,9 +135,14 @@ export default function Crew({
     // end of the list rather than a status bar.
     <div
       className={cn(
-        "flex min-h-0 shrink-0 flex-col overflow-y-auto",
+        // Stacked, it must shrink to the wrapper's 40% to scroll inside it.
+        "flex min-h-0 flex-col overflow-y-auto",
+        !stacked && "shrink-0",
+        // Stacked, closed rows cap at five before scrolling: five plus the hint
+        // row (5 × h-8 + h-7), or five alone where the hint rides the first
+        // row. An open transcript takes the wrapper's 40% instead.
         stacked
-          ? "max-h-[40%] border-t border-border"
+          ? !rows.some((r) => open.has(r.item.sessionId)) && "max-h-[11.75rem] @lg:max-h-40"
           : "border-l [border-image:linear-gradient(to_bottom,transparent,var(--border))_1]",
       )}
       style={stacked ? undefined : { width: CREW_W }}
@@ -135,7 +151,7 @@ export default function Crew({
           a list rather than a workspace, and a label over five rows that each
           name themselves is a row of chrome spent on the one thing nobody has
           to be told. */}
-      {rows.map((row) => {
+      {rows.map((row, i) => {
         const id = row.item.sessionId;
         // Two ways a row is open and they draw different things. `open` holds
         // what the *reader* opened; a question opens its own row without going
@@ -165,14 +181,23 @@ export default function Crew({
               openFully && pane.session ? "min-h-64 flex-1" : "shrink-0",
             )}
           >
-            <CrewHeader
-              row={row}
-              open={openFully}
-              focused={focused}
-              pr={prFor(row.item.projectPath, row.item.branch)}
-              onToggle={() => onToggle(id)}
-              onOpenInMain={() => onOpenInMain(id)}
-            />
+            <div className="flex items-center">
+              <div className="min-w-0 flex-1">
+                <CrewHeader
+                  row={row}
+                  open={openFully}
+                  focused={focused}
+                  pr={prFor(row.item.projectPath, row.item.branch)}
+                  onToggle={() => onToggle(id)}
+                  onOpenInMain={() => onOpenInMain(id)}
+                  onShowInSidebar={() => onShowInSidebar(id)}
+                />
+              </div>
+              {/* Stacked, the list is as wide as the composer and the first
+                  row has room to spare, so the chord rides it rather than
+                  spending a line of its own. */}
+              {stacked && i === 0 && <CrewHint className="hidden gap-2 @lg:flex" />}
+            </div>
             {(openFully || row.asking) && (
               // Dimmed rather than veiled, the grid's own reading: a scrim is
               // one more element to keep in step with the palette, where
@@ -188,8 +213,12 @@ export default function Crew({
                 // and collapsing somebody else's open row then bounced the
                 // composer to the anchor instead of leaving it where the
                 // reader had it. The header already focuses what it opens.
-                onPointerDown={() => !focused && onFocus(id)}
-                onFocus={() => !focused && onFocus(id)}
+                //
+                // A card alone claims nothing: answering it is a reply sent by
+                // id, not a move into that session, so the composer stays on
+                // the conversation the reader was in.
+                onPointerDown={() => openFully && !focused && onFocus(id)}
+                onFocus={() => openFully && !focused && onFocus(id)}
                 className={cn(
                   "min-h-0 flex-1 transition-opacity duration-150 ease-out",
                   composing && !focused && "opacity-35",
@@ -238,17 +267,30 @@ export default function Crew({
           of it nobody is looking for. "Toggle", not "hide": the chord is the
           only way *back* too, and a hint naming one direction reads as a
           control that only goes that way. */}
-      <CrewHint />
+      <CrewHint className={cn("flex justify-between", stacked && "@lg:hidden")} />
     </div>
+  );
+
+  // Stacked, the wrapper lines the list up with the composer's column and is
+  // the container the hint's placement is asked of.
+  return stacked ? (
+    <div className="@container mx-auto flex max-h-[40%] min-h-0 w-[calc(100%-2rem)] max-w-3xl shrink-0 flex-col">
+      {list}
+    </div>
+  ) : (
+    list
   );
 }
 
-/// The chord's hint row. Also drawn alone above the composer where a narrow
-/// window has put the crew away on its own, since the reader never hid it and
-/// the chord is the only way to bring it back.
-export function CrewHint() {
+/// The chord's hint row: at the foot of the list, or beside the first row.
+function CrewHint({ className }: { className?: string }) {
   return (
-    <div className="flex min-h-7 shrink-0 items-center justify-between px-3 text-ui text-muted-foreground/60">
+    <div
+      className={cn(
+        "min-h-7 shrink-0 items-center px-3 text-ui text-muted-foreground/60",
+        className,
+      )}
+    >
       Toggle crew
       <ShortcutKeys ids={["crew.toggle"]} className={HINT_KEYS} />
     </div>
@@ -355,6 +397,7 @@ function CrewHeader({
   pr,
   onToggle,
   onOpenInMain,
+  onShowInSidebar,
 }: {
   row: CrewRow;
   open: boolean;
@@ -362,6 +405,7 @@ function CrewHeader({
   pr: PrMark | undefined;
   onToggle: () => void;
   onOpenInMain: () => void;
+  onShowInSidebar: () => void;
 }) {
   // The avatar cannot carry the two states on its own: its hue is seeded from
   // the session id, so yellow and green have nowhere to live on it — it says
@@ -380,8 +424,13 @@ function CrewHeader({
     // click anywhere but on the words read as the app ignoring it. A `button`
     // rather than a div with a handler, since it is one — that is what gets it
     // Enter, Space and a tab stop for free.
+    //
+    // The menu opens on a hidden row alone: showing it in the sidebar is the one
+    // thing it offers, and a shown row has nothing to put there.
+    <ContextMenu>
     <Tooltip delayDuration={TIP_DELAY}>
       <TooltipTrigger asChild>
+        <ContextMenuTrigger asChild disabled={!row.item.hidden}>
         <button
           type="button"
           aria-expanded={open}
@@ -390,7 +439,7 @@ function CrewHeader({
           // in the main column instead of in its strip is that sentence again.
           onClick={(e) => (e.metaKey || e.ctrlKey ? onOpenInMain() : onToggle())}
           className={cn(
-            "group relative flex h-8 w-full shrink-0 cursor-pointer items-center gap-2 pl-1.5 pr-3 text-left text-ui",
+            "group relative flex h-8 w-full shrink-0 cursor-pointer items-center gap-2 pl-1.5 pr-3 text-left text-ui select-none",
             // Selection is weight and colour, no fill. A filled row is how a
             // *list* marks the one thing it is showing, and in a column with no
             // borders it was the loudest shape on screen — a lit band across
@@ -442,6 +491,7 @@ function CrewHeader({
             )}
           </span>
         </button>
+        </ContextMenuTrigger>
       </TooltipTrigger>
       {/* The click is a keycap rather than the word, so the whole gesture is
           one chip pair the eye takes in at once, with the sentence left to say
@@ -470,6 +520,13 @@ function CrewHeader({
         to open in full view
       </TooltipContent>
     </Tooltip>
+      <ContextMenuContent className="w-40">
+        <ContextMenuItem className="text-ui" onSelect={onShowInSidebar}>
+          <Eye />
+          Show in sidebar
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 

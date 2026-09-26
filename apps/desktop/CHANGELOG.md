@@ -5,6 +5,70 @@ The release job reads the matching section into the GitHub release notes and the
 updater carries it, so this file is what a release says about itself — not a
 second description of it. GitHub's generated commit list is appended below it.
 
+## 0.25.1
+
+### Fixed
+
+- **The browser follows its pane when the side panel is on the left.**
+  Collapsing or resizing the sidebar left the page drawn where the
+  pane used to be.
+
+## 0.25.0
+
+### Added
+
+- **Hidden sessions for reviews.** A session started with `dray new
+  --hidden` stays out of the sidebar and shows only in the crew beside
+  the session that started it. Right-click it there to show it in the
+  sidebar. Agents hide review sessions by default. Needs `dray` 0.7.0,
+  which updates itself.
+- **The side panel can sit on the left.** Settings › Appearance ›
+  Panel side.
+- **The side panel remembers its width per session.**
+- **Drag to reorder tabs** in the Browser and Files views.
+- **Grok Build takes a message mid-turn** into the turn it is running,
+  instead of holding it until the turn ends.
+
+### Changed
+
+- **On a 14" screen with the side panel open, the crew sits under the
+  chat** instead of squeezing in beside it.
+
+### Fixed
+
+- **Leaving the Browser view gives the side panel back** if arriving
+  there closed it.
+- **A session opened from a notice moves the sidebar's project filter**
+  so its row is visible.
+- **Merging a PR keeps the panel on the PR tab.**
+- **Tooltips no longer stick** after closing the project or permission
+  menu.
+
+## 0.24.0
+
+### Added
+
+- **Agents can record the browser.** `dray browser record start` and
+  `record stop` save an MP4 that plays inline in chat, so checking a
+  feature is watching a video. Typing, hover and animation are captured.
+  Needs `dray` 0.6.0, which updates itself.
+- **Device sizes in the browser.** Pick a device from the icon's menu,
+  set a responsive size and save it, rotate any device. MacBook Pro 14
+  and 16, 1080p and 4K are new presets.
+- **⌘R reloads the browser page and ⌘T opens a new tab.**
+- **The Files view plays videos** (mp4, m4v, mov, webm).
+- **Drag to reorder projects and spaces** in Settings → Spaces. The
+  sidebar and the composer's project picker now keep that order.
+
+### Fixed
+
+- **fx lists the newest Codex and grok models**, read from fx itself.
+- **Browser tabs show their favicons** again.
+- **`/compact` on a resumed Claude Code session stays busy** until it
+  actually finishes.
+- **A file the Files view can't show says why**, instead of "Not text".
+- **Answering a card in the crew column keeps you on the parent session.**
+
 ## 0.23.7
 
 ### Changed
