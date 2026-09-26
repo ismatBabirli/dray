@@ -165,8 +165,9 @@ async fn send_msg(
             None,
             is_new_session,
             // The composer never has a parent, and its prompts are the user's
-            // own; only the orchestration socket sets either.
+            // own; only the orchestration socket sets either — or hides one.
             None,
+            false,
             None,
             &app,
         )
@@ -400,6 +401,13 @@ async fn work_status(cwd: String) -> git::WorkStatus {
     git::work_status(&cwd).await
 }
 
+/// One session's index entry, settled or not. The frontend holds one side of
+/// the settled split, so a notice about a session on the other side asks here.
+#[tauri::command]
+async fn session_index_item(session_id: &str) -> Result<Option<SessionIndexItem>, Fail> {
+    Ok(store::get_session_index_item(session_id).await?)
+}
+
 /// What removing this session's worktree would cost, for the dialog that asks.
 ///
 /// Answers for a session with no worktree too — an all-zero, `exists: false`
@@ -441,12 +449,25 @@ async fn set_session_flags(
     session_id: &str,
     archived: Option<bool>,
     pinned: Option<bool>,
+    hidden: Option<bool>,
     manager: State<'_, SessionManager>,
 ) -> Result<Option<SessionIndexItem>, Fail> {
-    let updated = store::set_session_flags(session_id, archived, pinned).await?;
-    if updated.is_some() && archived == Some(true) {
-        if let Err(e) = manager.settle(session_id).await {
-            eprintln!("could not stop settled session {session_id}: {e}");
+    let updated = store::set_session_flags(session_id, archived, pinned, hidden).await?;
+    if updated.is_none() {
+        return Ok(None);
+    }
+    // A hidden child settles and unsettles with its parent, since only the
+    // parent's crew draws it. Here off the whole index, where the frontend
+    // holds one side of the split and can miss a child on the other.
+    let mut settling = vec![session_id.to_string()];
+    if let Some(archived) = archived {
+        settling.extend(store::archive_hidden_descendants(session_id, archived).await?);
+    }
+    if archived == Some(true) {
+        for id in &settling {
+            if let Err(e) = manager.settle(id).await {
+                eprintln!("could not stop settled session {id}: {e}");
+            }
         }
     }
     Ok(updated)
@@ -731,6 +752,7 @@ pub fn run() {
             delete_session,
             fork_session,
             worktree_disposition,
+            session_index_item,
             remove_session_worktree,
             mark_session_read,
             interrupt_session,

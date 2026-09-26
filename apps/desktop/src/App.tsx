@@ -135,7 +135,7 @@ import { changeRange, lastToolResult, turnChangedTree } from "@/lib/changes";
 import { usePlan } from "@/lib/plan";
 import { currentTodos, startsNewList, type Todo } from "@/lib/todos";
 import { prBadgeCount, sessionBranch } from "@/lib/pr";
-import { crewAnchor, crewRows, crewSeen } from "@/lib/crew";
+import { crewAnchor, crewRows, crewSeen, inSidebar, withHiddenAsks } from "@/lib/crew";
 import { panelMove, sidebarMove } from "@/lib/sidebarAuto";
 import { playCelebration } from "@/lib/sound";
 import {
@@ -215,6 +215,7 @@ function App() {
     handleRespondPermission,
     handleAnswerQuestions,
     handleSelectSessionIndexItem,
+    navGen,
     handleNewSession,
     markSessionUnread,
     setSessionFlags,
@@ -1023,8 +1024,13 @@ function App() {
   // mounted at all.
   const [searchOpen, setSearchOpen] = useState(false);
   const searchedSessions = useMemo(
-    () => filterSessions(visibleSessions, search),
+    () => filterSessions(inSidebar(visibleSessions), search),
     [visibleSessions, search],
+  );
+  // A hidden session's card lights its parent's row, the only row it has.
+  const sidebarAsking = useMemo(
+    () => withHiddenAsks(sessionIndexItems, askingSessions),
+    [sessionIndexItems, askingSessions],
   );
 
   // The sidebar's marks: one `gh` per repo on screen rather than one per row —
@@ -1055,6 +1061,24 @@ function App() {
   const prBranch = selectedSession
     ? sessionBranch(selectedSession, workStatus?.branch)
     : null;
+  // The header's way back from a hidden session, which has no sidebar row. The
+  // loaded side first, else asked of the backend: with the sidebar on the other
+  // side of the settled split the parent is not in the list, and still exists.
+  const hiddenParentId = selectedSession?.hidden ? selectedSession.parentSessionId : null;
+  const loadedParent = sessionIndexItems.find((i) => i.sessionId === hiddenParentId);
+  const [fetchedParent, setFetchedParent] = useState<SessionIndexItem | null>(null);
+  useEffect(() => {
+    if (!hiddenParentId || loadedParent) return;
+    let live = true;
+    void invoke<SessionIndexItem | null>("session_index_item", { sessionId: hiddenParentId })
+      .then((item) => live && setFetchedParent(item))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [hiddenParentId, loadedParent]);
+  const hiddenParent =
+    loadedParent ?? (fetchedParent?.sessionId === hiddenParentId ? fetchedParent : undefined);
   // "The PR tab is on screen", read off the *pick* rather than off `activeTab`,
   // which cannot exist yet — it is derived from this hook's own answer. An
   // unset pick counts, since the derived default is the PR tab whenever there
@@ -1465,11 +1489,11 @@ function App() {
         projects,
         // The same reading the sidebar groups by, and withheld on the same list
         // — the walk has to step the runs the eye is looking at.
-        archivedShown ? undefined : { statusBySession, asking: askingSessions },
+        archivedShown ? undefined : { statusBySession, asking: sidebarAsking },
         archivedShown,
         archivedShown ? [] : spaceGroups,
       ),
-    [searchedSessions, projects, archivedShown, statusBySession, askingSessions, spaceGroups],
+    [searchedSessions, projects, archivedShown, statusBySession, sidebarAsking, spaceGroups],
   );
 
   // Wraps downward only. Falling off the bottom returns to the newest session,
@@ -1506,11 +1530,11 @@ function App() {
       sessionUnits(
         searchedSessions,
         projects,
-        archivedShown ? undefined : { statusBySession, asking: askingSessions },
+        archivedShown ? undefined : { statusBySession, asking: sidebarAsking },
         archivedShown,
         archivedShown ? [] : spaceGroups,
       ),
-    [searchedSessions, projects, archivedShown, statusBySession, askingSessions, spaceGroups],
+    [searchedSessions, projects, archivedShown, statusBySession, sidebarAsking, spaceGroups],
   );
   const stepGroup = (delta: number) => stepThrough(units, delta);
 
@@ -1726,9 +1750,13 @@ function App() {
   const openFromNotice = async (sessionId: string) => {
     const previous = selectedSessionId;
     const gen = filterGen.current;
-    if (!(await handleSelectSessionIndexItem(sessionId)) || !projectFilter) return;
+    const selecting = handleSelectSessionIndexItem(sessionId);
+    // Past this select's own move, so any later one is somebody else's.
+    const nav = navGen.current;
+    if (!(await selecting) || !projectFilter) return;
     if (gen !== filterGen.current) return;
-    const path = sessionIndexItems.find((i) => i.sessionId === sessionId)?.projectPath;
+    const path = (await indexItem(sessionId))?.projectPath;
+    if (gen !== filterGen.current || nav !== navGen.current) return;
     // Outside the space, the space effect below closes it instead.
     if (!path || path === projectFilter || !sessionInSpace(projects, space, path)) return;
     const next = spaceProjects.some((p) => p.path === path) ? path : null;
@@ -1738,9 +1766,31 @@ function App() {
     if (next) handleSelectProject(next);
   };
 
+  /// A session's index entry from the loaded side, else from the backend: the
+  /// sidebar holds one side of the settled split, and a notice can name a
+  /// session on the other.
+  const indexItem = async (id: string) =>
+    sessionIndexItems.find((i) => i.sessionId === id) ??
+    (await invoke<SessionIndexItem | null>("session_index_item", { sessionId: id }).catch(
+      () => null,
+    ));
+
+  /// A notice or banner click. A hidden session is drawn in its parent's crew,
+  /// so it opens the parent — where the parent still exists.
+  const openNotice = async (id: string) => {
+    // Claimed by bumping before the lookups, so any move landing during them —
+    // a click, a filter switch, a second notice — wins and this gives up.
+    const nav = ++navGen.current;
+    const gen = filterGen.current;
+    const item = await indexItem(id);
+    const parent = item?.hidden && item.parentSessionId ? await indexItem(item.parentSessionId) : null;
+    if (nav !== navGen.current || gen !== filterGen.current) return;
+    await openFromNotice(parent?.sessionId ?? id);
+  };
+
   // A ref, since the listener is registered once and the handler reads state.
-  const openFromNoticeRef = useRef(openFromNotice);
-  openFromNoticeRef.current = openFromNotice;
+  const openFromNoticeRef = useRef(openNotice);
+  openFromNoticeRef.current = openNotice;
   // The reader clicked a desktop banner. Rust has already raised the window.
   useEffect(() => {
     const unlisten = listen<string>("notification_activated", (event) => {
@@ -2282,6 +2332,7 @@ function App() {
             onToggle={toggleCrewRow}
             onFocus={focusSession}
             onOpenInMain={openCrewRowInMain}
+            onShowInSidebar={(id) => void setSessionFlags(id, { hidden: false })}
             composing={composing}
             active={!issuesOpen && viewTab === "chat"}
             chat={paneChat}
@@ -2306,7 +2357,7 @@ function App() {
           projectFilter={projectFilter}
           onProjectFilterChange={changeProjectFilter}
           statusBySession={statusBySession}
-          askingSessions={askingSessions}
+          askingSessions={sidebarAsking}
           prFor={prMarks.prFor}
           // Cleared while the page is up. The column is showing issues, so a
           // lit row would name a session that is nowhere on screen — and the
@@ -2390,6 +2441,13 @@ function App() {
             // its session, and the focused one's repeated up here read as a
             // second line of the same row.
             standIn={issuesOpen ? "Issues" : mainGroup ? groupName(mainGroup) : null}
+            parent={
+              hiddenParent && {
+                title: hiddenParent.title,
+                onSelect: () =>
+                  goToSession(() => void handleSelectSessionIndexItem(hiddenParent.sessionId)),
+              }
+            }
             className="flex-1"
           />
 
@@ -2843,7 +2901,7 @@ function App() {
     {/* Outside `AppShell` on purpose: it is fixed to the window rather than
         placed in the layout, and the shell has no slot that isn't a pane. */}
     <NoticeStack
-      onSelect={(id) => goToSession(() => void openFromNotice(id))}
+      onSelect={(id) => goToSession(() => void openNotice(id))}
       // The session and the pane both, since the card is about something the
       // transcript does not show. The pick is written the same way
       // `usePullRequest`'s `onOpened` writes it — `activeTab` honours a

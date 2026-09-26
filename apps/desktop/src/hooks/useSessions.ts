@@ -16,6 +16,7 @@ import {
   pushNotice,
   type NoticeKind,
 } from "@/hooks/useNotices";
+import { hiddenChildren } from "@/lib/crew";
 import { dropHeld, heldFor, holdEarlyEvent } from "@/lib/earlyEvents";
 import { fastFor, fastNotice } from "@/lib/fastMode";
 import { isWindowFocused, onFocusChange } from "@/lib/focus";
@@ -808,6 +809,7 @@ const handleSendMsg = async (
       modified: new Date().toISOString(),
       archived: false,
       pinned: false,
+      hidden: false,
     };
     upsertSession(shell);
   } else {
@@ -1293,7 +1295,7 @@ const detachSession = async (sessionId: string) => {
 /// settle that did not happen — describes a move the index never made.
 const setSessionFlags = async (
   sessionId: string,
-  flags: { archived?: boolean; pinned?: boolean },
+  flags: { archived?: boolean; pinned?: boolean; hidden?: boolean },
 ): Promise<boolean> => {
   const fail = failUnlessLeft();
   try {
@@ -1301,6 +1303,7 @@ const setSessionFlags = async (
       sessionId,
       archived: flags.archived ?? null,
       pinned: flags.pinned ?? null,
+      hidden: flags.hidden ?? null,
     });
     // Null is the backend finding no such session, which is a write that did
     // not happen like any other.
@@ -1336,11 +1339,21 @@ const setSessionFlags = async (
     setSessions((prev) =>
       prev.map((s) =>
         s.sessionId === sessionId
-          ? { ...s, archived: updated.archived, pinned: updated.pinned }
+          ? { ...s, archived: updated.archived, pinned: updated.pinned, hidden: updated.hidden }
           : s,
       ),
     );
     if (updated.archived) evictSessions({ sessionId });
+    // A hidden child is drawn in this session's crew alone, so it goes where
+    // the parent goes. Awaited, so a caller that refetches the other side
+    // afterwards reads the children already moved.
+    if (flags.archived !== undefined) {
+      await Promise.all(
+        hiddenChildren(sessionIndexItems, sessionId).map((c) =>
+          setSessionFlags(c.sessionId, { archived: flags.archived }),
+        ),
+      );
+    }
     return true;
   } catch (e) {
     fail(e);
@@ -1570,6 +1583,9 @@ const deleteSession = async (sessionId: string) => {
     return;
   }
 
+  // Read before the row goes. A hidden child has no row of its own to be
+  // deleted from, so it goes with its parent.
+  const children = hiddenChildren(sessionIndexItems, sessionId);
   setSessionIndexItems((prev) => prev.filter((i) => i.sessionId !== sessionId));
   setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
   retireStreamingBlock(sessionId);
@@ -1584,6 +1600,7 @@ const deleteSession = async (sessionId: string) => {
   if (selectedSessionId === sessionId) {
     handleNewSession();
   }
+  await Promise.all(children.map((c) => deleteSession(c.sessionId)));
 };
 
 // Refetched on every toggle rather than filtered from one cached list: the two
@@ -2649,6 +2666,6 @@ const contextUsage: { used: number; max: number } | null = (() => {
   return used !== null && max !== null ? { used, max } : null;
 })();
 
-return {harness, setHarness, sessions, selectedSessionId, selectedSession, sessionIndexItems, statusBySession, askingSessions, archivedShown, archivedRequested: showArchived, setShowArchived, models, refreshModels, reloadModels, seedFxModels, loadingModels, modelId, effort, fast, setFast, fastNote, permissionMode, projects, projectPath, branches, branch, useWorktree, busy, working, backgroundTasks, liveTaskIds, tasksBySession, compacting, apiRetry, contextUsage, error, setError, handleModelChange, setPermissionMode, handleAttachProject, handleSelectProject, handleRemoveProject, setProjectSpace, moveProject, retagSpace, canAnnounce, handleSelectBranch, pendingBranch, setPendingBranch, runCheckout, setUseWorktree, handleSendMsg, handleInterrupt, handleStopTask, queuedMessages, handleCancelQueued, handleRespondPermission, handleAnswerQuestions, handleSelectSessionIndexItem, handleNewSession, markSessionUnread, setSessionFlags, forkSession, unlinkIssue, detachSession, deleteSession, removeWorktree, ensureLoaded, setOnScreen, setCrewSeen, paneState, indexSide};
+return {harness, setHarness, sessions, selectedSessionId, selectedSession, sessionIndexItems, statusBySession, askingSessions, archivedShown, archivedRequested: showArchived, setShowArchived, models, refreshModels, reloadModels, seedFxModels, loadingModels, modelId, effort, fast, setFast, fastNote, permissionMode, projects, projectPath, branches, branch, useWorktree, busy, working, backgroundTasks, liveTaskIds, tasksBySession, compacting, apiRetry, contextUsage, error, setError, handleModelChange, setPermissionMode, handleAttachProject, handleSelectProject, handleRemoveProject, setProjectSpace, moveProject, retagSpace, canAnnounce, handleSelectBranch, pendingBranch, setPendingBranch, runCheckout, setUseWorktree, handleSendMsg, handleInterrupt, handleStopTask, queuedMessages, handleCancelQueued, handleRespondPermission, handleAnswerQuestions, handleSelectSessionIndexItem, handleNewSession, markSessionUnread, setSessionFlags, forkSession, unlinkIssue, detachSession, deleteSession, removeWorktree, ensureLoaded, setOnScreen, setCrewSeen, paneState, indexSide, navGen};
 
 }

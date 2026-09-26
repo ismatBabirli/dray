@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { crewAnchor, crewRows, crewSeen } from "@/lib/crew";
+import { crewAnchor, crewRows, crewSeen, hiddenChildren, inSidebar, withHiddenAsks } from "@/lib/crew";
 import type { SessionIndexItem, SessionStatus } from "@/types/events";
 
 const item = (
@@ -29,6 +29,7 @@ const item = (
   modified: "2026-09-01T00:00:00Z",
   archived: false,
   pinned: false,
+  hidden: false,
   ...extra,
 });
 
@@ -168,5 +169,37 @@ describe("crewSeen", () => {
   // active space: a child that cannot be seen must still announce.
   it("names nobody where the column is not drawn", () => {
     expect(crewSeen(crewRows(items, "a", quiet), false)).toEqual([]);
+  });
+});
+
+describe("hidden sessions", () => {
+  const items = [
+    item("a", null),
+    item("review", "a", { hidden: true }),
+    item("shown", "a"),
+    item("orphan", "gone", { hidden: true }),
+  ];
+
+  it("leaves a hidden child out of the sidebar while its parent is listed", () => {
+    expect(inSidebar(items).map((i) => i.sessionId)).toEqual(["a", "shown", "orphan"]);
+  });
+
+  it("leaves a settled hidden child out of the settled list too", () => {
+    const settled = [item("a", null, { archived: true }), item("review", "a", { hidden: true, archived: true })];
+    expect(inSidebar(settled).map((i) => i.sessionId)).toEqual(["a"]);
+  });
+
+  it("still draws it in the parent's crew", () => {
+    expect(ids(crewRows(items, "a", quiet))).toContain("review");
+  });
+
+  it("lights the parent of a hidden asker, and no one else's", () => {
+    const deep = [...items, item("sub", "review", { hidden: true })];
+    expect([...withHiddenAsks(deep, new Set(["sub"]))].sort()).toEqual(["a", "review", "sub"]);
+    expect([...withHiddenAsks(deep, new Set(["shown"]))]).toEqual(["shown"]);
+  });
+
+  it("names only the hidden children for a cascade", () => {
+    expect(hiddenChildren(items, "a").map((i) => i.sessionId)).toEqual(["review"]);
   });
 });
