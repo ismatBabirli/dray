@@ -61,6 +61,11 @@ struct Recording {
     /// Frames are dropped while set: a screenshot of this tab is laying it
     /// out at its own size, which is not what the video is of.
     paused: bool,
+    /// Bumped on every pause, so a capture asked for before one and answered
+    /// after it is refused even once `paused` is down again.
+    layout: u64,
+    /// The tab closed. The recording stays for `record stop`; `film` quits.
+    closed: bool,
     recorder: crate::recording::Recorder,
 }
 /// The pane saying it has the page covered, so the reflow the capture needs
@@ -130,6 +135,10 @@ const DEVICES: &[(&str, u32, u32)] = &[
     ("iPad Air", 820, 1180),
     ("Laptop", 1280, 800),
     ("Desktop", 1440, 900),
+    ("MacBook Pro 14", 1512, 982),
+    ("MacBook Pro 16", 1728, 1117),
+    ("1080p", 1920, 1080),
+    ("4K", 3840, 2160),
 ];
 
 wrap_dev_tools_message_observer! {
@@ -161,37 +170,6 @@ wrap_dev_tools_message_observer! {
             };
             let _ = tx.send(reply);
         }
-
-        fn on_dev_tools_event(
-            &self,
-            browser: Option<&mut Browser>,
-            method: Option<&CefString>,
-            params: Option<&[u8]>,
-        ) {
-            if method.map(|m| m.to_string()).as_deref() != Some("Page.screencastFrame") {
-                return;
-            }
-            let (Some(browser), Some(params)) = (browser, params) else { return };
-            let at = Instant::now();
-            let Ok(mut frame) = serde_json::from_slice::<Value>(params) else { return };
-            // Acked before anything else: Chromium sends nothing more until
-            // it is, so a frame dropped below must still be answered. The
-            // reply lands in `on_dev_tools_method_result` with nobody waiting.
-            let ack = json!({
-                "id": NEXT_ID.fetch_add(1, AtomicOrdering::Relaxed),
-                "method": "Page.screencastFrameAck",
-                "params": { "sessionId": frame["sessionId"] },
-            });
-            if let Some(host) = browser.host() {
-                host.send_dev_tools_message(Some(ack.to_string().as_bytes()));
-            }
-            let id = browser.identifier();
-            if let Value::String(data) = frame["data"].take() {
-                if let Some(rec) = RECORDING.lock().unwrap().values().find(|r| r.tab == id && !r.paused) {
-                    rec.recorder.frame(data, at);
-                }
-            }
-        }
     }
 }
 
@@ -204,8 +182,8 @@ pub(super) fn observe(browser: &Browser) -> Option<Registration> {
 }
 
 /// The size a recorded tab's view is parked at, off-screen, instead of being
-/// hidden: a hidden view paints nothing, and a screencast only sends what
-/// was painted. See `apply_layout`.
+/// hidden: a hidden view runs no `requestAnimationFrame`, so anything a page
+/// animates from script would film frozen. See `apply_layout`.
 pub(super) fn parked(tab: i32) -> Option<(u32, u32)> {
     RECORDING.lock().unwrap().values().find(|r| r.tab == tab).map(|r| r.size)
 }
@@ -218,6 +196,7 @@ fn recording_of(session: &str) -> Option<(i32, (u32, u32))> {
 fn set_paused(session: &str, paused: bool) {
     if let Some(rec) = RECORDING.lock().unwrap().get_mut(session) {
         rec.paused = paused;
+        rec.layout += paused as u64;
     }
 }
 
@@ -233,8 +212,76 @@ pub(super) fn drop_recording(session: &str) {
     }
 }
 
+/// Device pixels per CSS pixel a recording is filmed at. At 1x text blurs, and
+/// avconvert holds the bitrate flat, so 2x costs almost nothing in file size.
+const RECORD_SCALE: u32 = 2;
+
 fn metrics(w: u32, h: u32) -> Value {
-    json!({ "width": w, "height": h, "deviceScaleFactor": 1, "mobile": false })
+    json!({ "width": w, "height": h, "deviceScaleFactor": RECORD_SCALE, "mobile": false })
+}
+
+/// The gap between frames a recording asks for.
+const RECORD_FRAME: Duration = Duration::from_millis(33);
+/// The longest `type` spends keying text into a recorded tab.
+const TYPE_BUDGET: Duration = Duration::from_secs(4);
+
+/// Films a recording by asking for a frame on a clock, until the recording it
+/// was started for is gone or its tab closes. **Not `Page.startScreencast`**:
+/// this CEF build sends a screencast frame only when scroll offset or size
+/// changes, so typing, hover and animation never reached the video. A capture
+/// forces a fresh frame whatever changed. Captures run one after another, so a
+/// page slower to encode than the clock films at the rate it manages. `last`
+/// is the digest of the frame `record start` took itself.
+fn film(session: String, tab: i32, shot: u64, mut last: u64) {
+    tauri::async_runtime::spawn(async move {
+        let mut tick = tokio::time::interval(RECORD_FRAME);
+        tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+        // The layout generation a frame may be filed under; `None` while paused.
+        let state = || match RECORDING.lock().unwrap().get(&session) {
+            Some(r) if r.shot == shot && !r.closed => Some((!r.paused).then_some(r.layout)),
+            _ => None,
+        };
+        loop {
+            tick.tick().await;
+            let Some(state) = state() else { return };
+            let Some(layout) = state else { continue };
+            let Ok(data) = grab(tab).await else { continue };
+            let at = Instant::now();
+            // A frame identical to the last is dropped, so a still page leaves
+            // a gap `GAP_CAP` can cut, and the agent thinking costs no video. A
+            // blinking caret defeats it. ponytail: a pixel-diff threshold if
+            // that ever matters.
+            let hash = digest(&data);
+            if hash == last {
+                continue;
+            }
+            // A screenshot may have paused the tab while this capture was out,
+            // and then the frame is of its layout, not ours. A pause bumps
+            // `layout`, so an unchanged one also means not paused now. Only a
+            // filed frame becomes the baseline, or a refused one would dedupe
+            // away the same page state captured properly a moment later.
+            if let Some(rec) = RECORDING.lock().unwrap().get(&session).filter(|r| r.shot == shot && r.layout == layout) {
+                rec.recorder.frame(data, at);
+                last = hash;
+            }
+        }
+    });
+}
+
+/// One frame of a recorded tab, as base64 JPEG.
+async fn grab(tab: i32) -> Result<String, String> {
+    let mut reply = cdp(tab, "Page.captureScreenshot", json!({ "format": "jpeg", "quality": 90 })).await?;
+    match reply["data"].take() {
+        Value::String(data) => Ok(data),
+        _ => Err("no image came back".into()),
+    }
+}
+
+fn digest(data: &str) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    data.hash(&mut h);
+    h.finish()
 }
 
 /// Removes a session's recordings, for session delete. Best effort, like the
@@ -263,7 +310,10 @@ pub(super) fn forget(tab: i32) {
     // A recorded tab closing uncovers the pane and unlocks its tabs, but the
     // recording stays until `record stop`, which still hands back what was
     // filmed before the close.
-    let closed = RECORDING.lock().unwrap().iter().find(|(_, r)| r.tab == tab).map(|(s, r)| (s.clone(), r.shot));
+    let closed = RECORDING.lock().unwrap().iter_mut().find(|(_, r)| r.tab == tab).map(|(s, r)| {
+        r.closed = true;
+        (s.clone(), r.shot)
+    });
     if let Some((session, shot)) = closed {
         emit_recording(&session, false);
         emit_shooting(&session, false, shot);
@@ -656,7 +706,18 @@ async fn perform(session: &str, action: BrowserAction) -> Answer {
         BrowserAction::Type { at, text } | BrowserAction::Fill { at, text } => {
             let tab = active_tab(session)?;
             focus(tab, &at, clear).await?;
-            cdp(tab, "Input.insertText", json!({ "text": text })).await?;
+            if parked(tab).is_some() {
+                // Keyed in a character at a time while filmed, or the video
+                // shows a paste. Capped so a long text costs seconds, not minutes.
+                let n = text.chars().count().max(1) as u64;
+                let gap = Duration::from_millis((TYPE_BUDGET.as_millis() as u64 / n).min(70));
+                for c in text.chars() {
+                    cdp(tab, "Input.insertText", json!({ "text": c.to_string() })).await?;
+                    tokio::time::sleep(gap).await;
+                }
+            } else {
+                cdp(tab, "Input.insertText", json!({ "text": text })).await?;
+            }
             ok(format!("{} {}", if clear { "filled" } else { "typed into" }, describe_locator(&at)))
         }
         BrowserAction::Press { key } => {
@@ -926,25 +987,32 @@ async fn perform(session: &str, action: BrowserAction) -> Answer {
             await_shutter(shot).await;
             tokio::time::sleep(SETTLE).await;
             SHUTTER_OPEN.store(false, AtomicOrdering::Release);
-            RECORDING.lock().unwrap().insert(session.into(), Recording { tab, size: (w, h), shot, paused: false, recorder });
+            RECORDING.lock().unwrap().insert(session.into(), Recording { tab, size: (w, h), shot, paused: false, layout: 0, closed: false, recorder });
             emit_recording(session, true);
             let started = async {
                 on_main(apply_layout)?;
                 cdp(tab, "Emulation.setDeviceMetricsOverride", metrics(w, h)).await?;
                 tokio::time::sleep(SETTLE).await;
-                cdp(
-                    tab,
-                    "Page.startScreencast",
-                    json!({ "format": "jpeg", "quality": 80, "maxWidth": w, "maxHeight": h }),
-                )
-                .await
+                // One frame before answering, so a `record stop` straight after
+                // still has a clip to hand back rather than racing `film`'s first.
+                grab(tab).await
             }
             .await;
-            if let Err(e) = started {
-                RECORDING.lock().unwrap().remove(session);
-                end_recording(session, tab, shot).await;
-                return Err(format!("could not start recording: {e}"));
+            let first = match started {
+                Ok(first) => first,
+                Err(e) => {
+                    if let Some(rec) = RECORDING.lock().unwrap().remove(session) {
+                        std::thread::spawn(move || rec.recorder.discard());
+                    }
+                    end_recording(session, tab, shot).await;
+                    return Err(format!("could not start recording: {e}"));
+                }
+            };
+            let baseline = digest(&first);
+            if let Some(rec) = RECORDING.lock().unwrap().get(session) {
+                rec.recorder.frame(first, Instant::now());
             }
+            film(session.to_string(), tab, shot, baseline);
             drop(held);
             ok(format!("recording at {w}×{h}; `dray browser record stop` when done"))
         }
@@ -952,10 +1020,7 @@ async fn perform(session: &str, action: BrowserAction) -> Answer {
             let held = CAPTURING.lock().await;
             let (tab, _) = recording_of(session)
                 .ok_or("nothing is recording; `dray browser record start` first")?;
-            // Stopped before the recording is taken, so the last frames still
-            // have somewhere to go. A tab closed mid-recording refuses this and
-            // the override alike, which changes nothing.
-            let _ = cdp(tab, "Page.stopScreencast", json!({})).await;
+            // Taking the recording out is what stops `film`.
             let rec = RECORDING.lock().unwrap().remove(session).ok_or("the recording was dropped")?;
             end_recording(session, tab, rec.shot).await;
             drop(held);

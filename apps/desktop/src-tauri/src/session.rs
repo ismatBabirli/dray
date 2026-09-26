@@ -473,6 +473,9 @@ impl SessionManager {
         // composer never has one, and it is recorded rather than acted on —
         // the depth cap reads it back off the index on the *next* create.
         parent_session_id: Option<&str>,
+        // Kept out of the sidebar, drawn in the parent's crew alone. Only the
+        // orchestration socket sets it, and only with a parent.
+        hidden: bool,
         // The session that relayed this prompt, for a message arriving over the
         // orchestration socket. `None` everywhere else: the composer's prompts
         // are the user's own, and a `user_message` with a sender is drawn
@@ -671,6 +674,7 @@ impl SessionManager {
             // appears before the child spawns, and a tab that arrived a beat
             // later would be one more thing moving while the first turn starts.
             item.issues = linked_issues.clone();
+            item.hidden = hidden;
 
             // The one failure that has to undo the tree, and the row that just
             // failed to be written is exactly why: removal is offered from a
@@ -960,11 +964,11 @@ impl SessionManager {
                 // The cost is that there is no window to cancel in — which the
                 // UI states by itself, since a prompt written straight through
                 // draws no pending row and so offers no Esc.
-                // pi holds a steering queue of its own and drains it at the next
-                // tool-call boundary inside the run, so there is nothing for
-                // Dray's queue to do here and no boundary for it to race for —
-                // whether or not a tool happens to be running right now.
-                if matches!(s.stdin, Transport::Pi(_)) {
+                // pi and grok each hold a steering queue of their own and
+                // drain it at the next boundary inside the run, so there is
+                // nothing for Dray's queue to do here and no boundary for it to
+                // race for — whether or not a tool happens to be running now.
+                if matches!(s.stdin, Transport::Pi(_) | Transport::Grok(_)) {
                     s.steer(prompt, attachment_paths, issues, from, app).await?;
                     return Ok(SendOutcome {
                         issues: linked,
@@ -1396,12 +1400,41 @@ impl SessionManager {
     /// living at the project root while its files sat in a directory nothing
     /// pointed at any more.
     pub async fn remove_worktree(&self, session_id: &str) -> Result<SessionIndexItem> {
+        let (relocated, existed) = self.remove_tree(session_id).await?;
+
+        // Reported here and not at the command, since only this side can tell a
+        // deletion from a tidy-up — and only on the explicit route: `delete`
+        // calls the same helper, but removing a session is a different action
+        // and counting it here would report two features for one press. Once
+        // per press, however many hidden children's trees went with it.
+        if existed {
+            crate::analytics::feature_used("worktree_deleted");
+        }
+
+        Ok(relocated)
+    }
+
+    /// [`Self::remove_worktree`]'s work, answering whether the tree was still
+    /// there.
+    async fn remove_tree(&self, session_id: &str) -> Result<(SessionIndexItem, bool)> {
         let item = get_session_index_item(session_id)
             .await?
             .with_context(|| format!("no session {session_id}"))?;
 
         if item.worktree_name.is_none() {
             bail!("that session is not running in a worktree");
+        }
+
+        // A hidden child is drawn in this session's crew alone, so nothing on
+        // screen offers to remove its tree: it goes with this one. First, and a
+        // refusal stops here — this session's own button is then still there to
+        // retry with, where a child failing after it had nowhere to be retried.
+        for child in crate::store::hidden_children(session_id).await? {
+            if child.worktree_name.is_some() {
+                Box::pin(self.remove_tree(&child.session_id)).await.with_context(|| {
+                    format!("could not remove the worktree of hidden session \"{}\"", child.title)
+                })?;
+            }
         }
 
         if let Some(session) = self.take(session_id).await {
@@ -1414,15 +1447,7 @@ impl SessionManager {
             .await?
             .with_context(|| format!("no session {session_id}"))?;
 
-        // Reported here and not at the command, since only this side can tell a
-        // deletion from a tidy-up — and only on the explicit route: `delete`
-        // calls the same helper, but removing a session is a different action
-        // and counting it here would report two features for one press.
-        if existed {
-            crate::analytics::feature_used("worktree_deleted");
-        }
-
-        Ok(relocated)
+        Ok((relocated, existed))
     }
 
     /// The agent process's pid, for finding what it started (a dev server is a
@@ -1458,6 +1483,13 @@ impl SessionManager {
     /// The child goes first and its lock is released before the disk work, so a
     /// dying process can't append one last event to a file we just removed.
     pub async fn delete(&self, session_id: &str) -> Result<bool> {
+        // A hidden child is drawn in this session's crew alone, so it goes with
+        // it. Here rather than in the frontend, which holds one side of the
+        // settled split and can miss a child sitting on the other.
+        for child in crate::store::hidden_children(session_id).await? {
+            Box::pin(self.delete(&child.session_id)).await?;
+        }
+
         self.settle(session_id).await?;
 
         // Best-effort for the same reason the attachments below are, and with
@@ -1568,12 +1600,13 @@ impl Transport {
     /// Whether this child takes **one prompt per turn**, with no way to inject
     /// a second into the one already running.
     ///
-    /// Both ACP harnesses do, and it is the protocol's own doing rather than a
-    /// choice either made: `session/prompt` is a request that blocks for the
-    /// whole turn, and a second written meanwhile takes over the single id the
-    /// read loop settles the turn on — so the first would never be closed. (fx
-    /// refuses it outright with `-32600 Prompt already in progress`; grok's
-    /// queue is its own and Dray does not drive it.)
+    /// fx does, and it is ACP's own doing rather than a choice fx made:
+    /// `session/prompt` is a request that blocks for the whole turn, and a
+    /// second written meanwhile takes over the single id the read loop settles
+    /// the turn on — so the first would never be closed. fx refuses it outright
+    /// with `-32600 Prompt already in progress`. grok speaks the same protocol
+    /// and is not here, because it has a way in beside it: `_x.ai/interject` —
+    /// see [`Session::steer`].
     ///
     /// So a prompt typed mid-turn is *held* rather than written through, and
     /// released at the turn's end as one joined prompt — see
@@ -1581,7 +1614,7 @@ impl Transport {
     /// a batch over at, seconds away, which is why this is a question about the
     /// transport rather than a flag on the session.
     pub fn one_prompt_per_turn(&self) -> bool {
-        matches!(self, Transport::Fx(_) | Transport::Grok(_))
+        matches!(self, Transport::Fx(_))
     }
 
     /// Opens a turn with one prompt, for the transports that take it as a
@@ -1914,12 +1947,15 @@ impl Session {
     /// Sends a prompt *into* the turn already running, for a harness that takes
     /// one.
     ///
-    /// pi does, and it is the reason this is not a queue. `streamingBehavior:
-    /// "steer"` puts the prompt on pi's own steering queue, which it drains at
-    /// the next tool-call boundary inside the run — before the model call after
-    /// it, verified live. So the boundary is pi's to find and the prompt is
-    /// pi's to hold, where Dray's queue exists precisely because Claude Code
-    /// offers neither.
+    /// pi and grok do, and they are the reason this is not a queue. grok's
+    /// is `_x.ai/interject`, read at the next tool or model gap; see
+    /// [`interject`](crate::harness::grok::interject).
+    ///
+    /// pi's `streamingBehavior: "steer"` puts the prompt on pi's own steering
+    /// queue, which it drains at the next tool-call boundary inside the run —
+    /// before the model call after it, verified live. So the boundary is pi's
+    /// to find and the prompt is pi's to hold, where Dray's queue exists
+    /// precisely because Claude Code offers neither.
     ///
     /// Written through rather than held, which trades the same thing
     /// [`queue_and_flush`](Self::queue_and_flush) trades and buys more for it:
@@ -1935,7 +1971,7 @@ impl Session {
         from: Option<MessageSender>,
         app: &AppHandle,
     ) -> Result<()> {
-        deliver_prompt(
+        let sent = deliver_prompt(
             &self.id,
             self.harness,
             prompt,
@@ -1955,8 +1991,20 @@ impl Session {
             &self.stdin,
             app,
         )
-        .await
-        .map(|_| ())
+        .await;
+        match sent {
+            // Drawn beside the bubble, for `deliver_batch`'s reason: returned to
+            // the composer, it leaves a message nothing answers, and a retry
+            // draws it twice.
+            Err(err) if err.is::<Undelivered>() => {
+                eprintln!("[steer err] {err:#}");
+                report_send_failure(&self.id, self.harness, &format!("{err:#}"), &self.seq, app).await;
+                Ok(())
+            }
+            // Nothing logged yet — an attachment that could not be read — so the
+            // composer keeps the draft and says why.
+            other => other.map(|_| ()),
+        }
     }
 
     /// Holds a prompt and immediately hands it over, for the case where a tool
@@ -2487,6 +2535,18 @@ pub async fn write_line(stdin: &Arc<Mutex<ChildStdin>>, value: &impl Serialize) 
     Ok(())
 }
 
+/// A prompt already drawn and logged whose send then failed, so a caller can
+/// tell it from a failure that left nothing on screen. Marked on the two sends
+/// [`Session::steer`] reaches, pi's and grok's.
+#[derive(Debug)]
+struct Undelivered;
+
+impl std::fmt::Display for Undelivered {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("couldn't hand the prompt to the agent")
+    }
+}
+
 /// Persists the user's own prompt event, emits it, then writes it to the
 /// child's stdin — the CLI never echoes a prompt back, so this is the only
 /// place it enters the transcript.
@@ -2589,7 +2649,15 @@ async fn deliver_prompt(
     // write is the send rather than a line the child picks up on its own
     // schedule.
     if let Transport::Pi(client) = transport {
-        crate::harness::pi::send_prompt(client, &text, delivery, &prepared.images).await?;
+        crate::harness::pi::send_prompt(client, &text, delivery, &prepared.images)
+            .await
+            .context(Undelivered)?;
+        return Ok(text);
+    }
+    // grok takes a prompt into the running turn through a method of its own;
+    // a second `session/prompt` would take over the id the turn settles on.
+    if let (Transport::Grok(session), crate::harness::pi::Delivery::Steer) = (transport, delivery) {
+        crate::harness::grok::interject(session, &text).await.context(Undelivered)?;
         return Ok(text);
     }
     // fx takes a prompt as a request that blocks for the turn, so the write
@@ -3375,6 +3443,17 @@ pub async fn strand_queue_on_exit(
 mod tests {
     use super::*;
     use crate::harness::claude_code::{mapper::Mapper, parser};
+
+    /// `steer` tells a send that failed after the bubble was logged from one
+    /// that failed before it by the marker alone, so it has to survive as
+    /// context over the harness's own error and not match a plain one.
+    #[test]
+    fn a_failed_send_is_told_from_a_failed_prepare() {
+        let sent = Err::<(), _>(anyhow::anyhow!("broken pipe")).context(Undelivered).unwrap_err();
+        assert!(sent.is::<Undelivered>());
+        assert_eq!(format!("{sent:#}"), "couldn't hand the prompt to the agent: broken pipe");
+        assert!(!anyhow::anyhow!("attachment unreadable").is::<Undelivered>());
+    }
 
     /// A send holding one session's lock across a respawn — seconds of kill,
     /// spawn and git — must not hold up Stop in another, and must still order

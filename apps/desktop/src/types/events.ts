@@ -1741,7 +1741,16 @@ issues: Array<IssueRef>,
  * also what the depth guard reads: a session that was itself spawned may
  * not spawn more.
  */
-parentSessionId: string | null, created: string, modified: string, archived: boolean, pinned: boolean, };
+parentSessionId: string | null, created: string, modified: string, archived: boolean, pinned: boolean, 
+/**
+ * Left out of the sidebar and drawn only in its parent's crew — a review
+ * session nobody means to read on its own. `dray new --hidden` sets it,
+ * the crew row's menu clears it, and detaching clears it too, since a
+ * session with no parent has no crew to be drawn in.
+ *
+ * `#[serde(default)]`: an entry written before the field reads as shown.
+ */
+hidden: boolean, };
 
 /**
  * Session-level facts, known at startup.
@@ -1864,7 +1873,16 @@ issues: Array<IssueRef>,
  * also what the depth guard reads: a session that was itself spawned may
  * not spawn more.
  */
-parentSessionId: string | null, created: string, modified: string, archived: boolean, pinned: boolean, };
+parentSessionId: string | null, created: string, modified: string, archived: boolean, pinned: boolean, 
+/**
+ * Left out of the sidebar and drawn only in its parent's crew — a review
+ * session nobody means to read on its own. `dray new --hidden` sets it,
+ * the crew row's menu clears it, and detaching clears it too, since a
+ * session with no parent has no crew to be drawn in.
+ *
+ * `#[serde(default)]`: an entry written before the field reads as shown.
+ */
+hidden: boolean, };
 
 /**
  * Driven by [`StatusTracker`](crate::session::StatusTracker). `Completed`

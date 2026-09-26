@@ -1,6 +1,7 @@
 import { lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { Plus } from "lucide-react";
 
@@ -34,6 +35,7 @@ import {
   closeTab,
   describePick,
   isRecording,
+  navigate,
   openInBrowser,
   setPendingTab,
   setPickHandler,
@@ -56,6 +58,7 @@ import RightPanel, {
   PanelToggle,
   TabBody,
   tabOrder,
+  type PanelSide,
   type PanelTab,
 } from "@/components/RightPanel";
 import {
@@ -72,7 +75,7 @@ import Sidebar, {
   sessionUnits,
   sortSessions,
 } from "@/components/Sidebar";
-import Crew, { CREW_W, CrewHint } from "@/components/Crew";
+import Crew, { CREW_STACK_WITH_PANEL_W, CREW_W } from "@/components/Crew";
 import SplitView, { DragGhost, DropZone, type PaneChat } from "@/components/SplitView";
 import { DROP_ATTR, useSessionDrag, type DropTarget } from "@/lib/dragSession";
 import {
@@ -139,8 +142,8 @@ import { changeRange, lastToolResult, turnChangedTree } from "@/lib/changes";
 import { usePlan } from "@/lib/plan";
 import { currentTodos, startsNewList, type Todo } from "@/lib/todos";
 import { prBadgeCount, sessionBranch } from "@/lib/pr";
-import { crewAnchor, crewRows, crewSeen } from "@/lib/crew";
-import { sidebarMove } from "@/lib/sidebarAuto";
+import { crewAnchor, crewRows, crewSeen, inSidebar, withHiddenAsks } from "@/lib/crew";
+import { panelMove, sidebarMove } from "@/lib/sidebarAuto";
 import { playCelebration } from "@/lib/sound";
 import {
   activeSpace,
@@ -222,6 +225,7 @@ function App() {
     handleRespondPermission,
     handleAnswerQuestions,
     handleSelectSessionIndexItem,
+    navGen,
     handleNewSession,
     markSessionUnread,
     setSessionFlags,
@@ -289,6 +293,12 @@ function App() {
     "ade.autoHideSidebarInBrowser",
     true,
   );
+  // The right pane's half of the same bargain, its own switch since a reader
+  // may want the pane beside a page where the sidebar is only in the way.
+  const [autoHidePanel, setAutoHidePanel] = useLocalStorage("ade.autoHidePanelInBrowser", true);
+  // Owned here for the same reason: `RightPanel`, the shell and the settings
+  // row all read it.
+  const [panelSide, setPanelSide] = useLocalStorage<PanelSide>("ade.panelSide", "right");
   // Whether the reader has been told the app does that. Written once and never
   // cleared, the same bargain `splitLearned` makes below.
   const [autoHideNoticed, setAutoHideNoticed] = useLocalStorage(
@@ -741,13 +751,18 @@ function App() {
   // The sidebar counts at its drawn width, since the panel yields to it and a
   // widened sidebar would otherwise leave the panel a sliver; floored at its
   // minimum, because narrowing the window clamps that width under it.
+  // Up to a 14" MacBook's width, an open panel stacks the crew even where the
+  // minimums fit: all four at their floors reads as cramped, not as fitting.
+  // That case still starts shown — it fits, it is only drawn somewhere else.
   const crewPanelOpen = !!(crewAnchorId && panelOpens[crewAnchorId]) && !issuesOpen;
   const sidebarW = Math.max(SIDEBAR_MIN, usePaneWidth("sidebar"));
-  const crewBeside =
-    useViewportWidth() >=
+  const viewportW = useViewportWidth();
+  const crewFits =
+    viewportW >=
     CHAT_MIN + CREW_W + (collapsed ? 0 : sidebarW) + (crewPanelOpen ? PANEL_MIN : 0);
+  const crewBeside = crewFits && !(crewPanelOpen && viewportW <= CREW_STACK_WITH_PANEL_W);
   const [crewHiddenBy, setCrewHiddenBy] = useState<Record<string, boolean>>({});
-  const crewHidden = !!crewAnchorId && (crewHiddenBy[crewAnchorId] ?? !crewBeside);
+  const crewHidden = !!crewAnchorId && (crewHiddenBy[crewAnchorId] ?? !crewFits);
   const crewUp = crewExists && !crewHidden;
   const crewDrawn = crewAvailable && !crewHidden;
 
@@ -1019,8 +1034,13 @@ function App() {
   // mounted at all.
   const [searchOpen, setSearchOpen] = useState(false);
   const searchedSessions = useMemo(
-    () => filterSessions(visibleSessions, search),
+    () => filterSessions(inSidebar(visibleSessions), search),
     [visibleSessions, search],
+  );
+  // A hidden session's card lights its parent's row, the only row it has.
+  const sidebarAsking = useMemo(
+    () => withHiddenAsks(sessionIndexItems, askingSessions),
+    [sessionIndexItems, askingSessions],
   );
 
   // The sidebar's marks: one `gh` per repo on screen rather than one per row —
@@ -1051,6 +1071,24 @@ function App() {
   const prBranch = selectedSession
     ? sessionBranch(selectedSession, workStatus?.branch)
     : null;
+  // The header's way back from a hidden session, which has no sidebar row. The
+  // loaded side first, else asked of the backend: with the sidebar on the other
+  // side of the settled split the parent is not in the list, and still exists.
+  const hiddenParentId = selectedSession?.hidden ? selectedSession.parentSessionId : null;
+  const loadedParent = sessionIndexItems.find((i) => i.sessionId === hiddenParentId);
+  const [fetchedParent, setFetchedParent] = useState<SessionIndexItem | null>(null);
+  useEffect(() => {
+    if (!hiddenParentId || loadedParent) return;
+    let live = true;
+    void invoke<SessionIndexItem | null>("session_index_item", { sessionId: hiddenParentId })
+      .then((item) => live && setFetchedParent(item))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [hiddenParentId, loadedParent]);
+  const hiddenParent =
+    loadedParent ?? (fetchedParent?.sessionId === hiddenParentId ? fetchedParent : undefined);
   // "The PR tab is on screen", read off the *pick* rather than off `activeTab`,
   // which cannot exist yet — it is derived from this hook's own answer. An
   // unset pick counts, since the derived default is the PR tab whenever there
@@ -1176,9 +1214,9 @@ function App() {
   const pendingBrowserTab = usePendingTab(selectedSessionId ?? "");
   const hasBrowserTabs = browserTabs && browserTabs.length > 0;
   // The main column's Browser view is the panel's browser expanded. Arriving
-  // on it closes the pane, every time and whatever tab the pane was on: the
-  // reader came for the full width. Nothing keeps it closed — ⌘E brings it
-  // back beside the page — and the next arrival closes it again.
+  // on it closes the pane, whatever tab the pane was on: the reader came for
+  // the full width. ⌘E brings it back beside the page, and leaving gives back
+  // a pane the arrival took — the sidebar's rule, under its own switch.
   const fullBrowserOpen = !issuesOpen && viewTab === "browser";
   const lastViewTab = useRef(viewTab);
   // Set only where arriving on the browser is what collapsed the sidebar, so
@@ -1186,10 +1224,29 @@ function App() {
   // drops the claim for the same reason: a sidebar they closed by hand while
   // reading a page is theirs, not ours to give back.
   const hidForBrowser = useRef(false);
+  // The pane's claims, one per pane key, since the pane is per session — see
+  // [panelMove](./lib/sidebarAuto.ts) for why one claim was not enough.
+  const panelHidForBrowser = useRef(new Set<string>());
+  const lastPanelKey = useRef(panelKey);
   useEffect(() => {
     const was = lastViewTab.current;
     lastViewTab.current = viewTab;
-    if (viewTab === "browser" && was !== "browser") setPanelOpen(false);
+    const keyMoved = lastPanelKey.current !== panelKey;
+    lastPanelKey.current = panelKey;
+
+    if (panelKey) {
+      const move = panelMove({
+        from: was,
+        to: viewTab,
+        keyMoved,
+        enabled: autoHidePanel,
+        open: panelOpen,
+        claimed: panelHidForBrowser.current.has(panelKey),
+      });
+      if (move === "hide") panelHidForBrowser.current.add(panelKey);
+      else if (move === "restore") panelHidForBrowser.current.delete(panelKey);
+      if (move) setPanelOpen(move === "restore");
+    }
 
     // The sidebar's own rule is [sidebarMove](./lib/sidebarAuto.ts), which is
     // pure and tested: `collapsed` is a dep this effect only *reads*, so the
@@ -1223,6 +1280,9 @@ function App() {
   }, [
     viewTab,
     setPanelOpen,
+    panelOpen,
+    panelKey,
+    autoHidePanel,
     collapsed,
     setCollapsed,
     autoHideSidebar,
@@ -1255,7 +1315,12 @@ function App() {
   // the reader's pick for when they switch to one that has it.
   const activeTab: PanelTab = panelTab && tabs.includes(panelTab) ? panelTab : defaultTab;
 
-  const togglePanel = () => setPanelOpen((prev) => !prev);
+  // Drops the Browser view's claim, `toggleSidebar`'s reason: a pane moved by
+  // hand is the reader's.
+  const togglePanel = () => {
+    if (panelKey) panelHidForBrowser.current.delete(panelKey);
+    setPanelOpen((prev) => !prev);
+  };
 
   // Moves along the visible row, wrapping. Off `tabs` rather than `PANEL_TABS`,
   // so a session with no PR tab cycles through two and never lands on one that
@@ -1459,11 +1524,11 @@ function App() {
         projects,
         // The same reading the sidebar groups by, and withheld on the same list
         // — the walk has to step the runs the eye is looking at.
-        archivedShown ? undefined : { statusBySession, asking: askingSessions },
+        archivedShown ? undefined : { statusBySession, asking: sidebarAsking },
         archivedShown,
         archivedShown ? [] : spaceGroups,
       ),
-    [searchedSessions, projects, archivedShown, statusBySession, askingSessions, spaceGroups],
+    [searchedSessions, projects, archivedShown, statusBySession, sidebarAsking, spaceGroups],
   );
 
   // Wraps downward only. Falling off the bottom returns to the newest session,
@@ -1500,11 +1565,11 @@ function App() {
       sessionUnits(
         searchedSessions,
         projects,
-        archivedShown ? undefined : { statusBySession, asking: askingSessions },
+        archivedShown ? undefined : { statusBySession, asking: sidebarAsking },
         archivedShown,
         archivedShown ? [] : spaceGroups,
       ),
-    [searchedSessions, projects, archivedShown, statusBySession, askingSessions, spaceGroups],
+    [searchedSessions, projects, archivedShown, statusBySession, sidebarAsking, spaceGroups],
   );
   const stepGroup = (delta: number) => stepThrough(units, delta);
 
@@ -1638,6 +1703,7 @@ function App() {
     // what was open in it. Nothing is restored: the effect below closes a
     // transcript that falls outside the space being entered.
     filterSelection.current[projectFilter ?? ""] = selectedSessionId;
+    filterGen.current++;
     setProjectFilter(null);
 
     for (const notice of getNotices()) {
@@ -1663,6 +1729,9 @@ function App() {
   /// switch after launch, so the entry is written on the way out of a filter
   /// and nowhere else.
   const filterSelection = useRef<Record<string, string | null>>({});
+  /// Bumped at every filter move, at call time, so a read across an await can
+  /// tell the filter moved under it. Rendered state is a render behind.
+  const filterGen = useRef(0);
 
   /// Drops a session from every filter's memory, so a filter cannot reopen a
   /// transcript the reader has just put away.
@@ -1689,6 +1758,7 @@ function App() {
   const changeProjectFilter = (next: string | null) => {
     if (next === projectFilter) return;
     filterSelection.current[projectFilter ?? ""] = selectedSessionId;
+    filterGen.current++;
     setProjectFilter(next);
     if (next) handleSelectProject(next);
 
@@ -1703,6 +1773,68 @@ function App() {
       else handleNewSession();
     });
   };
+
+  /// Opens a session named by a notice or a banner, which can be in any project,
+  /// and takes the filter to it — or the sidebar shows no row selected.
+  ///
+  /// Only once the select has landed: a rollback puts the old session back, and
+  /// following that would undo a filter switch the reader just made. A detached
+  /// project has no filter entry, so its session widens to All Projects. And
+  /// only where no filter or space switch landed during the read — everything
+  /// below is the click-time render's, and would undo that switch.
+  const openFromNotice = async (sessionId: string) => {
+    const previous = selectedSessionId;
+    const gen = filterGen.current;
+    const selecting = handleSelectSessionIndexItem(sessionId);
+    // Past this select's own move, so any later one is somebody else's.
+    const nav = navGen.current;
+    if (!(await selecting) || !projectFilter) return;
+    if (gen !== filterGen.current) return;
+    const path = (await indexItem(sessionId))?.projectPath;
+    if (gen !== filterGen.current || nav !== navGen.current) return;
+    // Outside the space, the space effect below closes it instead.
+    if (!path || path === projectFilter || !sessionInSpace(projects, space, path)) return;
+    const next = spaceProjects.some((p) => p.path === path) ? path : null;
+    filterSelection.current[projectFilter] = previous;
+    filterGen.current++;
+    setProjectFilter(next);
+    if (next) handleSelectProject(next);
+  };
+
+  /// A session's index entry from the loaded side, else from the backend: the
+  /// sidebar holds one side of the settled split, and a notice can name a
+  /// session on the other.
+  const indexItem = async (id: string) =>
+    sessionIndexItems.find((i) => i.sessionId === id) ??
+    (await invoke<SessionIndexItem | null>("session_index_item", { sessionId: id }).catch(
+      () => null,
+    ));
+
+  /// A notice or banner click. A hidden session is drawn in its parent's crew,
+  /// so it opens the parent — where the parent still exists.
+  const openNotice = async (id: string) => {
+    // Claimed by bumping before the lookups, so any move landing during them —
+    // a click, a filter switch, a second notice — wins and this gives up.
+    const nav = ++navGen.current;
+    const gen = filterGen.current;
+    const item = await indexItem(id);
+    const parent = item?.hidden && item.parentSessionId ? await indexItem(item.parentSessionId) : null;
+    if (nav !== navGen.current || gen !== filterGen.current) return;
+    await openFromNotice(parent?.sessionId ?? id);
+  };
+
+  // A ref, since the listener is registered once and the handler reads state.
+  const openFromNoticeRef = useRef(openNotice);
+  openFromNoticeRef.current = openNotice;
+  // The reader clicked a desktop banner. Rust has already raised the window.
+  useEffect(() => {
+    const unlisten = listen<string>("notification_activated", (event) => {
+      goToSession(() => void openFromNoticeRef.current(event.payload));
+    });
+    return () => void unlisten.then((f) => f());
+    // `goToSession` only closes pages through stable setters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /// Declares a space, and reports it only where one is actually made.
   ///
@@ -2075,6 +2207,10 @@ function App() {
   // Safe to take despite being the webview's reload, because `useHotkey` claims
   // every chord it matches — and the app has no Reload menu item, which on
   // macOS would swallow the key before the webview ever saw it.
+  //
+  // The browser reloads its page. A press inside the page never gets here —
+  // Chromium has the key, and cef.rs reloads there.
+  const browserShown = fullBrowserOpen || (panelShown && activeTab === "browser");
   useHotkey("panel.refresh", () => {
     // "Re-read what I am looking at", the same rule the session case follows:
     // the pane wins where one is open, and the list has it otherwise.
@@ -2082,7 +2218,20 @@ function App() {
       if (pickedIssue) return pickedIssueData.refresh();
       return issuesRefreshRef.current?.();
     }
+    if (browserShown && selectedSessionId) {
+      if (!pendingBrowserTab && browserTabs?.some((tab) => tab.active)) {
+        void navigate(selectedSessionId, "reload");
+      }
+      return;
+    }
     if (panelShown) panelRefresh?.onRefresh();
+  });
+  // ⌘T, the chord every browser gives a new tab. Bound only while the browser
+  // is on screen, so it stays free everywhere else.
+  useHotkey("browser.newTab", () => {
+    if (selectedSessionId && !isRecording(selectedSessionId)) setPendingTab(selectedSessionId, true);
+  }, {
+    enabled: browserShown && !!selectedSessionId,
   });
   // ⌘S writes the doc on screen. Unregistered rather than a no-op off that tab:
   // `useHotkey` claims every chord it matches, and ⌘S is the browser's own save
@@ -2201,6 +2350,15 @@ function App() {
   const shownSession =
     selectedSession ?? sessionIndexItems.find((i) => i.sessionId === selectedSessionId) ?? null;
 
+  // A left panel with the sidebar collapsed takes the window's left edge, and
+  // with it the traffic lights the header would otherwise clear. Fullscreen has
+  // none to clear.
+  const panelAtLeftEdge =
+    panelSide === "left" &&
+    collapsed &&
+    !fullscreen &&
+    (issuesOpen ? !!pickedIssue : !!shownSession && panelShown);
+
   // What every transcript on screen reports back through: the main column, a
   // split pane and a crew strip alike.
   const paneChat: PaneChat = {
@@ -2224,6 +2382,7 @@ function App() {
       // The issues page fills the column, so the centred empty-composer state
       // is wrong there even with no session selected.
       centered={!shownSession && !issuesOpen}
+      panelLeft={panelSide === "left"}
       overlay={singleDrop && <DropZone region={singleDrop.region} label={singleDrop.label} />}
       // Chat's alone, and not a `TabBody` — the other views answer questions
       // about a repository rather than about a conversation, and a split is
@@ -2242,12 +2401,11 @@ function App() {
             onToggle={toggleCrewRow}
             onFocus={focusSession}
             onOpenInMain={openCrewRowInMain}
+            onShowInSidebar={(id) => void setSessionFlags(id, { hidden: false })}
             composing={composing}
             active={!issuesOpen && viewTab === "chat"}
             chat={paneChat}
           />
-        ) : crewAvailable && !crewBeside ? (
-          <CrewHint />
         ) : undefined
       }
       sidebar={
@@ -2268,7 +2426,7 @@ function App() {
           projectFilter={projectFilter}
           onProjectFilterChange={changeProjectFilter}
           statusBySession={statusBySession}
-          askingSessions={askingSessions}
+          askingSessions={sidebarAsking}
           prFor={prMarks.prFor}
           // Cleared while the page is up. The column is showing issues, so a
           // lit row would name a session that is nowhere on screen — and the
@@ -2334,7 +2492,7 @@ function App() {
                 "flex items-center",
                 // Fullscreen has no traffic lights, so the toggle pulls back past
                 // the header's own padding to sit flush at the window edge.
-                fullscreen ? "-ml-1" : "pl-(--traffic-lights-w)",
+                fullscreen ? "-ml-1" : !panelAtLeftEdge && "pl-(--traffic-lights-w)",
               )}
             >
               {/* No dev badge beside it: the badge lives at the sidebar's
@@ -2352,6 +2510,13 @@ function App() {
             // its session, and the focused one's repeated up here read as a
             // second line of the same row.
             standIn={issuesOpen ? "Issues" : mainGroup ? groupName(mainGroup) : null}
+            parent={
+              hiddenParent && {
+                title: hiddenParent.title,
+                onSelect: () =>
+                  goToSession(() => void handleSelectSessionIndexItem(hiddenParent.sessionId)),
+              }
+            }
             className="flex-1"
           />
 
@@ -2382,6 +2547,8 @@ function App() {
         // changes and a pull request belonging to work the reader had left.
         issuesOpen ? (
           <RightPanel
+            side={panelSide}
+            clearTrafficLights={panelAtLeftEdge}
             open={!!pickedIssue}
             // A word rather than a tab row: there is one thing in this pane
             // and nothing to switch to. "Details" and not "Issue", which would
@@ -2427,6 +2594,8 @@ function App() {
         // changes tab from snapshotting the working tree in the background.
         shownSession ? (
           <RightPanel
+            side={panelSide}
+            clearTrafficLights={panelAtLeftEdge}
             open={panelShown}
             tab={activeTab}
             onTabChange={setPanelTab}
@@ -2443,6 +2612,7 @@ function App() {
             tabs={tabs}
             refresh={panelRefresh}
             cwd={shownSession.cwd}
+            widthKey={shownSession.sessionId}
           >
             <TabBody active={activeTab === "changes"}>
               <MountOnce when={panelShown && activeTab === "changes"}>
@@ -2486,6 +2656,13 @@ function App() {
                 branch={prBranch}
                 cwd={shownSession.cwd}
                 {...pullRequests}
+                // Pinned at the press: with no pick the default follows an
+                // *open* PR, so a merge would flip the pane to Changes under
+                // the reader waiting to see it land.
+                act={(number, action) => {
+                  setPanelTab("pr");
+                  return pullRequests.act(number, action);
+                }}
               />
               </MountOnce>
             </TabBody>
@@ -2806,13 +2983,13 @@ function App() {
     {/* Outside `AppShell` on purpose: it is fixed to the window rather than
         placed in the layout, and the shell has no slot that isn't a pane. */}
     <NoticeStack
-      onSelect={(id) => goToSession(() => void handleSelectSessionIndexItem(id))}
+      onSelect={(id) => goToSession(() => void openNotice(id))}
       // The session and the pane both, since the card is about something the
       // transcript does not show. The pick is written the same way
       // `usePullRequest`'s `onOpened` writes it — `activeTab` honours a
       // standing pick, and opening the pane stores "changes" on its own.
       onOpenPr={(id) => {
-        void handleSelectSessionIndexItem(id);
+        void openFromNotice(id);
         showPanel("pr", id);
       }}
       onDeleteWorktree={(id) => removeWorktree(id)}
@@ -2845,6 +3022,10 @@ function App() {
       onMoveProject={moveProject}
       autoHideSidebar={autoHideSidebar}
       onAutoHideSidebarChange={setAutoHideSidebar}
+      autoHidePanel={autoHidePanel}
+      onAutoHidePanelChange={setAutoHidePanel}
+      panelSide={panelSide}
+      onPanelSideChange={setPanelSide}
       integrations={integrations}
       updateStatus={updateStatus}
       updateManual={updateManual}
