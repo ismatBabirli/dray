@@ -32,7 +32,7 @@ export function MiniHome() {
         <div className="relative mx-auto w-[960px]">
           <div className="flex h-10 items-start justify-between">
             <div className="flex h-10 w-[120px] items-center bg-black pl-4 light:bg-white">
-              <Wordmark className="h-[11px] w-auto text-white light:text-[#0A0A0A]" />
+              <Wordmark className="h-[18px] w-auto text-white light:text-[#0A0A0A]" />
             </div>
             <div className="flex h-10 border-r border-b border-white/20 light:border-black/15">
               <span className={`${CELL} w-[72px]`}>Docs</span>

@@ -250,10 +250,10 @@ def main():
     og_image(mark, word, out / "opengraph-1200x630.png")
     print(f"wrote brand/wain-{{mark,wordmark,lockup}}.svg and {len(list(out.glob('*.png')))} PNGs in brand/png")
     if "--install" in sys.argv:
-        install(out, lw, lh, body)
+        install(out, lw, lh, body, mark.w * 96 / mark.h, mark.path(96 / mark.h))
 
 
-def install(out, lw, lh, body):
+def install(out, lw, lh, body, mark_w_96, mark_path_96):
     """Copy the assets to where each app reads them. The inline lockups in apps/web's
     Wordmark.tsx and apps/desktop's onboarding Welcome.tsx are edited by hand from
     brand/wain-lockup.svg; afterwards apps/desktop/scripts/icons.sh rebuilds icns/ico."""
@@ -276,6 +276,9 @@ def install(out, lw, lh, body):
     sized = f'<svg width="{lw:g}" height="{lh:g}" viewBox="0 0 {lw:g} {lh:g}" fill="none" xmlns="http://www.w3.org/2000/svg">\n{black}\n</svg>\n'
     (ROOT / "apps/desktop/public/assets/wain-logo.svg").write_text(sized)
     (ROOT / "apps/gpui/assets/icons/wain-logo.svg").write_text(sized)
+    mw = round(mark_w_96, 2)
+    (ROOT / "apps/desktop/public/assets/icon.svg").write_text(
+        f'<svg width="{mw:g}" height="96" viewBox="0 0 {mw:g} 96" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="{mark_path_96}" fill="black"/>\n</svg>\n')
     print("installed into apps/desktop, apps/web, apps/docs and apps/gpui")
 
 
