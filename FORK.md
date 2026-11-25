@@ -24,6 +24,11 @@ Wain is a renamed fork of Dray (`monorepo-labs/dray`). `CLAUDE.md` below is upst
 - **The `Claude Code Review` Action runs only once its secret is set on `ismatbabirli/wain`.** Until then, review in the session (`/code-review`) before asking for a merge.
 - **The `caveman-commit` skill isn't installed.** Write commit messages by hand: a short plain subject, then why.
 
+## Releases
+
+- **Versions follow upstream's**: Wain's `vX.Y.Z` and `cli-vX.Y.Z` are upstream's numbers on Wain's code, so a version bump never conflicts on a sync. Tag Wain's own commit, never upstream's tag of the same name: the `upstream` remote is set to `--no-tags` so its tags stay out of this clone.
+- **`CLI_PUBLISH_GATE=off`** (a repo variable) lets a CLI release publish without waiting for the app release that speaks its protocol. It was set for the first CLI release, before any app release existed. Delete it (`gh variable delete CLI_PUBLISH_GATE`) once the app has shipped, so the gate guards later releases again.
+
 ## The site
 
 - wainhq.com runs on Ismat's Coolify, node 2: project `wainhq.com`, `wain-web` and `wain-postgres`. The runbook is `~/projects/infra/services/wain/README.md`, the scripts `deploy-wain.sh` and `dns-wain.sh`. That repo's `AGENTS.md` rules apply there: ask before anything that changes production.
