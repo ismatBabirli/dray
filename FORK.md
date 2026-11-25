@@ -24,7 +24,16 @@ Wain is a renamed fork of Dray (`monorepo-labs/dray`). `CLAUDE.md` below is upst
 - **Apple team `FBH9JL8MB9`** (Ismat's) replaces upstream's by a `rebrand.mjs` rule.
 - **`IslandView.composerCard` is split in four** (`cardContent`, `cardFill`, `cardFace`, `composerCard`). GitHub's Xcode 26 gave up type-checking it whole, which stopped the release; upstream builds on a newer Xcode and never sees it. On a sync conflict there, keep the split and carry upstream's change into it.
 - **`wain upload` doesn't work yet**: it posts to upstream's upload worker. Attach screenshots to the PR through GitHub instead.
-- **The `Claude Code Review` Action runs only once its secret is set on `ismatbabirli/wain`.** Until then, review in the session (`/code-review`) before asking for a merge.
+- **The `Claude Code Review` Action and `claude.yml` are disabled** (`gh workflow disable`), and their secret is not set. Until both change, review in the session (`/code-review`) before asking for a merge. They are the only workflows an outsider can start, by a comment or a pull request, so before `gh workflow enable`: pin their two actions to a SHA, as every other workflow is, and gate `claude.yml` on the commenter being the owner.
+
+## Repo safety
+
+The repo is public, so these hold on purpose (set 26 Nov 2026):
+
+- **Every outside pull request's workflows wait for Ismat's approval** (`fork-pr-contributor-approval: all_external_contributors`), not only a first-timer's.
+- **Ruleset "main stays":** `main` cannot be deleted or force-pushed, by anyone. Ordinary pushes, the upstream sync's merges included, go through.
+- **Ruleset "release tags: admin only":** only a repo admin creates, moves or deletes `v*` and `cli-v*`, so no token or app can start a release.
+- Nothing deploys on push: Coolify's auto-deploy is off and the repo has no webhooks or deploy keys. Ismat is the only collaborator, and the Actions token defaults to read and cannot approve pull requests.
 - **The `caveman-commit` skill isn't installed.** Write commit messages by hand: a short plain subject, then why.
 
 ## Releases
