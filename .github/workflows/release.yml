@@ -533,8 +533,10 @@ jobs:
           set -euo pipefail
           R="repos/${GITHUB_REPOSITORY}/releases"
           if ! ID="$(gh api "$R/tags/${GITHUB_REF_NAME}" --jq .id 2>/dev/null)"; then
+            # Wain: no target_commitish. The tag exists, so GitHub ignores it, and on
+            # this repo the Actions token is refused (403) whenever it is sent.
             ID="$(gh api "$R" -f tag_name="${GITHUB_REF_NAME}" -f name="${GITHUB_REF_NAME}" \
-              -f body="$NOTES" -f target_commitish="${GITHUB_SHA}" -F draft=false \
+              -f body="$NOTES" -F draft=false \
               -F prerelease="$PRERELEASE" -F generate_release_notes=true --jq .id)"
           fi
           upload() {
