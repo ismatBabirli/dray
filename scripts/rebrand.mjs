@@ -24,6 +24,9 @@ const RULES = [
   // server_id's pinned vector in Rust, Swift and Kotlin: sha256 of "dray-server\0test-token"
   // becomes the "wain-server\0" one, or all three tests fail on the renamed salt.
   [/4b3f3d0f73afd9cc/g, "350581a0ddbc1421"],
+  // Upstream's Apple team. Wain signs iOS and Island as Ismat's, and the site's
+  // APNs default must name the team the push key belongs to.
+  [/7WYP3LRDL8/g, "FBH9JL8MB9"],
   [/DRAY/g, "WAIN"],
   [/Dray/g, "Wain"],
   [/dray/g, "wain"],
@@ -110,6 +113,7 @@ function selfTest() {
     ["@yogesharc/thinking-orbs com.github.yogesharc:thinking-orbs", "@yogesharc/thinking-orbs com.github.yogesharc:thinking-orbs"],
     ["Copyright 2026 Yogesh Dhakal", "Copyright 2026 Yogesh Dhakal"],
     ["https://github.com/Monorepo-Labs/dray/pull/1", "https://github.com/IsmatBabirli/wain/pull/1"],
+    ["DEVELOPMENT_TEAM: 7WYP3LRDL8", "DEVELOPMENT_TEAM: FBH9JL8MB9"],
   ];
   for (const [from, to] of cases) assert.equal(rebrand(from), to);
 
