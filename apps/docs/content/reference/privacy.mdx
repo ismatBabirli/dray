@@ -1,167 +1,90 @@
 ---
 title: Privacy
-description: Wain's privacy policy. What the desktop app, the iPhone and iPad app, Wain accounts and wainhq.com collect, what is never sent, how to turn analytics off, and how to delete your account.
+description: Wain's privacy policy. What the desktop app, Wain accounts and wainhq.com collect, where it is kept, what is never sent, and how to delete your account.
 sidebar:
   order: 4
 ---
 
-This is Wain's privacy policy. It covers the Wain desktop app, the Wain app for iPhone and iPad, Wain accounts, and wainhq.com with these docs. "We" and "us" here mean Wain.
+This is Wain's privacy policy. It covers the Wain desktop app, the `wain` command line and server, Wain accounts, and wainhq.com with these docs. Wain is run by Ismat Babirli; "we" and "us" here mean him. Write to [support@wainhq.com](mailto:support@wainhq.com) about anything on this page.
 
 Last updated: 25 November 2026.
 
 In short:
 
 - Your prompts, code, transcripts and files stay on your own machines.
-- The desktop app sends a few [anonymous usage events](#analytics-in-the-desktop-app). You can [turn them off](#turn-analytics-off).
-- The [iPhone and iPad app](#the-iphone-and-ipad-app) collects nothing. Its alerts pass through wainhq.com on their way to Apple, and are not stored.
+- Wain sends no analytics: no usage events, no error reports, no surveys.
 - A [Wain account](#your-wain-account) holds your name, email address and the machines you sign in on.
 - We sell nothing, show no ads and do not track you across other apps or sites.
 
-## Analytics in the desktop app
+## No analytics
 
-Wain sends a small set of anonymous usage events, so we can see which builds are in use, which features get used and where the app breaks. Your prompts, code, conversations, file paths, session titles and error messages never leave your machine through analytics. Analytics is on, and Settings has no switch for it.
+Wain's builds send no usage events, error reports or surveys, from the app, the background server or the Linux server. The source code can send anonymous usage events when it is built with an analytics key; Wain's releases are built without one. If that ever changes, this page will say so first, and you will be able to turn it off by setting `WAIN_NO_ANALYTICS`.
 
-## Turn analytics off
+When something breaks, the details stay on your machine, in `~/.wain`. An agent line Wain could not read, for one, is kept in `~/.wain/parse_failures.jsonl`.
 
-Set `WAIN_NO_ANALYTICS` to any value in the environment Wain starts from. Wain then sends nothing, from the app or from the background server on your Mac, since the app passes the variable on to it. See [Environment variables](/reference/data#environment-variables) for how to start the app with one.
-
-Older versions had a **Share basic analytics** switch in Settings. A choice saved there is no longer read.
-
-## The install id
-
-Events are tied to a random id for this install, not to you. It is created with the first event and stored in `~/.wain/settings.json`.
-
-## What is sent
-
-Every event carries the same few facts about the build:
-
-| Property | Example |
-|---|---|
-| `app_version` | `0.28.1` |
-| `os`, `arch` | `macos`, `aarch64` |
-| `is_debug` | `false` |
-| `source` | `app` |
-
-PostHog, the service that receives events, keeps the IP address each event comes from, and uses it to tell the country.
-
-Then each event adds its own:
-
-| Event | When | Adds |
-|---|---|---|
-| `app_started` | Each launch | Nothing more. |
-| `active_day` | At most once a day: on launch, when Wain comes to the front, when you send a message, or when you use Wain Island | Nothing more. Messages agents send each other do not count. |
-| `session_started` | You create a session | Agent, model, effort, permission mode, whether fast mode is on, whether it uses a worktree, whether another session started it, whether it is a bot's chat, a bot's task or a routine's run, and where it runs: `local` or `remote` (below). |
-| `bot_created` | You make a bot | The bot's agent and `app`, or `cli` with no agent when an agent made it with `wain bot new`. Never its name. The bot Wain makes for you is not counted. |
-| `routine_added` | A bot adds a routine | Whether it runs `every` so often or `at` set times, and whether it has a check. Never its name or prompt. |
-| `feature_used` | A feature works | Which feature, from a fixed list (below). |
-| `error` | Something breaks | Where it broke, never what it said (below). |
-
-`feature_used` names one of: `dictation` (with the dictation model's id, and where you dictated: `app`, `island` or `phone`), `island_open` (you opened Wain Island), `island_send` (you sent a message from it), `island_card` (you answered a permission or question card from it), `bot_message` (you sent a message in a bot's chat, from the app, Wain Island or your phone; a bot's messages, task reports and routines don't count), `routine_run` (a routine started a run), `fork`, `pr_merged`, `linear_connected`, `space_created`, `worktree_deleted`, `settle`, `unsettle`, `pin`, `unpin`, `set_aside`, `unset_aside`, `handoff_commit`, `handoff_pr`, `handoff_runServer`, `handoff_custom` (you pressed a button of your own, never its label or prompt), `browser_open` (you opened a page in the browser, with `localhost` or `site` and never the address), `boat_resumed`, `boat_extended` (with how many minutes), `github_starred`, `github_star_dismissed` and `github_star_fallback_opened` (how you answered the card asking you to star Wain on GitHub), `remote_access`, `share`, `server_added` and `server_connected`. The last three add how: `app` or `cli` for a share, `ssh` or `address` for a server. Never the port, the address or the server's name. `server_connected` is sent at most once a day per kind.
-
-## What is never sent
+## What never leaves your machine
 
 - Your prompts, the agent's replies, and anything else in a transcript.
 - Code, file names and file paths.
 - Session titles, project names, branch names, issue titles.
 - Server names and addresses, ports and links.
-- The text of any error message.
-- Screens or recordings. Session recording and click tracking are off.
+- Screens and recordings.
 
-None of these go out with analytics. The one place a line of a conversation leaves your machine is an alert to your own iPhone, if you turned alerts on there; see [The iPhone and iPad app](#the-iphone-and-ipad-app).
-
-## Error reports
-
-When Wain breaks, the `error` event says where, in a form that cannot carry your data:
-
-- **A crash in the app's core:** the file and line in Wain's own source code, and the thread's name. Not the crash message, since that can contain a path.
-- **An agent line Wain could not read:** which agent, and at which step. Not the line itself. Sent once per agent and step per run. The full line stays on your machine in `~/.wain/parse_failures.jsonl`.
-- **A failed update install:** which step failed.
-- **A screen that crashed:** React's error code and up to eight locations in Wain's own code. Not the message.
-
-Other errors in the app's interface are not reported.
-
-## Surveys
-
-Now and then Wain may show a short survey card from PostHog, the analytics service it uses. With `WAIN_NO_ANALYTICS` set, no survey is loaded. A survey can be aimed at installs by the facts above and by how many sessions this install has. Answering is optional, and your answer goes to PostHog. Dismiss the card to skip it.
-
-## Linux servers
-
-A Wain server you install on Linux sends no analytics. The Mac app counts `server_added` and `server_connected` when you add or connect one, as described above.
-
-When you start a session on another machine from the Mac app, the app sends that `session_started`, under your own install id, with `location` set to `remote` and `remote_os` set to `macos`, `linux` or `other`. The same goes for a bot you make there and a message you send in its chat. The server's name, address and hostname are never sent. A Wain app on that other Mac does not count the session a second time. Sessions an agent starts there on its own, a bot's tasks and routines included, are counted by that machine, or not at all on Linux.
+Your agents talk to their own providers, as they do in a terminal; see [Other connections Wain makes](#other-connections-wain-makes).
 
 ## The website and these docs
 
-wainhq.com and these docs count page views, plus clicks on the download, iPhone, sponsor and FAQ buttons and the switch between dark and light, in the same PostHog project. They set a PostHog cookie holding a random id, so repeat visits and moves between pages count as one visitor. Nothing ties that id to who you are, and signing in does not tell PostHog who you are. Click tracking and session recording are off.
+wainhq.com and these docs run no analytics and set no tracking cookies. Signing in sets a session cookie, which keeps you signed in and nothing else.
 
-PostHog keeps the IP address each visit comes from, and uses it to tell the country.
-
-A page view carries the page's address. On your account pages that address holds your org's short name, such as `/app/your-org/servers`.
+Cloudflare carries every request to the site on its way to our server. It sees your IP address, as any network in the path does, and may set a cookie it needs to protect the site from attacks.
 
 ## Your Wain account
 
-You sign in to the desktop app with a Wain account, in your browser on wainhq.com. The same account links your servers to an org. The iPhone and iPad app needs no account.
+You sign in to the desktop app with a Wain account, in your browser on wainhq.com. The same account links your servers to an org.
 
-You sign in with GitHub, Google, or an email address and password. With GitHub or Google, they tell us your name, email address and profile picture. We ask for nothing else, and get no access to your repositories or other data there.
+You sign in with GitHub or Google. They tell us your name, email address and profile picture. We ask for nothing else, and get no access to your repositories or other data there. Email sign-in is not available yet.
 
 Your account holds:
 
 | What | Why |
 |---|---|
-| Your name and email address | To sign you in, show who you are, and send you sign-in codes. |
+| Your name and email address | To sign you in and show who you are. |
 | Your profile picture, from GitHub or Google | Shown beside your name on wainhq.com. |
 | A username, made from your email address | Yours to change in your account settings. |
-| A password, stored hashed, if you sign up with email | To sign you in. We never see the password itself. |
 | Your orgs and who is in them | So members of an org can share its servers. |
 | The machines you sign in on or link, by the name each gives itself | So you can see and unlink them. On a Mac this is its computer name. |
-| The IP address and browser of each sign-in on the site | Saved with that sign-in. |
+| The IP address and browser of each sign-in on the site | Saved with that sign-in, to spot sign-ins that aren't yours. |
 
-Sign-in codes reach you by email, sent through Bento.
-
-Your account is kept apart from analytics. The desktop app's events carry its random install id, never your account, and the website never tells PostHog who you are.
+It is stored in a database on a server we run ourselves, at netcup in Austria.
 
 ### Change or delete your account
 
 Change your name and username in your account settings on wainhq.com. To delete your account and everything it holds, email [support@wainhq.com](mailto:support@wainhq.com) from the address you sign in with. There is no delete button yet.
 
-## The iPhone and iPad app
+### Your rights
 
-The Wain app for iPhone and iPad collects nothing. It has no analytics, no crash reporting, no ads and no account.
-
-It talks to the Wain servers you add, and to wainhq.com only for alerts (below). Your sessions, code and messages travel between the app and your own machines. Each server's address and token stay on your device, the token in the Keychain.
-
-- **Dictation.** On iOS 26 and later, your speech can be turned into text on the iPhone itself. Or, when you pick your Mac in Settings › Dictation, the recording goes to the Wain server on your Mac, which turns it into text there. Either way, your voice never reaches us.
-- **Alerts.** With notifications allowed, the app trades your iPhone's Apple push token with wainhq.com for a sealed handle, and gives that handle to your servers. When a task is done, asks permission or a question, or has a pull request ready to merge, your server sends the alert through wainhq.com to Apple. An alert holds the task's title or the bot's name and one line: the first line of the agent's reply, the question, or what it asks permission for. wainhq.com passes it on and does not store or log it. A server sends none while someone used its Mac in the last two minutes. Turn alerts off, or each kind, in the app's Settings › Notifications. See [Notifications](/settings/notifications).
-- **Camera.** Used only to scan a pairing QR code. The picture stays on the device.
-- **Photos.** The app only adds pictures you choose to save. It never reads your library.
-- **Other connections.** The app reads GitHub's public list of Wain releases, to tell you when a server is out of date. A picture in a transcript that points to a web address is loaded from that address. Links open in your browser.
-- **Your Mac's count.** When the phone works through a Mac, the Mac app counts it the way it counts everything else on this page. A dictation from the phone is counted with where you dictated set to `phone`, and a task you start from the phone is counted as a session. Nothing else about it is sent.
-- **Deleting your data.** We hold none from the app. Remove a server in Settings to forget it and its token on the device. Do that before you delete the app: iOS can keep Keychain items after an app is deleted.
+You can ask us for a copy of what your account holds, to correct it, or to delete it, by writing to [support@wainhq.com](mailto:support@wainhq.com). We answer within 30 days. If you live in the EU or the UK, you can also complain to your data protection authority.
 
 ## Other connections Wain makes
 
-Besides analytics, Wain connects to the network for:
+Wain connects to the network for:
 
 - **Your agents.** Each agent CLI talks to its own provider, as it does in a terminal. Wain also asks the session's own agent, on its cheapest model, to write each session's title from your first prompt. For fx, Wain reads Vercel's public model list to know each model's effort levels.
-- **Updates.** Checking for and downloading new versions of the app and the `wain` CLI.
+- **Updates.** Checking for and downloading new versions of the app and the `wain` CLI, from Wain's GitHub repository.
 - **The changelog.** Reading what's new from wainhq.com.
 - **Your Wain account.** Signing in through wainhq.com, and checking now and then that the sign-in still holds. The sign-in and this machine's link to your org are kept in `~/.wain/account.json` and `~/.wain/org-link.json`.
-- **iPhone alerts,** only while an iPhone has asked this server for them: each alert goes through wainhq.com to Apple, as [above](#the-iphone-and-ipad-app).
 - **Downloads you trigger or need:** the Chromium framework for Wain's browser (from Spotify's CEF build server), dictation models (from Hugging Face).
 - **GitHub and Linear,** when you use pull requests or issues, through `gh` or your Linear key.
 - **OpenTunnel,** only while [Remote access](/reference/remote-access#remote-access) is on or a [public link](/reference/remote-access#share-a-dev-server) is live.
 
-Dictation runs on your Mac. Your voice never leaves it, except when your iPhone sends a recording to your own Mac to be turned into text (see [The iPhone and iPad app](#the-iphone-and-ipad-app)).
+Dictation runs on your Mac. Your voice never leaves it.
 
 ## Services we use
 
-- **PostHog** receives analytics from the desktop app and the website.
-- **Vercel** hosts wainhq.com and these docs.
-- **Railway** hosts the database that holds Wain accounts.
-- **GitHub** and **Google** sign you in, when you choose them.
-- **Bento** sends sign-in codes by email.
-- **Apple** delivers alerts to your iPhone.
-- **Dodo Payments** takes payments when you sponsor Wain. Your card details go to Dodo, never to us.
+- **Cloudflare** runs the domain's DNS and carries traffic to wainhq.com.
+- **netcup**, in Austria, hosts wainhq.com, these docs and the database that holds Wain accounts, on a server we run.
+- **Contabo**, in Germany, hosts the mail server for wainhq.com addresses, on a server we run. Mail you send to support@wainhq.com is kept there.
+- **GitHub** and **Google** sign you in, when you choose them. GitHub also hosts Wain's source code and releases.
 
 We sell no data, show no ads, and share nothing beyond these services.
 
@@ -175,6 +98,4 @@ Email [support@wainhq.com](mailto:support@wainhq.com). For other help, see [Help
 
 ## Limits
 
-- There is no switch in Settings. `WAIN_NO_ANALYTICS` is the only way to turn analytics off.
-- Surveys are drawn by PostHog and look like PostHog's, not like Wain.
 - There is no button to delete your account yet. Email us instead.

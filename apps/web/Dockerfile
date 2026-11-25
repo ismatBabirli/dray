@@ -7,9 +7,11 @@ WORKDIR /repo
 COPY . .
 RUN pnpm install --frozen-lockfile --filter @wain/web
 
-# Inlined into the pages by next build; Coolify passes it as --build-arg.
+# Both read by next build and baked in, the docs origin into the /docs rewrite;
+# Coolify passes them as --build-arg.
 ARG NEXT_PUBLIC_SITE_URL
-ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL NEXT_TELEMETRY_DISABLED=1
+ARG DOCS_ORIGIN
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL DOCS_ORIGIN=$DOCS_ORIGIN NEXT_TELEMETRY_DISABLED=1
 WORKDIR /repo/apps/web
 RUN pnpm build
 

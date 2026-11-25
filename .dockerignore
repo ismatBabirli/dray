@@ -1,12 +1,15 @@
-# Build context for apps/web/Dockerfile: an allowlist, or every app's assets and
-# Rust target dirs ship to the builder. Every workspace package.json comes along
-# so pnpm's frozen lockfile still sees the whole workspace.
+# Build context for apps/web/Dockerfile and apps/docs/Dockerfile: an allowlist, or
+# every app's assets and Rust target dirs ship to the builder. Every workspace
+# package.json comes along so pnpm's frozen lockfile still sees the whole workspace.
 *
 !package.json
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
 !apps/*/package.json
 !apps/web/
+!apps/docs/
 !apps/desktop/CHANGELOG.md
 apps/web/node_modules
 apps/web/.next
+apps/docs/node_modules
+apps/docs/dist
