@@ -10,16 +10,16 @@
 #    tree onto upstream-renamed. Parents: the previous sync and the upstream tip,
 #    so the merge base for wain is always the last sync, and git log still shows
 #    which upstream commit each sync came from (trailer "Upstream:").
-# 4. Merges upstream-renamed into the current branch when that is wain and clean;
+# 4. Merges upstream-renamed into the current branch when that is main and clean;
 #    otherwise prints the command.
 #
-# Env: UPSTREAM_REMOTE (upstream), UPSTREAM_BRANCH (main), WAIN_BRANCH (wain).
+# Env: UPSTREAM_REMOTE (upstream), UPSTREAM_BRANCH (main), WAIN_BRANCH (main).
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 REMOTE="${UPSTREAM_REMOTE:-upstream}"
 BRANCH="${UPSTREAM_BRANCH:-main}"
-WAIN_BRANCH="${WAIN_BRANCH:-wain}"
+WAIN_BRANCH="${WAIN_BRANCH:-main}"
 TARGET="refs/heads/upstream-renamed"
 
 git fetch -q "$REMOTE" "$BRANCH"

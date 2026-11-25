@@ -6,18 +6,18 @@ Wain is a renamed fork of Dray (`monorepo-labs/dray`). `CLAUDE.md` below is upst
 
 - **The maintainer is Ismat** (`ismatBabirli` on GitHub). Where `CLAUDE.md` says "he", "his feedback" or "his go", read Ismat. Assign issues to `ismatBabirli`, not `yogesharc`.
 - **One repo, `ismatbabirli/wain`.** Never open an issue, PR or comment on `monorepo-labs/dray`. A GitHub fork's PRs target the parent by default, so check `gh repo set-default --view` says `ismatbabirli/wain` before any `gh pr create`.
-- **Work happens on `wain`**, the product branch. The local `main` is a mirror of upstream; leave it alone.
+- **`main` is Wain**, the product branch, cloned in `~/projects/wain`. Upstream is the `upstream` remote (`monorepo-labs/dray`); its renamed copy is the `upstream-renamed` branch. Nothing tracks upstream's `main` locally.
 
 ## Syncing upstream
 
-- `scripts/sync-upstream.sh` brings upstream in, already renamed, onto `upstream-renamed`, and merges it into `wain` when that is checked out and clean. Run the tests after (`pnpm test:affected --full`).
+- `scripts/sync-upstream.sh` brings upstream in, already renamed, onto `upstream-renamed`, and merges it into `main` when that is checked out and clean. Run the tests after (`pnpm test:affected --full`).
 - **It stops if upstream's `LICENSE` changed.** Stop too, and ask Ismat.
 - **Never rename by hand what the script renames.** Change `scripts/rebrand.mjs` and re-sync instead, or the next sync conflicts on every line touched.
-- A conflict on a file `wain` changed on purpose (the copy below, the logo, `pluginBrand.ts`) is expected: keep Wain's version unless upstream's change is one Wain wants.
+- A conflict on a file Wain changed on purpose (the copy below, the logo, `pluginBrand.ts`) is expected: keep Wain's version unless upstream's change is one Wain wants.
 
 ## Things that differ from upstream
 
-- **Upstream's people and money are not Wain's.** No founder quotes, sponsors, testimonials, author numbers, upstream social accounts or upstream payment links. They were removed on `wain`; a sync must not bring them back. `FORK-PLAN.md` §5 lists them.
+- **Upstream's people and money are not Wain's.** No founder quotes, sponsors, testimonials, author numbers, upstream social accounts or upstream payment links. They were removed in Wain; a sync must not bring them back. `FORK-PLAN.md` §5 lists them.
 - **Logo:** every asset is built by `python3 brand/build.py --install` from `brand/wain-brand-sheet.png`, then `apps/desktop/scripts/icons.sh`. Don't edit the generated files by hand.
 - **No Greptile colour** (`pluginBrand.ts`), no upstream PostHog key (the docs read `DOCS_POSTHOG_KEY`), and the updater trusts only Wain's key; its private half is in `~/projects/infra/services/wain/.env`, encrypted.
 - **`wain upload` doesn't work yet**: it posts to upstream's upload worker. Attach screenshots to the PR through GitHub instead.
