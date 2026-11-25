@@ -29,13 +29,11 @@ reads:
 
 ## 0.34.3 · 2026-11-25
 
+The first release of Wain, made from Dray 0.34.3.
+
 ### Improved
 
-- **Onboarding has its own song.** "Welcome to Wain" starts with the
-  logo, reaches full volume a few seconds in and plays to its end, even
-  past sign-in. A speaker button at the top right of the Wain Bot step
-  and the sign-in page mutes it, and plays it again once it ends. The
-  logo's shimmer is louder too.
+- **The logo's shimmer is louder** when onboarding opens.
 
 ## 0.34.2 · 2026-11-25
 
