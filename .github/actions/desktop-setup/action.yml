@@ -78,8 +78,10 @@ runs:
       uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
       with:
         path: ${{ steps.paths.outputs.paths }}
-        key: darwin-cargo-${{ steps.rust.outputs.cachekey }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
-        restore-keys: darwin-cargo-${{ steps.rust.outputs.cachekey }}-
+        # Wain: per host arch. Build scripts and proc-macros only run where they were built,
+        # so an arm64 cache restored on an Intel Mac still recompiled all 445 crates.
+        key: darwin-cargo-${{ runner.arch }}-${{ steps.rust.outputs.cachekey }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+        restore-keys: darwin-cargo-${{ runner.arch }}-${{ steps.rust.outputs.cachekey }}-
 
     # Capped, so an install that hangs fails the job rather than holding it.
     - shell: bash
