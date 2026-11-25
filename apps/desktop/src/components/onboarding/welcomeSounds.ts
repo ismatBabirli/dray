@@ -1,5 +1,5 @@
-/// Onboarding's sounds: a shimmer under the logo's light, made in code, then
-/// a recorded song from the logo on (#1567). The shimmer was picked by
+/// Onboarding's sounds: a shimmer under the logo's light, made in code.
+/// Upstream follows it with a recorded song (#1567), which Wain drops. The shimmer was picked by
 /// ear (#1421) from takes that live in this file's history, as does the synth
 /// groove the song replaced.
 ///
@@ -8,7 +8,6 @@
 
 import { useSyncExternalStore } from "react";
 
-import musicUrl from "@/assets/onboarding-music.mp3";
 import { channel } from "@/lib/channel";
 
 /// High soft sines drifting in like light on glass, landing as the logo's
@@ -54,9 +53,6 @@ function voice(ctx: BaseAudioContext, to: AudioNode, hz: number, type: Oscillato
   osc.stop(until);
 }
 
-/// How long the song takes to rise from silent to full volume.
-const RISE_S = 1;
-
 /// `played` holds once the song has started in this run, so its control
 /// outlives the song and offers it again.
 type MusicState = { played: boolean; playing: boolean; muted: boolean };
@@ -88,51 +84,9 @@ export function replayOnboardingMusic() {
   startOnboardingMusic(0);
 }
 
-/// Onboarding's song, "Welcome to Wain", from the logo on: silent at first,
-/// rising to reach full volume `fullAtMs` from now. Played once, to its own
-/// ending, and never stopped: it outlives onboarding, so a
-/// reader quick through setup and sign-in still hears it out. A second call
-/// while it plays does nothing, which is also what keeps StrictMode's second
-/// effect run from starting a second copy.
-///
-/// Decoded into a buffer and scheduled on the audio clock rather than played
-/// by an `<audio>`, so the rise lands on time while the window is in the
-/// background, where timers are throttled.
-export function startOnboardingMusic(fullAtMs: number) {
-  if (music.playing) return;
-  let ctx: AudioContext;
-  try {
-    ctx = new AudioContext();
-  } catch {
-    return;
-  }
-  const close = () => {
-    mute = undefined;
-    setMusic({ playing: false });
-    void ctx.close().catch(() => {});
-  };
-  const master = ctx.createGain();
-  const full = ctx.currentTime + fullAtMs / 1000;
-  master.gain.setValueAtTime(0, 0);
-  master.gain.setValueAtTime(0, Math.max(0, full - RISE_S));
-  master.gain.linearRampToValueAtTime(1, full);
-  mute = ctx.createGain();
-  mute.gain.value = music.muted ? 0 : 1;
-  master.connect(mute).connect(ctx.destination);
-  setMusic({ played: true, playing: true });
-
-  void fetch(musicUrl)
-    .then((res) => res.arrayBuffer())
-    .then((bytes) => ctx.decodeAudioData(bytes))
-    .then((music) => {
-      const src = ctx.createBufferSource();
-      src.buffer = music;
-      src.connect(master);
-      src.onended = close;
-      src.start();
-    })
-    .catch(close);
-}
+/// Wain plays no song: upstream's sings "Welcome to Dray" (FORK.md). Never
+/// playing leaves `played` false, so the mute button never draws.
+export function startOnboardingMusic(_fullAtMs: number) {}
 
 /// Decaying noise as an impulse: a large soft room.
 function makeHall(ctx: BaseAudioContext, seconds: number) {
