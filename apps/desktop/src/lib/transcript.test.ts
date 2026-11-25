@@ -974,8 +974,8 @@ describe("segmentMedia", () => {
     } as AgentEventPayload);
   }
 
-  const video = "/Users/me/.dray/browser/recordings/s1/flow.mp4";
-  const stop = { command: 'dray browser record stop "flow"' };
+  const video = "/Users/me/.wain/browser/recordings/s1/flow.mp4";
+  const stop = { command: 'wain browser record stop "flow"' };
 
   /// A grouped run's results sit after the group in `work`, so the pictures of
   /// calls folded into one row must still be found.
@@ -1013,9 +1013,9 @@ describe("segmentMedia", () => {
   /// A file that only mentions a recording path — this very test file, read
   /// back by an agent, or searched for the command — is not a recording.
   it("reads a video add's output, in any home", () => {
-    const moved = "/srv/dray/browser/recordings/s1/screen.mp4";
+    const moved = "/srv/wain/browser/recordings/s1/screen.mp4";
     const items = [
-      { seq: 1, payload: { type: "tool_call_started", callId: "add", input: { command: `dray video add /tmp/screen.mov` } } },
+      { seq: 1, payload: { type: "tool_call_started", callId: "add", input: { command: `wain video add /tmp/screen.mov` } } },
     ] as never[];
     const results = new Map([["add", { text: `${moved}\n` }]]) as never;
     expect(segmentMedia(items, null, results)).toEqual([{ video: moved }]);
@@ -1023,7 +1023,7 @@ describe("segmentMedia", () => {
 
   it("does not read a home-relative path as an absolute one", () => {
     const items = [
-      { seq: 1, payload: { type: "assistant_text", text: "see ~/.dray/browser/recordings/s1/a.mp4 for it" } },
+      { seq: 1, payload: { type: "assistant_text", text: "see ~/.wain/browser/recordings/s1/a.mp4 for it" } },
     ] as never[];
     expect(segmentMedia(items, null, new Map())).toEqual([]);
   });
@@ -1031,12 +1031,12 @@ describe("segmentMedia", () => {
   it("reads recordings out of record stop's output alone", () => {
     const fixture = `const video = "${video}"`;
     expect(paths([callStarted(1, "a", { file_path: "/x/transcript.test.ts" }), result(2, "a", fixture, 0)])).toEqual([]);
-    expect(paths([callStarted(1, "a", { command: "rg -n 'dray browser record stop' src" }), result(2, "a", fixture, 0)])).toEqual([]);
+    expect(paths([callStarted(1, "a", { command: "rg -n 'wain browser record stop' src" }), result(2, "a", fixture, 0)])).toEqual([]);
   });
 
   /// Codex wraps every command in its shell's `-lc '…'`.
   it("takes record stop wherever a shell runs it", () => {
-    for (const command of [`/bin/zsh -lc 'dray browser record stop flow'`, "cd /x && dray browser record stop"]) {
+    for (const command of [`/bin/zsh -lc 'wain browser record stop flow'`, "cd /x && wain browser record stop"]) {
       expect(paths([callStarted(1, "a", { command }), result(2, "a", `saved ${video}`, 0)])).toEqual([video]);
     }
   });
@@ -1060,8 +1060,8 @@ describe("segmentMedia", () => {
 
   it("finds a recording under any dev home", () => {
     const paths = [
-      "/Users/me/.dray-dev/browser/recordings/s1/a.mp4",
-      "/Users/me/.dray-worktrees/opal-plum/browser/recordings/s1/b.mp4",
+      "/Users/me/.wain-dev/browser/recordings/s1/a.mp4",
+      "/Users/me/.wain-worktrees/opal-plum/browser/recordings/s1/b.mp4",
     ];
     const items = paths.flatMap((path, i) => [callStarted(2 * i, `c${i}`, stop), result(2 * i + 1, `c${i}`, `saved ${path}`, 0)]);
     const results = new Map(
@@ -1085,7 +1085,7 @@ describe("segmentMedia", () => {
       cwd: null,
     });
     const fromSubagent = { ...result(3, "c", "", 1), subagent: { toolUseId: "t" } } as unknown as AgentEvent;
-    const other = "/Users/me/.dray/browser/recordings/s1/other.mp4";
+    const other = "/Users/me/.wain/browser/recordings/s1/other.mp4";
     const media = sessionMedia([
       attached,
       callStarted(1, "a", stop),
@@ -1102,8 +1102,8 @@ describe("segmentMedia", () => {
   });
 
   it("hiddenInBotChat keeps only media a bot's chat does not draw", () => {
-    const named = "/Users/me/.dray/browser/recordings/s1/named.mp4";
-    const unnamed = "/Users/me/.dray/browser/recordings/s1/unnamed.mp4";
+    const named = "/Users/me/.wain/browser/recordings/s1/named.mp4";
+    const unnamed = "/Users/me/.wain/browser/recordings/s1/unnamed.mp4";
     const shot = { path: "/shots/tool.png", url: null, mimeType: "image/png" };
     const mine = { path: "/att/mine.png", url: null, mimeType: "image/png" };
     const events = [event(0, { type: "assistant_text", block: null, text: `Proof: ${named}` })];

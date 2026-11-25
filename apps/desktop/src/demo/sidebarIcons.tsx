@@ -1,6 +1,6 @@
 // Takes on the sidebar's four icons — New Task, Issues, Search, New bot —
 // drawn as our own SVGs, outline and filled, a few metaphors each. The whole
-// app runs against a real `dray-serve` as servers.html runs it; a picker swaps
+// app runs against a real `wain-serve` as servers.html runs it; a picker swaps
 // the icons in with a stylesheet over the real rows, so no seam sits in `src/`.
 //
 //   open "/demo/sidebar-icons.html?localUrl=ws://127.0.0.1:<port>&local=<token>"

@@ -179,7 +179,7 @@ export function BreakTile({ text, Scene }: { text: string; Scene: () => ReactNod
 
 /// The reminder as a card in the site's language: striped, a drawing on top
 /// and the line under it, on each palette's loudest colour (`--break-card` in
-/// App.css), so drayhq.com's blue stays Dray's own theme's.
+/// App.css), so wainhq.com's blue stays Wain's own theme's.
 export function BreakCard({
   text,
   Scene,

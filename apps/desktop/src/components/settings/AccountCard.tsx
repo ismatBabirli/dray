@@ -21,17 +21,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useDrayAccount, useOrgLink } from "@/hooks/useOrgLink";
+import { useWainAccount, useOrgLink } from "@/hooks/useOrgLink";
 import { MACHINE } from "@/lib/platform";
 import { useLocalServer } from "@/lib/servers";
 import { invoke, LOCAL } from "@/lib/transport";
 import { cn } from "@/lib/utils";
-import type { DrayUser } from "@/types/events";
+import type { WainUser } from "@/types/events";
 
 /// The account's picture, or its initials where there is none or it fails to
 /// load: first and last name. Size it with `size-*` alone; the letters scale
 /// with the circle.
-function AccountAvatar({ user, className }: { user: DrayUser; className?: string }) {
+function AccountAvatar({ user, className }: { user: WainUser; className?: string }) {
   const [failed, setFailed] = useState(false);
   if (user.image && !failed) {
     return (
@@ -94,7 +94,7 @@ const PROVIDERS = [
 ];
 const EMAIL = { id: "email", label: "email", Icon: Mail };
 
-/// The Dray account the app is signed in to (#874, #1277, #1314), at the top
+/// The Wain account the app is signed in to (#874, #1277, #1314), at the top
 /// of Settings' list: picture or initials, name and email. Its menu says how
 /// the account signs in and offers Sign out, which forgets the account,
 /// leaves this machine's link alone, and lands on the sign-in gate. Draws
@@ -103,7 +103,7 @@ const EMAIL = { id: "email", label: "email", Icon: Mail };
 export default function AccountCard() {
   const local = useLocalServer();
   const connected = local?.status === "connected";
-  const user = useDrayAccount(connected)?.user;
+  const user = useWainAccount(connected)?.user;
   const linked = !!useOrgLink(LOCAL, connected).state?.linked;
   const [asking, setAsking] = useState(false);
   if (!user) return null;
@@ -145,9 +145,9 @@ export default function AccountCard() {
       <AlertDialog open={asking} onOpenChange={setAsking}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Sign out of Dray?</AlertDialogTitle>
+            <AlertDialogTitle>Sign out of Wain?</AlertDialogTitle>
             <AlertDialogDescription>
-              You'll need to sign in again to use Dray.{linked && ` This ${MACHINE} stays linked.`}
+              You'll need to sign in again to use Wain.{linked && ` This ${MACHINE} stays linked.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

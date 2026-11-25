@@ -4,7 +4,7 @@ import { Avatar } from "@/components/account/AppNav";
 import { LABEL, LEAD, MUTED, ROWS, TITLE } from "@/components/account/styles";
 import { loadOrg } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Members - Dray" };
+export const metadata: Metadata = { title: "Members - Wain" };
 
 /// Who is in the org and in what role. Read-only until invites exist.
 export default async function MembersPage({ params }: { params: Promise<{ slug: string }> }) {

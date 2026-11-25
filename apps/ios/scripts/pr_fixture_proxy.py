@@ -1,4 +1,4 @@
-"""Sits between the phone and an isolated dray-serve. Forwards everything, but
+"""Sits between the phone and an isolated wain-serve. Forwards everything, but
 answers the PR commands itself from fixtures keyed on the session's repo
 (`pr-<state>` in cwd), so every sheet state shows and no real PR is touched.
 A merge flips that repo's fixture to MERGED; restart the proxy to reset it.
@@ -6,25 +6,25 @@ What `PrPanelTests` runs against.
 
 Setup, from apps/ios:
   1. A server of its own, never the app's:
-       DRAY_HOME=/tmp/pr-home DRAY_NO_ANALYTICS=1 dray --serve &
+       WAIN_HOME=/tmp/pr-home WAIN_NO_ANALYTICS=1 wain --serve &
   2. One session per state, each in a throwaway repo named for it
      (pr-running, pr-failing, pr-ready, pr-draft, pr-loggedout, pr-merge), titled "PR <state>".
      `merge` is the merge test's own copy of `ready`, so its merge never reaches the states test:
-       DRAY_ENDPOINT=/tmp/pr-home/dray.sock dray session new --project /tmp/pr-ready \\
+       WAIN_ENDPOINT=/tmp/pr-home/wain.sock wain session new --project /tmp/pr-ready \\
          --model haiku --effort low --title "PR ready" "Reply with the single word ok."
   3. pip install websockets, then
        python3 scripts/pr_fixture_proxy.py 64999 $(head -1 /tmp/pr-home/serve-port)
-  4. TEST_RUNNER_DRAY_URL=ws://127.0.0.1:64999 TEST_RUNNER_DRAY_TOKEN=$(cat /tmp/pr-home/serve-token) \\
-       xcodebuild test -only-testing:DrayUITests/PrPanelTests …
+  4. TEST_RUNNER_WAIN_URL=ws://127.0.0.1:64999 TEST_RUNNER_WAIN_TOKEN=$(cat /tmp/pr-home/serve-token) \\
+       xcodebuild test -only-testing:WainUITests/PrPanelTests …
 """
 import asyncio, json, re, sys
 import websockets
 
 LISTEN, UP = int(sys.argv[1]), int(sys.argv[2])
-URL = "https://github.com/monorepo-labs/dray/pull/812"
+URL = "https://github.com/ismatbabirli/wain/pull/812"
 
 def check(name, state):
-    return {"name": name, "state": state, "url": "https://github.com/monorepo-labs/dray/actions"}
+    return {"name": name, "state": state, "url": "https://github.com/ismatbabirli/wain/actions"}
 
 def comment(author, body, kind="comment", path=None, resolved=False, replies=0, minute=1):
     return {"author": author, "avatar": f"https://github.com/{author}.png?size=40", "body": body,
@@ -35,14 +35,14 @@ def comment(author, body, kind="comment", path=None, resolved=False, replies=0, 
 COMMENTS = [
     comment("mira-k", "Looks right on the SE now. Ship it.", "approved", minute=1),
     comment("greptile-apps", "`trailingSlot` is 36pt here and 32pt in the child row, so the time column drifts by 4pt.",
-            path="apps/ios/Dray/Sidebar.swift", replies=1, minute=2),
-    comment("greptile-apps", "Padding is hardcoded; Theme.Space.m covers it.", path="apps/ios/Dray/Theme.swift",
+            path="apps/ios/Wain/Sidebar.swift", replies=1, minute=2),
+    comment("greptile-apps", "Padding is hardcoded; Theme.Space.m covers it.", path="apps/ios/Wain/Theme.swift",
             resolved=True, minute=3),
 ]
 REVIEWED = comment("greptile-apps", "Confidence 4/5. The rail slot is fixed now, but one row still reads its width from the title.",
                    "reviewed", minute=4)
 PASSED = [check("build-macos", "success"), check("cargo test", "success"),
-          check("Greptile Review", "success"), check("Vercel — dray-site", "success")]
+          check("Greptile Review", "success"), check("Vercel — wain-site", "success")]
 
 def pr(**over):
     base = {"number": 812, "title": "Tighten session row spacing", "url": URL, "state": "OPEN", "isDraft": False,
@@ -54,9 +54,9 @@ def pr(**over):
 
 FIXTURES = {
     "running": [pr(mergeStateStatus="BLOCKED", checks=[check("build-macos", "pending"), check("cargo test", "pending"),
-               check("Greptile Review", "success"), check("Vercel — dray-site", "success")], comments=[REVIEWED] + COMMENTS[1:])],
+               check("Greptile Review", "success"), check("Vercel — wain-site", "success")], comments=[REVIEWED] + COMMENTS[1:])],
     "failing": [pr(mergeStateStatus="UNSTABLE", checks=[check("build-macos", "success"), check("cargo test", "failure"),
-               check("Greptile Review", "success"), check("Vercel — dray-site", "success")], comments=[REVIEWED] + COMMENTS[1:])],
+               check("Greptile Review", "success"), check("Vercel — wain-site", "success")], comments=[REVIEWED] + COMMENTS[1:])],
     "ready": [pr()],
     "merge": [pr()],
     "draft": [pr(isDraft=True, mergeStateStatus="DRAFT", comments=COMMENTS[1:])],

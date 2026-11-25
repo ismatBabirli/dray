@@ -43,7 +43,7 @@ describe("cardRepos", () => {
     expect(cardRepos([elsewhere, card("/a")])).toEqual(["github:o/r", "/a"]);
     // A remote chat keeps its server, whose `gh` reads the card.
     noteSession("remote-chat", "vps");
-    expect(cardRepos([{ ...elsewhere, sessionId: "remote-chat" }])).toEqual(["dray://vps/github:o/r"]);
+    expect(cardRepos([{ ...elsewhere, sessionId: "remote-chat" }])).toEqual(["wain://vps/github:o/r"]);
   });
 });
 

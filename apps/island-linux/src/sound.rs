@@ -1,6 +1,6 @@
-//! The island's sounds, the files the Mac island plays: Dray's own
+//! The island's sounds, the files the Mac island plays: Wain's own
 //! `notification.wav` for a new waiting card, the island's `send.wav` as a
-//! send or the last answer flashes, and Dray's dictation tones. On Linux each
+//! send or the last answer flashes, and Wain's dictation tones. On Linux each
 //! is handed to whichever of PipeWire's, PulseAudio's or ALSA's players is
 //! installed, so the island links no audio library; Windows plays them from
 //! memory with `PlaySound`.
@@ -25,7 +25,7 @@ fn file(cell: &'static OnceLock<Option<PathBuf>>, name: &str, bytes: &[u8]) -> O
     use std::os::unix::fs::OpenOptionsExt;
     cell.get_or_init(|| {
         let dir = std::env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
-        let path = dir.join(format!("dray-island-{}-{name}.wav", std::process::id()));
+        let path = dir.join(format!("wain-island-{}-{name}.wav", std::process::id()));
         let mut file = std::fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(&path).ok()?;
         file.write_all(bytes).ok()?;
         Some(path)
@@ -46,7 +46,7 @@ pub fn send() {
     sound(&SENT, "send", SEND);
 }
 
-/// Dray's own dictation tones, so the island and the app dictate alike: the
+/// Wain's own dictation tones, so the island and the app dictate alike: the
 /// microphone opened, and dictated words became a row.
 pub fn dictation_started() {
     sound(&STARTED, "dictate-start", START);

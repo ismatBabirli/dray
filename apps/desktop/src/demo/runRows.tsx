@@ -125,7 +125,7 @@ const SCENARIOS: Scenario[] = [
         "s2",
         "Monitor",
         "Wait for the window to launch",
-        "tail -f /tmp/dev.log | grep --line-buffered 'target/debug/dray'",
+        "tail -f /tmp/dev.log | grep --line-buffered 'target/debug/wain'",
       ),
       agent("c3", "Explore", "Check the grok mapper against the captured wire", {
         tokens: 9_800,
@@ -197,7 +197,7 @@ const SCENARIOS: Scenario[] = [
         "x3",
         "Monitor",
         "Wait for the window to launch",
-        "tail -f /tmp/dev.log | grep --line-buffered 'target/debug/dray'",
+        "tail -f /tmp/dev.log | grep --line-buffered 'target/debug/wain'",
       ),
     ],
   },

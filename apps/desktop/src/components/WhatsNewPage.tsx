@@ -29,7 +29,7 @@ export default function WhatsNewPage({
   onClose: () => void;
 }) {
   const count = highlights.length;
-  const heading = count === 1 ? "New in Dray." : `${count} new things in Dray.`;
+  const heading = count === 1 ? "New in Wain." : `${count} new things in Wain.`;
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
@@ -45,7 +45,7 @@ export default function WhatsNewPage({
         }}
         className="top-0 left-0 flex h-full w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 bg-[#1612F8] p-0 text-white shadow-none backdrop-blur-none select-none"
       >
-        <DialogTitle className="sr-only">New in Dray</DialogTitle>
+        <DialogTitle className="sr-only">New in Wain</DialogTitle>
         {/* The site's closing band: its own black stripes at 12%. */}
         <Stripes ink="#0000001F" />
         <header data-tauri-drag-region="deep" className="relative flex h-(--titlebar-h,40px) shrink-0 items-center justify-end">

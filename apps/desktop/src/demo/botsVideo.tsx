@@ -1,5 +1,5 @@
-// The whole app on three bots, for a video of what a bot does: Dray, Ops and
-// Docs in the sidebar and nothing else, Dray's chat open with its tasks
+// The whole app on three bots, for a video of what a bot does: Wain, Ops and
+// Docs in the sidebar and nothing else, Wain's chat open with its tasks
 // beside it, most of them on a sandbox server. Tauri's IPC is mocked and
 // holds the whole story in the page, so it needs no server and plays the
 // same every time.
@@ -10,10 +10,10 @@
 //
 // Record it in a visible window: a hidden tab clamps timers to a second.
 //
-// The story, quick on purpose: Yogesh asks for the changelog, Dray starts a
+// The story, quick on purpose: Yogesh asks for the changelog, Wain starts a
 // task and says nothing, the PR turns ready and its merge card lands with the
 // task's proof video, the card is merged, which settles the task. Then a rule
-// Dray answers with 👍 and learns, and the iOS task joins "Waiting on you".
+// Wain answers with 👍 and learns, and the iOS task joins "Waiting on you".
 
 import { emit } from "@tauri-apps/api/event";
 import { mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
@@ -49,16 +49,16 @@ const yesterday = (h: number, m: number) => {
 const LOCAL = "local";
 /// The machine most tasks run on, drawn as the server glyph on their rows.
 const SANDBOX = "sandbox";
-const REPO = "/Users/yogesh/code/dray";
+const REPO = "/Users/yogesh/code/wain";
 /// The same repository's checkout on the sandbox, as that server spells it.
-const SANDBOX_REPO = "/home/dray/dray";
-const BOTS_DIR = "/Users/yogesh/.dray/bots";
-/// Where `dray browser record` and `screenshot` write, so the chat draws a
+const SANDBOX_REPO = "/home/wain/wain";
+const BOTS_DIR = "/Users/yogesh/.wain/bots";
+/// Where `wain browser record` and `screenshot` write, so the chat draws a
 /// player and a picture. Served from `demo/bots-video/` by `fileSrc` below.
-const MEDIA = "/Users/yogesh/.dray/browser/recordings/019a7c00-0000-7000-8000-00000000c0de";
+const MEDIA = "/Users/yogesh/.wain/browser/recordings/019a7c00-0000-7000-8000-00000000c0de";
 
 const BOTS: Bot[] = [
-  { id: "b0000001", name: "Dray", path: `${BOTS_DIR}/b0000001`, created: yesterday(9, 0), avatar: { shape: "nub", hue: 250 } },
+  { id: "b0000001", name: "Wain", path: `${BOTS_DIR}/b0000001`, created: yesterday(9, 0), avatar: { shape: "nub", hue: 250 } },
   { id: "b0000002", name: "Ops", path: `${BOTS_DIR}/b0000002`, created: yesterday(9, 5), avatar: { shape: "hexagon", hue: 200 } },
   { id: "b0000003", name: "Docs", path: `${BOTS_DIR}/b0000003`, created: yesterday(9, 8), avatar: { shape: "round", hue: 320 } },
 ];
@@ -103,7 +103,7 @@ const botChat = (bot: Bot, sessionId: string, modified: string) =>
 /// Each session's server; absent is This Mac.
 const serverOf = new Map<string, string>();
 
-/// A task of Dray's: hidden, in a worktree of the repo, on its own branch, on
+/// A task of Wain's: hidden, in a worktree of the repo, on its own branch, on
 /// the sandbox where `sandbox` says so.
 function task(n: number, title: string, more: Partial<SessionIndexItem> = {}, sandbox = false) {
   const repo = sandbox ? SANDBOX_REPO : REPO;
@@ -140,7 +140,7 @@ const index: SessionIndexItem[] = [
 
 const pr = (n: number, number: number, more: Partial<PrMark> = {}): PrMark => ({
   number,
-  url: `https://github.com/monorepo-labs/dray/pull/${number}`,
+  url: `https://github.com/ismatbabirli/wain/pull/${number}`,
   headRefName: `worktree-task-${n}`,
   isDraft: false,
   state: "OPEN",
@@ -209,7 +209,7 @@ const done = () => ({
   authFailed: false,
 });
 
-/// A `dray session new` and the id it prints, which the chat draws as a
+/// A `wain session new` and the id it prints, which the chat draws as a
 /// "Started a new task" line.
 function startTask(n: number, title: string) {
   const call = `call-new-${n}`;
@@ -220,17 +220,17 @@ function startTask(n: number, title: string) {
       callId: call,
       name: "Bash",
       toolType: "shell",
-      input: { command: `dray session new${machine} --project ${REPO} --title "${title}" "$(cat <<'EOF'\n${title}.\nEOF\n)"` },
+      input: { command: `wain session new${machine} --project ${REPO} --title "${title}" "$(cat <<'EOF'\n${title}.\nEOF\n)"` },
     },
     { type: "tool_call_completed", callId: call, result: { text: `${id(n)}\n`, isError: false, structured: null, exitCode: 0, durationMs: 800, images: [] } },
   ];
 }
 
-/// A `dray session send`, drawn as "Messaged".
+/// A `wain session send`, drawn as "Messaged".
 function message(n: number, text: string) {
   const call = `call-send-${n}-${seq}`;
   return [
-    { type: "tool_call_started", callId: call, name: "Bash", toolType: "shell", input: { command: `dray session send ${id(n)} "${text}"` } },
+    { type: "tool_call_started", callId: call, name: "Bash", toolType: "shell", input: { command: `wain session send ${id(n)} "${text}"` } },
     { type: "tool_call_completed", callId: call, result: { text: "Sent.", isError: false, structured: null, exitCode: 0, durationMs: 300, images: [] } },
   ];
 }
@@ -459,7 +459,7 @@ mockIPC(
 // change what the card and the task list draw. Only this page's own: the app
 // on the same origin keeps its history.
 const ours = (key: string) => key.startsWith(id(0).slice(0, 24));
-// A browser that never ran Dray would otherwise open on "What's new". The feed
+// A browser that never ran Wain would otherwise open on "What's new". The feed
 // is answered empty rather than the seen mark moved, which the app on this
 // origin would keep.
 const realFetch = window.fetch;
@@ -560,7 +560,7 @@ async function tell() {
   await bot(...startTask(CHANGELOG, "Write the 0.30.5 changelog"), done());
   setStatus(CHAT, "completed");
 
-  // Its PR turns ready: Dray posts the card, the bot passes on the proof.
+  // Its PR turns ready: Wain posts the card, the bot passes on the proof.
   await beat(1400);
   marks.push(pr(CHANGELOG, 1015));
   setStatus(id(CHANGELOG), "completed");
@@ -574,7 +574,7 @@ async function tell() {
       projectPath: REPO,
       branch: `worktree-task-${CHANGELOG}`,
       number: 1015,
-      url: "https://github.com/monorepo-labs/dray/pull/1015",
+      url: "https://github.com/ismatbabirli/wain/pull/1015",
     },
     say(`Checked it on the site. 0.30.5 reads right.\n\n${MEDIA}/changelog.mp4`),
     done(),
@@ -626,8 +626,8 @@ async function tell() {
   change(id(IOS), { need: { text: "Should bot chats sit above or below projects in the iOS list?", at: new Date().toISOString() } });
 }
 
-// Opens Dray's chat with its tasks beside it, then plays or jumps to the end.
-const row = await until(() => byText("Dray", document.querySelector("aside") ?? document));
+// Opens Wain's chat with its tasks beside it, then plays or jumps to the end.
+const row = await until(() => byText("Wain", document.querySelector("aside") ?? document));
 // A server's sessions are read when it says it is up, as on connect.
 void emit("server_event", { server: SANDBOX, event: "live_state", payload: { asks: [], tasks: [] } });
 row.click();

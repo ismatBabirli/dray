@@ -1,4 +1,4 @@
-//! `dray browser` on a server: Chrome for Testing's `chrome-headless-shell`,
+//! `wain browser` on a server: Chrome for Testing's `chrome-headless-shell`,
 //! one process per session, driven over the DevTools pipe. The verbs are
 //! `automation.rs`, shared with the Mac; this module answers the functions it
 //! reads and nothing else. See HEADLESS-PLAN.md.
@@ -107,13 +107,13 @@ const WINDOW: &str = "--window-size=1440,900";
 const DISCARD_AFTER: Duration = Duration::from_secs(5 * 60);
 const TIMEOUT: Duration = Duration::from_secs(30);
 
-// --- What `dray browser` reads ----------------------------------------------
+// --- What `wain browser` reads ----------------------------------------------
 
 /// Every Chromium's profiles, headless and CEF: `browser/` in the home, so two
 /// servers on two homes never share one.
 pub(crate) fn browser_dir() -> PathBuf {
     crate::store::home_override()
-        .unwrap_or_else(|| std::env::home_dir().unwrap_or_default().join(".dray"))
+        .unwrap_or_else(|| std::env::home_dir().unwrap_or_default().join(".wain"))
         .join("browser")
 }
 
@@ -123,7 +123,7 @@ pub(crate) fn browser_dir() -> PathBuf {
 /// lock from its own host itself, but one naming another host it leaves, and
 /// refuses the profile as in use elsewhere — which is every lock a sandbox
 /// leaves behind, since a resume changes the hostname. Cleared only when no
-/// process of this binary's name holds that pid here, so a Dray still running
+/// process of this binary's name holds that pid here, so a Wain still running
 /// across a hostname change keeps its lock.
 pub(crate) fn clear_stale_lock(dir: &Path) {
     let Ok(target) = std::fs::read_link(dir.join("SingletonLock")) else { return };
@@ -903,7 +903,7 @@ async fn preflight(exe: &Path) -> Result<(), String> {
         return Ok(());
     }
     Err(format!(
-        "Chromium needs system libraries this server lacks ({}). Run `dray setup` there and pick \
+        "Chromium needs system libraries this server lacks ({}). Run `wain setup` there and pick \
          Browser for agents, then try again.",
         missing.join(", ")
     ))

@@ -1,4 +1,4 @@
-//! Issue cards: GitHub issues an agent shows the reader with `dray session
+//! Issue cards: GitHub issues an agent shows the reader with `wain session
 //! issue-card`, one or several. A row opens its issue in the issues view, and
 //! its Work on it hands the issue back to the agent, the way a reader's
 //! reaction reaches it, so it can start.
@@ -6,7 +6,7 @@
 use std::sync::Mutex;
 
 use anyhow::{bail, Context, Result};
-use dray_proto::Response;
+use wain_proto::Response;
 
 use super::github;
 use crate::events::{AgentEvent, AgentEventPayload, IssueCardRow};
@@ -20,7 +20,7 @@ const EXCERPT_CAP: usize = 240;
 
 /// Posts a card listing `card.numbers` of `card.repo` in the calling chat.
 /// Each issue is read now, so a wrong number is refused rather than drawn.
-pub async fn post(card: dray_proto::IssueCard, app: &Sink) -> Result<Response> {
+pub async fn post(card: wain_proto::IssueCard, app: &Sink) -> Result<Response> {
     let chat = store::get_session_index_item(&card.session_id)
         .await?
         .with_context(|| format!("no session {}", card.session_id))?;
@@ -173,7 +173,7 @@ pub fn work_prompt(repo: &str, number: u64, title: &str) -> String {
 pub async fn send_issue_to_bot(bot_id: String, issue: super::IssueRef, note: Option<String>, sink: Sink) -> Result<(), Fail> {
     let bot = crate::bots::find_bot(&bot_id).await?;
     let prompt = handoff_prompt(&issue, note.as_deref());
-    // Held until a new chat is on the index, as `dray bot send` holds it.
+    // Held until a new chat is on the index, as `wain bot send` holds it.
     let lock = crate::bots::first_chat_lock(&bot.id);
     let first = lock.lock().await;
     match crate::bots::chat_of(&bot).await {

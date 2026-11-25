@@ -1,4 +1,4 @@
-//! Dray Island on Linux and Windows: `apps/island-linux`'s binary, run as
+//! Wain Island on Linux and Windows: `apps/island-linux`'s binary, run as
 //! this app's child (#833). Unlike the Mac's, it does not outlive the app: it
 //! holds the read end of a pipe on its stdin and quits at EOF, which the
 //! kernel delivers however the app goes — quit, crash or kill — with nothing
@@ -48,7 +48,7 @@ pub async fn configure(key: &str) -> Result<(), String> {
         .arg("--child")
         // The island finds its server through the home, so a dev build's
         // reaches the dev server.
-        .env("DRAY_HOME", &home)
+        .env("WAIN_HOME", &home)
         .stdin(Stdio::piped())
         .stdout(log.try_clone().map_err(|err| err.to_string())?)
         .stderr(log);
@@ -68,7 +68,7 @@ pub async fn configure(key: &str) -> Result<(), String> {
     // A dev island is a console binary, which would open a window of its own.
     #[cfg(windows)]
     std::os::windows::process::CommandExt::creation_flags(&mut command, crate::platform::CREATE_NO_WINDOW);
-    let child = command.spawn().map_err(|err| format!("could not start Dray Island: {err}"))?;
+    let child = command.spawn().map_err(|err| format!("could not start Wain Island: {err}"))?;
     *island = Some(child);
     Ok(())
 }
@@ -92,7 +92,7 @@ pub fn running() -> bool {
 /// build, the island crate's own target dir, since `tauri dev` builds the
 /// app alone.
 fn binary() -> Option<PathBuf> {
-    let name = format!("dray-island{}", std::env::consts::EXE_SUFFIX);
+    let name = format!("wain-island{}", std::env::consts::EXE_SUFFIX);
     let beside = std::env::current_exe().ok()?.parent()?.join(&name);
     if beside.exists() {
         return Some(beside);
@@ -109,7 +109,7 @@ fn prefs_path() -> Option<PathBuf> {
         .map(PathBuf::from)
         .filter(|p| p.is_absolute())
         .or_else(|| std::env::home_dir().map(|h| h.join(".config")))?;
-    Some(base.join("dray/island.json"))
+    Some(base.join("wain/island.json"))
 }
 
 fn write_key(key: &str) -> std::io::Result<()> {
@@ -184,7 +184,7 @@ fn file_field<'a>(name: &str, value: &'a str) -> Option<(&'static str, &'a str)>
 /// its own verb, since its text has spaces, and an island that does not know
 /// the verb skips the line rather than reading it as an id.
 pub fn done(session_id: &str, note: Option<String>, rows: Option<serde_json::Value>) -> Result<(), String> {
-    if send(&done_line(session_id, note, rows)) { Ok(()) } else { Err("Dray Island isn't running".into()) }
+    if send(&done_line(session_id, note, rows)) { Ok(()) } else { Err("Wain Island isn't running".into()) }
 }
 
 fn done_line(session_id: &str, note: Option<String>, rows: Option<serde_json::Value>) -> String {

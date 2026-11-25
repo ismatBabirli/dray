@@ -89,11 +89,11 @@ function Shell({
   );
 }
 
-function NewInDray({ className }: { className?: string }) {
+function NewInWain({ className }: { className?: string }) {
   return (
     <span className={cn("flex items-center gap-1.5 text-ui font-medium", className)}>
       <SparklesIcon className="size-3.5 text-accent-add" aria-hidden />
-      New in Dray
+      New in Wain
     </span>
   );
 }
@@ -109,7 +109,7 @@ function Close({ onClose, className }: { onClose: () => void; className?: string
 function TopBar({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex h-12 shrink-0 items-center justify-between px-5">
-      <NewInDray />
+      <NewInWain />
       <Close onClose={onClose} />
     </div>
   );
@@ -162,7 +162,7 @@ function ActionLink({ h, onAction, className }: { h: Highlight; onAction: (label
 function TakeHero({ hl, onAction, onClose }: TakeProps) {
   const [hero, ...rest] = hl;
   return (
-    <Shell label="What's new in Dray" onClose={onClose}>
+    <Shell label="What's new in Wain" onClose={onClose}>
       <TopBar onClose={onClose} />
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-5xl flex-col items-center px-10 pb-16">
@@ -197,14 +197,14 @@ function TakeHero({ hl, onAction, onClose }: TakeProps) {
 /// the page scrolls, Continue waiting at the end.
 function TakeStory({ hl, onAction, onClose }: TakeProps) {
   return (
-    <Shell label="What's new in Dray" onClose={onClose}>
+    <Shell label="What's new in Wain" onClose={onClose}>
       <TopBar onClose={onClose} />
       <div className="min-h-0 flex-1 snap-y snap-proximity overflow-y-auto">
         <header className="mx-auto flex max-w-6xl snap-start flex-col items-start px-12 pt-10 pb-6">
           <h1 className="text-6xl font-medium tracking-tight">
             {hl.length} new things
             <br />
-            <span className="text-muted-foreground">in Dray.</span>
+            <span className="text-muted-foreground">in Wain.</span>
           </h1>
         </header>
         {hl.map((h, i) => (
@@ -242,7 +242,7 @@ function TakeSplit({ hl, onAction, onClose }: TakeProps) {
   const h = hl[pick];
   return (
     <Shell
-      label="What's new in Dray"
+      label="What's new in Wain"
       onClose={onClose}
       onKeyDown={(e) => {
         const by = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
@@ -253,7 +253,7 @@ function TakeSplit({ hl, onAction, onClose }: TakeProps) {
       className="grid grid-cols-[22rem_1fr]"
     >
       <aside className="flex min-h-0 flex-col border-r border-border bg-muted/40 p-4">
-        <NewInDray className="px-2 pt-1" />
+        <NewInWain className="px-2 pt-1" />
         <h1 className="mt-3 px-2 text-3xl font-medium tracking-tight">What's new</h1>
         <nav className="mt-6 flex flex-col gap-1">
           {hl.map((x, i) => (
@@ -303,7 +303,7 @@ function TakeGrid({ hl, onAction, onClose }: TakeProps) {
   const h = open === null ? null : hl[open];
   return (
     <Shell
-      label="What's new in Dray"
+      label="What's new in Wain"
       onClose={onClose}
       // Escape steps out of a detail before it closes the page.
       onEscapeKeyDown={(e) => {
@@ -371,7 +371,7 @@ function TakeSpotlight({ hl, onAction, onClose }: TakeProps) {
   const step = (by: number) => setPick((p) => Math.min(Math.max(p + by, 0), hl.length - 1));
   return (
     <Shell
-      label="What's new in Dray"
+      label="What's new in Wain"
       onClose={onClose}
       onKeyDown={(e) => {
         const by = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
@@ -392,7 +392,7 @@ function TakeSpotlight({ hl, onAction, onClose }: TakeProps) {
         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-black/50" />
       </div>
       <div className="relative flex h-12 shrink-0 items-center justify-between px-5">
-        <NewInDray className="text-white" />
+        <NewInWain className="text-white" />
         <Close onClose={onClose} className="text-white/80 hover:bg-white/10 hover:text-white" />
       </div>
       <div key={pick} className="relative flex min-h-0 flex-1 items-center justify-center px-16 animate-in fade-in-0 zoom-in-[0.98] [animation-duration:400ms]">
@@ -663,7 +663,7 @@ function TakeLanding({
   const asCard = exit !== "title";
   return (
     <Shell
-      label="New in Dray"
+      label="New in Wain"
       onClose={onClose}
       className={cn("overflow-hidden select-none", PAGE[backdrop], onLight ? "text-[#0A0A0A]" : "text-white")}
     >
@@ -677,7 +677,7 @@ function TakeLanding({
         <div className="mx-auto flex w-full max-w-[1120px] flex-col pt-6">
           {/* GateHeading draws white; a white page needs it dark. */}
           <div className={cn("flex items-start justify-between gap-6", onLight && "[&_h1]:text-[#0A0A0A]")}>
-            <GateHeading>{one ? "New in Dray." : `${hl.length} new things in Dray.`}</GateHeading>
+            <GateHeading>{one ? "New in Wain." : `${hl.length} new things in Wain.`}</GateHeading>
             {!asCard && <ContinueButton onClose={onClose} onLight={onLight} />}
           </div>
           {/* Gaps and small gaps: 16px or 6px of the page between cards,

@@ -1,11 +1,11 @@
-//! `dray` — run and manage Dray sessions from outside the app.
+//! `wain` — run and manage Wain sessions from outside the app.
 //!
 //! Deliberately standalone. It links neither the app nor tokio: one connect,
 //! one write, one read, exit. That keeps startup instant, which matters because
 //! the usual caller is an agent shelling out to it — and it is what lets this
-//! ship for linux, where there is no Dray app to be part of.
+//! ship for linux, where there is no Wain app to be part of.
 //!
-//! Everything about *where* to connect lives in [`dray_proto::endpoint`], so
+//! Everything about *where* to connect lives in [`wain_proto::endpoint`], so
 //! moving the app to a server changes one function and nothing here.
 
 use clap::{Args, CommandFactory, Parser, Subcommand};
@@ -17,7 +17,7 @@ mod routine;
 mod setup;
 mod upload;
 use draft::DraftCommand;
-use dray_proto::{
+use wain_proto::{
     encode_line, AddVideo, AttachSession, BrowserAction, MergeCard, IssueCard, BrowserRequest, CreateSession, Envelope, Get, Is, IssueInput,
     LinkIssues, ListSessions, Locator, OnMachine, RenameSession, Request, Response, SendMessage, SessionRef,
     React, SessionSummary, SetAside, SetModel, SetNeed, SettleSession, ShareAction, ShareRequest,
@@ -31,23 +31,23 @@ use std::process::ExitCode;
 /// than no skill, and fetching it separately is exactly how that happens.
 const SKILL: &str = include_str!("../skill/SKILL.md");
 
-const INSTALLER_URL: &str = "https://www.drayhq.com/install.sh";
+const INSTALLER_URL: &str = "https://www.wainhq.com/install.sh";
 
 #[derive(Parser)]
 #[command(
-    name = "dray",
+    name = "wain",
     version,
-    about = "Run and manage Dray sessions.",
-    long_about = "Run and manage Dray sessions.\n\nDray runs coding agents in parallel, one \
+    about = "Run and manage Wain sessions.",
+    long_about = "Run and manage Wain sessions.\n\nWain runs coding agents in parallel, one \
                   session per piece of work. This creates those sessions from the command line, \
-                  so an agent in one session can fan work out into several.\n\nRequires the Dray \
+                  so an agent in one session can fan work out into several.\n\nRequires the Wain \
                   app to be running."
 )]
 struct Cli {
     #[command(subcommand)]
     command: Command,
 
-    /// Run this on another machine, as `dray machine ls` names it. `session ls` also takes `all`. A session id finds
+    /// Run this on another machine, as `wain machine ls` names it. `session ls` also takes `all`. A session id finds
     /// its machine on its own.
     #[arg(long, global = true, value_name = "NAME")]
     machine: Option<String>,
@@ -82,21 +82,21 @@ enum Command {
     /// live ones, or stop one.
     #[command(arg_required_else_help = true, args_conflicts_with_subcommands = true)]
     Share(ShareArgs),
-    // Hidden: it serves Dray's own contributors (#1501), and CONTRIBUTING.md is its doc.
-    /// Upload screenshots or recordings for a Dray pull request and print a
-    /// markdown line for each. For Dray contributors only. Signs in with
+    // Hidden: it serves Wain's own contributors (#1501), and CONTRIBUTING.md is its doc.
+    /// Upload screenshots or recordings for a Wain pull request and print a
+    /// markdown line for each. For Wain contributors only. Signs in with
     /// `gh auth token` or GITHUB_TOKEN.
     #[command(arg_required_else_help = true, hide = true)]
     Upload(upload::Upload),
     /// The machines this one reaches: add, list, rename, connect, remove.
     #[command(subcommand, arg_required_else_help = true)]
     Machine(machine::MachineCommand),
-    /// This machine's Dray server: install, start, stop, run in the foreground.
+    /// This machine's Wain server: install, start, stop, run in the foreground.
     #[command(subcommand, arg_required_else_help = true)]
     Server(setup::ServerCommand),
-    /// Link this machine's Dray server to an org at drayhq.com.
+    /// Link this machine's Wain server to an org at wainhq.com.
     Login,
-    /// Unlink this machine's Dray server from its org.
+    /// Unlink this machine's Wain server from its org.
     Logout,
     /// Upgrade this binary to the newest release.
     Update(Update),
@@ -109,8 +109,8 @@ enum Command {
 
     // The spellings before `session` and `server`, kept so what already calls
     // them still runs: agents holding an older skill, and remote servers —
-    // the app's SSH connect runs `dray service start` there, and a tunnel's
-    // systemd unit runs `dray tunnel`, against whichever CLI that box has.
+    // the app's SSH connect runs `wain service start` there, and a tunnel's
+    // systemd unit runs `wain tunnel`, against whichever CLI that box has.
     #[command(hide = true)]
     New(New),
     #[command(hide = true)]
@@ -163,7 +163,7 @@ enum SessionCommand {
     /// the user can merge it from the chat.
     MergeCard(SessionArg),
     /// Post a card in this session's chat showing GitHub issues, one or
-    /// several. The user opens each in Dray, or presses Work on it, which
+    /// several. The user opens each in Wain, or presses Work on it, which
     /// tells you to start on that issue.
     IssueCard(IssueCardArgs),
     /// Say in one line what a stalled task needs from the user, for the "Waiting
@@ -198,22 +198,22 @@ fn issue_number(said: &str) -> Result<u64, String> {
 
 #[derive(Args)]
 struct SessionArg {
-    /// The session, as printed by `dray session ls`.
+    /// The session, as printed by `wain session ls`.
     session_id: String,
 }
 
 #[derive(Args)]
 struct Attach {
-    /// The task, as printed by `dray session ls`.
+    /// The task, as printed by `wain session ls`.
     session_id: String,
-    /// The bot, by name or id, as `dray bot ls` prints it.
+    /// The bot, by name or id, as `wain bot ls` prints it.
     #[arg(long)]
     bot: String,
 }
 
 #[derive(Args)]
 struct Need {
-    /// The task, as printed by `dray session ls`.
+    /// The task, as printed by `wain session ls`.
     session_id: String,
     /// What it needs, imperative and short: "Pick: keep or drop the rename button".
     need: Option<String>,
@@ -221,7 +221,7 @@ struct Need {
 
 #[derive(Args)]
 struct ModelArgs {
-    /// The session, as printed by `dray session ls`.
+    /// The session, as printed by `wain session ls`.
     session_id: String,
     /// A model alias, like fable, opus or sonnet on claude_code. Another
     /// agent's model moves the session to that agent. Without it the model
@@ -236,14 +236,14 @@ struct ModelArgs {
 
 #[derive(Args)]
 struct Rename {
-    /// The session, as printed by `dray session ls`.
+    /// The session, as printed by `wain session ls`.
     session_id: String,
     title: String,
 }
 
 #[derive(Args)]
 struct Settle {
-    /// The session, as printed by `dray session ls`.
+    /// The session, as printed by `wain session ls`.
     session_id: String,
     /// Delete its worktree and branch too, whatever they hold — uncommitted
     /// and unpushed work included. Without it the worktree stays.
@@ -313,7 +313,7 @@ struct New {
 #[derive(Args)]
 struct Update {
     /// Install the newest release even when it is the one already running.
-    /// Reinstalls a damaged binary; `DRAY_VERSION=<tag>` downgrades.
+    /// Reinstalls a damaged binary; `WAIN_VERSION=<tag>` downgrades.
     #[arg(long)]
     force: bool,
 
@@ -325,7 +325,7 @@ struct Update {
 
 #[derive(Args)]
 struct Send {
-    /// The session to send to, as printed by `dray session ls`.
+    /// The session to send to, as printed by `wain session ls`.
     session_id: String,
 
     /// The message. Write it for someone who cannot see your conversation.
@@ -362,7 +362,7 @@ struct IssueLinkArgs {
     #[arg(required = true, value_name = "ISSUE")]
     session_and_issues: Vec<String>,
 
-    /// The session to tag, as printed by `dray session ls`. Defaults to the
+    /// The session to tag, as printed by `wain session ls`. Defaults to the
     /// session running this command.
     #[arg(long)]
     session: Option<String>,
@@ -454,7 +454,7 @@ struct ShareArgs {
     #[command(subcommand)]
     command: Option<ShareCommand>,
 
-    /// `dray share <port>`, the spelling before `share start`.
+    /// `wain share <port>`, the spelling before `share start`.
     #[arg(hide = true)]
     port: Option<u16>,
 
@@ -515,8 +515,8 @@ struct VideoAdd {
 
 #[derive(Subcommand)]
 enum SkillCommand {
-    /// Write the skill to ~/.claude/skills/dray/, ~/.codex/skills/dray/ and
-    /// ~/.agents/skills/dray/, where Claude Code, Codex and pi find it.
+    /// Write the skill to ~/.claude/skills/wain/, ~/.codex/skills/wain/ and
+    /// ~/.agents/skills/wain/, where Claude Code, Codex and pi find it.
     Install,
 }
 
@@ -524,7 +524,7 @@ fn main() -> ExitCode {
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(message) => {
-            eprintln!("dray: {message}");
+            eprintln!("wain: {message}");
             ExitCode::FAILURE
         }
     }
@@ -556,7 +556,7 @@ fn run() -> Result<(), String> {
         Command::Update(args) => update(args),
         Command::Skill(SkillCommand::Install) => install_skill(),
         Command::Completion { shell } => {
-            clap_complete::generate(shell, &mut completion_command(), "dray", &mut std::io::stdout());
+            clap_complete::generate(shell, &mut completion_command(), "wain", &mut std::io::stdout());
             Ok(())
         }
         Command::New(args) => new(args),
@@ -669,7 +669,7 @@ fn new(args: New) -> Result<(), String> {
 
     match send(request)? {
         Response::Created { session, base_ref, warning } => {
-            // The id alone on stdout, so `$(dray session new …)` captures something
+            // The id alone on stdout, so `$(wain session new …)` captures something
             // usable; everything a human wants goes to stderr beside it.
             println!("{}", session.session_id);
             eprintln!(
@@ -695,14 +695,14 @@ fn new(args: New) -> Result<(), String> {
             // otherwise tell the user what it asked for rather than what ran.
             if args.no_worktree && session.worktree_name.is_some() {
                 eprintln!(
-                    "This Dray app does not know --no-worktree, so the session runs in a worktree. \
-                     Update the Dray app."
+                    "This Wain app does not know --no-worktree, so the session runs in a worktree. \
+                     Update the Wain app."
                 );
             }
             if args.hidden && !session.hidden {
                 eprintln!(
-                    "This Dray app does not know --hidden, so the session shows in the sidebar. \
-                     Update the Dray app."
+                    "This Wain app does not know --hidden, so the session shows in the sidebar. \
+                     Update the Wain app."
                 );
             }
             if let Some(warning) = warning {
@@ -800,7 +800,7 @@ fn send_message(args: Send) -> Result<(), String> {
 
 fn browser(args: BrowserCommand) -> Result<(), String> {
     let session_id = args.session.clone().or_else(parent_session_id).ok_or(
-        "which session's browser? Pass --session <id>, or run this from inside a Dray session.",
+        "which session's browser? Pass --session <id>, or run this from inside a Wain session.",
     )?;
     let action = browser_action(&args).unwrap_or_else(|e| usage(&e));
     match send(Request::Browser(BrowserRequest { session_id, action }))? {
@@ -818,7 +818,7 @@ fn browser(args: BrowserCommand) -> Result<(), String> {
 }
 
 fn merge_card(args: SessionArg) -> Result<(), String> {
-    let session_id = parent_session_id().ok_or("run this from inside a Dray session: the card goes in its chat.")?;
+    let session_id = parent_session_id().ok_or("run this from inside a Wain session: the card goes in its chat.")?;
     let request = Request::MergeCard(MergeCard { session_id, task_session_id: args.session_id });
     match send(request)? {
         Response::MergeCard { number, url, title } => {
@@ -831,7 +831,7 @@ fn merge_card(args: SessionArg) -> Result<(), String> {
 }
 
 fn issue_card(args: IssueCardArgs) -> Result<(), String> {
-    let session_id = parent_session_id().ok_or("run this from inside a Dray session: the card goes in its chat.")?;
+    let session_id = parent_session_id().ok_or("run this from inside a Wain session: the card goes in its chat.")?;
     let request = Request::IssueCard(IssueCard { session_id, repo: args.repo, numbers: args.numbers, title: None });
     match send(request)? {
         Response::IssueCard { issues } => {
@@ -878,14 +878,14 @@ fn react(args: ReactArgs) -> Result<(), String> {
     }
 }
 
-/// `dray video add` and `dray image add`. The path is resolved here, not by the
+/// `wain video add` and `wain image add`. The path is resolved here, not by the
 /// server: a relative path means this shell's directory, and the server stands
 /// in another.
 fn add_media(file: PathBuf, name: Option<String>, session: Option<String>, image: bool) -> Result<(), String> {
     let what = if image { "screenshot" } else { "video" };
     let session_id = session
         .or_else(parent_session_id)
-        .ok_or("which session? Pass --session <id>, or run this from inside a Dray session.")?;
+        .ok_or("which session? Pass --session <id>, or run this from inside a Wain session.")?;
     let path = std::fs::canonicalize(&file)
         .map_err(|e| format!("{}: {e}. A {what} made on another machine has to be copied here first.", file.display()))?;
     let add = AddVideo { session_id, path: path.to_string_lossy().into_owned(), name };
@@ -910,7 +910,7 @@ fn share(args: ShareArgs) -> Result<(), String> {
     let session_id = args
         .session
         .or_else(parent_session_id)
-        .ok_or("which session? Pass --session <id>, or run this from inside a Dray session.")?;
+        .ok_or("which session? Pass --session <id>, or run this from inside a Wain session.")?;
     let started = match action {
         ShareAction::Start { port } => Some(port),
         _ => None,
@@ -928,7 +928,7 @@ fn share(args: ShareArgs) -> Result<(), String> {
     }
 }
 
-/// `dray share ls`: the project's live links, each with the session it
+/// `wain share ls`: the project's live links, each with the session it
 /// belongs to, which is `--session`-free on purpose — a link is reached by
 /// project, the way `session ls` reaches sessions.
 fn list_shares(args: Ls) -> Result<(), String> {
@@ -1168,7 +1168,7 @@ fn act(
 }
 
 fn parse_id(s: &str) -> Result<i32, String> {
-    s.parse().map_err(|_| format!("{s} is not a tab id; `dray browser tab` lists them"))
+    s.parse().map_err(|_| format!("{s} is not a tab id; `wain browser tab` lists them"))
 }
 
 /// The app answered something this command never asks for: the two sides
@@ -1238,19 +1238,19 @@ fn print_table(sessions: &[SessionSummary]) {
 /// curl or wget, the pair the installer itself accepts.
 fn update(args: Update) -> Result<(), String> {
     let exe = std::env::current_exe()
-        .map_err(|e| format!("could not find the running dray binary: {e}"))?;
+        .map_err(|e| format!("could not find the running wain binary: {e}"))?;
     let dir = exe
         .parent()
-        .ok_or("the running dray binary sits in no directory")?;
+        .ok_or("the running wain binary sits in no directory")?;
 
     // The app writes the CLI it ships to ~/.local/bin on every launch, so an
     // update here would fight it: undone at the next launch, and until then
-    // a CLI the app was not released beside. A server on its own `DRAY_HOME`
-    // still updates its `dray-serve` here, and so does one beside a Linux
+    // a CLI the app was not released beside. A server on its own `WAIN_HOME`
+    // still updates its `wain-serve` here, and so does one beside a Linux
     // app, whose own server is its child and never this binary.
-    let own_server = cfg!(target_os = "linux") && dir.join("dray-serve").is_file();
+    let own_server = cfg!(target_os = "linux") && dir.join("wain-serve").is_file();
     if setup::app_updates_this_cli() && !own_server {
-        eprintln!("The Dray app keeps this CLI up to date. Update the app to update it.");
+        eprintln!("The Wain app keeps this CLI up to date. Update the app to update it.");
         return Ok(());
     }
 
@@ -1264,26 +1264,26 @@ fn update(args: Update) -> Result<(), String> {
     ])
     // Where this binary lives, not ~/.local/bin. Renaming over a running
     // unix binary is safe: the process keeps the inode it started from.
-    .env("DRAY_INSTALL_DIR", dir)
+    .env("WAIN_INSTALL_DIR", dir)
     // An update is not a first install: no setup questions.
-    .env("DRAY_UPDATING", "1")
-    .env("DRAY_CHANNEL", args.channel.as_deref().unwrap_or(own_channel()));
+    .env("WAIN_UPDATING", "1")
+    .env("WAIN_CHANNEL", args.channel.as_deref().unwrap_or(own_channel()));
 
     let current = if setup::app_ships_this_cli() { serve_tag_beside(dir) } else { Some(current_tag()) };
     match current.filter(|_| !args.force) {
         Some(tag) => {
-            sh.env("DRAY_CURRENT_VERSION", tag);
+            sh.env("WAIN_CURRENT_VERSION", tag);
         }
         // Cleared rather than left alone, or a value the caller exported makes
         // the flag do nothing.
         None => {
-            sh.env_remove("DRAY_CURRENT_VERSION");
+            sh.env_remove("WAIN_CURRENT_VERSION");
         }
     }
 
     // The installer exits 0 on "already installed" too, so success alone says
     // nothing about the server being left behind. A replaced binary does.
-    let serve = dir.join("dray-serve");
+    let serve = dir.join("wain-serve");
     let stamp = || std::fs::metadata(&serve).and_then(|meta| meta.modified()).ok();
     let before = stamp();
 
@@ -1304,13 +1304,13 @@ fn update(args: Update) -> Result<(), String> {
     }
 }
 
-/// The release the `dray-serve` beside this binary was built as, for a machine
-/// whose app ships `dray`: its launches rewrite `dray` and never `dray-serve`,
+/// The release the `wain-serve` beside this binary was built as, for a machine
+/// whose app ships `wain`: its launches rewrite `wain` and never `wain-serve`,
 /// so this binary's version would stop the installer at "already current" with
-/// the server left behind. No `dray-serve` there is no pair to keep, so this
+/// the server left behind. No `wain-serve` there is no pair to keep, so this
 /// binary's tag; one too old to say is reinstalled.
 fn serve_tag_beside(dir: &std::path::Path) -> Option<String> {
-    let serve = dir.join(format!("dray-serve{}", std::env::consts::EXE_SUFFIX));
+    let serve = dir.join(format!("wain-serve{}", std::env::consts::EXE_SUFFIX));
     if !serve.exists() {
         return Some(current_tag());
     }
@@ -1321,12 +1321,12 @@ fn serve_tag_beside(dir: &std::path::Path) -> Option<String> {
         .output()
         .ok()?;
     let version = String::from_utf8_lossy(&out.stdout);
-    let version = version.trim().strip_prefix("dray-serve ")?;
+    let version = version.trim().strip_prefix("wain-serve ")?;
     (out.status.success() && version != "dev").then(|| format!("cli-v{version}"))
 }
 
 /// The release tag this binary was built as — the one fact the installer cannot
-/// work out for itself, since it cannot tell which `dray` on disk ran it.
+/// work out for itself, since it cannot tell which `wain` on disk ran it.
 fn current_tag() -> String {
     format!("cli-v{}", env!("CARGO_PKG_VERSION"))
 }
@@ -1352,7 +1352,7 @@ fn install_skill() -> Result<(), String> {
     let home = std::env::home_dir().ok_or("could not resolve your home directory")?;
 
     for agent_home in SKILL_HOMES {
-        let dir = home.join(agent_home).join("skills").join("dray");
+        let dir = home.join(agent_home).join("skills").join("wain");
 
         std::fs::create_dir_all(&dir)
             .map_err(|e| format!("could not create {}: {e}", dir.display()))?;
@@ -1361,7 +1361,7 @@ fn install_skill() -> Result<(), String> {
         std::fs::write(&path, SKILL)
             .map_err(|e| format!("could not write {}: {e}", path.display()))?;
 
-        eprintln!("Installed the dray skill to {}", path.display());
+        eprintln!("Installed the wain skill to {}", path.display());
     }
 
     Ok(())
@@ -1393,15 +1393,15 @@ fn install_skill() -> Result<(), String> {
 fn connect_failure(error: &std::io::Error, endpoint: &str) -> String {
     match error.kind() {
         ErrorKind::PermissionDenied => format!(
-            "permission denied reaching Dray at {endpoint}. The app may well be \
+            "permission denied reaching Wain at {endpoint}. The app may well be \
              running: a sandbox, or the filesystem permissions on that path, \
              blocked the connection. If this command is sandboxed, retry this one \
              command with escalated permissions."
         ),
         ErrorKind::NotFound | ErrorKind::ConnectionRefused => {
-            "Dray isn't running. Start the app and try again.".to_string()
+            "Wain isn't running. Start the app and try again.".to_string()
         }
-        _ => format!("could not connect to Dray at {endpoint}: {error}"),
+        _ => format!("could not connect to Wain at {endpoint}: {error}"),
     }
 }
 
@@ -1413,7 +1413,7 @@ fn on_machine(session: &SessionSummary) -> String {
 /// One request, one response, connection closed. With `--machine` the request
 /// rides inside `on_machine`, and this machine's server carries it there.
 fn send(request: Request) -> Result<Response, String> {
-    let endpoint = dray_proto::endpoint().ok_or("could not work out where Dray is listening")?;
+    let endpoint = wain_proto::endpoint().ok_or("could not work out where Wain is listening")?;
     let request = match MACHINE.get() {
         Some(machine) => Request::OnMachine(OnMachine { machine: machine.clone(), request: Box::new(request) }),
         None => request,
@@ -1426,12 +1426,12 @@ fn connect(endpoint: &str) -> std::io::Result<std::os::unix::net::UnixStream> {
     std::os::unix::net::UnixStream::connect(endpoint)
 }
 
-/// The server's named pipe for this socket path (`dray_proto::pipe_name`).
+/// The server's named pipe for this socket path (`wain_proto::pipe_name`).
 /// Every instance busy reads as `ERROR_PIPE_BUSY`, which a moment cures.
 #[cfg(windows)]
 fn connect(endpoint: &str) -> std::io::Result<std::fs::File> {
     const ERROR_PIPE_BUSY: i32 = 231;
-    let pipe = dray_proto::pipe_name(endpoint);
+    let pipe = wain_proto::pipe_name(endpoint);
     let mut tries = 0;
     loop {
         match std::fs::OpenOptions::new().read(true).write(true).open(&pipe) {
@@ -1451,7 +1451,7 @@ fn connect(endpoint: &str) -> std::io::Result<std::fs::File> {
 
 /// Whether the pipe's server process runs as this process's user. The pipe
 /// namespace is machine-wide and the name derivable, so another account can
-/// take it before Dray starts; on Unix the socket's `0700` directory rules
+/// take it before Wain starts; on Unix the socket's `0700` directory rules
 /// that out. Anything unreadable answers no.
 #[cfg(windows)]
 fn served_by_this_user(pipe: &std::fs::File) -> bool {
@@ -1518,7 +1518,7 @@ fn send_to(endpoint: &str, request: Request) -> Result<Response, String> {
         .map_err(|e| format!("could not read the response: {e}"))?;
 
     if response.trim().is_empty() {
-        return Err("Dray closed the connection without answering.".into());
+        return Err("Wain closed the connection without answering.".into());
     }
 
     serde_json::from_str(&response).map_err(|e| format!("could not parse the response: {e}"))
@@ -1528,8 +1528,8 @@ fn send_to(endpoint: &str, request: Request) -> Result<Response, String> {
 ///
 /// The session is optional so that the documented invocation can name no
 /// environment variable at all. The Claude Code harness refuses any command that
-/// names one inside a worktree-isolated session — which is every session `dray
-/// new` makes — so the documented `dray issue link "$DRAY_SESSION_ID" DRA-53`
+/// names one inside a worktree-isolated session — which is every session `wain
+/// new` makes — so the documented `wain issue link "$WAIN_SESSION_ID" DRA-53`
 /// was refused before it spawned, and refused silently: the agent read the
 /// refusal, carried on, and the issue was never linked.
 ///
@@ -1545,8 +1545,8 @@ fn split_session_and_issues(
         given.remove(0)
     } else {
         from_environment.ok_or(
-            "no session named, and DRAY_SESSION_ID is not set: name the session, \
-             as printed by `dray session ls`",
+            "no session named, and WAIN_SESSION_ID is not set: name the session, \
+             as printed by `wain session ls`",
         )?
     };
 
@@ -1568,11 +1568,11 @@ fn is_session_id(value: &str) -> bool {
         && value.chars().all(|c| c.is_ascii_hexdigit() || c == '-')
 }
 
-/// Which session is making this call, if one is. Injected into every agent Dray
+/// Which session is making this call, if one is. Injected into every agent Wain
 /// spawns; absent when a person runs this in their own terminal, which is
 /// ordinary rather than an error.
 fn parent_session_id() -> Option<String> {
-    std::env::var("DRAY_SESSION_ID")
+    std::env::var("WAIN_SESSION_ID")
         .ok()
         .filter(|v| !v.is_empty())
 }
@@ -1620,7 +1620,7 @@ fn expand_home(path: PathBuf) -> PathBuf {
 /// we happen to be standing in.
 ///
 /// `rev-parse --show-toplevel` answers the linked worktree, and that is what an
-/// agent running in a Dray worktree session was putting on the wire as the new
+/// agent running in a Wain worktree session was putting on the wire as the new
 /// session's project. The app then computed a `cwd` of
 /// `<that worktree>/.claude/worktrees/<name>`, which `claude -w` never creates —
 /// it resolves the repo for itself — so Changes, commit and PR all read a
@@ -1689,18 +1689,18 @@ mod tests {
     #[cfg(unix)]
     fn hands_the_installer_the_servers_version() {
         use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("dray-serve-tag-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain-serve-tag-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         assert_eq!(serve_tag_beside(&dir), Some(current_tag()), "no server: no pair");
 
-        let serve = dir.join("dray-serve");
+        let serve = dir.join("wain-serve");
         let answer = |script: &str| {
             std::fs::write(&serve, format!("#!/bin/sh\n{script}\n")).unwrap();
             std::fs::set_permissions(&serve, std::fs::Permissions::from_mode(0o755)).unwrap();
             serve_tag_beside(&dir)
         };
-        assert_eq!(answer("echo 'dray-serve 0.14.0-beta.1'").as_deref(), Some("cli-v0.14.0-beta.1"));
-        assert_eq!(answer("echo 'dray-serve dev'"), None, "a local build says nothing");
+        assert_eq!(answer("echo 'wain-serve 0.14.0-beta.1'").as_deref(), Some("cli-v0.14.0-beta.1"));
+        assert_eq!(answer("echo 'wain-serve dev'"), None, "a local build says nothing");
         assert_eq!(answer("echo usage >&2; exit 2"), None, "too old to answer");
 
         std::fs::remove_dir_all(&dir).unwrap();
@@ -1715,12 +1715,12 @@ mod tests {
     fn failure(kind: ErrorKind) -> String {
         unwrapped(&connect_failure(
             &std::io::Error::from(kind),
-            "/Users/me/.dray/dray.sock",
+            "/Users/me/.wain/wain.sock",
         ))
     }
 
     const CURE: &str = "retry this one command with escalated permissions";
-    const CLOSED: &str = "Dray isn't running. Start the app and try again.";
+    const CLOSED: &str = "Wain isn't running. Start the app and try again.";
 
     /// The bug this arm exists for: a sandbox refusing the connect used to
     /// report the user's app closed, which is a false fact about their machine
@@ -1734,7 +1734,7 @@ mod tests {
     fn permission_denied_hedges_the_cause_and_names_the_conditional_cure() {
         let message = failure(ErrorKind::PermissionDenied);
 
-        assert!(message.contains("/Users/me/.dray/dray.sock"));
+        assert!(message.contains("/Users/me/.wain/wain.sock"));
         assert!(message.contains("The app may well be running"));
         assert!(message.contains("a sandbox, or the filesystem permissions"));
         assert!(message.contains(CURE));
@@ -1766,8 +1766,8 @@ mod tests {
         ] {
             let message = failure(kind);
 
-            assert!(message.contains("could not connect to Dray at"));
-            assert!(message.contains("/Users/me/.dray/dray.sock"));
+            assert!(message.contains("could not connect to Wain at"));
+            assert!(message.contains("/Users/me/.wain/wain.sock"));
             assert!(!message.contains("isn't running"));
             assert!(!message.contains(CURE));
         }
@@ -1780,7 +1780,7 @@ mod tests {
     #[test]
     fn a_verb_reads_the_same_bare_or_after_find() {
         let action = |line: &[&str]| {
-            let cli = Cli::parse_from([&["dray", "browser"][..], line].concat());
+            let cli = Cli::parse_from([&["wain", "browser"][..], line].concat());
             let Command::Browser(args) = cli.command else { panic!("wrong subcommand") };
             browser_action(&args)
         };
@@ -1829,7 +1829,7 @@ mod tests {
     #[test]
     fn metadata_describes_one_issue() {
         let args = Cli::try_parse_from([
-            "dray", "issue", "link", SESSION, "DRA-53", "DRA-54", "--title", "One",
+            "wain", "issue", "link", SESSION, "DRA-53", "DRA-54", "--title", "One",
         ])
         .unwrap();
 
@@ -1857,7 +1857,7 @@ mod tests {
 
     /// The whole point: the documented invocation names no environment variable,
     /// because the Claude Code harness refuses a command that does inside a
-    /// worktree — which is every session `dray new` makes.
+    /// worktree — which is every session `wain new` makes.
     #[test]
     fn issues_alone_take_the_session_from_the_environment() {
         let split =
@@ -1905,28 +1905,28 @@ mod tests {
     /// `unlink` shares the arguments so it gains the short form too.
     #[test]
     fn both_forms_parse() {
-        assert!(Cli::try_parse_from(["dray", "issue", "link", "DRA-53"]).is_ok());
-        assert!(Cli::try_parse_from(["dray", "issue", "unlink", "DRA-53"]).is_ok());
-        assert!(Cli::try_parse_from(["dray", "issue", "link", SESSION, "DRA-53"]).is_ok());
-        assert!(Cli::try_parse_from(["dray", "issue", "link"]).is_err());
+        assert!(Cli::try_parse_from(["wain", "issue", "link", "DRA-53"]).is_ok());
+        assert!(Cli::try_parse_from(["wain", "issue", "unlink", "DRA-53"]).is_ok());
+        assert!(Cli::try_parse_from(["wain", "issue", "link", SESSION, "DRA-53"]).is_ok());
+        assert!(Cli::try_parse_from(["wain", "issue", "link"]).is_err());
     }
 
     #[test]
     fn opting_out_of_the_worktree_is_explicit_and_takes_no_base() {
         let Ok(Cli { command: Command::Session(SessionCommand::New(new)), .. }) =
-            Cli::try_parse_from(["dray", "session", "new", "x", "--no-worktree", "--project", "/srv"])
+            Cli::try_parse_from(["wain", "session", "new", "x", "--no-worktree", "--project", "/srv"])
         else {
             panic!("not a create");
         };
         assert!(new.no_worktree);
         let Ok(Cli { command: Command::Session(SessionCommand::New(new)), .. }) =
-            Cli::try_parse_from(["dray", "session", "new", "x"])
+            Cli::try_parse_from(["wain", "session", "new", "x"])
         else {
             panic!("not a create");
         };
         assert!(!new.no_worktree);
         // `--base` starts a worktree on a ref, which this has none to start.
-        assert!(Cli::try_parse_from(["dray", "new", "x", "--no-worktree", "--base", "main"]).is_err());
+        assert!(Cli::try_parse_from(["wain", "new", "x", "--no-worktree", "--base", "main"]).is_err());
     }
 
     #[test]
@@ -1946,71 +1946,71 @@ mod tests {
     }
 
     /// The old spellings still parse — agents with an older skill, and remote
-    /// servers the app runs `dray service start` and `dray tunnel` on — and a
+    /// servers the app runs `wain service start` and `wain tunnel` on — and a
     /// bare group prints its help rather than acting.
     #[test]
     fn new_tree_and_old_spellings_parse() {
         let parses = |argv: &[&str]| Cli::try_parse_from(argv).map(|_| ()).map_err(|e| e.kind());
         for argv in [
-            &["dray", "session", "new", "x", "--base", "main", "--title", "T"][..],
-            &["dray", "session", "settle", SESSION, "--delete-worktree"],
-            &["dray", "session", "set-aside", SESSION],
-            &["dray", "session", "need", SESSION, "Pick: keep or drop the rename button"],
-            &["dray", "session", "need", SESSION],
-            &["dray", "session", "rename", SESSION, "New name"],
-            &["dray", "session", "model", SESSION, "fable"],
-            &["dray", "session", "model", SESSION, "opus", "--effort", "high"],
-            &["dray", "session", "model", SESSION, "--effort", "low"],
-            &["dray", "session", "model", SESSION],
-            &["dray", "share", "start", "5173"],
-            &["dray", "share", "ls", "--all", "--json"],
-            &["dray", "server", "install", "--tools", "git,gh"],
-            &["dray", "server", "tunnel", "on"],
-            &["dray", "issue", "link", "DRA-53", "--session", SESSION],
-            &["dray", "completion", "zsh"],
-            &["dray", "new", "x", "--from", "main"],
-            &["dray", "ls"],
-            &["dray", "send", SESSION, "hi"],
-            &["dray", "share", "5173"],
-            &["dray", "setup", "--install", "git"],
-            &["dray", "serve", "--port", "7317"],
-            &["dray", "service", "start"],
-            &["dray", "tunnel"],
+            &["wain", "session", "new", "x", "--base", "main", "--title", "T"][..],
+            &["wain", "session", "settle", SESSION, "--delete-worktree"],
+            &["wain", "session", "set-aside", SESSION],
+            &["wain", "session", "need", SESSION, "Pick: keep or drop the rename button"],
+            &["wain", "session", "need", SESSION],
+            &["wain", "session", "rename", SESSION, "New name"],
+            &["wain", "session", "model", SESSION, "fable"],
+            &["wain", "session", "model", SESSION, "opus", "--effort", "high"],
+            &["wain", "session", "model", SESSION, "--effort", "low"],
+            &["wain", "session", "model", SESSION],
+            &["wain", "share", "start", "5173"],
+            &["wain", "share", "ls", "--all", "--json"],
+            &["wain", "server", "install", "--tools", "git,gh"],
+            &["wain", "server", "tunnel", "on"],
+            &["wain", "issue", "link", "DRA-53", "--session", SESSION],
+            &["wain", "completion", "zsh"],
+            &["wain", "new", "x", "--from", "main"],
+            &["wain", "ls"],
+            &["wain", "send", SESSION, "hi"],
+            &["wain", "share", "5173"],
+            &["wain", "setup", "--install", "git"],
+            &["wain", "serve", "--port", "7317"],
+            &["wain", "service", "start"],
+            &["wain", "tunnel"],
         ] {
             assert_eq!(parses(argv), Ok(()), "{argv:?}");
         }
         let help = Err(clap::error::ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand);
         for group in ["session", "server", "machine", "share", "draft"] {
-            assert_eq!(parses(&["dray", group]), help, "{group}");
+            assert_eq!(parses(&["wain", group]), help, "{group}");
         }
         let Ok(Cli { command: Command::Session(SessionCommand::New(new)), .. }) =
-            Cli::try_parse_from(["dray", "session", "new", "x", "--from", "main"])
+            Cli::try_parse_from(["wain", "session", "new", "x", "--from", "main"])
         else {
             panic!("not a create");
         };
         assert_eq!(new.base.as_deref(), Some("main"));
         // Global, so it reads after the verb as well as before it.
         for argv in [
-            &["dray", "--machine", "vps", "session", "ls"][..],
-            &["dray", "session", "send", "id", "hi", "--machine", "vps"],
+            &["wain", "--machine", "vps", "session", "ls"][..],
+            &["wain", "session", "send", "id", "hi", "--machine", "vps"],
         ] {
             let cli = Cli::try_parse_from(argv).unwrap();
             assert_eq!(cli.machine.as_deref(), Some("vps"), "{argv:?}");
         }
     }
 
-    /// `upload` is for Dray's own contributors (#1501): it runs, but neither
+    /// `upload` is for Wain's own contributors (#1501): it runs, but neither
     /// `--help` nor a completion's description offers it.
     #[test]
     fn upload_runs_but_is_not_offered() {
         assert!(matches!(
-            Cli::try_parse_from(["dray", "upload", "shot.png"]),
+            Cli::try_parse_from(["wain", "upload", "shot.png"]),
             Ok(Cli { command: Command::Upload(_), .. })
         ));
         let help = Cli::command().render_help().to_string();
         assert!(!help.contains("upload"), "{help}");
         let mut zsh = Vec::new();
-        clap_complete::generate(clap_complete::Shell::Zsh, &mut completion_command(), "dray", &mut zsh);
+        clap_complete::generate(clap_complete::Shell::Zsh, &mut completion_command(), "wain", &mut zsh);
         assert!(!String::from_utf8(zsh).unwrap().contains("Upload screenshots"));
     }
 
@@ -2024,38 +2024,38 @@ mod tests {
             machine_refusal(&cli.command)
         };
         for argv in [
-            &["dray", "--machine", "vps", "bot", "ls"][..],
-            &["dray", "bot", "ls", "--json", "--machine", "vps"],
-            &["dray", "--machine", "vps", "bot", "new", "Ops", "--colour", "teal"],
-            &["dray", "--machine", "vps", "bot", "send", "Ops", "hi"],
-            &["dray", "--machine", "vps", "bot", "send", "--ask", "Ops", "hi"],
-            &["dray", "--machine", "vps", "bot", "rename", "Ops", "Release"],
-            &["dray", "--machine", "vps", "bot", "rm", "Ops"],
-            &["dray", "--machine", "vps", "bot", "routine", "add", "PR", "look", "--every", "2h", "--bot", "Ops"],
-            &["dray", "--machine", "vps", "bot", "routine", "ls"],
-            &["dray", "--machine", "vps", "bot", "routine", "pause", "PR"],
-            &["dray", "--machine", "vps", "bot", "routine", "resume", "PR"],
-            &["dray", "--machine", "vps", "bot", "routine", "run", "PR"],
-            &["dray", "--machine", "vps", "bot", "routine", "rm", "PR"],
+            &["wain", "--machine", "vps", "bot", "ls"][..],
+            &["wain", "bot", "ls", "--json", "--machine", "vps"],
+            &["wain", "--machine", "vps", "bot", "new", "Ops", "--colour", "teal"],
+            &["wain", "--machine", "vps", "bot", "send", "Ops", "hi"],
+            &["wain", "--machine", "vps", "bot", "send", "--ask", "Ops", "hi"],
+            &["wain", "--machine", "vps", "bot", "rename", "Ops", "Release"],
+            &["wain", "--machine", "vps", "bot", "rm", "Ops"],
+            &["wain", "--machine", "vps", "bot", "routine", "add", "PR", "look", "--every", "2h", "--bot", "Ops"],
+            &["wain", "--machine", "vps", "bot", "routine", "ls"],
+            &["wain", "--machine", "vps", "bot", "routine", "pause", "PR"],
+            &["wain", "--machine", "vps", "bot", "routine", "resume", "PR"],
+            &["wain", "--machine", "vps", "bot", "routine", "run", "PR"],
+            &["wain", "--machine", "vps", "bot", "routine", "rm", "PR"],
         ] {
             assert_eq!(refusal(argv), None, "{argv:?}");
         }
-        let add = refusal(&["dray", "--machine", "vps", "bot", "routine", "add", "PR", "look", "--every", "2h"]).unwrap();
+        let add = refusal(&["wain", "--machine", "vps", "bot", "routine", "add", "PR", "look", "--every", "2h"]).unwrap();
         assert!(add.contains("--bot"), "{add}");
-        assert!(refusal(&["dray", "--machine", "vps", "skill", "install"]).unwrap().contains("bot"));
+        assert!(refusal(&["wain", "--machine", "vps", "skill", "install"]).unwrap().contains("bot"));
     }
 
     #[test]
     fn the_worktree_cannot_be_named_either() {
-        // An agent has no basis for picking a name, Dray generates a readable
+        // An agent has no basis for picking a name, Wain generates a readable
         // one, and a caller-supplied name is one more thing that can collide.
-        assert!(Cli::try_parse_from(["dray", "new", "x", "--worktree-name", "n"]).is_err());
+        assert!(Cli::try_parse_from(["wain", "new", "x", "--worktree-name", "n"]).is_err());
     }
 
     #[test]
     fn the_skill_carries_frontmatter_claude_code_can_read() {
         assert!(SKILL.starts_with("---\n"), "skill needs YAML frontmatter");
-        assert!(SKILL.contains("\nname: dray\n"));
+        assert!(SKILL.contains("\nname: wain\n"));
         assert!(SKILL.contains("\ndescription: "));
     }
 
@@ -2100,7 +2100,7 @@ mod tests {
 
     #[test]
     fn a_plain_directory_is_no_project() {
-        let dir = std::env::temp_dir().join(format!("dray-clitest-plain-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain-clitest-plain-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
 
         assert_eq!(repo_root(&dir), None);
@@ -2113,7 +2113,7 @@ mod tests {
     /// `None` when there is no usable git, which is not a failure worth failing
     /// the suite over.
     fn scratch_repo() -> Option<PathBuf> {
-        let dir = std::env::temp_dir().join(format!("dray-clitest-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain-clitest-{}", std::process::id()));
         // A run that failed before its cleanup would otherwise leave a repo
         // here whose `child` worktree already exists.
         let _ = std::fs::remove_dir_all(&dir);

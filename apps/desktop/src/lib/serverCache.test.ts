@@ -9,8 +9,8 @@ const server = (id: string, over: Partial<ServerInfo> = {}): ServerInfo =>
 const row = (path: string) => ({ path });
 const pathOf = (r: { path: string }) => r.path;
 
-const here = row("/code/dray");
-const boxRow = row(qualify("/srv/dray", "box"));
+const here = row("/code/wain");
+const boxRow = row(qualify("/srv/wain", "box"));
 const kept = row(qualify("/srv/web", "box"));
 
 describe("serverShown", () => {
@@ -58,9 +58,9 @@ describe("withKept", () => {
 });
 
 describe("keptRow", () => {
-  const task = { projectPath: "/srv/dray", branch: null, worktreeName: "fix-login", status: "idle" } as SessionIndexItem;
+  const task = { projectPath: "/srv/wain", branch: null, worktreeName: "fix-login", status: "idle" } as SessionIndexItem;
   const marks = (state: PrMark["state"] | null) => (repo: string, branch: string | null) =>
-    repo === "/srv/dray" && branch === "worktree-fix-login" ? (state && ({ state } as PrMark)) : undefined;
+    repo === "/srv/wain" && branch === "worktree-fix-login" ? (state && ({ state } as PrMark)) : undefined;
 
   it("marks a row whose PR is open, and only that", () => {
     expect(keptRow(task, marks("OPEN"))).toEqual({ ...task, prOpen: true });
@@ -76,21 +76,21 @@ describe("keptRow", () => {
   });
 
   it("keeps the PR's repo, so it can be read from here while the machine is down", () => {
-    const url = "https://github.com/acme/dray/pull/4";
+    const url = "https://github.com/acme/wain/pull/4";
     const withUrl = (repo: string, branch: string | null) =>
-      repo === "/srv/dray" && branch === "worktree-fix-login" ? ({ state: "OPEN", url } as PrMark) : undefined;
+      repo === "/srv/wain" && branch === "worktree-fix-login" ? ({ state: "OPEN", url } as PrMark) : undefined;
     const kept = keptRow(task, withUrl);
-    expect(kept).toEqual({ ...task, prOpen: true, prRepo: "acme/dray" });
-    expect(keptRepo(kept)).toBe("acme/dray");
+    expect(kept).toEqual({ ...task, prOpen: true, prRepo: "acme/wain" });
+    expect(keptRepo(kept)).toBe("acme/wain");
     // The repo outlives the PR: a merged or vanished one still names it.
-    expect(keptRow(kept, marks(null))).toEqual({ ...task, prRepo: "acme/dray" });
+    expect(keptRow(kept, marks(null))).toEqual({ ...task, prRepo: "acme/wain" });
   });
 
   it("keeps the last kept fields on a fresh row whose PR is not read yet", () => {
-    const before = { ...task, prOpen: true as const, prRepo: "acme/dray" };
+    const before = { ...task, prOpen: true as const, prRepo: "acme/wain" };
     expect(keptRow(task, () => undefined, undefined, before)).toEqual(before);
     // A read wins over what was kept, but the repo stays.
-    expect(keptRow(task, marks("MERGED"), undefined, before)).toEqual({ ...task, prRepo: "acme/dray" });
+    expect(keptRow(task, marks("MERGED"), undefined, before)).toEqual({ ...task, prRepo: "acme/wain" });
   });
 
   it("carries the live status over the index row's", () => {

@@ -11,7 +11,7 @@ plugins {
 if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google-services")
 
 // Play upload key: `keystore.properties` beside the project root, or the same four values as
-// DRAY_ANDROID_* env vars. Without them a release build still configures, just unsigned.
+// WAIN_ANDROID_* env vars. Without them a release build still configures, just unsigned.
 val keystoreProps = Properties().apply {
     val f = rootProject.file("keystore.properties")
     if (f.exists()) f.inputStream().use { load(it) }
@@ -19,25 +19,25 @@ val keystoreProps = Properties().apply {
 fun signingValue(key: String, env: String): String? =
     keystoreProps.getProperty(key) ?: System.getenv(env)?.takeIf { it.isNotEmpty() }
 val uploadSigning = listOf(
-    signingValue("storeFile", "DRAY_ANDROID_STORE_FILE"),
-    signingValue("storePassword", "DRAY_ANDROID_STORE_PASSWORD"),
-    signingValue("keyAlias", "DRAY_ANDROID_KEY_ALIAS"),
-    signingValue("keyPassword", "DRAY_ANDROID_KEY_PASSWORD"),
+    signingValue("storeFile", "WAIN_ANDROID_STORE_FILE"),
+    signingValue("storePassword", "WAIN_ANDROID_STORE_PASSWORD"),
+    signingValue("keyAlias", "WAIN_ANDROID_KEY_ALIAS"),
+    signingValue("keyPassword", "WAIN_ANDROID_KEY_PASSWORD"),
 ).takeIf { values -> values.all { it != null } }?.map { it!! }
 
 android {
-    namespace = "com.yogesh.dray"
+    namespace = "com.wainhq.wain"
     // AndroidX now asks for 37.1 or later; targetSdk stays at what Play requires.
     compileSdk { version = release(37) { minorApiLevel = 2 } }
 
     defaultConfig {
-        applicationId = "com.dray.app"
+        applicationId = "com.wain.app"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
         // The push relay. A debug build can be pointed at a local one with the `pushRelay` intent extra.
-        buildConfigField("String", "PUSH_RELAY", "\"https://drayhq.com\"")
+        buildConfigField("String", "PUSH_RELAY", "\"https://wainhq.com\"")
     }
 
     signingConfigs {

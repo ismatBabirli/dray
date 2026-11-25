@@ -2,14 +2,14 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { after } from "next/server";
 import { boat, BoatError, listByLabel, type Sandbox } from "./boat";
 
-/// Dray Cloud's control plane: one boat sandbox per task, each labelled
-/// `dray=cloud` and listed by label, so nothing here keeps state. The contract
+/// Wain Cloud's control plane: one boat sandbox per task, each labelled
+/// `wain=cloud` and listed by label, so nothing here keeps state. The contract
 /// is issue #857.
 
 const PORT = 7317;
 const TTL_SECONDS = 900;
-const LABEL = { dray: "cloud" };
-const SNAPSHOT = "dray-cloud";
+const LABEL = { wain: "cloud" };
+const SNAPSHOT = "wain-cloud";
 const SANDBOX_ID = /^bx_[23456789abcdefghjkmnpqrstuvwxyz]{8}$/;
 
 export type State = "starting" | "running" | "stopping" | "stopped" | "error";
@@ -44,8 +44,8 @@ function machine(s: Sandbox, subdomain = s.subdomain): Machine {
 }
 
 /// Derived, never stored. A machine holds both values from its create on, and
-/// forks and resumes keep them, so changing `DRAY_CLOUD_SECRET` strands the
-/// whole pool: rotating means deleting every `dray=cloud` sandbox with it.
+/// forks and resumes keep them, so changing `WAIN_CLOUD_SECRET` strands the
+/// whole pool: rotating means deleting every `wain=cloud` sandbox with it.
 const derive = (secret: string, what: string) =>
   createHmac("sha256", secret).update(what).digest("hex");
 
@@ -65,7 +65,7 @@ const error = (status: number, error: string, message?: string) =>
 type Secrets = { serveToken: string; machineSecret: string };
 type Who = "client" | "machine";
 
-/// Wraps a route: 404 while `DRAY_CLOUD_KEY` is unset, 401 for the wrong
+/// Wraps a route: 404 while `WAIN_CLOUD_KEY` is unset, 401 for the wrong
 /// bearer, and boat's failures turned into an answer. Env is read per request
 /// so a route never caches a value from build time.
 export function route<C>(
@@ -73,9 +73,9 @@ export function route<C>(
   handler: (req: Request, secrets: Secrets, ctx: C) => Promise<Response>,
 ) {
   return async (req: Request, ctx: C) => {
-    const key = process.env.DRAY_CLOUD_KEY;
+    const key = process.env.WAIN_CLOUD_KEY;
     if (!key) return new Response(null, { status: 404 });
-    const secret = process.env.DRAY_CLOUD_SECRET;
+    const secret = process.env.WAIN_CLOUD_SECRET;
     if (!secret || !process.env.BOAT_API_KEY) return error(500, "misconfigured");
     const secrets = { serveToken: derive(secret, "serve-token"), machineSecret: derive(secret, "machine") };
     if (!same(bearer(req), who === "client" ? key : secrets.machineSecret)) {
@@ -96,7 +96,7 @@ export function route<C>(
 
 /// Boat reports a cancelled create once and then forgets it, so it is no machine.
 const listMachines = async () =>
-  (await listByLabel("dray=cloud")).filter((s) => s.state !== "cancelled");
+  (await listByLabel("wain=cloud")).filter((s) => s.state !== "cancelled");
 
 /// A labelled sandbox by id, or null. Read off the label list rather than
 /// `GET /sandboxes/{id}`, so a sandbox this key made for anything else is
@@ -128,9 +128,9 @@ async function create(origin: string, serveToken: string, machineSecret: string)
       ttlSeconds: TTL_SECONDS,
       hostedPorts: [{ port: PORT, public: true, localhost: true }],
       files: [
-        { path: ".dray/serve-token", content: serveToken },
+        { path: ".wain/serve-token", content: serveToken },
         {
-          path: ".dray/cloud.json",
+          path: ".wain/cloud.json",
           content: JSON.stringify({ url: `${origin}/api/cloud`, secret: machineSecret }),
         },
       ],

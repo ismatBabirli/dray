@@ -7,8 +7,8 @@ import { SiteNav } from "@/components/home/SiteNav";
 import { FEEDBACK, REPO, SUPPORT_EMAIL } from "@/lib/links";
 
 export const metadata: Metadata = {
-  title: "Help - Dray",
-  description: "Get help with Dray on Mac, Linux, iPhone and iPad: the docs, GitHub issues, and how to reach the person who builds it.",
+  title: "Help - Wain",
+  description: "Get help with Wain on Mac, Linux, iPhone and iPad: the docs, GitHub issues, and how to reach the person who builds it.",
 };
 
 const LINK =
@@ -29,7 +29,7 @@ export default function HelpPage() {
           <SiteNav bare />
           <div className="lg:ml-[102px] lg:max-w-[756px]">
             <h1 className="pt-16 font-inter text-[28px] leading-[32px] font-normal tracking-[-0.03em] text-balance sm:pt-[101px] sm:text-[36px] sm:leading-[40px]">
-              Get help with Dray.
+              Get help with Wain.
             </h1>
             <p className="mt-4 text-[16px] leading-6 tracking-[-0.01em] text-[#7C7C7C] light:text-[#8A8A8A]">
               For the Mac and Linux apps, the server, and the app for iPhone and iPad.
@@ -40,7 +40,7 @@ export default function HelpPage() {
             <Card
               label="Docs"
               title="Look it up."
-              body="How to install Dray, run your agents, connect your other machines, and fix common problems."
+              body="How to install Wain, run your agents, connect your other machines, and fix common problems."
             >
               <a href="/docs" className={BUTTON}>
                 Read the docs
@@ -64,7 +64,7 @@ export default function HelpPage() {
             <Card
               label="Email"
               title="Write to us."
-              body="For anything you'd rather not post in public, such as deleting your account. Yogesh, who builds Dray, reads every one."
+              body="For anything you'd rather not post in public, such as deleting your account. Yogesh, who builds Wain, reads every one."
             >
               <a href={`mailto:${SUPPORT_EMAIL}`} className={BUTTON}>
                 {SUPPORT_EMAIL}
@@ -82,7 +82,7 @@ export default function HelpPage() {
                   <a href="/app/account" className={LINK}>
                     account settings
                   </a>
-                  . Read what Dray collects in the{" "}
+                  . Read what Wain collects in the{" "}
                   <a href="/docs/reference/privacy" className={LINK}>
                     privacy policy
                   </a>
@@ -99,10 +99,10 @@ export default function HelpPage() {
           <section className="mt-16 lg:ml-[102px] lg:max-w-[756px]">
             <h2 className={`${LABEL} mb-4`}>Connect the iPhone and iPad app</h2>
             <p className={CARD_BODY}>
-              The app works with Dray on your Mac, or a Dray server on Linux. It needs no account.
+              The app works with Wain on your Mac, or a Wain server on Linux. It needs no account.
             </p>
             <ol className={`mt-4 list-decimal space-y-2 pl-5 ${CARD_BODY}`}>
-              <li>On your Mac, open Dray, then Settings → Servers.</li>
+              <li>On your Mac, open Wain, then Settings → Servers.</li>
               <li>
                 On the This Mac row, turn on{" "}
                 <a href="/docs/reference/remote-access#remote-access" className={LINK}>
@@ -111,7 +111,7 @@ export default function HelpPage() {
                 .
               </li>
               <li>Press the QR code button on that row.</li>
-              <li>Scan the code with your iPhone&apos;s Camera, or from Add server in the Dray app.</li>
+              <li>Scan the code with your iPhone&apos;s Camera, or from Add server in the Wain app.</li>
             </ol>
           </section>
         </div>

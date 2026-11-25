@@ -83,7 +83,7 @@ const statusTone = (pr: PrMark | undefined) => (pr ? VERDICT_TONE[mergeVerdict(p
 /// checks draw `ChecksRunningIcon`; failing ones turn the PR glyph red.
 const statusLine = (pr: PrMark | undefined) => (pr ? VERDICT_WORDS[mergeVerdict(pr)] : "Reading status…");
 
-/// A task's pull request, posted into the chat by `dray session merge-card`.
+/// A task's pull request, posted into the chat by `wain session merge-card`.
 /// Whole while it is new and unmerged; one line once merged, or once the
 /// reader has moved on by `FULL_FOR` messages. It never goes away unmerged.
 export default function MergeCard({ event }: { event: AgentEvent }) {
@@ -168,7 +168,7 @@ export default function MergeCard({ event }: { event: AgentEvent }) {
           </button>
           <p className="flex items-center gap-1.5 text-ui text-muted-foreground">
             <PrStateIcon pr={pr ?? { state: "OPEN", isDraft: false }} strokeWidth={1.5} />
-            {/* Dray's browser on a click, the system's on ⌘-click. */}
+            {/* Wain's browser on a click, the system's on ⌘-click. */}
             <button
               type="button"
               className="shrink-0 cursor-pointer tabular-nums underline-offset-2 hover:text-foreground hover:underline"

@@ -40,10 +40,10 @@ beforeEach(() => {
 
 describe("bot store", () => {
   it("qualifies a remote's bots, so each knows its server", async () => {
-    answers.set("box", [bot("ops", "/root/.dray/bots/ops")]);
+    answers.set("box", [bot("ops", "/root/.wain/bots/ops")]);
     await refreshBots("box");
     const [ops] = botsOf("box") ?? [];
-    expect(ops.path).toBe("dray://box/root/.dray/bots/ops");
+    expect(ops.path).toBe("wain://box/root/.wain/bots/ops");
     expect(serverOfBot(ops)).toBe("box");
   });
 
@@ -59,11 +59,11 @@ describe("bot store", () => {
   });
 
   it("lets a kept list stand in only until the server answers", async () => {
-    keepBots("cold", [bot("old", "dray://cold/x")]);
+    keepBots("cold", [bot("old", "wain://cold/x")]);
     expect(botsOf("cold")).toHaveLength(1);
     answers.set("cold", []);
     await refreshBots("cold");
-    keepBots("cold", [bot("old", "dray://cold/x")]);
+    keepBots("cold", [bot("old", "wain://cold/x")]);
     expect(botsOf("cold")).toEqual([]);
   });
 

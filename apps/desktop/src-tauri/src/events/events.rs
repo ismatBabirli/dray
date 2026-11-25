@@ -151,7 +151,7 @@ pub enum AgentEventPayload {
         /// it inside the running one and emits a single `result` for both.
         #[serde(default)]
         queued: bool,
-        /// The Dray session that relayed this prompt, when one did.
+        /// The Wain session that relayed this prompt, when one did.
         ///
         /// `None` — the ordinary case — means the user typed it. Carried as a
         /// field rather than named in `text` because the transcript draws the
@@ -179,7 +179,7 @@ pub enum AgentEventPayload {
         /// to record one is the tree the message was actually written in.
         #[serde(default)]
         cwd: Option<String>,
-        /// Dray's own prompt opening a new bot's chat, so the bot speaks first.
+        /// Wain's own prompt opening a new bot's chat, so the bot speaks first.
         /// The transcript draws no bubble for it; the log keeps it, being what
         /// the agent was actually given.
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -437,7 +437,7 @@ pub enum AgentEventPayload {
     /// had then, for once the task is settled and gone from the index.
     TaskStarted { task_id: String, title: String },
 
-    /// A task's pull request, posted by the agent with `dray session merge-card`
+    /// A task's pull request, posted by the agent with `wain session merge-card`
     /// or by the app once it is ready, so the reader can land it from the chat.
     /// The PR's live state is read by the frontend; these fields are what the
     /// card still names once the task is settled and gone from the index.
@@ -462,7 +462,7 @@ pub enum AgentEventPayload {
         repo: Option<String>,
     },
 
-    /// GitHub issues the agent showed the reader with `dray session
+    /// GitHub issues the agent showed the reader with `wain session
     /// issue-card`, each opened in the issues view or handed back to the agent
     /// to work on from its row. The rows are as GitHub had them when posted.
     IssueCard {
@@ -481,7 +481,7 @@ pub enum AgentEventPayload {
     },
 
     /// What a bot's turn changed in its instructions, skills or memory, read
-    /// off the commit Dray made of its folder. Drawn as "Learned" rows with
+    /// off the commit Wain made of its folder. Drawn as "Learned" rows with
     /// View diff and Undo, so a lesson the bot gave itself is never silent.
     Learned {
         commit: String,
@@ -578,7 +578,7 @@ pub enum AgentEventPayload {
 
 impl AgentEventPayload {
     /// Every archived picture this payload points at. Both arms hold paths under
-    /// `~/.dray/attachments/<session-id>/`, so anything moving a log between
+    /// `~/.wain/attachments/<session-id>/`, so anything moving a log between
     /// sessions has to repoint them — see
     /// [`copy_session_log`](crate::store::copy_session_log).
     pub fn images_mut(&mut self) -> &mut [ImageRef] {
@@ -807,7 +807,7 @@ pub struct ToolResult {
     pub exit_code: Option<i32>,
     pub duration_ms: Option<u64>,
     /// Pictures the tool handed back — a `Read` of a screenshot, an MCP tool
-    /// that answers in images. Archived under `~/.dray/attachments` before the
+    /// that answers in images. Archived under `~/.wain/attachments` before the
     /// event is written, so this carries a path and never the bytes: the CLI
     /// sends the same image twice on one line and a session of screenshots was
     /// 12MB of base64 in a 14MB log.
@@ -898,7 +898,7 @@ pub struct MessageSender {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub ask: Option<bool>,
-    /// The answer to an `--ask`, passed back by Dray. Needs no answer itself.
+    /// The answer to an `--ask`, passed back by Wain. Needs no answer itself.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub reply: Option<bool>,

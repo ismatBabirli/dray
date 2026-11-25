@@ -11,12 +11,12 @@ struct IslandApp: App {
 }
 #endif
 
-/// This Mac's server, as `serve-port` and `serve-token` in Dray's home name it.
+/// This Mac's server, as `serve-port` and `serve-token` in Wain's home name it.
 /// Read at every connect, since a restarted server listens on a fresh port.
-/// Dray hands its home over as `DRAY_HOME`, so a dev build's island reaches the dev server.
+/// Wain hands its home over as `WAIN_HOME`, so a dev build's island reaches the dev server.
 func localServer() -> (url: String, token: String)? {
-    let home = ProcessInfo.processInfo.environment["DRAY_HOME"].map { URL(fileURLWithPath: $0) }
-        ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: ".dray")
+    let home = ProcessInfo.processInfo.environment["WAIN_HOME"].map { URL(fileURLWithPath: $0) }
+        ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: ".wain")
     guard let port = (try? String(contentsOf: home.appending(path: "serve-port"), encoding: .utf8))?
             .split(separator: "\n").first,
           let token = try? String(contentsOf: home.appending(path: "serve-token"), encoding: .utf8)
@@ -65,7 +65,7 @@ enum PinchTap {
     }
 }
 
-/// A panel that takes keys without making Dray Island the active app, so the
+/// A panel that takes keys without making Wain Island the active app, so the
 /// app the reader is working in keeps its place in the window order.
 final class IslandPanel: NSPanel {
     override var canBecomeKey: Bool { true }
@@ -121,7 +121,7 @@ final class Delegate: NSObject, NSApplicationDelegate {
     private static weak var shared: Delegate?
     /// The first of a double tap, while the panel is shut.
     private var lastTap: Date?
-    /// A tap is waiting on Dray's selection; another meanwhile must not open twice.
+    /// A tap is waiting on Wain's selection; another meanwhile must not open twice.
     private var askingApp = false
     /// A tap landed while asking, which is the double tap that opens listening.
     private var dictateOnOpen = false
@@ -140,7 +140,7 @@ final class Delegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// The recorder is Dray's, so quitting mid-dictation would leave its
+    /// The recorder is Wain's, so quitting mid-dictation would leave its
     /// microphone open; cancel it first. A `pkill` gets past this.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard let composer, composer.dictation != .idle else { return .terminateNow }
@@ -155,13 +155,13 @@ final class Delegate: NSObject, NSApplicationDelegate {
         (try? Bundle.main.executableURL?.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
     }
     private let startedOn = Delegate.binaryDate()
-    /// Dray launched while the panel was open or a screenshot ran; the restart waits for it to end.
+    /// Wain launched while the panel was open or a screenshot ran; the restart waits for it to end.
     private var updatePending = false
     /// The replacement is launching; a second ping meanwhile would start a second one.
     private var restarting = false
 
-    /// An update swaps the bundle under a running island, and Dray's `open` only
-    /// finds this one still up, so every Dray launch pings it and it moves itself
+    /// An update swaps the bundle under a running island, and Wain's `open` only
+    /// finds this one still up, so every Wain launch pings it and it moves itself
     /// onto the new binary — while hidden, never under the reader's hands. A
     /// screenshot hides the panel without being done with it, so it waits too.
     private func updateIfReplaced() {
@@ -182,7 +182,7 @@ final class Delegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Dray starts its server before this, but a server mid-restart has no
+    /// Wain starts its server before this, but a server mid-restart has no
     /// `serve-port` yet; nothing works without one, so keep looking.
     private func waitForServer() {
         guard localServer() != nil else {
@@ -357,7 +357,7 @@ final class Delegate: NSObject, NSApplicationDelegate {
         }
         composer.takeKeys = { [weak self] in self?.panel?.makeKeyAndOrderFront(nil) }
         registerCapture()
-        // Dray's Settings writes the picks and then says so, through `notifyutil -p`.
+        // Wain's Settings writes the picks and then says so, through `notifyutil -p`.
         // A C callback captures nothing, so it finds the delegate through a static;
         // `NSApp.delegate` is SwiftUI's adaptor, not this.
         Self.shared = self
@@ -365,7 +365,7 @@ final class Delegate: NSObject, NSApplicationDelegate {
             DispatchQueue.main.async {
                 MainActor.assumeIsolated { Delegate.shared?.prefsChanged() }
             }
-        }, "com.yogesh.dray.island.prefs" as CFString, nil, .deliverImmediately)
+        }, "com.wainhq.wain.island.prefs" as CFString, nil, .deliverImmediately)
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), nil, { _, _, _, _, _ in
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
@@ -373,23 +373,23 @@ final class Delegate: NSObject, NSApplicationDelegate {
                     Delegate.shared?.show()
                 }
             }
-        }, "com.yogesh.dray.island.show" as CFString, nil, .deliverImmediately)
-        // Tells Dray this island reads `<id>.<n>` events and their notes: an older one still running reads neither.
+        }, "com.wainhq.wain.island.show" as CFString, nil, .deliverImmediately)
+        // Tells Wain this island reads `<id>.<n>` events and their notes: an older one still running reads neither.
         try? FileManager.default.createDirectory(at: Self.doneDir, withIntermediateDirectories: true)
         try? String(ProcessInfo.processInfo.processIdentifier).write(to: Self.eventsMarker, atomically: true, encoding: .utf8)
-        // A session finished where Dray would have posted its banner. The ids
+        // A session finished where Wain would have posted its banner. The ids
         // queue under `island.done`, since a Darwin notification carries none.
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), nil, { _, _, _, _, _ in
             DispatchQueue.main.async {
                 MainActor.assumeIsolated { Delegate.shared?.sessionsDone() }
             }
-        }, "com.yogesh.dray.island.done" as CFString, nil, .deliverImmediately)
+        }, "com.wainhq.wain.island.done" as CFString, nil, .deliverImmediately)
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), nil, { _, _, _, _, _ in
             DispatchQueue.main.async {
                 MainActor.assumeIsolated { Delegate.shared?.updateIfReplaced() }
             }
-        }, "com.yogesh.dray.island.update" as CFString, nil, .deliverImmediately)
-        // Dray's window connected to a machine or lost one.
+        }, "com.wainhq.wain.island.update" as CFString, nil, .deliverImmediately)
+        // Wain's window connected to a machine or lost one.
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), nil, { _, _, _, _, _ in
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
@@ -397,25 +397,25 @@ final class Delegate: NSObject, NSApplicationDelegate {
                     Task { await composer.followApp() }
                 }
             }
-        }, "com.yogesh.dray.island.links" as CFString, nil, .deliverImmediately)
-        // The tap's twin for other processes: Dray.app, or a script driving the panel.
-        DistributedNotificationCenter.default().addObserver(forName: .init("com.yogesh.dray.island.tap"), object: nil, queue: .main) { [weak self] _ in
+        }, "com.wainhq.wain.island.links" as CFString, nil, .deliverImmediately)
+        // The tap's twin for other processes: Wain.app, or a script driving the panel.
+        DistributedNotificationCenter.default().addObserver(forName: .init("com.wainhq.wain.island.tap"), object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.pressed() }
         }
     }
 
-    /// Dray's inbox, one file per event holding its note; `island_done_dir` in apps.rs names it too.
+    /// Wain's inbox, one file per event holding its note; `island_done_dir` in apps.rs names it too.
     static let doneDir = FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("Library/Caches/com.yogesh.dray.island/done")
+        .appendingPathComponent("Library/Caches/com.wainhq.wain.island/done")
     /// This island's pid, which `island_reads_events` in apps.rs matches against the running one.
     static let eventsMarker = doneDir.deletingLastPathComponent().appendingPathComponent("events-pid")
     /// A bot chat's waiting tasks, `<id>.json`, beside the inbox so an island that reads none never takes one for an event.
     static let waitingDir = doneDir.deletingLastPathComponent().appendingPathComponent("waiting")
 
-    /// Takes the sessions Dray dropped, oldest first, deleting only the files
+    /// Takes the sessions Wain dropped, oldest first, deleting only the files
     /// read, so one landing meanwhile waits for its own notification. A file's
     /// text is what the pill says in place of "Done"; empty, it is a finished turn.
-    /// A note's rows, where Dray sent them, wait in `waitingDir`.
+    /// A note's rows, where Wain sent them, wait in `waitingDir`.
     func sessionsDone() {
         let fm = FileManager.default
         let files = (try? fm.contentsOfDirectory(at: Self.doneDir, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
@@ -423,7 +423,7 @@ final class Delegate: NSObject, NSApplicationDelegate {
         for file in files.sorted(by: { stamp($0) < stamp($1) }) {
             let note = (try? String(contentsOf: file, encoding: .utf8)) ?? ""
             try? fm.removeItem(at: file)
-            // `<id>.<n>`, one file per event; a bare id is an older Dray's.
+            // `<id>.<n>`, one file per event; a bare id is an older Wain's.
             let id = String(file.lastPathComponent.prefix { $0 != "." })
             var rows: [WaitingTask]?
             if !note.isEmpty {
@@ -492,7 +492,7 @@ final class Delegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// A tap over Dray's window opens on the session that window has open,
+    /// A tap over Wain's window opens on the session that window has open,
     /// asked before the panel shows so the title never flips under the reader.
     /// The app answers nothing unless its window has focus, so every tap asks.
     private func open() {
@@ -733,7 +733,7 @@ final class ModifierTap {
     private var inputsAtDown: UInt32 = 0
     private var monitors: [Any] = []
 
-    /// Dray's Settings writes `island.key`; read at every press, so a change lands without a restart.
+    /// Wain's Settings writes `island.key`; read at every press, so a change lands without a restart.
     private static var key: NSEvent.ModifierFlags {
         switch UserDefaults.standard.string(forKey: "island.key") {
         case "option": .option

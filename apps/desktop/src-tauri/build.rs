@@ -23,9 +23,9 @@ fn main() {
 fn delay_load_cef() {
     let windows = env::var("CARGO_CFG_TARGET_OS").is_ok_and(|os| os == "windows");
     if windows && env::var_os("CARGO_FEATURE_CEF").is_some() {
-        // The app alone: `dray-helper` calls nothing of CEF's off a Mac, and
+        // The app alone: `wain-helper` calls nothing of CEF's off a Mac, and
         // the linker warns about a delay-load with no imports.
-        println!("cargo:rustc-link-arg-bin=dray=/DELAYLOAD:libcef.dll");
+        println!("cargo:rustc-link-arg-bin=wain=/DELAYLOAD:libcef.dll");
     }
 }
 
@@ -33,7 +33,7 @@ fn delay_load_cef() {
 /// resources under `/usr/lib/<productName>/` beside `/usr/bin/<binary>`, in the
 /// `.deb` and inside the AppImage alike. See `tauri.linux.conf.json`.
 /// `bundled_modules` in transcription/engine.rs names the same directory.
-const BUNDLED_RPATH: &str = "$ORIGIN/../lib/Dray/transcribe";
+const BUNDLED_RPATH: &str = "$ORIGIN/../lib/Wain/transcribe";
 
 /// Copies the shared libtranscribe and its backend modules (Linux's
 /// `dynamic-backends` build, see Cargo.toml) to `transcribe-libs/`, a fixed

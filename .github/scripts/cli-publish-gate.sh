@@ -2,7 +2,7 @@
 # Holds a CLI release whose protocol moved until an app release speaking it is
 # out, so the `v*` and `cli-v*` tags can always be pushed together.
 #
-# The order matters one way only: a CLI behind the app is cured by `dray
+# The order matters one way only: a CLI behind the app is cured by `wain
 # update`, which agents run themselves; an app behind the CLI needs a human.
 #
 #   cli-publish-gate.sh decide <cli-tag>
@@ -16,8 +16,8 @@
 # Outputs go to $GITHUB_OUTPUT where it is set.
 set -euo pipefail
 
-proto_file=crates/dray-proto/src/lib.rs
-repo=${GITHUB_REPOSITORY:-monorepo-labs/dray}
+proto_file=crates/wain-proto/src/lib.rs
+repo=${GITHUB_REPOSITORY:-ismatbabirli/wain}
 
 die() { echo "::error::$*" >&2; exit 1; }
 out() { [ -z "${GITHUB_OUTPUT:-}" ] || printf '%s\n' "$@" >> "$GITHUB_OUTPUT"; }

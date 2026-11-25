@@ -1,6 +1,6 @@
-# Dray
+# Wain
 
-A desktop home for your coding agents. Dray wraps coding-agent CLIs (Claude
+A desktop home for your coding agents. Wain wraps coding-agent CLIs (Claude
 Code, Codex, pi, fx, Grok) in a native chat UI. Run many sessions at once. Each gets
 its own worktree, diff view, PR panel, issue panel and embedded browser.
 
@@ -12,7 +12,7 @@ its own worktree, diff view, PR panel, issue panel and embedded browser.
 
 [![Greptile: The War on Bugs](https://www.greptile.com/badge.svg)](https://www.greptile.com/?utm_source=oss_badge&utm_medium=readme&utm_campaign=greptile_for_open_source)
 
-Want to sponsor Dray? [drayhq.com/support](https://www.drayhq.com/support)
+Want to sponsor Wain? [wainhq.com/support](https://www.wainhq.com/support)
 
 ## Layout
 
@@ -20,11 +20,11 @@ Want to sponsor Dray? [drayhq.com/support](https://www.drayhq.com/support)
 | ------------------- | ------------------------------------------------------ |
 | `apps/desktop`      | The Tauri app. React 19 + Vite frontend, Rust backend. |
 | `apps/web`          | Marketing site. Next.js, deployed to Vercel.           |
-| `apps/docs`         | Docs at drayhq.com/docs. Blume, deployed to Vercel.    |
-| `apps/ios`          | iPhone and iPad client of a Dray server. SwiftUI.      |
-| `apps/island`       | Dray Island, the Mac companion panel. SwiftUI.         |
-| `apps/cli`          | The `dray` CLI agents use to fan work out.             |
-| `crates/dray-proto` | Wire types shared by the CLI and the app.              |
+| `apps/docs`         | Docs at wainhq.com/docs. Blume, deployed to Vercel.    |
+| `apps/ios`          | iPhone and iPad client of a Wain server. SwiftUI.      |
+| `apps/island`       | Wain Island, the Mac companion panel. SwiftUI.         |
+| `apps/cli`          | The `wain` CLI agents use to fan work out.             |
+| `crates/wain-proto` | Wire types shared by the CLI and the app.              |
 
 ## Getting started
 
@@ -49,16 +49,16 @@ cd apps/desktop/src-tauri && cargo test
 `cargo test` regenerates `apps/desktop/src/types/events.ts`. Always follow a
 filtered run with a bare `cargo test`.
 
-## The `dray` CLI
+## The `wain` CLI
 
-A standalone binary. It talks to the running app over `~/.dray/dray.sock`, so
+A standalone binary. It talks to the running app over `~/.wain/wain.sock`, so
 an agent in one session can create, list and message others.
 
 ```bash
-curl -fsSL https://www.drayhq.com/install.sh | sh
+curl -fsSL https://www.wainhq.com/install.sh | sh
 ```
 
-On Linux the same line makes the machine a Dray server: [drayhq.com/docs/server](https://www.drayhq.com/docs/server).
+On Linux the same line makes the machine a Wain server: [wainhq.com/docs/server](https://www.wainhq.com/docs/server).
 
 ## Releasing
 

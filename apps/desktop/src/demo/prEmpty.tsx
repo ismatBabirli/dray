@@ -37,7 +37,7 @@ const TERMINALS: ExternalApp[] = [
   },
 };
 
-const CWD = "/Users/you/code/dray";
+const CWD = "/Users/you/code/wain";
 
 /// What the PR pane draws when there is no pull request behind it.
 ///

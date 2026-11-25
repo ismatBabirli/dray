@@ -18,7 +18,7 @@ const WIDTH = 1200;
 const HEIGHT = 720;
 
 /// The app, whole, above the fold, and the visitor can touch it. It opens on
-/// the Dray bot's chat beside its Tasks tab, and the sidebar holds the bots
+/// the Wain bot's chat beside its Tasks tab, and the sidebar holds the bots
 /// alone. A visitor can merge what a task left ready, open a task — which
 /// brings its own PR, Changes and More panel — or the bot's page as a tab,
 /// switch bots, and message one to watch it start a task. `startX` is where a

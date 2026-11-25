@@ -105,7 +105,7 @@ export default function WhatsNewDialog({
         <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between">
           <span className={cn(PILL, "flex items-center gap-1.5")}>
             <SparklesIcon className="size-3.5 text-[#3DD68C]" aria-hidden />
-            New in Dray
+            New in Wain
           </span>
           {!last && (
             <button

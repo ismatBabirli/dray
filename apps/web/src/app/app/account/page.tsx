@@ -6,7 +6,7 @@ import { AppShell } from "@/components/account/AppShell";
 import { TITLE } from "@/components/account/styles";
 import { listOrgs, requireSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Account - Dray" };
+export const metadata: Metadata = { title: "Account - Wain" };
 
 /// The reader's own settings, apart from any org's.
 export default async function AccountPage() {

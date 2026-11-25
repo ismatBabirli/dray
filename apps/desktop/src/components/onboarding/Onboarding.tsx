@@ -13,7 +13,7 @@ import type { Bot } from "@/types/events";
 import BotTiles from "./BotTiles";
 import Welcome, { MUSIC_AT } from "./Welcome";
 import { type AgentSetup, type GithubSetup, type SetupState, useAgentSetup, useGithubSetup } from "./agents";
-import { askToOpenDrayBot, finishOnboarding, useOnboarding } from "./state";
+import { askToOpenWainBot, finishOnboarding, useOnboarding } from "./state";
 import { startOnboardingMusic } from "./welcomeSounds";
 import "./onboarding.css";
 
@@ -23,11 +23,11 @@ const READY_HOLD_MS = 1600;
 const FIRST_REVEAL_MS = 900;
 const NEXT_REVEAL_MS = 260;
 
-/// The full-window onboarding: welcome, setup, Dray Bot. Drawn like the
+/// The full-window onboarding: welcome, setup, Wain Bot. Drawn like the
 /// sign-in gate — black, the site's tiles — since it is the brand's own page
 /// rather than the app's. Mounted above the gate, not inside the app, so a new
 /// reader meets it before signing in; nothing in it needs an account. Its
-/// Continue leads to the gate, and to Dray Bot's chat once the app is in.
+/// Continue leads to the gate, and to Wain Bot's chat once the app is in.
 export default function Onboarding() {
   const on = useOnboarding();
   if (!on) return null;
@@ -35,7 +35,7 @@ export default function Onboarding() {
     <Flow
       onStart={() => {
         finishOnboarding();
-        askToOpenDrayBot();
+        askToOpenWainBot();
       }}
     />
   );
@@ -44,7 +44,7 @@ export default function Onboarding() {
 function Flow({ onStart }: { onStart: () => void }) {
   const [step, setStep] = useState<"welcome" | "setup" | "bot">("welcome");
   // Read here, not handed down by the app, which is not mounted before sign-in.
-  // The first read is what makes Dray Bot.
+  // The first read is what makes Wain Bot.
   const [bot, setBot] = useState<Bot>();
   useEffect(() => {
     invoke<Bot[]>("list_bots", {}, LOCAL)
@@ -76,7 +76,7 @@ function Flow({ onStart }: { onStart: () => void }) {
   );
 }
 
-/// An agent and `gh`, both required: nothing in Dray runs without an agent, and
+/// An agent and `gh`, both required: nothing in Wain runs without an agent, and
 /// pull requests, issues and the bot's view of GitHub all go through `gh`. So
 /// there is no skip; once both are ready the flow moves on by itself.
 function Setup({ agents, github, onNext }: { agents: AgentSetup; github: GithubSetup; onNext: () => void }) {
@@ -226,7 +226,7 @@ function Corner({ state }: { state: SetupState }) {
   );
 }
 
-/// Dray Bot, and the homepage's four tiles on what it does.
+/// Wain Bot, and the homepage's four tiles on what it does.
 function MeetBot({ bot, onStart }: { bot: Bot | undefined; onStart: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Enter" && onStart();
@@ -240,18 +240,18 @@ function MeetBot({ bot, onStart }: { bot: Bot | undefined; onStart: () => void }
       <div className="m-auto flex w-full max-w-[960px] flex-col">
         <div className="flex items-start justify-between gap-10">
           <div className="ob-in flex shrink-0 items-center gap-4">
-            <BotAvatar seed={bot?.id ?? "dray"} avatar={bot?.avatar} follow className="size-12" />
-            <h1 className="text-[36px] leading-10 font-light tracking-[-0.03em]">Meet Dray Bot.</h1>
+            <BotAvatar seed={bot?.id ?? "wain"} avatar={bot?.avatar} follow className="size-12" />
+            <h1 className="text-[36px] leading-10 font-light tracking-[-0.03em]">Meet Wain Bot.</h1>
           </div>
           <div className="ob-in relative flex max-w-[440px] flex-col gap-2 pt-1" style={{ animationDelay: "60ms" }}>
             <svg aria-hidden width="30" height="26" viewBox="0 0 22 19" className="absolute top-1.5 -left-11 fill-white/15">
               <path d="M0 19V9.5L5 0h4L6 9.5h3V19ZM13 19V9.5L18 0h4l-3 9.5h3V19Z" />
             </svg>
             <p className="text-[15px] leading-6 text-white/70">
-              Dray Bot is how I work these days. I tell it what I want, and it starts the tasks, keeps them moving and only
+              Wain Bot is how I work these days. I tell it what I want, and it starts the tasks, keeps them moving and only
               comes back when it needs me. Far calmer than watching every task myself.
             </p>
-            <p className="text-[13px] leading-[18px] text-white/40">Yogesh, Founder of Dray</p>
+            <p className="text-[13px] leading-[18px] text-white/40">Yogesh, Founder of Wain</p>
           </div>
         </div>
         <div className="ob-in mt-8" style={{ animationDelay: "120ms" }}>

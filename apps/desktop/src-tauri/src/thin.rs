@@ -95,7 +95,7 @@ const RECEIPT: usize = 4 * 1024;
 
 /// `events` as a bot's chat draws them. A bot is talked to like a person, so
 /// its chat shows the conversation and the tasks it started and never the
-/// work between: of its tool calls only a `dray … new` or `dray … send` is
+/// work between: of its tool calls only a `wain … new` or `wain … send` is
 /// read, for a task or a message it names, and those are kept whole. Every
 /// other call goes with its result, and so do reasoning, reported edits and
 /// whatever a subagent did — in a bot's log, most of the bytes and most of
@@ -125,7 +125,7 @@ pub fn chat(events: Vec<AgentEvent>) -> Vec<AgentEvent> {
             match &mut event.payload {
                 AgentEventPayload::ToolCallStarted { call_id, input, .. } => {
                     let said = input.to_string();
-                    let ours = said.contains("dray") && (said.contains("new") || said.contains("send"));
+                    let ours = said.contains("wain") && (said.contains("new") || said.contains("send"));
                     if ours {
                         read.insert(call_id.clone());
                     }
@@ -338,7 +338,7 @@ mod tests {
 
     #[test]
     fn a_bots_chat_keeps_the_talk_and_the_calls_it_reads() {
-        let dray = |seq: u64, command: &str, out: &str| {
+        let wain = |seq: u64, command: &str, out: &str| {
             let id = format!("d{seq}");
             [
                 event(seq, json!({ "type": "tool_call_started", "callId": id, "name": "Bash", "toolType": "shell", "input": { "command": command }, "rawInput": null, "title": null })),
@@ -348,9 +348,9 @@ mod tests {
         let mut log = vec![prompt(0)];
         log.extend(call(1));
         log.push(event(3, json!({ "type": "reasoning", "text": "hm" })));
-        log.extend(dray(4, "dray session new --project /tmp 'do it'", "01a1edc2-be4d-7410-88ec-8bff59d44ac0\nStarted"));
-        log.extend(dray(6, "dray session send abc 'hello'", &"y".repeat(9000)));
-        log.extend(dray(8, "dray session ls", "rows"));
+        log.extend(wain(4, "wain session new --project /tmp 'do it'", "01a1edc2-be4d-7410-88ec-8bff59d44ac0\nStarted"));
+        log.extend(wain(6, "wain session send abc 'hello'", &"y".repeat(9000)));
+        log.extend(wain(8, "wain session ls", "rows"));
         let mut inner = event(10, json!({ "type": "assistant_text", "text": "from a subagent" }));
         inner.subagent = Some(crate::events::Subagent { id: "s".into(), label: None });
         log.push(inner);
@@ -362,7 +362,7 @@ mod tests {
         let ids: Vec<&str> = kept.iter().map(|e| e.id.as_str()).collect();
         assert_eq!(ids, ["e0", "e4", "e5", "e6", "e7", "e11", "e12"]);
         let AgentEventPayload::ToolCallStarted { input, .. } = &kept[1].payload else { panic!() };
-        assert_eq!(input["command"], "dray session new --project /tmp 'do it'");
+        assert_eq!(input["command"], "wain session new --project /tmp 'do it'");
         let AgentEventPayload::ToolCallCompleted { result, .. } = &kept[2].payload else { panic!() };
         assert!(result.text.starts_with("01a1edc2"));
         let AgentEventPayload::ToolCallCompleted { result, .. } = &kept[4].payload else { panic!() };

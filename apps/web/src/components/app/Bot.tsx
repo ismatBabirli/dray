@@ -177,7 +177,7 @@ export function BotRow({
           <span
             role="img"
             aria-label={`${unread} unread`}
-            // The app's Dray theme: a red deeper than its own in dark, green in light.
+            // The app's Wain theme: a red deeper than its own in dark, green in light.
             className="absolute -right-0.5 -bottom-0.5 flex size-4 items-center justify-center rounded-full bg-[oklch(0.55_0.2_25)] text-[10px] leading-none font-semibold text-white tabular-nums light:bg-accent-add"
           >
             {unread}

@@ -1,14 +1,14 @@
-// `dray upload`'s endpoint (#1479). README.md says how to deploy it.
+// `wain upload`'s endpoint (#1479). README.md says how to deploy it.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "dray-upload",
+  "name": "wain-upload",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-19",
-  "routes": [{ "pattern": "upload.drayhq.com", "custom_domain": true }],
-  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "dray-uploads" }],
+  "routes": [{ "pattern": "upload.wainhq.com", "custom_domain": true }],
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "wain-uploads" }],
   "vars": {
     // The bucket's own public domain, set on the bucket in the dashboard.
-    "PUBLIC_URL": "https://img.drayhq.com"
+    "PUBLIC_URL": "https://img.wainhq.com"
   },
   "durable_objects": {
     "bindings": [{ "name": "LIMITER", "class_name": "Limiter" }]

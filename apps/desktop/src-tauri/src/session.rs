@@ -106,7 +106,7 @@ pub struct QueuedMessage {
     /// flush.
     #[serde(default)]
     pub issues: Vec<IssueRef>,
-    /// Dray's own prompt, which nobody typed: a bot's kickoff or review, or a
+    /// Wain's own prompt, which nobody typed: a bot's kickoff or review, or a
     /// reaction told to the agent. No client draws it and a cancel never takes
     /// it back, as its logged event draws nothing either.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -119,7 +119,7 @@ pub struct QueuedMessage {
 }
 
 /// The device a reader typed a prompt on, named to the agent so it can fit its
-/// reply to the screen. Each client sends its own with `send_msg`; Dray's own
+/// reply to the screen. Each client sends its own with `send_msg`; Wain's own
 /// prompts, relays and the CLI send none.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -207,13 +207,13 @@ pub struct QueueChangedEvent {
 }
 
 /// Tells every client what a session still holds. `send_msg` answers only the
-/// sender, so without this a prompt queued from the island or `dray session
+/// sender, so without this a prompt queued from the island or `wain session
 /// send` showed nowhere until its flush. Emitted under the lock, so two
 /// changes racing each other can never arrive in the wrong order.
 ///
 /// A relayed message — a task's report, another bot's or session's send — is
 /// left out: it is for the agent, and every client drew it as the reader's own
-/// bubble until its flush. So is Dray's own prompt ([`QueuedMessage::hidden`]).
+/// bubble until its flush. So is Wain's own prompt ([`QueuedMessage::hidden`]).
 pub async fn publish_queue(session_id: &str, queued: &QueuedMessages, app: &Sink) {
     let held = queued.lock().await;
     let event = QueueChangedEvent {
@@ -258,7 +258,7 @@ pub struct SendOutcome {
 /// build still spawns.
 ///
 /// `None` is legal for pi alone and means "let pi decide" — its own settings
-/// already name a model, and Dray naming one it might have no key for is the
+/// already name a model, and Wain naming one it might have no key for is the
 /// worst possible first run.
 pub async fn model_spec(harness: Harness, model: &ModelId) -> Result<Option<Model>> {
     Ok(match harness {
@@ -275,7 +275,7 @@ pub async fn model_spec(harness: Harness, model: &ModelId) -> Result<Option<Mode
 ///
 /// A model belongs to exactly one harness, and the pair reaches a send or a
 /// switch from places that each know only half of it — the composer's stored
-/// defaults and the `dray` CLI's own flags — so nothing upstream makes them
+/// defaults and the `wain` CLI's own flags — so nothing upstream makes them
 /// agree. Refused rather than quietly repaired: a session running on a model
 /// nobody picked is the failure that looks like success.
 ///
@@ -748,7 +748,7 @@ pub async fn publish_status(session_id: &str, status: SessionStatus, app: &Sink)
 /// itself. A real interrupt answers well inside it.
 const STOP_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
 
-/// The turn end a `result` would have been, for a turn Dray closes itself.
+/// The turn end a `result` would have been, for a turn Wain closes itself.
 /// `stop_reason` starting `aborted` is what keeps a reader's own Stop from
 /// drawing as a failure.
 fn closing_turn(stop_reason: &str, final_text: Option<&str>) -> AgentEventPayload {
@@ -963,7 +963,7 @@ pub struct SessionManager {
 }
 
 /// The process's one manager. A static rather than Tauri managed state, so the
-/// desktop's commands, the orchestration socket and `dray-serve` all reach the
+/// desktop's commands, the orchestration socket and `wain-serve` all reach the
 /// same map without a Tauri app in between.
 pub fn manager() -> &'static SessionManager {
     static MANAGER: std::sync::LazyLock<SessionManager> =
@@ -978,7 +978,7 @@ async fn require_dir(dir: &str, what: &str) -> Result<()> {
     if tokio::fs::metadata(dir).await.is_ok_and(|m| m.is_dir()) {
         return Ok(());
     }
-    bail!("{what} {dir} no longer exists. Restore it, or remove the project from Dray.")
+    bail!("{what} {dir} no longer exists. Restore it, or remove the project from Wain.")
 }
 
 /// The live session in a locked slot, or the error every caller answers a dead
@@ -1096,7 +1096,7 @@ impl SessionManager {
         false
     }
 
-    /// Whether anything is working here, background tasks included: what Dray
+    /// Whether anything is working here, background tasks included: what Wain
     /// Cloud's heartbeat reports. A slot locked by a send or a respawn counts,
     /// as in [`Self::any_turn_in_flight`]. A new session's first send joins the
     /// map only once its prompt is out, so `SENDS` is what makes it busy before.
@@ -1188,7 +1188,7 @@ impl SessionManager {
         // Absolute paths of what the composer had attached. Re-read here rather
         // than uploaded: the frontend holds a thumbnail, not bytes.
         attachment_paths: &[String],
-        // Issues named outright rather than tagged in the text. `dray new
+        // Issues named outright rather than tagged in the text. `wain new
         // --issue` is the only caller: the app sends none, since nothing in it
         // starts a session against a row. Merged with the prompt's own `#` tags,
         // which is why one list arrives here and not two — and naming an issue
@@ -1223,7 +1223,7 @@ impl SessionManager {
         // orchestration socket sets it, and only with a parent.
         hidden: bool,
         // A title the caller already knows, set and locked now so none is
-        // generated. Only `dray session new --title` names one.
+        // generated. Only `wain session new --title` names one.
         title: Option<&str>,
         // The session that relayed this prompt, for a message arriving over the
         // orchestration socket. `None` everywhere else: the composer's prompts
@@ -1232,7 +1232,7 @@ impl SessionManager {
         from: Option<MessageSender>,
         // The client's device, and in a bot's chat its time, named to the agent
         // beside the prompt. Only the `send_msg` command sets it: a relay, a
-        // routine or Dray's own prompt was typed on nothing.
+        // routine or Wain's own prompt was typed on nothing.
         origin: Option<Origin>,
         // Set by the auto-continue timer alone: the schedule it fires for. It
         // is claimed under this session's lock below, the lock a user's send
@@ -1264,11 +1264,11 @@ impl SessionManager {
         // clamped **here** so the index records what the child was told rather
         // than what was asked for. A `true` sitting on an entry that cannot
         // honour it is not a cosmetic lie: it draws a lit switch over a session
-        // running at ordinary speed, and `dray new` hands it down to every
+        // running at ordinary speed, and `wain new` hands it down to every
         // same-harness child the session spawns.
         //
         // Both halves are needed and the composer is not one of them. It runs
-        // the same narrowing in `fastFor`, but `dray new --fast --model haiku`
+        // the same narrowing in `fastFor`, but `wain new --fast --model haiku`
         // never goes near it — the orchestration socket reaches this function
         // directly, which is the whole reason the rule is restated on this side.
         //
@@ -1327,7 +1327,7 @@ impl SessionManager {
             crate::bots::mark_new_chat(session_id, cwd, harness).await;
 
             // Only Claude Code's `-w` makes its own tree. For everything else
-            // the tree has to be one Dray makes — the same route `--from`
+            // the tree has to be one Wain makes — the same route `--from`
             // already takes, started where the CLI would have started it.
             // Without this the tree is never created, and the session bails
             // inside `Session::init` with its row already in the index: a
@@ -1381,7 +1381,7 @@ impl SessionManager {
                 None => git::list_branches(cwd).await?.current,
             };
 
-            // A base ref is the one case Dray makes the tree itself. The harness
+            // A base ref is the one case Wain makes the tree itself. The harness
             // cannot be told where to fork from — `-w` resolves the default
             // branch and fetches `origin/<it>`, and its flag surface exposes no
             // base at all — so the tree is created here and the child is spawned
@@ -1466,7 +1466,7 @@ impl SessionManager {
             // The spawn below is deliberately *not* covered — by then the row
             // exists, and deleting the session already takes the tree with it.
             //
-            // Only a tree Dray made. A `-w` one does not exist yet, and the
+            // Only a tree Wain made. A `-w` one does not exist yet, and the
             // failed create above left nothing to undo.
             if let Err(e) = append_session_index_item(item.clone()).await {
                 if owned_worktree {
@@ -1789,7 +1789,7 @@ impl SessionManager {
                 // draws no pending row and so offers no Esc.
                 // pi and grok each hold a steering queue of their own and
                 // drain it at the next boundary inside the run, so there is
-                // nothing for Dray's queue to do here and no boundary for it to
+                // nothing for Wain's queue to do here and no boundary for it to
                 // race for — whether or not a tool happens to be running now.
                 if matches!(s.stdin, Transport::Pi(_) | Transport::Grok(_)) {
                     s.steer(prompt, attachment_paths, issues, from, origin, app).await?;
@@ -1906,7 +1906,7 @@ impl SessionManager {
         // Claude Code takes `-w` and creates the tree itself after launch, so
         // the child spawns at the project root and the baseline can only be the
         // fork point it is about to resolve. Every other harness needs the tree
-        // to exist first — so Dray makes it, and then the ordinary snapshot
+        // to exist first — so Wain makes it, and then the ordinary snapshot
         // works, which is the more exact of the two baselines.
         let mut pending_worktree = None;
         let (spawn_cwd, baseline) = match unmade_worktree {
@@ -2048,7 +2048,7 @@ impl SessionManager {
         }
         if !parent.harness.names_a_cli() {
             bail!(
-                "this session runs on {}, which this version of Dray can't drive — update Dray",
+                "this session runs on {}, which this version of Wain can't drive — update Wain",
                 parent.harness.label()
             );
         }
@@ -2059,7 +2059,7 @@ impl SessionManager {
 
         // **grok addresses a conversation by session id *and directory*, so
         // "can this be forked" is a question only grok's own store answers.**
-        // Dray's index stops naming the right directory the moment a worktree
+        // Wain's index stops naming the right directory the moment a worktree
         // is removed — `cwd` is rewritten to the project root, where grok never
         // put anything — and `worktree_removed` cannot stand in for the
         // question either, being set from a *shape* whose own false positive is
@@ -2183,7 +2183,7 @@ impl SessionManager {
     /// task held the session `in_progress` — the status follows the turn alone
     /// now, so that fan-out only killed dev servers the reader still wanted.
     /// Per-task stops stay available in the subagent panel for the narrower ask.
-    /// `dray session model` for a prompt already held behind a running turn.
+    /// `wain session model` for a prompt already held behind a running turn.
     /// That prompt opens the next turn but is flushed straight to the child,
     /// never through `send_msg`, so the pick goes out now by the rule a prompt
     /// queued now would take: live on Claude Code, deferred to the flush on fx.
@@ -2386,7 +2386,7 @@ impl SessionManager {
         Ok((relocated, existed))
     }
 
-    /// Logs and emits an event Dray writes into a session's chat itself. Numbered
+    /// Logs and emits an event Wain writes into a session's chat itself. Numbered
     /// through the live child's counter where one runs — the agent posting a card
     /// is mid-turn — and off the log otherwise, under the slot's lock either way
     /// so a spawn cannot take the same `seq`.
@@ -2423,7 +2423,7 @@ impl SessionManager {
     }
 
     /// [`move_agent`] ahead of a send: the composer's `switch_agent`, and
-    /// `dray session model` naming another agent's model.
+    /// `wain session model` naming another agent's model.
     pub async fn switch_agent(
         &self,
         session_id: &str,
@@ -2573,7 +2573,7 @@ async fn sweep_deleted(session_id: &str, item: Option<SessionIndexItem>) {
     #[cfg(any(feature = "serve", feature = "desktop"))]
     crate::headless::automation::delete_recordings(session_id);
 
-    // pi keeps its own transcript beside Dray's, because the *file* is its
+    // pi keeps its own transcript beside Wain's, because the *file* is its
     // resume handle. Left behind it is a whole conversation on disk that
     // nothing can ever reach again, the index entry naming it having just
     // gone. Best-effort and unconditional: a non-pi session has no such
@@ -2640,7 +2640,7 @@ pub enum Transport {
     /// fx's connection: JSON-RPC like Codex's, addressed to the session fx
     /// minted. See [`FxSession`](crate::harness::fx::FxSession).
     Fx(crate::harness::fx::FxSession),
-    /// grok's connection: ACP like fx's, addressed to the session id **Dray**
+    /// grok's connection: ACP like fx's, addressed to the session id **Wain**
     /// chose — grok honours `_meta.sessionId`, so there is no minted id to
     /// carry. See [`GrokSession`](crate::harness::grok::GrokSession).
     Grok(crate::harness::grok::GrokSession),
@@ -2740,7 +2740,7 @@ pub struct Session {
 impl Session {
     /// Spawns the child process for the given harness.
     ///
-    /// `model` is optional because pi's is: it is multi-provider, so Dray names
+    /// `model` is optional because pi's is: it is multi-provider, so Wain names
     /// no default it could be wrong about and lets pi's own settings decide.
     /// The other two name one in `default_model_for`, so `None` reaching them
     /// is a caller that skipped resolution rather than a state to spawn in.
@@ -2818,7 +2818,7 @@ impl Session {
                 // filters the instruction out on `fork_needs_cli`. One arriving
                 // anyway is a caller expecting a CLI-side fork pi cannot
                 // perform: its own `fork` names the file rather than taking the
-                // one Dray chose, since `--fork` and `--session` are refused
+                // one Wain chose, since `--fork` and `--session` are refused
                 // together.
                 if fork_from.is_some() {
                     bail!("a pi fork is the copied session file — there is nothing to resume from");
@@ -2865,7 +2865,7 @@ impl Session {
             Harness::Grok => {
                 // The same refusal fx and pi take, for the same reason: grok's
                 // `-w` makes a Grove copy under `~/.grok/worktrees` on a layout
-                // of its own, so Dray makes the tree here as it does for them.
+                // of its own, so Wain makes the tree here as it does for them.
                 // A name arriving anyway is a caller that skipped that, and a
                 // session silently running in the wrong tree is worth refusing
                 // outright.
@@ -2916,7 +2916,7 @@ impl Session {
             // and picking one would run a different agent inside somebody
             // else's conversation.
             Harness::Other(name) => {
-                bail!("this session runs on {name}, which this version of Dray can't drive — update Dray")
+                bail!("this session runs on {name}, which this version of Wain can't drive — update Wain")
             }
         }
     }
@@ -3018,7 +3018,7 @@ impl Session {
             issues: issues.to_vec(),
             // Peeked, not taken: the flush that logs it takes the mark, and
             // logs it as a kickoff that draws nothing.
-            hidden: crate::bots::is_dray_prompt(&self.id, prompt),
+            hidden: crate::bots::is_wain_prompt(&self.id, prompt),
             origin,
         };
         self.queued.lock().await.push(message.clone());
@@ -3089,7 +3089,7 @@ impl Session {
     /// pi's `streamingBehavior: "steer"` puts the prompt on pi's own steering
     /// queue, which it drains at the next tool-call boundary inside the run —
     /// before the model call after it, verified live. So the boundary is pi's
-    /// to find and the prompt is pi's to hold, where Dray's queue exists
+    /// to find and the prompt is pi's to hold, where Wain's queue exists
     /// precisely because Claude Code offers neither.
     ///
     /// Written through rather than held, which trades the same thing
@@ -3838,7 +3838,7 @@ fn lead_in_around(hidden: Option<&str>, text: &str, after: bool) -> String {
 async fn deliver_prompt(
     session_id: &str,
     // Whose conversation this prompt joins. Recorded on the event rather than
-    // assumed, since this is the one event Dray mints itself for every harness.
+    // assumed, since this is the one event Wain mints itself for every harness.
     harness: Harness,
     prompt: &str,
     attachment_paths: &[String],
@@ -3888,7 +3888,7 @@ async fn deliver_prompt(
     // of the logged text cannot carry it twice. Not on a slash command, whose
     // arguments it would join, nor on a prompt nobody typed.
     let tag = origin
-        .filter(|_| from.is_none() && !slash && !crate::bots::is_dray_prompt(session_id, prompt))
+        .filter(|_| from.is_none() && !slash && !crate::bots::is_wain_prompt(session_id, prompt))
         .and_then(|origin| origin.tag());
     let given = match &tag {
         Some(tag) if given.is_empty() => tag.clone(),
@@ -3919,7 +3919,7 @@ async fn deliver_prompt(
         _ => None,
     };
 
-    // A bot whose chat opens on a welcome (Dray Bot) has it written down as
+    // A bot whose chat opens on a welcome (Wain Bot) has it written down as
     // the chat's first message, ahead of the prompt that started the session,
     // so the chat reads after a restart as it did before the first send. One
     // event per message, each its own bubble. The agent is handed the same
@@ -3937,8 +3937,8 @@ async fn deliver_prompt(
         append_session_event(session_id, event).await?;
     }
     let seq = seq.fetch_add(1, Relaxed);
-    let dray = crate::bots::take_dray_prompt(session_id, prompt);
-    crate::bots::learn::note_prompt(session_id, prompt, from.as_ref(), dray);
+    let wain = crate::bots::take_wain_prompt(session_id, prompt);
+    crate::bots::learn::note_prompt(session_id, prompt, from.as_ref(), wain);
 
     let payload = AgentEventPayload::UserMessage {
         text: text.clone(),
@@ -3958,7 +3958,7 @@ async fn deliver_prompt(
         // Absent means "this session's own cwd", which is the truth for every
         // message a session logs itself. Only a fork records one.
         cwd: None,
-        kickoff: dray,
+        kickoff: wain,
     };
     // Nothing tracks turns yet; Claude Code opens one per `init`.
     let agent_event = AgentEvent::mint(session_id.to_string(), harness, seq, None, None, payload);
@@ -4073,7 +4073,7 @@ pub struct Ingest<'a> {
 /// Lives here rather than in a harness because none of it is one harness's
 /// business: which payloads are persisted, when the tree is snapshotted, where
 /// a tool result's images are archived, and what counts as a boundary are all
-/// properties of Dray's own event model. With a copy per harness they would
+/// properties of Wain's own event model. With a copy per harness they would
 /// drift, and the drift would be silent — a second harness whose deltas were
 /// persisted looks exactly like one whose logs are simply larger.
 pub async fn ingest(ctx: &Ingest<'_>, agent_event: AgentEvent, app: &Sink) {
@@ -4104,7 +4104,7 @@ static REACTED: std::sync::LazyLock<std::sync::Mutex<HashMap<String, String>>> =
 /// refused `react` beside a `no_reply_needed` leaves the turn closed. Anything the agent writes after it is filler: a CLI
 /// that ignores `claude/endTurn`, or a batch holding an errored result, gives
 /// the model one more call, and it narrated the close ("(Turn ended without a
-/// reply.)"). Closed on the call itself, not on Dray's answer to it: the CLI
+/// reply.)"). Closed on the call itself, not on Wain's answer to it: the CLI
 /// runs the tool while the response is still streaming, and a stray token the
 /// model wrote after the call ("ↀ") could reach the pipe before the call did.
 static CLOSED: std::sync::LazyLock<std::sync::Mutex<HashMap<String, std::collections::HashSet<String>>>> =
@@ -4454,7 +4454,7 @@ async fn ingest_event(ctx: &Ingest<'_>, mut agent_event: AgentEvent, app: &Sink,
         eprintln!("[write err] {err}");
     }
 
-    // A new bot's greeting, then Dray's question for the user's name as a
+    // A new bot's greeting, then Wain's question for the user's name as a
     // message of its own (#1076), ahead of anything the turn learned.
     if let Some(text) = ask_name {
         let payload = AgentEventPayload::AssistantText { block: None, text };
@@ -4607,7 +4607,7 @@ async fn apply_live_controls(
             )
             .await;
             // Written back over the optimistic touch above, so the row
-            // and `dray ls` name the effort that is running rather than
+            // and `wain ls` name the effort that is running rather than
             // the one that was asked for. Every other field is still
             // the pick: fast mode is applied below this block, so
             // recording the child's current value here would drop it.
@@ -5111,8 +5111,8 @@ mod tests {
         assert_eq!(lead_in_around(hidden, "/hello", true), "/hello\n\n[Since your last turn: x]");
         assert_eq!(lead_in_around(None, "/hello", true), "/hello");
         // After the words, a hand-over no longer points at them as coming next.
-        let replay = Some("[Dray: …]\n\n<conversation>\nx\n</conversation>\n\nThe user's new message:\n\n");
-        assert_eq!(lead_in_around(replay, "/fix", true), "/fix\n\n[Dray: …]\n\n<conversation>\nx\n</conversation>");
+        let replay = Some("[Wain: …]\n\n<conversation>\nx\n</conversation>\n\nThe user's new message:\n\n");
+        assert_eq!(lead_in_around(replay, "/fix", true), "/fix\n\n[Wain: …]\n\n<conversation>\nx\n</conversation>");
     }
 
     #[test]
@@ -5159,7 +5159,7 @@ mod tests {
         assert!(!drops_echo(session, &mut call("c1", "Bash")), "an ordinary tool closes nothing");
         assert!(!drops_echo(session, &mut text("Ran it.")));
         assert!(!drops_echo(session, &mut call("c2", no_reply::TOOL_NAME)), "the call itself is drawn");
-        // Before Dray has even answered the call: the CLI runs it mid-stream.
+        // Before Wain has even answered the call: the CLI runs it mid-stream.
         assert!(drops_echo(session, &mut delta()));
         assert!(drops_echo(session, &mut text("ↀ")));
         assert!(drops_echo(session, &mut text("(Turn ended without a reply.)")));
@@ -5215,14 +5215,14 @@ mod tests {
     }
 
     #[test]
-    fn a_queued_dray_prompt_is_neither_drawn_nor_cancelled() {
-        let session = "queued-dray-prompt";
+    fn a_queued_wain_prompt_is_neither_drawn_nor_cancelled() {
+        let session = "queued-wain-prompt";
         let note = "The user reacted 👍 (like) to your message";
-        crate::bots::mark_dray_prompt(session, note);
-        assert!(crate::bots::is_dray_prompt(session, note));
+        crate::bots::mark_wain_prompt(session, note);
+        assert!(crate::bots::is_wain_prompt(session, note));
         // Peeked, the mark is still there for the flush that logs it.
-        assert!(crate::bots::take_dray_prompt(session, note));
-        assert!(!crate::bots::is_dray_prompt(session, note));
+        assert!(crate::bots::take_wain_prompt(session, note));
+        assert!(!crate::bots::is_wain_prompt(session, note));
 
         let held = |hidden: bool| QueuedMessage {
             id: "q".into(),
@@ -5619,7 +5619,7 @@ mod tests {
 
     /// What Stop's watchdog reads: the epoch moves on a send and on every turn
     /// edge, so a turn the CLI closed or reopened after the interrupt is left
-    /// alone, and Dray's own closing payload closes the turn it is handed.
+    /// alone, and Wain's own closing payload closes the turn it is handed.
     #[test]
     fn the_epoch_moves_on_every_turn_edge_and_a_synthetic_close_ends_the_turn() {
         let mut tracker = StatusTracker::default();

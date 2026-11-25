@@ -42,7 +42,7 @@ export function leadPath(projects: Project[], path: string): string {
   return checkoutsOf(projects, path)[0]?.path ?? path;
 }
 
-/// Where a new task may be sent by hand: up, and not a Dray Cloud machine,
+/// Where a new task may be sent by hand: up, and not a Wain Cloud machine,
 /// since each of those is one task's own.
 const offered = (server: ServerId): boolean => serverConnected(server) && !cloudServer(server);
 

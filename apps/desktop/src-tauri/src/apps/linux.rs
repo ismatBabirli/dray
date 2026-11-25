@@ -4,7 +4,7 @@
 //!
 //! Every spawn here takes back what an AppImage's AppRun added to the
 //! environment ([`crate::serve::appimage_env_undo`]): an editor inheriting the
-//! bundle's `LD_LIBRARY_PATH` loads Dray's libraries, and one holding the
+//! bundle's `LD_LIBRARY_PATH` loads Wain's libraries, and one holding the
 //! mount keeps a replaced AppImage alive for as long as it runs.
 
 use std::{
@@ -40,7 +40,7 @@ struct Launch {
 /// would run whatever its `Exec` says.
 static LISTED: LazyLock<Mutex<HashMap<String, Launch>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
 
-/// Whether `path` lies inside an AppImage's mount — Dray's own bundle, which
+/// Whether `path` lies inside an AppImage's mount — Wain's own bundle, which
 /// AppRun puts first on `PATH` and `XDG_DATA_DIRS`.
 fn in_appimage(path: &str) -> bool {
     path.starts_with(&*std::env::temp_dir().join(".mount_").to_string_lossy())
@@ -300,7 +300,7 @@ fn clean_env(cmd: &mut std::process::Command) {
     let _ = cmd;
 }
 
-/// Starts `argv` detached: its own process group, so a signal to Dray's never
+/// Starts `argv` detached: its own process group, so a signal to Wain's never
 /// reaches it, and no inherited stdio. Waits briefly, so a program refusing
 /// its arguments outright is an error the button can show; anything still
 /// running then is reaped in the background.
@@ -625,7 +625,7 @@ pub(super) async fn run_in_terminal(command: &str, cwd: &str) -> Result<(), Stri
     let script = format!(
         "#!/bin/sh\n{enter}{command}\nstatus=$?\nrm -f -- \"$0\"\nprintf '\\n%s' \"Finished (exit $status). Press Enter to close.\"\nread _\n"
     );
-    let path = std::env::temp_dir().join(format!("dray-login-{}.sh", uuid::Uuid::now_v7()));
+    let path = std::env::temp_dir().join(format!("wain-login-{}.sh", uuid::Uuid::now_v7()));
     super::write_script(&path, &script).map_err(|err| format!("could not write the login script: {err}"))?;
 
     // Always a directory, so a flag carrying a subcommand (WezTerm's `start`)
@@ -884,7 +884,7 @@ mod tests {
     /// table's order, and one file manager — the default — last.
     #[test]
     fn resolves_desktop_files_in_table_order() {
-        let tmp = std::env::temp_dir().join(format!("dray-xdg-{}", uuid::Uuid::now_v7()));
+        let tmp = std::env::temp_dir().join(format!("wain-xdg-{}", uuid::Uuid::now_v7()));
         let (user, system) = (tmp.join("user"), tmp.join("system"));
         let sh = which("sh").unwrap();
         let sh = sh.to_string_lossy();
@@ -918,7 +918,7 @@ mod tests {
     /// it shadows stays gone, and so does the binary on `PATH` behind both.
     #[test]
     fn a_hidden_entry_keeps_the_app_off_the_list() {
-        let tmp = std::env::temp_dir().join(format!("dray-xdg-{}", uuid::Uuid::now_v7()));
+        let tmp = std::env::temp_dir().join(format!("wain-xdg-{}", uuid::Uuid::now_v7()));
         let (user, system) = (tmp.join("user"), tmp.join("system"));
         let sh = which("sh").unwrap();
         write(

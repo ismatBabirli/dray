@@ -10,7 +10,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 
-use dray_core::events::Question;
+use wain_core::events::Question;
 use gpui::{
     AnyElement, App, AppContext, BoxShadow, Context, Entity, EventEmitter, FocusHandle, Focusable, FontWeight,
     InteractiveElement, IntoElement, KeyDownEvent, Keystroke, ParentElement, Render, SharedString,
@@ -638,7 +638,7 @@ impl Render for QuestionCard {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dray_core::events::QuestionOption;
+    use wain_core::events::QuestionOption;
     use gpui::Modifiers;
 
     fn question(text: &str, multi: bool) -> Question {

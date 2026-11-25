@@ -283,7 +283,7 @@ if (botName && taskProject) {
   await call("send_to_bot", {
     bot: botName,
     message:
-      `Start one task with \`dray session new --project ${taskProject} "<prompt>"\`, where the prompt tells it: ` +
+      `Start one task with \`wain session new --project ${taskProject} "<prompt>"\`, where the prompt tells it: ` +
       "use your AskUserQuestion tool to ask one question, 'Which colour?', with the options Red and Blue, then reply with exactly the colour picked. " +
       "Then reply to me with the single word: started.",
   });

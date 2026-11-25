@@ -1,13 +1,13 @@
 [package]
-name = "dray-island"
+name = "wain-island"
 version = "0.1.0"
 edition = "2024"
 license = "Apache-2.0"
-description = "Dray Island on Linux and Windows: the panel that answers, replies and starts tasks without Dray's window."
+description = "Wain Island on Linux and Windows: the panel that answers, replies and starts tasks without Wain's window."
 publish = false
 
 [[bin]]
-name = "dray-island"
+name = "wain-island"
 path = "src/main.rs"
 
 # GPUI is taken from one Zed commit, bumped on purpose: the crates.io release

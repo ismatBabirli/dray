@@ -8,8 +8,8 @@
 use std::collections::{HashMap, HashSet};
 
 
-use dray_core::projects::Project;
-use dray_core::store::{SessionIndexItem, SessionStatus};
+use wain_core::projects::Project;
+use wain_core::store::{SessionIndexItem, SessionStatus};
 use serde_json::Value;
 
 use crate::sessions::Live;

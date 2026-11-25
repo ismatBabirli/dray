@@ -359,7 +359,7 @@ function TaskRow({
 
         {words && <span className={cn("shrink-0 text-[12px]", TONE_TEXT[words.tone])}>{words.label}</span>}
 
-        {/* Opens the pull request in Dray's browser; ⌘-click, the system's. */}
+        {/* Opens the pull request in Wain's browser; ⌘-click, the system's. */}
         {pr && status && (
           <button
             type="button"

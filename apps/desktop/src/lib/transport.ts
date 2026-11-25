@@ -1,7 +1,7 @@
 // The one door to the Rust core. Inside the desktop app it is Tauri's own
 // `invoke` and `listen` for the local core, and `server_invoke`/`server_event`
-// for each remote `dray-serve` Rust holds a connection to. Pointed at a
-// `dray-serve` from a plain browser it is a WebSocket speaking the same two
+// for each remote `wain-serve` Rust holds a connection to. Pointed at a
+// `wain-serve` from a plain browser it is a WebSocket speaking the same two
 // calls. See SERVE-PLAN.md and SERVERS-PLAN.md.
 //
 // A browser names its server by the page's URL: `?token=…`, plus
@@ -20,10 +20,10 @@ export type ServerEventCallback<T> = (event: ServerEvent<T>) => void;
 
 // ── paths ─────────────────────────────────────────────────────────────────────
 
-/// A remote path, in the frontend, is `dray://<server>/abs/path`, so every key
+/// A remote path, in the frontend, is `wain://<server>/abs/path`, so every key
 /// built on a cwd or a project path is unique across servers with nothing else
 /// changed. `invoke` is the only thing that unwraps one.
-const SCHEME = "dray://";
+const SCHEME = "wain://";
 
 /// A Windows drive or UNC path carries its own root, so the slash after the
 /// server id is a separator and not the path's leading slash. Without this a
@@ -186,7 +186,7 @@ export const APP_COMMANDS = new Set([
   "run_server_login",
   "run_gh_login",
   "note_merge_for_star",
-  "star_dray",
+  "star_wain",
   "upload_attachment",
   "resume_boat",
   "extend_boat",
@@ -308,13 +308,13 @@ function abortable<T>(call: Promise<T>, signal: AbortSignal, cancel: () => void)
 }
 
 /// A URL the webview can load a server's file through: Tauri's asset protocol
-/// for a local one; `drayserver://`, which Rust answers with the token in a
+/// for a local one; `wainserver://`, which Rust answers with the token in a
 /// header, for a remote one. A remote server serves attachments and browser
 /// recordings alone, so any other path answers 404.
 export function fileSrc(path: string): string {
   const { server, path: raw } = splitPath(path);
   if (server !== LOCAL) {
-    return `drayserver://localhost/?${new URLSearchParams({ server, path: raw })}`;
+    return `wainserver://localhost/?${new URLSearchParams({ server, path: raw })}`;
   }
   if (!browser) return convertFileSrc(raw);
   const base = browser.url.replace(/^ws/, "http").replace(/\/+$/, "");
@@ -364,7 +364,7 @@ export async function listen<T>(event: string, handler: ServerEventCallback<T>):
   };
 }
 
-// ── a plain browser pointed at one dray-serve ────────────────────────────────
+// ── a plain browser pointed at one wain-serve ────────────────────────────────
 
 /** Stated again from serve.rs's `PROTOCOL`; the server refuses a mismatch by name. */
 const PROTOCOL = 1;
@@ -396,7 +396,7 @@ function connect(server: Remote): Promise<WebSocket> {
     ws.onmessage = ({ data }) => {
       const frame = JSON.parse(data);
       if (!admitted) {
-        if ("err" in frame) return reject(new Error(`dray-serve refused: ${frame.err}`));
+        if ("err" in frame) return reject(new Error(`wain-serve refused: ${frame.err}`));
         admitted = true;
         return resolve(ws);
       }
@@ -411,8 +411,8 @@ function connect(server: Remote): Promise<WebSocket> {
     };
     ws.onclose = () => {
       socket = null;
-      if (!admitted) reject(new Error(`could not reach dray-serve at ${server.url}`));
-      for (const call of pending.values()) call.reject("connection to dray-serve closed");
+      if (!admitted) reject(new Error(`could not reach wain-serve at ${server.url}`));
+      for (const call of pending.values()) call.reject("connection to wain-serve closed");
       pending.clear();
       // Something is waiting on events, and nothing else would reopen the
       // socket for it. The server opens every connect with `live_state`, which

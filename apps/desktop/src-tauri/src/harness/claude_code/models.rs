@@ -184,7 +184,7 @@ struct Row {
 
 /// The reply's `models` folded into the picker's list.
 ///
-/// `default` is left out: it is the CLI's name for its own pick, which Dray
+/// `default` is left out: it is the CLI's name for its own pick, which Wain
 /// makes itself. A row the table names keeps the table's place and shortlist
 /// tier, so a fresh install still seeds Fable and Opus. One it has never heard
 /// of leads if it is a bare alias — a new family — and sits under "Shortlist

@@ -1,8 +1,8 @@
 import type { ChangelogItem, Highlight, Release } from "@/lib/changelog";
 
-/// The highlights both what's-new demos page through. Media is drayhq.com's
+/// The highlights both what's-new demos page through. Media is wainhq.com's
 /// own; `?video=<url>` puts a video on the second page.
-const SITE = "https://www.drayhq.com/changelog";
+const SITE = "https://www.wainhq.com/changelog";
 const video = new URLSearchParams(location.search).get("video");
 
 const item = (title: string, body: string, media: ChangelogItem["media"], action?: string): ChangelogItem => ({
@@ -20,7 +20,7 @@ export const HIGHLIGHTS: Highlight[] = [
     version: "0.33.0",
     item: item(
       "Break reminders",
-      "Dray nudges you to stand up after a long stretch, with a short exercise to follow.",
+      "Wain nudges you to stand up after a long stretch, with a short exercise to follow.",
       [{ kind: "image", url: `${SITE}/break-reminder.png`, alt: "" }],
       "Open Breaks settings",
     ),
@@ -28,9 +28,9 @@ export const HIGHLIGHTS: Highlight[] = [
   {
     version: "0.33.0",
     item: item(
-      "Dray Island",
-      "A small panel at the top of your screen shows what every task is doing, and `dray island` opens it.",
-      [video ? { kind: "video", url: video, alt: "" } : { kind: "image", url: `${SITE}/dray-island.png`, alt: "" }],
+      "Wain Island",
+      "A small panel at the top of your screen shows what every task is doing, and `wain island` opens it.",
+      [video ? { kind: "video", url: video, alt: "" } : { kind: "image", url: `${SITE}/wain-island.png`, alt: "" }],
     ),
   },
   { version: "0.32.0", item: item("No picture on this one", "A page can go without media.", []) },
@@ -66,13 +66,13 @@ export const PAGE_HIGHLIGHTS: Highlight[] = [
     { label: "Start a task", target: "new-task" },
   ),
   page(
-    "Dray Island shows every task at the top of your screen",
+    "Wain Island shows every task at the top of your screen",
     "A small panel at the top of your screen shows what every task is doing, and tells you the moment one needs you.",
-    [{ kind: "image", url: `${SITE}/dray-island.png`, alt: "Dray Island at the top of the screen" }],
+    [{ kind: "image", url: `${SITE}/wain-island.png`, alt: "Wain Island at the top of the screen" }],
   ),
   page(
-    "Dray reminds you to take a break",
-    "Dray nudges you to stand up after a long stretch, with a short exercise to follow.",
+    "Wain reminds you to take a break",
+    "Wain nudges you to stand up after a long stretch, with a short exercise to follow.",
     [{ kind: "image", url: `${SITE}/break-reminder.png`, alt: "A break reminder card" }],
     { label: "Open Breaks settings", target: "settings/breaks" },
   ),
@@ -104,12 +104,12 @@ export const NEXT_RELEASE: Highlight[] = [
     [{ kind: "image", url: "/demo/whats-new/harness-composer.png", alt: "A chat Claude Code answered, Codex picked in the composer for the next message" }],
   ),
   page(
-    "Your agents, in your pocket. Dray is now on iPhone.",
+    "Your agents, in your pocket. Wain is now on iPhone.",
     "Every task on every machine, with questions to answer, permissions to allow and alerts when one is ready to merge.",
-    [{ kind: "image", url: "/demo/whats-new/iphone-app.png", alt: "Dray's bot chat on an iPhone, beside a QR code for the App Store" }],
+    [{ kind: "image", url: "/demo/whats-new/iphone-app.png", alt: "Wain's bot chat on an iPhone, beside a QR code for the App Store" }],
   ),
   page(
-    "OpenCode is now in Dray.",
+    "OpenCode is now in Wain.",
     "Pick OpenCode in the composer and run it like any other agent, with your own models and providers.",
     [{ kind: "image", url: "/demo/whats-new/opencode-logo.png", alt: "The OpenCode logo" }],
   ),

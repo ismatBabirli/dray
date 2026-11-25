@@ -99,7 +99,7 @@ function start() {
       }),
     );
   });
-  // `dray browser screenshot` opening and closing its shutter. The view
+  // `wain browser screenshot` opening and closing its shutter. The view
   // hides for the shot and the page's own still stands in its place, so the
   // reflow the capture needs happens where nobody is looking. Nothing is
   // drawn on top of that still: it is the page pixel for pixel, so the
@@ -377,7 +377,7 @@ export function setPickHandler(fn: typeof pickHandler) {
   pickHandler = fn;
 }
 
-/// The tab `dray browser record` is recording in each session, as
+/// The tab `wain browser record` is recording in each session, as
 /// `browser_recording` says. That tab alone is covered and kept from being
 /// closed; the reader goes on using the rest.
 const recording = new Map<string, number>();
@@ -395,7 +395,7 @@ export function recordingStart(sessionId: string): number | undefined {
   return recordingSince.get(sessionId);
 }
 
-/// Tabs a `dray browser` verb touched within `DRIVEN_HOLD`, keyed by tab id,
+/// Tabs a `wain browser` verb touched within `DRIVEN_HOLD`, keyed by tab id,
 /// which is unique across sessions. Held past the verb because the agent
 /// thinks between verbs, and a mark that blinks off meanwhile tells the
 /// reader the tab is theirs again a moment before the next click lands.
@@ -408,7 +408,7 @@ const DRIVEN_HOLD = 8000;
 /// Past the longest a verb runs: `wait` sleeps 30s at most, a navigation 20s.
 const RUNNING_CAP = 60_000;
 
-/// What the agent is doing, by `dray browser` verb. A verb missing here, and
+/// What the agent is doing, by `wain browser` verb. A verb missing here, and
 /// the gap between verbs, read as "using this tab".
 const DOING: Record<string, string> = {
   open: "opening a page",
@@ -864,7 +864,7 @@ export type Snapshot = { sessionId: string; url: string | null };
 let snapshot: Snapshot | null = null;
 let capturing = false;
 
-/// The sessions whose page `dray browser screenshot` or `record` is laying
+/// The sessions whose page `wain browser screenshot` or `record` is laying
 /// out at another size, which is a visible reflow in the pane the reader is
 /// watching — so the view hides and the page's own still is drawn in its
 /// place. The still is what makes it a cover rather than a hole: the shutter
@@ -1239,7 +1239,7 @@ export function browserTarget(url: string): "localhost" | "site" | null {
 }
 
 /// Reports a page the reader opened, by [`browserTarget`] alone — never the
-/// URL. Only the reader's own entry points call this; an agent's `dray
+/// URL. Only the reader's own entry points call this; an agent's `wain
 /// browser` and a page's own navigation go nowhere near it.
 export function trackBrowserOpen(url: string) {
   const target = browserTarget(url);

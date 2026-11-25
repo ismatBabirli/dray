@@ -25,15 +25,15 @@ beforeEach(() => {
 
 describe("paths", () => {
   it("round-trips a remote path and leaves a local one alone", () => {
-    expect(qualify("/root/app", "vps1")).toBe("dray://vps1/root/app");
-    expect(splitPath("dray://vps1/root/app")).toEqual({ server: "vps1", path: "/root/app" });
-    expect(displayPath("dray://vps1/root/app")).toBe("/root/app");
+    expect(qualify("/root/app", "vps1")).toBe("wain://vps1/root/app");
+    expect(splitPath("wain://vps1/root/app")).toEqual({ server: "vps1", path: "/root/app" });
+    expect(displayPath("wain://vps1/root/app")).toBe("/root/app");
     expect(qualify("/Users/me/app", "local")).toBe("/Users/me/app");
     expect(qualify("src/a.ts", "vps1")).toBe("src/a.ts");
   });
 
   it("keeps a token out of a remote file's URL", () => {
-    expect(fileSrc("dray://vps1/x/a.png")).toBe("drayserver://localhost/?server=vps1&path=%2Fx%2Fa.png");
+    expect(fileSrc("wain://vps1/x/a.png")).toBe("wainserver://localhost/?server=vps1&path=%2Fx%2Fa.png");
   });
 });
 
@@ -55,7 +55,7 @@ describe("invoke", () => {
   });
 
   it("routes by a qualified argument and unwraps it", async () => {
-    await invoke("send_msg", { sessionId: "s1", cwd: "dray://vps1/root/app", attachmentPaths: [] });
+    await invoke("send_msg", { sessionId: "s1", cwd: "wain://vps1/root/app", attachmentPaths: [] });
     expect(calls[0]).toEqual({
       cmd: "server_invoke",
       args: { server: "vps1", cmd: "send_msg", args: { sessionId: "s1", cwd: "/root/app", attachmentPaths: [] } },
@@ -72,7 +72,7 @@ describe("invoke", () => {
   });
 
   it("refuses one call naming two servers", async () => {
-    await expect(invoke("x", { a: "dray://one/a", b: "dray://two/b" })).rejects.toThrow(/two servers/);
+    await expect(invoke("x", { a: "wain://one/a", b: "wain://two/b" })).rejects.toThrow(/two servers/);
   });
 
   it("drops an aborted read at once and tells the app which call to cancel", async () => {
@@ -93,6 +93,6 @@ describe("invoke", () => {
   });
 
   it("qualifies the paths a remote answer carries", async () => {
-    expect(await invoke("list_projects", {}, "vps1")).toEqual([{ path: "dray://vps1/root/app", name: "app" }]);
+    expect(await invoke("list_projects", {}, "vps1")).toEqual([{ path: "wain://vps1/root/app", name: "app" }]);
   });
 });

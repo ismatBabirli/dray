@@ -1352,7 +1352,7 @@ mod tests {
             .all(|e| matches!(e, ClaudeCodeEvent::System(s) if !matches!(s, SystemEvent::Unrecognized))));
     }
 
-    /// The notice channel, captured on the one key Dray reads. `priority` and
+    /// The notice channel, captured on the one key Wain reads. `priority` and
     /// `color` ride the line and are unmodelled, so this also pins that the
     /// line still parses with them there.
     #[test]

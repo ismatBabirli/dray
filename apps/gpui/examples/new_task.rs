@@ -16,10 +16,10 @@ mod new_task;
 #[path = "../src/theme.rs"]
 mod theme;
 
-use dray_core::git::BranchList;
-use dray_core::harness::Harness;
-use dray_core::models::{Effort, Model, ModelId};
-use dray_core::projects::Project;
+use wain_core::git::BranchList;
+use wain_core::harness::Harness;
+use wain_core::models::{Effort, Model, ModelId};
+use wain_core::projects::Project;
 use gpui::{
     App, Bounds, Context, IntoElement, Render, Window, WindowBounds, WindowOptions, div, prelude::*, px, rems, size,
 };
@@ -149,12 +149,12 @@ fn main() {
                         t.set_checkouts(
                             vec![
                                 Checkout {
-                                    project: project("/Users/me/dray", Some("github.com/monorepo-labs/dray"), "2"),
+                                    project: project("/Users/me/wain", Some("github.com/ismatbabirli/wain"), "2"),
                                     server: None,
                                     connected: true,
                                 },
                                 Checkout {
-                                    project: project("/home/me/dray", Some("github.com/monorepo-labs/dray"), "1"),
+                                    project: project("/home/me/wain", Some("github.com/ismatbabirli/wain"), "1"),
                                     server: Some("boat-7".into()),
                                     connected: true,
                                 },
@@ -180,7 +180,7 @@ fn main() {
                         );
                         t.set_models(claude_models(), cx);
                         t.restore(
-                            Some("/Users/me/dray".into()),
+                            Some("/Users/me/wain".into()),
                             ModelId::new("opus"),
                             Some(Effort::High),
                             worktree,

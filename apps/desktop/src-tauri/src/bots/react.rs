@@ -1,8 +1,8 @@
 //! Reactions: an emoji on a message, both ways. A bot reacts to the user's
 //! newest message in place of a reply when it has nothing to say: Claude Code
-//! bots through the `react` tool on Dray's in-process MCP server
+//! bots through the `react` tool on Wain's in-process MCP server
 //! ([no_reply](crate::harness::claude_code::no_reply)), every other harness
-//! through `dray session react`. The user reacts back to the bot's messages
+//! through `wain session react`. The user reacts back to the bot's messages
 //! through [`react_to_message`].
 
 use anyhow::{bail, Context, Result};
@@ -46,7 +46,7 @@ pub fn echoes(reply: &str, emoji: &str) -> bool {
 }
 
 /// The id of the newest message the user typed. A task's report, another
-/// bot's message and Dray's own prompts are no one to react to.
+/// bot's message and Wain's own prompts are no one to react to.
 pub fn target(events: &[AgentEvent]) -> Option<&str> {
     events.iter().rev().find_map(|e| match &e.payload {
         AgentEventPayload::UserMessage { from: None, kickoff: false, .. } if e.subagent.is_none() => Some(e.id.as_str()),

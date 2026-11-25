@@ -19,7 +19,7 @@
 //! The frontend says which session is presented and where (`browser_layout`),
 //! from whichever pane is on screen — the Browser tab or the right panel's
 //! Live slot — and every other tab's view is hidden. A tab is a CEF browser
-//! under an id Dray mints, carried on its client, so the id outlives the
+//! under an id Wain mints, carried on its client, so the id outlives the
 //! browser: a discarded tab (`sweep`) is a browser closed and made again. A
 //! session's tabs share one `RequestContext` with its own cache path, so
 //! cookies are the session's and survive a discard.
@@ -63,7 +63,7 @@ mod win;
 #[cfg(target_os = "macos")]
 const FRAMEWORK: &str = "Chromium Embedded Framework.framework";
 #[cfg(target_os = "macos")]
-const HELPER: &str = "Dray Helper.app/Contents/MacOS/Dray Helper";
+const HELPER: &str = "Wain Helper.app/Contents/MacOS/Wain Helper";
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
 /// Never held across a call into CEF. Every `ImplBrowser`/`ImplFrame` call
@@ -90,7 +90,7 @@ static LAYOUT: Mutex<Option<(String, Layout)>> = Mutex::new(None);
 /// a split pane holds one tab whatever the strip has active.
 static PINNED: Mutex<Vec<(i32, Layout)>> = Mutex::new(Vec::new());
 /// Tab ids. Not CEF's `identifier()`, which a woken tab would come back
-/// under a new one of, renaming it under the strip and `dray browser tab`.
+/// under a new one of, renaming it under the strip and `wain browser tab`.
 static NEXT_TAB: AtomicI32 = AtomicI32::new(1);
 
 /// A tab not seen for this long gives its renderer back. Measured: one tab
@@ -111,7 +111,7 @@ struct Tab {
     session: String,
     /// `None` while discarded, or while a woken one is being made.
     browser: Option<Browser>,
-    /// Keeps `dray browser`'s DevTools observer attached for the tab's life.
+    /// Keeps `wain browser`'s DevTools observer attached for the tab's life.
     _devtools: Option<Registration>,
     /// The `NSView` CEF created, as a pointer — on Linux its X window id.
     /// Main thread only.
@@ -135,7 +135,7 @@ struct Tab {
     held_error: Option<String>,
     /// Whether the main frame committed a document since the load began.
     committed: bool,
-    /// Last drawn on screen or acted on by `dray browser`.
+    /// Last drawn on screen or acted on by `wain browser`.
     seen: Instant,
     /// Set by `sweep` before the close, cleared by `wake`. `on_before_close`
     /// reads it to keep the entry rather than drop it.
@@ -219,7 +219,7 @@ fn paths() -> Option<Paths> {
 fn paths() -> Option<Paths> {
     let exe = std::env::current_exe().ok()?;
     let exe_dir = exe.parent()?;
-    let dev = exe_dir.join("cef/Dray.app");
+    let dev = exe_dir.join("cef/Wain.app");
     let bundle = if dev.join("Contents/Frameworks").is_dir() {
         dev
     } else {
@@ -272,7 +272,7 @@ const INPUT_IN_DEVICE_PIXELS: bool = false;
 /// The profile root is in the build's own home, as its socket is: Chromium
 /// holds a singleton lock on the root, so a dev build sharing the release
 /// app's, or another worktree's, would fail to initialize and exit the
-/// process. A release under `DRAY_HOME` moves it too, or two homes share
+/// process. A release under `WAIN_HOME` moves it too, or two homes share
 /// profiles and a recording lands where its server cannot serve it.
 fn browser_dir() -> PathBuf {
     crate::headless::browser_dir()
@@ -377,7 +377,7 @@ fn start() -> Option<bool> {
         cache_path: path_str(&browser_dir().join("default")),
         ..Default::default()
     };
-    let mut cef_app = DrayApp::new();
+    let mut cef_app = WainApp::new();
     let ok = keeping_sigchld(|| {
         initialize(Some(args.as_main_args()), Some(&settings), Some(&mut cef_app), std::ptr::null_mut()) == 1
     });
@@ -546,9 +546,9 @@ extern "C" fn set_handling_send_event(_this: &AnyObject, _sel: Sel, value: Bool)
 /// The swapped-in `sendEvent:`. Marks the flag around the original, which is
 /// reachable under the selector this was registered as before the swap.
 #[cfg(target_os = "macos")]
-extern "C" fn dray_send_event(this: &AnyObject, _sel: Sel, event: &NSEvent) {
+extern "C" fn wain_send_event(this: &AnyObject, _sel: Sel, event: &NSEvent) {
     let was = HANDLING_SEND_EVENT.swap(true, Ordering::Relaxed);
-    let _: () = unsafe { msg_send![this, draySendEvent: event] };
+    let _: () = unsafe { msg_send![this, wainSendEvent: event] };
     HANDLING_SEND_EVENT.store(was, Ordering::Relaxed);
 }
 
@@ -571,9 +571,9 @@ unsafe fn patch_nsapp(app: &NSApplication) {
     };
     add(sel!(isHandlingSendEvent), is_handling_send_event as *const (), c"B@:");
     add(sel!(setHandlingSendEvent:), set_handling_send_event as *const (), c"v@:B");
-    add(sel!(draySendEvent:), dray_send_event as *const (), c"v@:@");
+    add(sel!(wainSendEvent:), wain_send_event as *const (), c"v@:@");
     let original = class_getInstanceMethod(cls, sel!(sendEvent:));
-    let ours = class_getInstanceMethod(cls, sel!(draySendEvent:));
+    let ours = class_getInstanceMethod(cls, sel!(wainSendEvent:));
     if !original.is_null() && !ours.is_null() {
         method_exchangeImplementations(original as *mut _, ours as *mut _);
     }
@@ -663,11 +663,11 @@ fn start_pump(app: AppHandle) {
 }
 
 wrap_app! {
-    struct DrayApp;
+    struct WainApp;
 
     impl App {
         fn browser_process_handler(&self) -> Option<BrowserProcessHandler> {
-            Some(DrayBrowserProcessHandler::new())
+            Some(WainBrowserProcessHandler::new())
         }
 
         /// Dev builds are unsigned and rebuilt constantly, and macOS grants
@@ -676,8 +676,8 @@ wrap_app! {
         /// The mock keychain is what Chromium's own tests run with.
         ///
         /// Occluded windows are not backgrounded: Chromium stops painting a
-        /// page whose window is covered, and a `dray browser record` then
-        /// records nothing — measured, zero frames with Dray behind another
+        /// page whose window is covered, and a `wain browser record` then
+        /// records nothing — measured, zero frames with Wain behind another
         /// app. Recording is done while the reader is elsewhere, so that is
         /// the case that matters. Only the presented tab is affected; the
         /// others are hidden views and stay throttled.
@@ -710,7 +710,7 @@ wrap_app! {
 }
 
 wrap_browser_process_handler! {
-    struct DrayBrowserProcessHandler;
+    struct WainBrowserProcessHandler;
 
     impl BrowserProcessHandler {
         fn on_schedule_message_pump_work(&self, delay_ms: i64) {
@@ -951,7 +951,7 @@ fn create_tab(session: &str, url: &str, activate: bool, tab: Option<i32>) -> Res
     }
     let info = child_window_info()?;
     let tab = tab.unwrap_or_else(|| NEXT_TAB.fetch_add(1, Ordering::SeqCst));
-    let mut client = DrayClient::new(session.to_string(), activate, tab, None, url.to_string());
+    let mut client = WainClient::new(session.to_string(), activate, tab, None, url.to_string());
     let mut context = context_for(session);
     creation_started();
     let ok = browser_host_create_browser(
@@ -1306,7 +1306,7 @@ fn browser_holds_focus(session: &str) -> bool {
 }
 
 /// Unhides a tab's view off-screen, so Chromium treats it as visible and
-/// delivers the input `dray browser` dispatches: a hidden `NSView` marks the
+/// delivers the input `wain browser` dispatches: a hidden `NSView` marks the
 /// widget hidden, and a hidden widget drops mouse and key events (measured:
 /// a page listener saw nothing). `apply_layout` puts it back.
 #[cfg(target_os = "macos")]
@@ -1376,7 +1376,7 @@ fn reveal(id: i32) {
 }
 
 wrap_client! {
-    struct DrayClient {
+    struct WainClient {
         session: String,
         activate: bool,
         tab: i32,
@@ -1386,30 +1386,30 @@ wrap_client! {
 
     impl Client {
         fn life_span_handler(&self) -> Option<LifeSpanHandler> {
-            Some(DrayLifeSpan::new(self.session.clone(), self.activate, self.tab, self.opener, self.url.clone()))
+            Some(WainLifeSpan::new(self.session.clone(), self.activate, self.tab, self.opener, self.url.clone()))
         }
         fn display_handler(&self) -> Option<DisplayHandler> {
-            Some(DrayDisplay::new(self.tab))
+            Some(WainDisplay::new(self.tab))
         }
         fn load_handler(&self) -> Option<LoadHandler> {
-            Some(DrayLoad::new(self.tab))
+            Some(WainLoad::new(self.tab))
         }
         fn keyboard_handler(&self) -> Option<KeyboardHandler> {
-            Some(DrayKeyboard::new())
+            Some(WainKeyboard::new())
         }
         fn focus_handler(&self) -> Option<FocusHandler> {
-            Some(DrayFocus::new(self.session.clone()))
+            Some(WainFocus::new(self.session.clone()))
         }
     }
 }
 
 wrap_focus_handler! {
-    struct DrayFocus {
+    struct WainFocus {
         session: String,
     }
 
     impl FocusHandler {
-        /// A load `dray browser` starts asks for focus, and granting it took
+        /// A load `wain browser` starts asks for focus, and granting it took
         /// the reader's keys out of the composer — into a hidden view, where
         /// they went nowhere. Navigation alone: the reader picking a tab asks
         /// as `SYSTEM`, and a load the page starts itself asks nothing
@@ -1421,7 +1421,7 @@ wrap_focus_handler! {
 }
 
 wrap_life_span_handler! {
-    struct DrayLifeSpan {
+    struct WainLifeSpan {
         session: String,
         activate: bool,
         tab: i32,
@@ -1524,13 +1524,13 @@ wrap_life_span_handler! {
             *window_info = info;
             let tab = NEXT_TAB.fetch_add(1, Ordering::SeqCst);
             let url = target_url.map(CefString::to_string).unwrap_or_default();
-            *client = Some(DrayClient::new(self.session.clone(), true, tab, Some(self.tab), url));
+            *client = Some(WainClient::new(self.session.clone(), true, tab, Some(self.tab), url));
             creation_started();
             0
         }
 
         /// Handled here. Left to CEF, a close on a child view is delivered
-        /// to the window holding it — Dray's main window — which raised the
+        /// to the window holding it — Wain's main window — which raised the
         /// app's own quit prompt for every tab closed. Answering `1` alone is
         /// not enough either: CEF then waits for the view hierarchy to be
         /// torn down, so the tab's view is pulled out of the window here and
@@ -1709,7 +1709,7 @@ mod string_list_tests {
 }
 
 wrap_display_handler! {
-    struct DrayDisplay {
+    struct WainDisplay {
         tab: i32,
     }
 
@@ -1785,9 +1785,9 @@ wrap_display_handler! {
     }
 }
 
-const PICK_PREFIX: &str = "__dray_pick__";
+const PICK_PREFIX: &str = "__wain_pick__";
 
-const BG_PREFIX: &str = "__dray_bg__";
+const BG_PREFIX: &str = "__wain_bg__";
 
 /// Reports the colour under the top edge of the page: the first opaque
 /// background walking up from the element there, else the canvas default.
@@ -1798,7 +1798,7 @@ const BG_PREFIX: &str = "__dray_bg__";
 /// or dark) or a class or style landing on `<html>`/`<body>` (a site's own
 /// theme toggle). Only a changed answer is logged.
 const BG_JS: &str = r#"(() => {
-  if (window.__drayBg) return window.__drayBg();
+  if (window.__wainBg) return window.__wainBg();
   const c = document.createElement("canvas");
   c.width = c.height = 1;
   const x = c.getContext("2d", { willReadFrequently: true });
@@ -1820,7 +1820,7 @@ const BG_JS: &str = r#"(() => {
     const next = JSON.stringify(found || (dark ? [18, 18, 18] : [255, 255, 255]));
     if (next === last) return;
     last = next;
-    console.log("__dray_bg__" + next);
+    console.log("__wain_bg__" + next);
   };
   // Pages restyle a beat after the signal, and often through a transition.
   let timer = 0;
@@ -1833,7 +1833,7 @@ const BG_JS: &str = r#"(() => {
   const opts = { attributes: true, attributeFilter: ["class", "style", "data-theme", "data-mode"] };
   watch.observe(document.documentElement, opts);
   if (document.body) watch.observe(document.body, opts);
-  window.__drayBg = report;
+  window.__wainBg = report;
   report();
 })();"#;
 
@@ -1897,11 +1897,11 @@ struct PickStyles {
 /// Everything it needs to say goes out through `console.log` with
 /// `PICK_PREFIX`; see `on_console_message`. Re-running it replaces a live one.
 const PICK_JS: &str = r#"(() => {
-  if (window.__drayPick) window.__drayPick.stop();
+  if (window.__wainPick) window.__wainPick.stop();
   const box = document.createElement('div');
   box.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483647;border:2px solid #f5c400;background:rgba(245,196,0,.12);border-radius:3px;transition:all 40ms;';
   document.documentElement.appendChild(box);
-  const say = (v) => console.log('__dray_pick__' + (v ? JSON.stringify(v) : 'null'));
+  const say = (v) => console.log('__wain_pick__' + (v ? JSON.stringify(v) : 'null'));
   const selectorOf = (el) => {
     const parts = [];
     for (let e = el, i = 0; e && e.nodeType === 1 && i < 5; e = e.parentElement, i++) {
@@ -1959,18 +1959,18 @@ const PICK_JS: &str = r#"(() => {
     document.removeEventListener('mouseup', block, opts);
     document.removeEventListener('keydown', key, opts);
     box.remove();
-    delete window.__drayPick;
+    delete window.__wainPick;
   };
   document.addEventListener('mousemove', move, opts);
   document.addEventListener('mousedown', block, opts);
   document.addEventListener('mouseup', block, opts);
   document.addEventListener('click', click, opts);
   document.addEventListener('keydown', key, opts);
-  window.__drayPick = { stop };
+  window.__wainPick = { stop };
 })();"#;
 
 wrap_load_handler! {
-    struct DrayLoad {
+    struct WainLoad {
         tab: i32,
     }
 
@@ -2128,7 +2128,7 @@ type OsEvent<'a> = Option<&'a mut sys::_XEvent>;
 type OsEvent<'a> = Option<&'a mut sys::MSG>;
 
 wrap_keyboard_handler! {
-    struct DrayKeyboard;
+    struct WainKeyboard;
 
     impl KeyboardHandler {
         fn on_pre_key_event(
@@ -2231,7 +2231,7 @@ wrap_keyboard_handler! {
         /// Keeps a characterless keydown the page left unhandled away from
         /// the menu bar. CEF hands every such key to `performKeyEquivalent:`,
         /// and an `NSEvent` with no characters matches the first item with no
-        /// shortcut — About. `dray browser press Escape`, Tab, arrows and any
+        /// shortcut — About. `wain browser press Escape`, Tab, arrows and any
         /// textless chord all synthesize one; a real key always carries
         /// characters, and no menu item answers to a function key. Mac
         /// alone: Linux has no menu bar to reach.
@@ -2252,13 +2252,13 @@ wrap_keyboard_handler! {
     }
 }
 
-// --- What `dray browser` reads ---------------------------------------------
+// --- What `wain browser` reads ---------------------------------------------
 //
 // `automation.rs` reaches its tabs through these and nothing else; the
 // headless backend answers the same names. See HEADLESS-PLAN.md.
 
 wrap_dev_tools_message_observer! {
-    struct DrayDevTools {
+    struct WainDevTools {
         tab: i32,
     }
 
@@ -2292,11 +2292,11 @@ wrap_dev_tools_message_observer! {
 fn observe(browser: &Browser, tab: i32) -> Option<Registration> {
     browser
         .host()
-        .and_then(|host| host.add_dev_tools_message_observer(Some(&mut DrayDevTools::new(tab))))
+        .and_then(|host| host.add_dev_tools_message_observer(Some(&mut WainDevTools::new(tab))))
 }
 
 /// CEF hands every browser its own DevTools channel; the reply comes back
-/// through `DrayDevTools`.
+/// through `WainDevTools`.
 fn send_cdp(tab: i32, id: i32, message: serde_json::Value) -> Result<(), String> {
     let message = message.to_string();
     on_main(move || {
@@ -2551,7 +2551,7 @@ fn reader_tab(session: &str, tab: Option<i32>) -> Option<i32> {
 }
 
 /// Loads `url` in `tab`, or in a new tab where that is `None` or has no
-/// browser. `dray browser` names the agent's tab, which is not the reader's.
+/// browser. `wain browser` names the agent's tab, which is not the reader's.
 fn load(session_id: String, url: String, tab: Option<i32>) -> Result<(), String> {
     let (tx, rx) = mpsc::channel();
     on_main(move || {
@@ -2613,7 +2613,7 @@ pub(crate) fn activate(session_id: String, id: i32, focus: bool) -> Result<(), S
 
 /// Moves a tab to place `to` among its session's tabs, for drag-to-reorder,
 /// and answers with the new order. Off the main thread, since it touches no
-/// browser; `dray browser`'s tab list follows, both reading this order.
+/// browser; `wain browser`'s tab list follows, both reading this order.
 #[tauri::command]
 pub fn browser_move(session_id: String, id: i32, to: usize) -> Vec<TabInfo> {
     {
@@ -2734,7 +2734,7 @@ pub fn browser_pick(session_id: String, start: bool) -> Result<(), String> {
                 set.remove(&id);
             }
         }
-        let code = if start { PICK_JS } else { "window.__drayPick && window.__drayPick.stop()" };
+        let code = if start { PICK_JS } else { "window.__wainPick && window.__wainPick.stop()" };
         frame.execute_java_script(Some(&CefString::from(code)), None, 0);
     })
 }

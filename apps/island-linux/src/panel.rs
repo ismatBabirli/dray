@@ -385,7 +385,7 @@ fn card(state: &Entity<Island>, island: &Island, key: &str, focus: &FocusHandle,
     el.children(island.notice.clone().map(|n| div().text_size(px(ASIDE)).text_color(rgb(RED)).child(n)))
 }
 
-/// Ctrl-click on a title opens the session in Dray, as ⌘-click does on the Mac.
+/// Ctrl-click on a title opens the session in Wain, as ⌘-click does on the Mac.
 fn title_click(
     state: Entity<Island>,
     key: String,
@@ -1167,9 +1167,9 @@ fn orb(state: &Entity<Island>, shown: f32, shader: f32) -> impl IntoElement {
 fn link_status(island: &Island) -> Option<impl IntoElement> {
     let (title, detail): (&str, String) = match &island.link {
         Link::Up => return None,
-        Link::Connecting => ("Connecting to Dray…", String::new()),
-        Link::Unreachable => ("Dray isn't running", "Open Dray to reach your tasks".into()),
-        Link::Refused(why) => ("Dray turned the island away", why.clone()),
+        Link::Connecting => ("Connecting to Wain…", String::new()),
+        Link::Unreachable => ("Wain isn't running", "Open Wain to reach your tasks".into()),
+        Link::Refused(why) => ("Wain turned the island away", why.clone()),
     };
     Some(
         div()
@@ -1204,8 +1204,8 @@ fn lead_mark(island: &Island, id: &str) -> Option<gpui::Div> {
 }
 
 /// The session the draft goes to. A click opens the switcher rather than
-/// Dray, since a title clicked without thinking must not switch apps;
-/// Ctrl-click is the deliberate way to Dray.
+/// Wain, since a title clicked without thinking must not switch apps;
+/// Ctrl-click is the deliberate way to Wain.
 fn title_row(state: &Entity<Island>, island: &Island, id: &str, cx: &App) -> impl IntoElement {
     let title = island.session(id).map(|s| s.title.clone()).filter(|t| !t.is_empty()).unwrap_or_else(|| "Task".into());
     // A bot's chat: its face leads its name, which breathes while it works.
@@ -1865,7 +1865,7 @@ struct DoneItem {
     bot: Option<crate::bots::Bot>,
 }
 
-/// Sessions finished, in place of Dray's banner, newest first: the Mac's
+/// Sessions finished, in place of Wain's banner, newest first: the Mac's
 /// `DonePill`. One names itself and offers Open in app; several are a count
 /// that, under the pointer, grows a row each, five tall and then scrolling.
 /// A bot's waiting notice grows its card's rows, and several bots waiting
@@ -2017,7 +2017,7 @@ fn done_face(state: &Entity<Island>, island: &Island, lead: Option<AnyElement>, 
 const MERGE_GREEN: u32 = 0x238636;
 
 /// A waiting task as the bot chat's card draws it: face, title, PR and age,
-/// and under them its bot's line for the reader. A click brings Dray forward
+/// and under them its bot's line for the reader. A click brings Wain forward
 /// on the task; a ready PR lands from here, Merge then the method.
 fn waiting_card(state: &Entity<Island>, island: &Island, chat: &str, task: &crate::bots::WaitingTask, cx: &App) -> AnyElement {
     let merge = island.merges.get(&task.id).cloned().unwrap_or_default();
@@ -2031,9 +2031,9 @@ fn waiting_card(state: &Entity<Island>, island: &Island, chat: &str, task: &crat
             .map(|n| n.text.clone()),
         None => task.need.clone(),
     };
-    // Another machine's task names its repo `dray://<machine>/<path>`, which
-    // this computer's server cannot merge in; its card opens it in Dray instead.
-    let mergeable = task.ready && task.pr.is_some() && !task.project_path.starts_with("dray://");
+    // Another machine's task names its repo `wain://<machine>/<path>`, which
+    // this computer's server cannot merge in; its card opens it in Wain instead.
+    let mergeable = task.ready && task.pr.is_some() && !task.project_path.starts_with("wain://");
     let id = task.id.clone();
     let title = if task.title.is_empty() { "Untitled".to_string() } else { task.title.clone() };
     let top = div()

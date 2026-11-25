@@ -1,5 +1,5 @@
-//! The Dray servers the desktop app is connected to: this Mac's own background
-//! server ([`LOCAL`]) and every remote `dray-serve`, each reached over its
+//! The Wain servers the desktop app is connected to: this Mac's own background
+//! server ([`LOCAL`]) and every remote `wain-serve`, each reached over its
 //! WebSocket. This module holds the connections so the token never leaves
 //! Rust, and the frontend reaches a server through `server_invoke` and hears
 //! it through `server_event`. See SERVERS-PLAN.md.
@@ -71,7 +71,7 @@ pub struct BoatStatus {
     pub stops_at: Option<String>,
     /// It stops within [`WARN`]: raise the card, offer more time.
     pub warning: bool,
-    /// Why the last resume didn't take, in boat's or Dray's words.
+    /// Why the last resume didn't take, in boat's or Wain's words.
     pub note: Option<String>,
 }
 
@@ -103,13 +103,13 @@ pub struct ServerInfo {
     pub beta: bool,
     /// The newer release out on its channel, while the server is behind it.
     pub latest: Option<String>,
-    /// Dray.app's own server on another Mac, updated by that app, not from here.
+    /// Wain.app's own server on another Mac, updated by that app, not from here.
     pub app: bool,
     /// An update landed on the server and it restarts onto it once idle.
     pub restarting: bool,
-    /// Stopped and resuming, for a boat sandbox and a Dray Cloud machine alike.
+    /// Stopped and resuming, for a boat sandbox and a Wain Cloud machine alike.
     pub boat: Option<BoatStatus>,
-    /// A Dray Cloud machine (#857): drawn as no row of its own, and read as
+    /// A Wain Cloud machine (#857): drawn as no row of its own, and read as
     /// "Cloud" wherever a machine is named.
     pub cloud: bool,
 }
@@ -119,23 +119,23 @@ type Reply = Result<Value, Value>;
 /// What carries one forwarded dev-server port. Dropping it takes the port down.
 enum Forward {
     Ssh(ssh::Forward),
-    /// A server with no login: see [`forward_over_dray`]. The set holds the
+    /// A server with no login: see [`forward_over_wain`]. The set holds the
     /// accepting task, and dropping a set aborts what it holds.
-    Dray { port: u16, _accepting: tokio::task::JoinSet<()> },
+    Wain { port: u16, _accepting: tokio::task::JoinSet<()> },
 }
 
 impl Forward {
     fn port(&self) -> u16 {
         match self {
             Forward::Ssh(forward) => forward.port,
-            Forward::Dray { port, .. } => *port,
+            Forward::Wain { port, .. } => *port,
         }
     }
 
     fn alive(&mut self) -> bool {
         match self {
             Forward::Ssh(forward) => forward.alive(),
-            Forward::Dray { .. } => true,
+            Forward::Wain { .. } => true,
         }
     }
 }
@@ -282,8 +282,8 @@ fn latest(conn: &Conn) -> Option<String> {
     (behind && conn.saved.ignored.as_ref() != Some(&newest)).then_some(newest)
 }
 
-/// The newest releases out, each channel's: CLI ones, which a `dray-serve`
-/// ships in, and app ones, which another Mac's Dray.app serves from.
+/// The newest releases out, each channel's: CLI ones, which a `wain-serve`
+/// ships in, and app ones, which another Mac's Wain.app serves from.
 #[derive(Debug, Clone, Default)]
 struct Releases {
     stable: Option<semver::Version>,
@@ -364,8 +364,8 @@ async fn refresh_releases(fresh: Duration) -> Result<(), String> {
     }
     let read = async {
         let list: Vec<Value> = crate::http()
-            .get("https://api.github.com/repos/monorepo-labs/dray/releases?per_page=100")
-            .header("User-Agent", "dray")
+            .get("https://api.github.com/repos/ismatbabirli/wain/releases?per_page=100")
+            .header("User-Agent", "wain")
             .timeout(Duration::from_secs(10))
             .send()
             .await?
@@ -408,7 +408,7 @@ fn announce() {
     tell_island();
 }
 
-/// A machine this app is connected to, and how Dray Island opens a socket of its
+/// A machine this app is connected to, and how Wain Island opens a socket of its
 /// own over the same link. The island is the app's companion, so it follows this
 /// list rather than holding one (#784).
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -444,7 +444,7 @@ fn tell_island() {
         *told = links;
     }
     tokio::spawn(async {
-        let _ = tokio::process::Command::new("notifyutil").args(["-p", "com.yogesh.dray.island.links"]).output().await;
+        let _ = tokio::process::Command::new("notifyutil").args(["-p", "com.wainhq.wain.island.links"]).output().await;
     });
 }
 
@@ -709,7 +709,7 @@ async fn run(id: String) {
                     json!({ "feature": "server_connected", "via": via }),
                 );
                 // This Mac's rule: a server running older code than its own
-                // binary restarts once idle. Covers a `dray update` run by
+                // binary restarts once idle. Covers a `wain update` run by
                 // hand there too.
                 if welcome.stale {
                     let restart = json!({ "id": 0, "cmd": "restart_when_idle", "args": {} });
@@ -731,7 +731,7 @@ async fn run(id: String) {
                     &id,
                     ServerStatus::Disconnected,
                     None,
-                    Some("The server's tunnel has a new address. Paste it here: dray service status on the server prints it.".into()),
+                    Some("The server's tunnel has a new address. Paste it here: wain service status on the server prints it.".into()),
                     Some(ssh::Fix::NewAddress),
                 );
                 return;
@@ -845,7 +845,7 @@ fn update_boat(id: &str, change: impl FnOnce(&mut Option<BoatRow>)) {
 
 /// Learns which sandbox a machine is from what it reported on connect. Its own
 /// say-so, so it only ever sets the link once, and only where boat agrees that
-/// sandbox is at the address the login just reached: a server cannot point Dray
+/// sandbox is at the address the login just reached: a server cannot point Wain
 /// at another sandbox, whatever it reports later.
 async fn remember_boat(id: &str, reported: Option<&str>, target: &ssh::Target) {
     let known = conns().iter().find(|c| c.saved.id == id).and_then(|c| c.saved.boat.clone());
@@ -988,7 +988,7 @@ fn boat_alerts() -> Value {
 }
 
 /// What brings a stopped machine back: `boat resume` for a sandbox added by
-/// hand, the control plane for a Dray Cloud one.
+/// hand, the control plane for a Wain Cloud one.
 #[derive(Clone)]
 enum Sleeper {
     Boat(BoatLink),
@@ -1138,7 +1138,7 @@ async fn wake_boat(id: String, sleeper: Sleeper) {
     }
     let name = conns().iter().find(|c| c.saved.id == id).map(|c| c.saved.name.clone()).unwrap_or_default();
     let why = last.map(|e| format!(" Last try: {e}")).unwrap_or_default();
-    settle(BoatPhase::Running, Some(format!("{name} is running, but Dray hasn't answered on it yet.{why}")), false);
+    settle(BoatPhase::Running, Some(format!("{name} is running, but Wain hasn't answered on it yet.{why}")), false);
 }
 
 /// More time on a sandbox's auto-stop: `minutes` from now, and on each later resume.
@@ -1165,7 +1165,7 @@ pub async fn extend_boat(id: String, minutes: u32) -> Result<(), String> {
     Ok(())
 }
 
-/// The Dray Cloud row in Settings. The machines themselves ride
+/// The Wain Cloud row in Settings. The machines themselves ride
 /// `servers_changed`, each a server marked `cloud`.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export, export_to = "events.ts")]
@@ -1191,9 +1191,9 @@ static CLOUD_GENERATION: AtomicU64 = AtomicU64::new(0);
 /// listed a while, and a listing must not bring its row back.
 static CLOUD_DROPPED: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
-const NO_CLOUD_KEY: &str = "Dray Cloud has no key. Add it in Settings, Servers.";
+const NO_CLOUD_KEY: &str = "Wain Cloud has no key. Add it in Settings, Servers.";
 
-/// How often the machines are listed while Dray Cloud is on. A stopped one is
+/// How often the machines are listed while Wain Cloud is on. A stopped one is
 /// noticed resuming from elsewhere within this, as a parked boat row is.
 const CLOUD_READ: Duration = Duration::from_secs(30);
 const CLOUD_RETRY_GAP: Duration = Duration::from_secs(10);
@@ -1205,7 +1205,7 @@ async fn cloud_key() -> Option<String> {
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn cloud_info() -> CloudInfo {
     CloudInfo {
-        on: crate::settings::read().await.dray_cloud,
+        on: crate::settings::read().await.wain_cloud,
         keyed: cloud_key().await.is_some(),
         error: CLOUD_ERROR.lock().unwrap_or_else(|e| e.into_inner()).clone(),
     }
@@ -1268,7 +1268,7 @@ async fn sync_cloud() -> Result<(), String> {
     // applied. Any of those moved the generation, and the list is read again.
     for _ in 0..3 {
         let generation = CLOUD_GENERATION.load(Ordering::SeqCst);
-        let (Some(key), true) = (cloud_key().await, crate::settings::read().await.dray_cloud) else {
+        let (Some(key), true) = (cloud_key().await, crate::settings::read().await.wain_cloud) else {
             return Ok(());
         };
         let listed = cloud::list(&key).await;
@@ -1352,7 +1352,7 @@ async fn apply_listing(listing: cloud::Listing) {
                     // once, which otherwise wiped the reason `wake_boat` had just
                     // left for its waiter. `wake` clears it on the next try.
                     if machine.state == cloud::State::Error {
-                        row.note = Some("Dray Cloud reports an error on it.".into());
+                        row.note = Some("Wain Cloud reports an error on it.".into());
                     }
                     let woke = was == Some(BoatPhase::Stopped) && phase == BoatPhase::Running;
                     let slept = was != Some(BoatPhase::Stopped) && phase == BoatPhase::Stopped;
@@ -1398,7 +1398,7 @@ async fn apply_listing(listing: cloud::Listing) {
     announce();
 }
 
-/// Lists the machines every [`CLOUD_READ`] while Dray Cloud is on.
+/// Lists the machines every [`CLOUD_READ`] while Wain Cloud is on.
 async fn watch_cloud() {
     loop {
         let _ = sync_cloud().await;
@@ -1406,7 +1406,7 @@ async fn watch_cloud() {
     }
 }
 
-/// Saves the Dray Cloud key once the control plane takes it, and turns Dray
+/// Saves the Wain Cloud key once the control plane takes it, and turns Wain
 /// Cloud on. An empty key forgets it and every cloud machine with it.
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn set_cloud_key(key: String) -> Result<(), String> {
@@ -1427,7 +1427,7 @@ pub async fn set_cloud_key(key: String) -> Result<(), String> {
     Ok(())
 }
 
-/// Dray Cloud's switch. Off keeps every machine's row and stops connecting to
+/// Wain Cloud's switch. Off keeps every machine's row and stops connecting to
 /// them, the way a server's own switch does; the machines stop on their timer.
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn set_cloud_on(on: bool) -> Result<(), String> {
@@ -1444,7 +1444,7 @@ pub async fn set_cloud_on(on: bool) -> Result<(), String> {
 /// The switch itself, under [`CLOUD_SYNC`].
 async fn switch_cloud(on: bool) -> Result<(), String> {
     CLOUD_GENERATION.fetch_add(1, Ordering::SeqCst);
-    crate::settings::update(|s| s.dray_cloud = on).await.map_err(|e| format!("{e:#}"))?;
+    crate::settings::update(|s| s.wain_cloud = on).await.map_err(|e| format!("{e:#}"))?;
     let touched = {
         let mut list = conns();
         let mut touched = false;
@@ -1490,7 +1490,7 @@ async fn reach_new_machine(sandbox: &str) -> Result<String, String> {
         match found {
             Some(id) => break id,
             None if tokio::time::Instant::now() < deadline => tokio::time::sleep(Duration::from_secs(2)).await,
-            None => return Err("Dray Cloud started a machine but never gave it an address.".into()),
+            None => return Err("Wain Cloud started a machine but never gave it an address.".into()),
         }
     };
     wake(id.clone(), true).await?;
@@ -1505,7 +1505,7 @@ pub async fn drop_cloud_machine(id: String) -> Result<(), String> {
         .iter()
         .find(|c| c.saved.id == id)
         .and_then(|c| c.saved.cloud.clone())
-        .ok_or("That is not a Dray Cloud machine.")?;
+        .ok_or("That is not a Wain Cloud machine.")?;
     let key = cloud_key().await.ok_or(NO_CLOUD_KEY)?;
     cloud::delete(&key, &sandbox).await?;
     crate::analytics::track("feature_used", json!({ "feature": "cloud_machine_dropped" }));
@@ -1552,7 +1552,7 @@ async fn forget_transcripts(server: &str) {
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn save_cloud_transcript(server: String, session_id: String, snapshot: Value) -> Result<(), String> {
     if !conns().iter().any(|c| c.saved.id == server && c.saved.cloud.is_some()) {
-        return Err(format!("{server} is not a Dray Cloud machine"));
+        return Err(format!("{server} is not a Wain Cloud machine"));
     }
     let path = transcript_path(&server, &session_id).await.ok_or("no transcript file for that session")?;
     if let Some(dir) = path.parent() {
@@ -1729,7 +1729,7 @@ pub fn list_servers() -> Vec<ServerInfo> {
 }
 
 /// The adds a Cancel can still reach, by the ticket their dialog minted.
-/// Keyed rather than one signal for them all: `dray machine add` runs these
+/// Keyed rather than one signal for them all: `wain machine add` runs these
 /// same functions, and a Cancel in Settings must not stop an add it never
 /// started. An add with no ticket is in here under no name and cannot be woken.
 static ADDING: LazyLock<Mutex<HashMap<String, Arc<tokio::sync::Notify>>>> = LazyLock::new(Default::default);
@@ -1793,7 +1793,7 @@ pub async fn add_server(url: String, token: String, name: Option<String>, ticket
     let existing = conns().iter().find(|c| c.saved.url == url).map(|c| c.saved.id.clone());
     // A re-add is how a token is rotated, and its name field is usually left
     // blank: the row keeps the name it has rather than falling back to the
-    // host, which `dray --machine <name>` would then stop finding.
+    // host, which `wain --machine <name>` would then stop finding.
     let kept = conns().iter().find(|c| c.saved.url == url).map(|c| c.saved.name.clone());
     let name = name
         .map(|n| n.trim().to_string())
@@ -1867,7 +1867,7 @@ pub async fn set_server_address(id: String, url: String) -> Result<(), String> {
     save().await
 }
 
-/// A name is how `dray --machine <name>` picks one server, so two may not
+/// A name is how `wain --machine <name>` picks one server, so two may not
 /// share it. `except` is the server being renamed or re-added, which may keep
 /// its own.
 fn refuse_taken(list: &[Conn], name: &str, except: Option<&str>) -> Result<(), String> {
@@ -1900,7 +1900,7 @@ pub async fn remove_server(id: String) -> Result<(), String> {
 }
 
 /// Titles of a server's tasks that still look unfinished, for Remove's
-/// confirm: what `dray machine rm` warns about, from the same kept list.
+/// confirm: what `wain machine rm` warns about, from the same kept list.
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn server_unfinished(id: String) -> Vec<String> {
     crate::machines::unfinished(&id).await
@@ -2026,14 +2026,14 @@ pub async fn add_ssh_server(line: String, name: Option<String>, ticket: Option<S
     added.ok_or_else(|| failed("the server was removed while it was being added".into()))
 }
 
-/// What a server with no Dray on it already has, for the install dialog.
+/// What a server with no Wain on it already has, for the install dialog.
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn survey_server(line: String) -> Result<ssh::Survey, ssh::Failure> {
     let target = ssh::parse(&line).map_err(|message| ssh::Failure { message, fix: None, permanent: true })?;
     ssh::survey(&target).await
 }
 
-/// Installs Dray and the picked tools on a server and starts it there. Its
+/// Installs Wain and the picked tools on a server and starts it there. Its
 /// output streams as `server_installing`, keyed by the line, so a dialog
 /// closed meanwhile simply stops listening.
 #[cfg_attr(feature = "desktop", tauri::command)]
@@ -2357,7 +2357,7 @@ pub async fn update_server(server: String) -> Result<String, String> {
         Err(err) => {
             let err = err.as_str().map_or_else(|| err.to_string(), str::to_owned);
             return Err(if err.starts_with("unknown command") {
-                "This server is too old to update from the app. Update it once on the server: dray update, then restart it.".into()
+                "This server is too old to update from the app. Update it once on the server: wain update, then restart it.".into()
             } else {
                 err
             });
@@ -2458,7 +2458,7 @@ pub async fn forward_port(server: String, port: u16) -> Result<u16, String> {
     };
     let forward = match (target, live) {
         (Some(target), _) => Forward::Ssh(ssh::forward(&target, port).await?),
-        (None, Some((url, token))) => forward_over_dray(url, token, &name, port).await?,
+        (None, Some((url, token))) => forward_over_wain(url, token, &name, port).await?,
         (None, None) => return Err(format!("{name} is not connected")),
     };
     let mut list = conns();
@@ -2488,8 +2488,8 @@ fn live_forward(conn: &mut Conn, port: u16) -> Option<u16> {
 /// the token, and is piped to `remote` there.
 // ponytail: a full TLS handshake per browser connection, about a second through
 // the relay. Multiplex over one socket if pages feel slow to load.
-async fn forward_over_dray(url: String, token: String, name: &str, remote: u16) -> Result<Forward, String> {
-    // Once before the port opens, so a stopped dev server or an old Dray is a
+async fn forward_over_wain(url: String, token: String, name: &str, remote: u16) -> Result<Forward, String> {
+    // Once before the port opens, so a stopped dev server or an old Wain is a
     // sentence rather than a blank page.
     open_pipe(&url, &token, name, remote).await?.close(None).await.ok();
     let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0)).await.map_err(|e| format!("no free local port: {e}"))?;
@@ -2517,21 +2517,21 @@ async fn forward_over_dray(url: String, token: String, name: &str, remote: u16) 
             });
         }
     });
-    Ok(Forward::Dray { port, _accepting: accepting })
+    Ok(Forward::Wain { port, _accepting: accepting })
 }
 
 /// A socket the server has joined to `remote` on its own machine.
 async fn open_pipe(url: &str, token: &str, name: &str, remote: u16) -> Result<Socket, String> {
     let (ws, welcome) = admit_with(url, json!({ "v": PROTOCOL, "token": token, "forward": remote })).await?;
     if !welcome.forwarding {
-        return Err(format!("Update Dray on {name} to open its dev servers here."));
+        return Err(format!("Update Wain on {name} to open its dev servers here."));
     }
     Ok(ws)
 }
 
 /// A file on a remote server — an attachment, a recording — fetched through
 /// its `/file` route with the token in a header, for the webview's
-/// `drayserver://` scheme. The token stays out of every URL the page holds.
+/// `wainserver://` scheme. The token stays out of every URL the page holds.
 /// Attachments are kept in [`FILES`], since a transcript drawn again asks
 /// for every picture in it again and the webview keeps none of a custom
 /// scheme's answers.
@@ -2721,15 +2721,15 @@ fn content_range(header: &str) -> Option<(u64, u64)> {
 /// Written once under a fresh uuid (`attachments/<session>/<uuid>.<ext>`)
 /// and never rewritten, so a copy can't go stale. Recordings are kept by a
 /// name a re-recording overwrites, so they are always fetched. The uuid is
-/// what tells Dray's own from a project's `attachments` folder, which the
+/// what tells Wain's own from a project's `attachments` folder, which the
 /// Files view also reads through `/file` and whose files do change.
 fn is_attachment(path: &str) -> bool {
     let path = std::path::Path::new(path);
-    let named_by_dray = path
+    let named_by_wain = path
         .file_stem()
         .and_then(|s| s.to_str())
         .is_some_and(|s| uuid::Uuid::parse_str(s).is_ok());
-    named_by_dray
+    named_by_wain
         && path
             .components()
             .rev()
@@ -2868,7 +2868,7 @@ pub async fn upload_attachment(server: String, path: String, id: String) -> Resu
     // and refuses it, which is the one cure worth naming.
     if !response.status().is_success() {
         return Err(format!(
-            "Could not upload {name} ({}). Update Dray on the server if it is older than this app.",
+            "Could not upload {name} ({}). Update Wain on the server if it is older than this app.",
             response.status()
         ));
     }
@@ -2964,10 +2964,10 @@ mod tests {
     #[test]
     fn keeps_attachments_alone_within_budget() {
         assert!(is_attachment(
-            "/home/u/.dray/attachments/s1/019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b.png"
+            "/home/u/.wain/attachments/s1/019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b.png"
         ));
         assert!(!is_attachment("/repo/attachments/demo/clip.mp4"));
-        assert!(!is_attachment("/home/u/.dray/browser/recordings/s1/flow.mp4"));
+        assert!(!is_attachment("/home/u/.wain/browser/recordings/s1/flow.mp4"));
         assert!(!is_attachment("/home/u/attachments/flow.mp4"));
 
         let key = |n: usize| ("srv".to_string(), format!("/a/{n}"));
@@ -3146,7 +3146,7 @@ mod tests {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = format!("ws://{}", listener.local_addr().unwrap());
-        let file = std::env::temp_dir().join("dray-no-tunnel-url");
+        let file = std::env::temp_dir().join("wain-no-tunnel-url");
         tokio::spawn(crate::serve::listen(
             listener,
             Default::default(),
@@ -3222,18 +3222,18 @@ mod tests {
     async fn a_forward_that_cannot_work_says_why() {
         let (url, remote) = forwarding_server().await;
         let refused = |f: Result<Forward, String>| f.err().expect("should have refused");
-        let wrong = refused(forward_over_dray(url.clone(), "nope".into(), "box", remote).await);
+        let wrong = refused(forward_over_wain(url.clone(), "nope".into(), "box", remote).await);
         assert!(wrong.contains("wrong token"), "{wrong}");
 
         let unused = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let dead = unused.local_addr().unwrap().port();
         drop(unused);
-        let stopped = refused(forward_over_dray(url, "t".into(), "box", dead).await);
+        let stopped = refused(forward_over_wain(url, "t".into(), "box", dead).await);
         assert!(stopped.contains(&format!("nothing is listening on port {dead}")), "{stopped}");
 
         // A server from before reads the hello as a client's and welcomes it.
-        let old = refused(forward_over_dray(fake_server(true).await, "t".into(), "box", remote).await);
-        assert!(old.contains("Update Dray on box"), "{old}");
+        let old = refused(forward_over_wain(fake_server(true).await, "t".into(), "box", remote).await);
+        assert!(old.contains("Update Wain on box"), "{old}");
     }
 
     async fn served_for(id: &str, answers: bool) -> Option<()> {
@@ -3276,7 +3276,7 @@ mod tests {
 
     #[test]
     fn names_a_server_by_its_host() {
-        assert_eq!(default_name("ws://dray-vps:7317"), "dray-vps");
+        assert_eq!(default_name("ws://wain-vps:7317"), "wain-vps");
     }
 
     async fn next_event(rx: &mut mpsc::UnboundedReceiver<(String, Value)>, want: impl Fn(&str, &Value) -> bool) -> Value {
@@ -3292,22 +3292,22 @@ mod tests {
         .expect("no such event in time")
     }
 
-    /// A real dev server behind a running `dray-serve`, usually through the
+    /// A real dev server behind a running `wain-serve`, usually through the
     /// relay: its page, and the hot-reload socket a page keeps open.
     ///
     /// ```text
-    /// DRAY_TEST_SERVER=wss://… DRAY_TEST_TOKEN=$(cat …/serve-token) DRAY_TEST_PORT=5173 \
+    /// WAIN_TEST_SERVER=wss://… WAIN_TEST_TOKEN=$(cat …/serve-token) WAIN_TEST_PORT=5173 \
     ///   cargo test servers::tests::forwards_a_real_vite_server -- --ignored --nocapture
     /// ```
     #[tokio::test(flavor = "multi_thread")]
     #[ignore]
     async fn forwards_a_real_vite_server() {
-        let url = std::env::var("DRAY_TEST_SERVER").expect("DRAY_TEST_SERVER");
-        let token = std::env::var("DRAY_TEST_TOKEN").expect("DRAY_TEST_TOKEN");
-        let remote: u16 = std::env::var("DRAY_TEST_PORT").expect("DRAY_TEST_PORT").parse().unwrap();
+        let url = std::env::var("WAIN_TEST_SERVER").expect("WAIN_TEST_SERVER");
+        let token = std::env::var("WAIN_TEST_TOKEN").expect("WAIN_TEST_TOKEN");
+        let remote: u16 = std::env::var("WAIN_TEST_PORT").expect("WAIN_TEST_PORT").parse().unwrap();
 
         let started = std::time::Instant::now();
-        let forward = forward_over_dray(url, token, "box", remote).await.unwrap();
+        let forward = forward_over_wain(url, token, "box", remote).await.unwrap();
         println!("forward up in {:?}", started.elapsed());
         let local = forward.port();
 
@@ -3329,20 +3329,20 @@ mod tests {
         println!("hot reload connected: {first}");
     }
 
-    /// Against a running `dray-serve`, in a throwaway `DRAY_HOME`:
+    /// Against a running `wain-serve`, in a throwaway `WAIN_HOME`:
     ///
     /// ```text
-    /// DRAY_TEST_SERVER=127.0.0.1:7318 DRAY_TEST_TOKEN=$(cat …/serve-token) \
+    /// WAIN_TEST_SERVER=127.0.0.1:7318 WAIN_TEST_TOKEN=$(cat …/serve-token) \
     ///   cargo test servers::tests::talks_to_a_live_server -- --ignored
     /// ```
     #[tokio::test(flavor = "multi_thread")]
     #[ignore]
     async fn talks_to_a_live_server() {
-        let url = std::env::var("DRAY_TEST_SERVER").expect("DRAY_TEST_SERVER");
-        let token = std::env::var("DRAY_TEST_TOKEN").expect("DRAY_TEST_TOKEN");
-        let home = std::env::temp_dir().join(format!("dray-servers-test-{}", uuid::Uuid::new_v4().simple()));
+        let url = std::env::var("WAIN_TEST_SERVER").expect("WAIN_TEST_SERVER");
+        let token = std::env::var("WAIN_TEST_TOKEN").expect("WAIN_TEST_TOKEN");
+        let home = std::env::temp_dir().join(format!("wain-servers-test-{}", uuid::Uuid::new_v4().simple()));
         std::fs::create_dir_all(&home).unwrap();
-        std::env::set_var("DRAY_HOME", &home);
+        std::env::set_var("WAIN_HOME", &home);
 
         let (tx, mut rx) = mpsc::unbounded_channel();
         start(Sink::new(move |event, payload| {
@@ -3382,24 +3382,24 @@ mod tests {
         assert!(gone.as_str().unwrap().contains("no server"));
     }
 
-    /// Against a server running `dray server tunnel on`, reached over SSH only
+    /// Against a server running `wain server tunnel on`, reached over SSH only
     /// to restart it. A server added by its tunnel address comes back at the
     /// same address after a restart, with nothing asked of the reader; an SSH
     /// server records the address and connects by it when the login fails.
     ///
     /// ```text
-    /// DRAY_TEST_SSH="ssh root@host" cargo test servers::tests::keeps_the_tunnels_address -- --ignored --nocapture
+    /// WAIN_TEST_SSH="ssh root@host" cargo test servers::tests::keeps_the_tunnels_address -- --ignored --nocapture
     /// ```
     #[tokio::test(flavor = "multi_thread")]
     #[ignore]
     async fn keeps_the_tunnels_address() {
-        let line = std::env::var("DRAY_TEST_SSH").expect("DRAY_TEST_SSH");
+        let line = std::env::var("WAIN_TEST_SSH").expect("WAIN_TEST_SSH");
         let target = ssh::parse(&line).unwrap();
         let on_server = |cmd: &str| {
             let out = std::process::Command::new("ssh").args(["-o", "BatchMode=yes", "--", &target.dest, cmd]).output().unwrap();
             String::from_utf8_lossy(&out.stdout).trim().to_string()
         };
-        let address = || on_server("cat ~/.dray/tunnel-url");
+        let address = || on_server("cat ~/.wain/tunnel-url");
         let connected = |what: &str| {
             let t0 = std::time::Instant::now();
             while list_servers()[0].status != ServerStatus::Connected {
@@ -3408,11 +3408,11 @@ mod tests {
             }
             eprintln!("connected {what} in {:?}", t0.elapsed());
         };
-        let home = std::env::temp_dir().join(format!("dray-tunnel-test-{}", uuid::Uuid::new_v4().simple()));
+        let home = std::env::temp_dir().join(format!("wain-tunnel-test-{}", uuid::Uuid::new_v4().simple()));
         std::fs::create_dir_all(&home).unwrap();
-        std::env::set_var("DRAY_HOME", &home);
+        std::env::set_var("WAIN_HOME", &home);
         start(Sink::new(|_, _| {})).await;
-        let token = on_server("cat ~/.dray/serve-token");
+        let token = on_server("cat ~/.wain/serve-token");
         let first = address();
         assert!(first.ends_with(".opentunnel.xyz"), "is the tunnel on? {first}");
 
@@ -3422,7 +3422,7 @@ mod tests {
         assert!(server_invoke(added.id.clone(), "list_projects".into(), json!({}), None).await.is_ok());
 
         // A restart: the same address, and the row reconnects on its own.
-        on_server("systemctl --user restart dray");
+        on_server("systemctl --user restart wain");
         let t0 = std::time::Instant::now();
         while address() != first {
             assert!(t0.elapsed() < Duration::from_secs(60), "the address moved or never came back: {}", address());
@@ -3457,19 +3457,19 @@ mod tests {
         remove_server(added.id).await.unwrap();
     }
 
-    /// Through a real SSH login, in a throwaway `DRAY_HOME`. Kills the `ssh`
+    /// Through a real SSH login, in a throwaway `WAIN_HOME`. Kills the `ssh`
     /// process mid-connection and waits for the loop to log in again.
     ///
     /// ```text
-    /// DRAY_TEST_SSH="ssh root@host" cargo test servers::tests::reconnects_through_ssh -- --ignored
+    /// WAIN_TEST_SSH="ssh root@host" cargo test servers::tests::reconnects_through_ssh -- --ignored
     /// ```
     #[tokio::test(flavor = "multi_thread")]
     #[ignore]
     async fn reconnects_through_ssh() {
-        let line = std::env::var("DRAY_TEST_SSH").expect("DRAY_TEST_SSH");
-        let home = std::env::temp_dir().join(format!("dray-ssh-test-{}", uuid::Uuid::new_v4().simple()));
+        let line = std::env::var("WAIN_TEST_SSH").expect("WAIN_TEST_SSH");
+        let home = std::env::temp_dir().join(format!("wain-ssh-test-{}", uuid::Uuid::new_v4().simple()));
         std::fs::create_dir_all(&home).unwrap();
-        std::env::set_var("DRAY_HOME", &home);
+        std::env::set_var("WAIN_HOME", &home);
         let (tx, mut rx) = mpsc::unbounded_channel();
         start(Sink::new(move |event, payload| {
             let _ = tx.send((event.to_string(), payload));

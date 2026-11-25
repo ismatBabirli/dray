@@ -2,7 +2,7 @@
 
 What each release changed, newest first, in terms of what you'd notice using it.
 The release job reads the matching section into the GitHub release notes, and
-drayhq.com/changelog and the app's Settings → Changelog are built from this
+wainhq.com/changelog and the app's Settings → Changelog are built from this
 file, so it is what a release says about itself — not a second description of
 it. GitHub's generated commit list is appended below it.
 
@@ -17,7 +17,7 @@ reads:
 - `- **Title.** Description.` or a plain one-liner.
 - An image or video goes on its own line, indented under its item:
   `![](changelog/servers.mp4)`. The file lives in `apps/web/public/changelog/`
-  and is served by drayhq.com.
+  and is served by wainhq.com.
 - A bigger feature can be a highlight: a page of its own in a dialog the app
   opens after an update, with the item's first image or video, its title and
   its text. Mark it with a comment under the item, which GitHub and the site
@@ -49,18 +49,18 @@ reads:
   said so far.
   ![A chat Claude Code answered, Codex picked in the composer for the next message](changelog/harness.png)
   <!-- highlight: desktop -->
-- **Your agents, in your pocket. Dray is now on iPhone.** Every task on
+- **Your agents, in your pocket. Wain is now on iPhone.** Every task on
   every machine, with questions to answer, permissions to allow and
   alerts when one is ready to merge.
-  ![Dray's bot chat on an iPhone, beside a QR code for the App Store](changelog/iphone.png)
+  ![Wain's bot chat on an iPhone, beside a QR code for the App Store](changelog/iphone.png)
   <!-- highlight: desktop -->
-- **OpenCode is now in Dray.** Pick OpenCode in the composer and run it
+- **OpenCode is now in Wain.** Pick OpenCode in the composer and run it
   like any other agent, with your own models and providers.
   ![OpenCode](changelog/opencode.png)
   <!-- highlight: desktop -->
 - **Onboarding.** A first launch opens on a short welcome, sets up an
   agent and the GitHub CLI, installing them if they are missing, and
-  introduces Dray Bot, all before you sign in.
+  introduces Wain Bot, all before you sign in.
 - **Issue cards in bot chat.** Bots can show GitHub issues as cards in
   their chat; click one to open it on the Issues page.
 - **Start work from the Issues page.** Start a task on an issue, or
@@ -108,7 +108,7 @@ reads:
 - **Attach a task to a bot.** Right-click a task in the sidebar and
   pick Attach to. It moves under that bot's Tasks and reports to it
   after every turn; Detach brings it back.
-  `dray session attach <id> --bot <name>` does the same.
+  `wain session attach <id> --bot <name>` does the same.
 - **Markdown files render in Files.** A `.md` file opens rendered, with
   working links and images. Switch to Edit to change it and ⌘S to save.
 
@@ -148,8 +148,8 @@ reads:
   repo it lists.
 - **Start a worktree on any branch.** With Worktree on, the new-task
   composer picks the branch the task starts from.
-  `dray session new --base <branch>` does the same.
-- **Bots can hand you a task.** `dray session detach` moves a bot's task
+  `wain session new --base <branch>` does the same.
+- **Bots can hand you a task.** `wain session detach` moves a bot's task
   out of its Tasks and into your sidebar. In a bot's Tasks list the menu
   item reads Detach from bot.
 
@@ -164,7 +164,7 @@ reads:
 
 ### New
 
-- **Sign in to Dray.** Sign in with GitHub, Google or email in your
+- **Sign in to Wain.** Sign in with GitHub, Google or email in your
   browser, and it brings you straight back to the app. Settings opens
   with your account card, where you can sign out.
 - **Bot routines.** A bot can schedule its own checks, every few hours
@@ -197,7 +197,7 @@ reads:
 
 ### Fixed
 
-- `dray browser` loads pages on Linux servers again instead of timing
+- `wain browser` loads pages on Linux servers again instead of timing
   out.
 
 ## 0.30.14 · 2026-11-18
@@ -244,7 +244,7 @@ reads:
 
 ### Fixed
 
-- Installing or updating the `dray` CLI picks the newest release again.
+- Installing or updating the `wain` CLI picks the newest release again.
 
 ## 0.30.10 · 2026-11-17
 
@@ -284,7 +284,7 @@ reads:
 
 - Bots hand long work to a background helper or a task, so their chat
   stays free while it runs.
-- `dray session new --no-worktree` starts a task in the folder as it is,
+- `wain session new --no-worktree` starts a task in the folder as it is,
   repo or not.
 
 ## 0.30.7 · 2026-11-15
@@ -313,7 +313,7 @@ reads:
 - **Dev servers in the bot's browser.** A bot's new tab lists its tasks'
   dev servers. A stopped one shows which task ran it, where, and a
   button to ask for a restart.
-- **`dray session model`** switches a session's model and effort from
+- **`wain session model`** switches a session's model and effort from
   the terminal.
 
 ### Improved
@@ -343,7 +343,7 @@ reads:
 
 ### Improved
 
-- Dray opens on your first bot.
+- Wain opens on your first bot.
 - A bot's Tasks tab puts what needs you first, then PRs ready to merge.
 - A task's own sub-tasks keep running after it settles, and report to
   the nearest task or bot still open.
@@ -470,7 +470,7 @@ reads:
 
 - The chat stays pinned to the bottom after scrolling an image or menu.
 - The browser's recording timer survives a tab switch.
-- A task's brief that quotes `dray session send` no longer draws a
+- A task's brief that quotes `wain session send` no longer draws a
   message that was never sent.
 
 ## 0.30.0 · 2026-11-12 · notify
@@ -479,13 +479,13 @@ reads:
 
 - **Bots.** A bot is one long-running chat with its own instructions
   and memory. It starts tasks for you and hears back when each one
-  finishes. Find them at the top of the sidebar, starting with Dray Bot.
+  finishes. Find them at the top of the sidebar, starting with Wain Bot.
 - **Tasks open as tabs.** Click a task in a bot's Tasks list and it
   opens as a tab beside the bot's chat. Add Diff and Files tabs with +.
 - **Switch a bot's agent.** Pick another agent mid-chat and the
   conversation carries over.
-- **Bots message each other.** `dray bot send` reaches another bot by
-  name, and `dray bot new|ls|rename|rm` manage them from the terminal.
+- **Bots message each other.** `wain bot send` reaches another bot by
+  name, and `wain bot new|ls|rename|rm` manage them from the terminal.
 - A bot's folder keeps its own git history, so lost notes can come back.
 
 ### Improved
@@ -498,7 +498,7 @@ reads:
 
 ### Fixed
 
-- Break reminders count time spent outside Dray, and the window comes
+- Break reminders count time spent outside Wain, and the window comes
   forward when one is due.
 - Recordings from a remote server play at once instead of sitting at
   0:00.
@@ -507,7 +507,7 @@ reads:
 
 ### New
 
-- **Break reminders.** After an hour of active use, Dray asks you to
+- **Break reminders.** After an hour of active use, Wain asks you to
   stand up and stretch. Set the interval or turn it off in Settings →
   Breaks.
 
@@ -527,23 +527,23 @@ reads:
 
 ### Fixed
 
-- A Mac running Dray as a server now says when it's behind.
+- A Mac running Wain as a server now says when it's behind.
 - Extending a boat sandbox clears the Island's warning at once.
-- `dray` keeps working after its socket file is deleted or replaced.
-- Pressing Escape or Tab in the browser no longer opens About Dray.
+- `wain` keeps working after its socket file is deleted or replaced.
+- Pressing Escape or Tab in the browser no longer opens About Wain.
 
 ## 0.29.18 · 2026-11-08
 
 ### New
 
 - **Agent CLIs update themselves.** When Claude Code or another agent is
-  behind, Dray updates it in the background. Turn it off in Settings →
+  behind, Wain updates it in the background. Turn it off in Settings →
   Accounts to get the Update button back.
 - **Projects grouped across machines.** A repo cloned on several machines
   is one project, and new tasks get a dropdown to pick which machine runs
   them.
 - **Videos play in the chat.** Any video an agent makes with
-  `dray video add` plays inline, on any machine.
+  `wain video add` plays inline, on any machine.
 - **boat sandboxes.** A stopped sandbox shows Resume, sending to it wakes
   it, and a warning with Extend shows before it auto-stops.
 
@@ -567,7 +567,7 @@ reads:
 
 ### New
 
-- **The `dray` CLI comes with the app.** Dray keeps `~/.local/bin/dray` up
+- **The `wain` CLI comes with the app.** Wain keeps `~/.local/bin/wain` up
   to date on every launch, so there's nothing to install or update by hand.
 - fx sessions can be forked.
 
@@ -587,8 +587,8 @@ reads:
 
 ### Improved
 
-- Every Dray server reaches other machines on its own, so
-  `dray --machine` works from a Linux server and with the app closed.
+- Every Wain server reaches other machines on its own, so
+  `wain --machine` works from a Linux server and with the app closed.
 - The Island uses far less CPU: it stops animating at rest and when it's
   out of sight.
 
@@ -597,14 +597,14 @@ reads:
 ### New
 
 - **Sessions on other machines.** Agents can reach sessions on servers you
-  added with `dray --machine <name>`, and `dray session ls --machine all`
+  added with `wain --machine <name>`, and `wain session ls --machine all`
   lists them all.
 
 ### Improved
 
 - The agent keeps its own browser tab, so clicking or duplicating tabs no
   longer moves its work into yours.
-- Prompts queued from the Island or `dray session send` show up in the chat
+- Prompts queued from the Island or `wain session send` show up in the chat
   right away.
 - Double-click selects a whole bit of inline code in the chat.
 - Esc dismisses the Island's done pill.
@@ -635,7 +635,7 @@ reads:
 
 ### Improved
 
-- Browser and Files tabs come back after quitting Dray or installing an
+- Browser and Files tabs come back after quitting Wain or installing an
   update. Browser tabs load when you open them.
 
 ### Fixed
@@ -674,7 +674,7 @@ reads:
   the Claude Code list.
 - Changing a Codex session's model, effort, mode or fast mode takes effect
   on the next turn without restarting the agent.
-- fx fast mode is set per session and can change mid-session. Dray no
+- fx fast mode is set per session and can change mid-session. Wain no
   longer writes it into your fx settings.
 - Stop now ends Grok background tasks and subagents.
 - When Claude Code switches to a fallback model, the transcript says so
@@ -705,7 +705,7 @@ reads:
 - **Reopen a closed tab with ⌘⇧T.** It works for browser pages, files and
   the Diff view.
 - Settings no longer has an analytics switch, and a choice saved there is
-  no longer read. Set `DRAY_NO_ANALYTICS` before starting Dray to turn
+  no longer read. Set `WAIN_NO_ANALYTICS` before starting Wain to turn
   usage reporting off.
 
 ### Fixed
@@ -742,14 +742,14 @@ reads:
 
 ### Fixed
 
-- After an update, the Island restarts on the new version when Dray opens,
+- After an update, the Island restarts on the new version when Wain opens,
   instead of running the old one until you quit it.
 
 ## 0.29.3 · 2026-10-22
 
 ### Improved
 
-- **The Island opens on the session you're looking at in Dray.** Click its
+- **The Island opens on the session you're looking at in Wain.** Click its
   title for the task list; ⌘⏎ opens a finished session.
 - **Answering a card in the Island says what happened.** It shows
   Allowed, Denied or Sent, and a send plays a soft sound.
@@ -757,7 +757,7 @@ reads:
 
 ### Fixed
 
-- Dray no longer quits when the Mac goes to sleep.
+- Wain no longer quits when the Mac goes to sleep.
 - Esc no longer takes the window out of fullscreen.
 - A question from a stacked crew session shows whole, not in a tiny scroll.
 - Dictation's start tone plays before the sound mutes.
@@ -767,7 +767,7 @@ reads:
 
 ### Improved
 
-- **The Island tells you when a session is done**, in place of Dray's
+- **The Island tells you when a session is done**, in place of Wain's
   banner. Alerts wait while you're typing in it, and ⌘S saves a draft.
 
 ### Fixed
@@ -781,11 +781,11 @@ reads:
 
 ### New
 
-- **Dray Island.** A composer that floats over every app. Tap Control
+- **Wain Island.** A composer that floats over every app. Tap Control
   to open it, tap again to dictate. Change the key or turn it off in
   Settings → Island.
 
-  ![](changelog/dray-island.png)
+  ![](changelog/wain-island.png)
 - **Screenshots in the Island.** ⌘⇧2 grabs part of the screen into
   your prompt. Hold Shift while dictating to draw on the screen.
 
@@ -820,20 +820,20 @@ reads:
 
 ### New
 
-- **Sessions keep running when Dray quits.** They run in a background
+- **Sessions keep running when Wain quits.** They run in a background
   server on this Mac now. Quit offers Quit, or Quit and stop sessions.
-  macOS shows a "Background item added" notice once; it is Dray's
+  macOS shows a "Background item added" notice once; it is Wain's
   server, listed under Login Items.
 - **Run sessions on your own servers.** Settings → Servers adds one from
   an SSH line, or by address and token. Its projects join the sidebar
-  and its sessions run there, with a browser of their own. Dray can
+  and its sessions run there, with a browser of their own. Wain can
   install itself on the server, clone a GitHub repo there, and reach it
-  without SSH through `dray server tunnel on`. A Mac with no Dray app
+  without SSH through `wain server tunnel on`. A Mac with no Wain app
   can be a server too, and Remote access shares this Mac with another.
 - **Update servers from the app.** A server row says "Update available"
   when a newer release is out on its channel. Update installs it, and
   the server restarts once its agents finish. Join beta in the row's ⋯
-  menu. A server on a CLI older than 0.12 needs one `dray update` by
+  menu. A server on a CLI older than 0.12 needs one `wain update` by
   hand first. Pairs with CLI 0.12.0.
 - **The sidebar groups sessions by stage.** Needs you, unread and idle
   first, then open PRs, running checks and merged, across every
@@ -848,13 +848,13 @@ reads:
   closes.
 - **Save a task without starting it.** ⌘S on a new task saves it as a
   draft, in a sidebar view of its own. Agents can make them with
-  `dray draft`.
+  `wain draft`.
 - **Set sessions aside.** Row menu → Set aside; rows untouched for three
   days go on their own. Any message brings one back.
 - **A session continues when its usage limit resets.** A Claude Code
   turn stopped by the limit sends `continue` a minute after the reset.
   The notice above the composer says when, and Cancel turns it off.
-- **Links in a transcript open in Dray's browser.** ⌘-click still leaves
+- **Links in a transcript open in Wain's browser.** ⌘-click still leaves
   for the system browser.
 - **Browser history.** Each session remembers the pages its browser
   visited: the empty tab lists them and the address bar suggests
@@ -863,9 +863,9 @@ reads:
   icon says what the agent is doing.
 - **GitHub sign-in from the app.** Settings → Accounts has a GitHub row
   for this Mac and every server.
-- **The CLI reads noun-verb now.** `dray session new|ls|send`,
-  `dray server install|start|tunnel`, `dray machine add|ls|rm`,
-  `dray share start|stop|ls`. Old spellings still work.
+- **The CLI reads noun-verb now.** `wain session new|ls|send`,
+  `wain server install|start|tunnel`, `wain machine add|ls|rm`,
+  `wain share start|stop|ls`. Old spellings still work.
 
 ### Improved
 
@@ -904,7 +904,7 @@ reads:
   channel. Update installs it, and the server restarts once its agents
   finish. The ⋯ menu has Check for updates and Join beta. Restart to
   update offers to update your servers too. A server on a CLI older than
-  0.12 needs one `dray update` by hand first. Pairs with CLI
+  0.12 needs one `wain update` by hand first. Pairs with CLI
   0.12.0-beta.1.
 - **The sidebar groups sessions by stage.** Needs you, unread and idle
   first, then open PRs, running checks and merged, across every
@@ -921,7 +921,7 @@ reads:
 
 ### Improved
 
-- The `dray` CLI follows the app's update channel when the app updates.
+- The `wain` CLI follows the app's update channel when the app updates.
   Leaving beta never downgrades it.
 - A remote server that is down shows Reconnecting… above the composer,
   with Try again. The transcript loads once the server is back. A
@@ -967,27 +967,27 @@ reads:
 
 ### New
 
-- **Sessions keep running when Dray quits.** They run in a background
+- **Sessions keep running when Wain quits.** They run in a background
   server on this Mac now. Quit offers Quit, or Quit and stop sessions.
-  macOS shows a "Background item added" notice once; it is Dray's
+  macOS shows a "Background item added" notice once; it is Wain's
   server, listed under Login Items.
-- **Reach a server without SSH.** `dray server tunnel on` on a Linux
+- **Reach a server without SSH.** `wain server tunnel on` on a Linux
   server gives it a public address; add it in Settings → Servers by
   address and token. A server added over SSH keeps that address and
   falls back to it when SSH is down.
 - **Share this Mac.** Remote access on the This Mac row in Settings →
   Servers puts the same address in front of this Mac, so another Mac
   connects to it.
-- **A Mac with no Dray app can be a server too.** `dray server install`
+- **A Mac with no Wain app can be a server too.** `wain server install`
   on it, then add it from another Mac. Runs while that user is logged in.
-- **The CLI reads noun-verb now.** `dray session new|ls|send|rename|stop|settle|set-aside`,
-  `dray server install|start|stop|tunnel`, `dray machine add|ls|rm` for
-  the app's server list, `dray share start|stop|ls`. Old spellings
+- **The CLI reads noun-verb now.** `wain session new|ls|send|rename|stop|settle|set-aside`,
+  `wain server install|start|stop|tunnel`, `wain machine add|ls|rm` for
+  the app's server list, `wain share start|stop|ls`. Old spellings
   still work. Pairs with CLI 0.11.0.
 - **A session continues when its usage limit resets.** A Claude Code
   turn stopped by the limit sends `continue` a minute after the reset.
   The notice above the composer says when, and Cancel turns it off.
-- **Links in a transcript open in Dray's browser.** Click opens the page
+- **Links in a transcript open in Wain's browser.** Click opens the page
   in the Browser view; ⌘-click still leaves for the system browser.
 - **Tabs in the titlebar.** Chat, Diff, Files, browser pages and open
   files are one draggable tab row: ⌘1–⌘9 by position, ⌘T new tab, ⌘W
@@ -1006,7 +1006,7 @@ reads:
 - A ⋯ button on each sidebar row opens its menu.
 - A session tag in a sent prompt is a button that opens that session.
 - A fresh Linux server puts `~/.local/bin` on PATH, so its console finds
-  `dray`, `gh` and `claude`.
+  `wain`, `gh` and `claude`.
 
 ### Fixed
 
@@ -1021,24 +1021,24 @@ reads:
 - **Add a server from one SSH line.** Paste how you reach it and the
   app opens the connection, reads the token itself, starts a stopped
   server, and says what is wrong in plain words: an unknown host key,
-  a refused key, a password wanted, or Dray missing.
-- **Install Dray on a server from the app.** Install it, pick what to
+  a refused key, a password wanted, or Wain missing.
+- **Install Wain on a server from the app.** Install it, pick what to
   install, and see the logins left to do.
-- **Attach a project by picking one of your GitHub repos.** Dray clones
+- **Attach a project by picking one of your GitHub repos.** Wain clones
   it, on a server or on the Mac.
 - **Agents on a server get a browser of their own.** Their screenshots
   and recordings show in the transcript, and the Browser tab lists a
   server's dev servers and opens them through a forwarded port.
-- Pairs with `dray` 0.10.0.
+- Pairs with `wain` 0.10.0.
 
 ## 0.27.0-beta.1 · 2026-10-06
 
 ### New
 
-- **Connect to your own Dray servers.** Settings → Servers adds one by
+- **Connect to your own Wain servers.** Settings → Servers adds one by
   address and token. Its projects join the sidebar and the project
   picker, marked with the server's name, and its sessions run there.
-  Pairs with `dray` 0.9.0, which installs a server on Linux in one line.
+  Pairs with `wain` 0.9.0, which installs a server on Linux in one line.
 - **The header names the server** a remote session runs on:
   `server / project / title`.
 - **A server that drops shows dimmed** in the sidebar, and picks up
@@ -1046,7 +1046,7 @@ reads:
 - **Save a task without starting it.** ⌘S on a new task saves it as a
   draft under its project in the sidebar. Open it to keep editing, or
   send it to start the session. Agents can make them too with
-  `dray draft`.
+  `wain draft`.
 
 ## 0.26.0 · 2026-10-01
 
@@ -1067,8 +1067,8 @@ reads:
 - **⌘⌥E moves the side panel** between left and right.
 - **⌘⇧←/→ steps browser tabs.** ⌘⇧[ ] does too in the Browser view
   while the side panel is shut.
-- **Agents can zoom the browser** with `dray browser zoom`. Needs
-  `dray` 0.8.0, which updates itself.
+- **Agents can zoom the browser** with `wain browser zoom`. Needs
+  `wain` 0.8.0, which updates itself.
 
 ### Improved
 
@@ -1110,10 +1110,10 @@ reads:
 
 ### New
 
-- **Hidden sessions for reviews.** A session started with `dray new
+- **Hidden sessions for reviews.** A session started with `wain new
   --hidden` stays out of the sidebar and shows only in the crew beside
   the session that started it. Right-click it there to show it in the
-  sidebar. Agents hide review sessions by default. Needs `dray` 0.7.0,
+  sidebar. Agents hide review sessions by default. Needs `wain` 0.7.0,
   which updates itself.
 - **The side panel can sit on the left.** Settings › Appearance ›
   Panel side.
@@ -1141,10 +1141,10 @@ reads:
 
 ### New
 
-- **Agents can record the browser.** `dray browser record start` and
+- **Agents can record the browser.** `wain browser record start` and
   `record stop` save an MP4 that plays inline in chat, so checking a
   feature is watching a video. Typing, hover and animation are captured.
-  Needs `dray` 0.6.0, which updates itself.
+  Needs `wain` 0.6.0, which updates itself.
 - **Device sizes in the browser.** Pick a device from the icon's menu,
   set a responsive size and save it, rotate any device. MacBook Pro 14
   and 16, 1080p and 4K are new presets.
@@ -1169,7 +1169,7 @@ reads:
 - **Faster everywhere.** Streaming a reply no longer redraws the whole
   app per token, long sessions open on their newest turns and load the
   rest as you scroll, and the app starts sooner.
-- **Quieter in the background.** An idle Dray barely touches the CPU:
+- **Quieter in the background.** An idle Wain barely touches the CPU:
   PR checks pause while the window is hidden, the browser stops ticking
   when no tab is open, and git is no longer run on every agent event.
 - **One busy session no longer stalls the others.** Restarting an agent
@@ -1212,7 +1212,7 @@ reads:
 ### Fixed
 
 - **Links in chat are underlined again**, and bare domains like
-  `drayhq.com/docs` or `localhost:3000` are links now, in your messages
+  `wainhq.com/docs` or `localhost:3000` are links now, in your messages
   and the agent's.
 - **An expanded shell row shows the whole command**, not just the
   one-line summary.
@@ -1243,9 +1243,9 @@ reads:
 - **The new-task page says when your agent's CLI has an update**, with
   an Update button that runs the CLI's own updater in place. pi and fx
   wait for their running sessions to finish first.
-- **The `dray` CLI updates itself alongside the app**, on the first
-  launch of each new version, so agents stop hitting "run `dray
-  update`". A machine without `dray` gets nothing installed.
+- **The `wain` CLI updates itself alongside the app**, on the first
+  launch of each new version, so agents stop hitting "run `wain
+  update`". A machine without `wain` gets nothing installed.
 - **Shortcuts can be unbound** from Settings → Shortcuts.
 - **GPT-6 Sol and Luna are in the Codex picker**, with 6 Astra, 6 Sol
   and 5.6 Sol at the top.
@@ -1292,7 +1292,7 @@ reads:
 
 ### New
 
-- **Grok Build is Dray's fifth agent harness.** Spawn, stream, resume
+- **Grok Build is Wain's fifth agent harness.** Spawn, stream, resume
   and stop, with permission cards, questions, subagents and the
   context ring. Model and effort move on a running session; a stance
   change respawns it. Fast mode is a switch rather than a second row
@@ -1388,7 +1388,7 @@ reads:
   Code, Codex, pi and fx — asked of the CLIs themselves, with the
   identity, the auth method and whether the login still works. Signing
   in opens a terminal and runs the command for you; Codex and pi also
-  take a key straight from the form. Dray stores no agent credential.
+  take a key straight from the form. Wain stores no agent credential.
 - **Settings groups moved to a rail.** Seven tabs across the top wrapped
   onto a second line; down the side they are one list.
 
@@ -1410,7 +1410,7 @@ reads:
 
 - **Mention another session from the composer with `&`.** A fourth
   picker beside `@`, `#` and `/`. A pick writes the session's title and
-  its id, so an agent handed the message has the address to `dray send`
+  its id, so an agent handed the message has the address to `wain send`
   to rather than a title to go looking for. Two sessions sharing a
   title trail their branch, so you can tell them apart.
 - **Each project filter remembers what you had open.** A filter is a
@@ -1453,7 +1453,7 @@ reads:
   CLI the tab simply vanished, so nothing said that one install puts
   pull requests on screen. It now stays, draws the command to run with
   a copy button, and a terminal to paste it into.
-- **Dray can ask you a question in the app.** A short survey card may
+- **Wain can ask you a question in the app.** A short survey card may
   appear for installs with usage reporting on; turning reporting off in
   Settings turns it off too.
 
@@ -1470,7 +1470,7 @@ reads:
 ### Fixed
 
 - **The effort control on an fx gateway model now matches what the
-  model takes.** Dray reads each model's levels from the gateway's own
+  model takes.** Wain reads each model's levels from the gateway's own
   catalog, so a model with no reasoning levels — grok-4.6,
   claude-sonnet-4 — draws no effort control instead of offering four
   the model refuses.
@@ -1481,7 +1481,7 @@ reads:
 
 - **No more stray chime at the end of an fx turn.** Naming an fx session
   played fx's own completion sound, which landed where the first turn
-  finished and read as Dray having grown a sound per turn.
+  finished and read as Wain having grown a sound per turn.
 - **A session that fails to get a title now says why.** The agent's own
   reason was being thrown away as it was written.
 
@@ -1491,7 +1491,7 @@ reads:
 
 - **An fx turn ends when the answer does.** fx held every first reply
   for several seconds while it wrote the session title, leaving the
-  working indicator spinning over finished work. Dray titles those
+  working indicator spinning over finished work. Wain titles those
   sessions itself now.
 
 ## 0.20.1 · 2026-09-16
@@ -1533,7 +1533,7 @@ reads:
 - **A large file opens instantly in the Files view.** An 8000-line
   lockfile switched tabs in ~56ms where it took up to 900ms.
 - **The PR panel costs a fraction of your GitHub rate limit.** Reading
-  a branch used to spend 11 API points per poll, which two Dray windows
+  a branch used to spend 11 API points per poll, which two Wain windows
   could drain in an hour and leave every agent's own `gh` call failing.
   It is 2 now.
 
@@ -1583,7 +1583,7 @@ reads:
 
 ### New
 
-- **fx is told Dray's rules**, which it had no way to learn before —
+- **fx is told Wain's rules**, which it had no way to learn before —
   `fx acp` has no system-prompt surface at all, so they ride the first
   prompt of a new session and the transcript still shows what you
   wrote.
@@ -1610,9 +1610,9 @@ reads:
 ### Fixed
 
 - **fx sessions get the MCP servers from `~/.fx/mcp.json`.** `fx acp`
-  reads no config of its own, so a Dray fx session ran without the
+  reads no config of its own, so a Wain fx session ran without the
   tools the same machine's `fx` shell had. Sent on resume too. A
-  server Dray cannot authenticate is dropped rather than taking the
+  server Wain cannot authenticate is dropped rather than taking the
   whole session with it, and tokens named by `bearer_token_env` are
   read through the login shell, so a launch from the Dock resolves
   them like a terminal does.
@@ -1628,7 +1628,7 @@ reads:
   fx. Each vendor charges for it differently, so the row carries their
   own sentence about what it costs. Claude Code and Codex can be moved
   in place; fx settles at creation. pi has none.
-- **`dray new --fast`** starts a spawned session on that tier. A
+- **`wain new --fast`** starts a spawned session on that tier. A
   session inherits its parent's setting only within the same agent.
 - **Claude Code says when it refuses fast mode**, and that sentence is
   drawn under the row rather than the switch sitting lit while the
@@ -1672,7 +1672,7 @@ reads:
   Codex or pi: sessions stream, resume and stop, permission requests
   are answered in the transcript, and model, effort and stance apply to
   a running session in place. Models come from fx itself, so one it
-  ships is pickable without a Dray release. fx has two stances of its
+  ships is pickable without a Wain release. fx has two stances of its
   own, Ask and Auto, so the picker offers those: a session arriving on
   Plan asks about everything, and one arriving on Bypass runs as Auto.
 
@@ -1694,9 +1694,9 @@ reads:
 - **A session whose login expired now recovers on the next prompt.**
   The CLI remembers being logged out for the life of its process, so
   logging in next door changed nothing and restarting the app was the
-  only cure. Dray restarts the child itself, even where a background
+  only cure. Wain restarts the child itself, even where a background
   task is still running.
-- **Sessions whose worktree was removed outside Dray are repaired at
+- **Sessions whose worktree was removed outside Wain are repaired at
   launch**, so the PR panel stops reporting that it could not run `gh`.
   A session is never moved into a checkout another session is working
   in.
@@ -1712,7 +1712,7 @@ reads:
 ### New
 
 - **Codex's model list comes from Codex.** A model OpenAI ships is
-  pickable the day it lands rather than the day Dray next releases. The
+  pickable the day it lands rather than the day Wain next releases. The
   first two rows are the top level and the Shift+Tab cycle, so a new
   flagship arrives there on its own; the rest fold into More models. The
   built-in table stays as the offline fallback.
@@ -1721,7 +1721,7 @@ reads:
 
 - **A prompt running one of Greptile's commands is tinted to say whose
   it is**, queued or sent.
-- **Analytics counts a day you used Dray**, not only a launch or a new
+- **Analytics counts a day you used Wain**, not only a launch or a new
   session — a day spent in one resumed session read as nobody there.
   Still nothing about what you write.
 
@@ -1832,8 +1832,8 @@ reads:
 
 ### New
 
-- **An issue's status and priority change from Dray.** Menus on the opened
-  issue's header and on the Issues page's rows — the first thing Dray
+- **An issue's status and priority change from Wain.** Menus on the opened
+  issue's header and on the Issues page's rows — the first thing Wain
   writes back to a tracker. The glyph moves as you click and the write
   reconciles behind it; a refused write puts the old value back and shows
   what Linear said. ⌘⇧F focuses the Issues search, ⌘-click opens a row in
@@ -1852,7 +1852,7 @@ reads:
 
 ### Fixed
 
-- **A message relayed with `dray send` no longer arrives as one paragraph.**
+- **A message relayed with `wain send` no longer arrives as one paragraph.**
   A literal `\n` written into a shell string now draws as a line break.
 - **Opening a menu no longer killed every keyboard shortcut for the rest of
   the session.**
@@ -1861,7 +1861,7 @@ reads:
 
 ### New
 
-- **Dray has a browser.** ⌘3 for the full view, or the Browser tab in the
+- **Wain has a browser.** ⌘3 for the full view, or the Browser tab in the
   right pane. Tabs with favicons, device sizes, zoom, hard reload and
   DevTools on their chords, and a list of local servers that shows only
   this checkout's — another worktree's dev server never appears. Each
@@ -1870,12 +1870,12 @@ reads:
   after the first window opens, ~330MB, and Settings → Integrations shows
   where it has got to. Keeping it out of the bundle keeps it out of every
   update too.
-- **`dray browser` lets an agent drive that browser** — open pages, click,
+- **`wain browser` lets an agent drive that browser** — open pages, click,
   type, read and screenshot, in its own session's tabs and nowhere else.
-  **It needs a matching CLI: run `dray update`.** An older `dray` is
+  **It needs a matching CLI: run `wain update`.** An older `wain` is
   refused by this app outright, and that refusal covers every command, not
   just the browser ones.
-- **A link in the chat asks where to open.** Dray's browser or the system
+- **A link in the chat asks where to open.** Wain's browser or the system
   one, with ⌘-click skipping the question. URLs you type in your own
   messages are clickable now too.
 - **⌘F searches the sidebar.** It works with the sidebar collapsed, and Esc
@@ -2143,8 +2143,8 @@ reads:
 
   **A pi session runs ungated, and that is pi's own shape, not a setting.** pi
   has no permission system — not a different one, none — so there is nothing
-  for Dray to ask through and the stance picker is hidden there. Everything the
-  agent runs, it runs. The gate is an extension Dray will ship; until then, know
+  for Wain to ask through and the stance picker is hidden there. Everything the
+  agent runs, it runs. The gate is an extension Wain will ship; until then, know
   what you are starting.
 
   pi names no default model on purpose, since which models work depends on the
@@ -2161,7 +2161,7 @@ reads:
 
 - **Stopping a pi session asks it to leave rather than killing it.** pi holds a
   lock while it runs and a clean exit releases it, where a kill leaves the next
-  pi waiting the stale one out for ~30 seconds — which looked exactly like Dray
+  pi waiting the stale one out for ~30 seconds — which looked exactly like Wain
   hanging, in a different session.
 - **A pi that dies mid-turn closes its own turn**, rather than leaving the
   session working with a finished transcript and a Stop that did nothing.
@@ -2171,7 +2171,7 @@ reads:
 ### New
 
 - **Two more themes: One Dark Pro and Cobalt2.** Both dark-only. The default
-  palette is called Dray now — the same colours under a name of its own, and
+  palette is called Wain now — the same colours under a name of its own, and
   the theme you had set stays set.
 - **Copy a table from the chat.** Wide markdown tables scroll in place instead
   of being squeezed to a letter a line, and hovering one reveals a copy
@@ -2202,7 +2202,7 @@ reads:
 
 - **Markdown opens in the side panel, and you can edit it there.** Clicking a
   `.md` file in the chat used to hand it to an external editor to read
-  something Dray already renders. It now opens in a Docs tab beside Changes
+  something Wain already renders. It now opens in a Docs tab beside Changes
   and PR, with a view/edit toggle. Anything that isn't markdown still goes to
   your editor.
 
@@ -2278,19 +2278,19 @@ reads:
 - **Opening a long session is fast again.** A 61-turn session took ~700ms
   before anything appeared; the newest turns now draw first and the rest fill
   in above them.
-- **`dray` tells a sandboxed refusal from a closed app.** Every connect error
-  read as "Dray isn't running", which named no cure when the real cause was
-  the agent's own sandbox. Update the CLI with `dray update`.
+- **`wain` tells a sandboxed refusal from a closed app.** Every connect error
+  read as "Wain isn't running", which named no cure when the real cause was
+  the agent's own sandbox. Update the CLI with `wain update`.
 
 ## 0.9.1 · 2026-08-29
 
 ### New
 
-- **Codex knows Dray's rules.** Claude Code was given them at spawn and Codex
-  was given nothing, so it knew neither the reply style nor that `dray`
+- **Codex knows Wain's rules.** Claude Code was given them at spawn and Codex
+  was given nothing, so it knew neither the reply style nor that `wain`
   exists. It has its own instructions now, sent on resume too, and
-  `dray skill install` writes the skill where Codex reads it. Update the CLI
-  with `dray update`.
+  `wain skill install` writes the skill where Codex reads it. Update the CLI
+  with `wain update`.
 
 ### Fixed
 
@@ -2317,9 +2317,9 @@ reads:
   Code and the session spawns `codex app-server` instead. Sessions stream,
   resume and stop; the transcript draws messages, reasoning, shell calls and
   file diffs; the context ring fills. Approvals are wired, and the buttons on
-  the card are Codex's own — where it offers no way to refuse, Dray adds one.
+  the card are Codex's own — where it offers no way to refuse, Wain adds one.
 
-  Two differences are Codex's, not choices: it splits Dray's permission mode
+  Two differences are Codex's, not choices: it splits Wain's permission mode
   into two settings (when it asks, and what a command may touch), and it has
   no plan mode, so Plan is hidden there. Changing model, effort or mode
   restarts the session, image prompts are not supported yet, and a Codex
@@ -2354,12 +2354,12 @@ reads:
   any background task was outstanding — and a dev server never ends — so it
   was refused for the rest of that session's life, with the menu item left
   enabled. It now refuses only while a turn is actually in flight.
-- **`dray issue link` works inside a worktree session.** The documented form
-  named `$DRAY_SESSION_ID`, and the agent's own guard refuses any command
+- **`wain issue link` works inside a worktree session.** The documented form
+  named `$WAIN_SESSION_ID`, and the agent's own guard refuses any command
   naming an environment variable there — silently, so the issue was never
   linked. The session id is now optional and read by the CLI itself. Update
-  the CLI with `dray update`.
-- **"Spin up a session" starts a Dray session.** That phrasing and its
+  the CLI with `wain update`.
+- **"Spin up a session" starts a Wain session.** That phrasing and its
   neighbours reached for the agent's own subagent tool instead.
 
 ## 0.8.2 · 2026-08-28
@@ -2433,7 +2433,7 @@ reads:
   chips, search and groups by state; an Issue tab in the right panel carrying
   the description, uploads, people and comments; and `#DRA-53` tags in the
   composer that resolve on send and open the issue from the sent message.
-  Connect with a personal API key on the page itself — Dray never writes to
+  Connect with a personal API key on the page itself — Wain never writes to
   the tracker, so nothing moves status or leaves a comment. Your agent still
   wants Linear's own MCP server to read an issue in full.
 - **Themes, and light mode.** Default (the old greys), plus Catppuccin and
@@ -2448,7 +2448,7 @@ reads:
 - **Delete branch on a merged or closed pull request.** Merging left the head
   branch on the remote forever. The row is remote-only and refuses a fork's
   branch outright.
-- **`dray update` stops when it is already current.** It used to download and
+- **`wain update` stops when it is already current.** It used to download and
   swap the binary every time and say nothing about being up to date. `--force`
   still reinstalls.
 
@@ -2485,26 +2485,26 @@ reads:
 
 ### New
 
-- **A settings dialog, and analytics behind a switch in it.** Dray now reports
+- **A settings dialog, and analytics behind a switch in it.** Wain now reports
   one event — `app_started`, carrying no properties — so there is a count of
   how many people run it. Nothing about your sessions, prompts, repositories or
   files is collected, and there is no second event.
 
-  **It is on by default.** Turn it off in Settings, or set `DRAY_NO_ANALYTICS`
+  **It is on by default.** Turn it off in Settings, or set `WAIN_NO_ANALYTICS`
   in the environment, which wins over the stored setting in one direction: it
   can switch reporting off, never on.
 
 ### Fixed
 
 - **A dev build no longer steals the installed app's socket.** They share one
-  file, so running `pnpm tauri dev` took the channel over — every `dray` call
+  file, so running `pnpm tauri dev` took the channel over — every `wain` call
   reached the dev app while the installed app's own agents wrote into a socket
   nobody was listening on. Each build now has its own.
 - **Project groups follow the project list's order**, not the recency of the
   sessions inside them. Replying to any session used to lift its whole project
   above the others, moving a heading under your eye mid-turn.
 - **A relayed message no longer shows its plumbing.** The
-  `[message from the Dray session …]` prefix is what tells the receiving agent
+  `[message from the Wain session …]` prefix is what tells the receiving agent
   who sent it, but it was drawn in the bubble too — the avatar above already
   says that.
 
@@ -2528,15 +2528,15 @@ to protocol v2, and the two refuse each other across that line rather than
 guessing — an old CLI silently ignoring a field it does not know is how a
 session spawned to review unpushed work reviews none of it and reports back
 that everything looks fine. The app is the half that cannot be fixed from an
-agent, so it goes first; the CLI then self-heals with `dray update`.
+agent, so it goes first; the CLI then self-heals with `wain update`.
 
 **If you are on CLI 0.1.0, re-run the install command by hand:**
 
 ```sh
-curl -fsSL https://www.drayhq.com/install.sh | sh
+curl -fsSL https://www.wainhq.com/install.sh | sh
 ```
 
-`dray update` shipped in 0.2.0, so the refusal names a command that version
+`wain update` shipped in 0.2.0, so the refusal names a command that version
 does not have. This is the last release that can happen to.
 
 ### New
@@ -2548,7 +2548,7 @@ does not have. This is the last release that can happen to.
   child process and no waiting. Refused while the source is mid-turn, since a
   fork is taken by reading a transcript a live session is still writing to.
 
-- **`dray new --from` bases a spawned session on existing work.** Sessions
+- **`wain new --from` bases a spawned session on existing work.** Sessions
   always forked from `origin/<default>`, so a spawned session could not see
   what the session that spawned it had just done — putting "have a second model
   review this" out of reach. Takes a session id, a branch or any ref. Still a
@@ -2558,18 +2558,18 @@ does not have. This is the last release that can happen to.
   rail and a row elbows onto its parent's, so a grandchild reads as hanging off
   its own parent rather than off the root.
 
-- **A relayed message is drawn as its sender.** A `dray send` used to land
+- **A relayed message is drawn as its sender.** A `wain send` used to land
   looking like something you typed, with the attribution as prose in the text.
   The sender now rides the event itself, above the bubble and clicking through
   to the session that sent it. It gets a generated mark seeded on session id —
   a session is not an account, and the initial-in-a-circle was a people
   fallback standing in for a picture that never existed.
 
-- **`dray ls` says which session spawned which.** The parent is named on the
+- **`wain ls` says which session spawned which.** The parent is named on the
   row rather than given a second id column, since most rows have no parent and
   two bare uuids under no header read as noise.
 
-- **`dray update` upgrades the CLI in place.** Re-running the installer used to
+- **`wain update` upgrades the CLI in place.** Re-running the installer used to
   be the only route, and it reinstalled the same version forever.
 
 ### Improved
@@ -2577,14 +2577,14 @@ does not have. This is the last release that can happen to.
 - **The commit buttons name what they act on.** "commit" on its own reads as a
   topic rather than an instruction; "commit your changes" settles it.
 
-- **`dray new` no longer takes a worktree name.** An agent has no basis for
+- **`wain new` no longer takes a worktree name.** An agent has no basis for
   picking one, the app already generates a readable name, and a supplied name
   is one more thing that can collide. Every spawned session still gets a
   worktree.
 
 ### Fixed
 
-- **`dray new` from inside a worktree session named the wrong project.** It
+- **`wain new` from inside a worktree session named the wrong project.** It
   read the worktree it was standing in rather than the repository, so the new
   session got a directory that never gets created — leaving Changes, commit and
   PR all reading somewhere that does not exist. Silent, because nothing could
@@ -2601,7 +2601,7 @@ does not have. This is the last release that can happen to.
   something ancient when it cannot reach the API.
 
 - **A protocol mismatch names the cure, and the right half of it.** A CLI
-  behind the app is told to run `dray update`; an app behind the CLI is told to
+  behind the app is told to run `wain update`; an app behind the CLI is told to
   update the app. Naming the wrong one is worse than naming neither.
 
 - **A running check no longer sits off the row's centre line**, and it outranks
@@ -2613,7 +2613,7 @@ does not have. This is the last release that can happen to.
 
 ### New
 
-- **An agent can fan work out into its own Dray sessions.** "Work through these
+- **An agent can fan work out into its own Wain sessions.** "Work through these
   three issues" now becomes three sessions, each in its own worktree, each a row
   in the sidebar you can open, interrupt and delete like any other. Spawned
   sessions nest under the one that created them, and messages travel both ways —
@@ -2622,8 +2622,8 @@ does not have. This is the last release that can happen to.
   session that spawned them, and a spawned session may spawn once more but no
   deeper.
 
-  It wants the `dray` CLI, which the agent installs itself:
-  `curl -fsSL https://www.drayhq.com/install.sh | sh`. The app installs nothing —
+  It wants the `wain` CLI, which the agent installs itself:
+  `curl -fsSL https://www.wainhq.com/install.sh | sh`. The app installs nothing —
   it only names the capability, and the agent gets on with it.
 
 - **⌘⇧← and ⌘⇧→ step the Changes sub-tabs**, the same shape ⌘⇧↑/↓ already steps
@@ -2632,7 +2632,7 @@ does not have. This is the last release that can happen to.
 
 ### Fixed
 
-- **The `dray` install command 404'd.** It resolved GitHub's latest release,
+- **The `wain` install command 404'd.** It resolved GitHub's latest release,
   which the app's own releases take over — so the one command that installs the
   CLI reached a build that never carried it. It now asks for the CLI release by
   name.
@@ -2764,7 +2764,7 @@ does not have. This is the last release that can happen to.
 
 - **A session's worktree can be deleted, and the chat survives it.** Nothing
   else cleans these up — the CLI never sweeps a tree it made with
-  `--worktree` — so every one Dray spawned sat there after the work landed.
+  `--worktree` — so every one Wain spawned sat there after the work landed.
   Settling a task now offers removal on a card that expires into keeping it,
   the settled bar carries a button for later, and deleting a session takes its
   worktree with it. The transcript, the log and the session itself stay; only
@@ -2858,7 +2858,7 @@ stays hidden; logged out, it says so rather than erroring.
 
 - **A session tells you when it wants you.** A turn finishing, a permission
   request and a question each announce themselves once, on the channel that
-  suits where you are: a desktop notification when Dray isn't focused, a card
+  suits where you are: a desktop notification when Wain isn't focused, a card
   in the corner when it is focused but that session is off screen, and nothing
   at all when you're already looking at the transcript. Clicking the desktop
   notification opens the session it came from.
@@ -2871,7 +2871,7 @@ stays hidden; logged out, it says so rather than erroring.
 
 ### Note
 
-macOS asks for notification permission the first time Dray posts one. Deny it
+macOS asks for notification permission the first time Wain posts one. Deny it
 and the in-app card and the sidebar marks still work — the desktop banner is
 the only thing lost.
 

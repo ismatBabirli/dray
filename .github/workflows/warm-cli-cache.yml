@@ -4,7 +4,7 @@ name: Warm CLI cache
 #
 # A tag build can read only its own ref's caches and the default branch's, so
 # every CLI release used to save four ~330MB entries under its own
-# `refs/tags/cli-v…` that no later tag could read, and compiled `dray-serve`'s
+# `refs/tags/cli-v…` that no later tag could read, and compiled `wain-serve`'s
 # 250-odd crates cold each time. `main` is the one scope a tag can read, so
 # this saves there and the release only restores. warm-cache.yml does the same
 # for the app.
@@ -96,13 +96,13 @@ jobs:
           target: ${{ matrix.target }}
           runner: ${{ matrix.os }}
 
-      # The `dray` crates rebuild on every tag whatever the cache holds — the
-      # version moves, and `DRAY_CLI_VERSION` with it — so their artifacts,
+      # The `wain` crates rebuild on every tag whatever the cache holds — the
+      # version moves, and `WAIN_CLI_VERSION` with it — so their artifacts,
       # binaries included, are weight with no hit behind them.
       - name: Drop what a release always rebuilds
         run: |
-          (cd apps/cli && cargo clean --release --target ${{ matrix.target }} -p dray)
-          (cd apps/desktop/src-tauri && cargo clean --release --target ${{ matrix.target }} -p dray)
+          (cd apps/cli && cargo clean --release --target ${{ matrix.target }} -p wain)
+          (cd apps/desktop/src-tauri && cargo clean --release --target ${{ matrix.target }} -p wain)
 
       # The action only restores; this is the one job that writes.
       - if: steps.build.outputs.cache-hit != 'true'

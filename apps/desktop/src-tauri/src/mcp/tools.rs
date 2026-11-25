@@ -1,11 +1,11 @@
 //! What an assistant can do here. Starting and messaging go through the same
-//! path as `dray session new` and `send` ([`orchestration::answer_here`]), so a
+//! path as `wain session new` and `send` ([`orchestration::answer_here`]), so a
 //! session started from a chat gets its worktree, its defaults and its sidebar
 //! row exactly as one started by an agent does.
 
 use std::time::{Duration, Instant};
 
-use dray_proto::{CreateSession, Request, Response, SendMessage, SendToBot, SessionRef};
+use wain_proto::{CreateSession, Request, Response, SendMessage, SendToBot, SessionRef};
 use serde_json::{json, Value};
 
 use super::auth::Access;
@@ -30,7 +30,7 @@ fn catalog() -> Vec<(bool, Value)> {
         (true, json!({
             "name": "list_projects",
             "title": "List projects",
-            "description": "The git repositories Dray works in on this machine. start_session takes one of these, by name or path.",
+            "description": "The git repositories Wain works in on this machine. start_session takes one of these, by name or path.",
             "inputSchema": { "type": "object", "properties": {} },
             "annotations": read,
         })),
@@ -207,7 +207,7 @@ async fn resolve_project(asked: Option<&str>) -> Result<String, String> {
     let Some(asked) = asked.map(str::trim).filter(|a| !a.is_empty()) else {
         return match projects.as_slice() {
             [only] => Ok(only.path.clone()),
-            [] => Err("No projects on this machine yet. Add one in Dray first.".into()),
+            [] => Err("No projects on this machine yet. Add one in Wain first.".into()),
             _ => Err(format!(
                 "Which project? One of: {}",
                 projects.iter().map(|p| p.name.as_str()).collect::<Vec<_>>().join(", ")
@@ -478,7 +478,7 @@ async fn wait_for_bot(bot: &Bot, seconds: Option<u64>) -> Result<Value, String> 
     Ok(answer)
 }
 
-/// `dray bot send` with no sender, so it lands as the user's own message, the
+/// `wain bot send` with no sender, so it lands as the user's own message, the
 /// way the app's composer sends one, and starts the bot's chat where it has none.
 async fn send_to_bot(bot: &str, message: &str, sink: &Sink) -> Result<Value, String> {
     let send = SendToBot { bot: bot.into(), prompt: message.into(), ..Default::default() };

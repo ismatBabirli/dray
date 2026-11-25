@@ -88,12 +88,12 @@ import type {
 /// the next person with the same bug can find; a direct message is beside it for
 /// what an issue is too heavy for.
 const CONTACT_URL = "https://x.com/yogesharc";
-const REPO_URL = "https://github.com/monorepo-labs/dray";
+const REPO_URL = "https://github.com/ismatbabirli/wain";
 const ISSUES_URL = `${REPO_URL}/issues/new`;
 // The landing page's own link, so both ask through one door.
-const SPONSOR_URL = "https://www.drayhq.com/support";
+const SPONSOR_URL = "https://www.wainhq.com/support";
 
-/// People who sponsor Dray, drawn in About — the landing page's "Supported by"
+/// People who sponsor Wain, drawn in About — the landing page's "Supported by"
 /// list, kept in step by hand. Avatars are bundled rather than fetched, so the
 /// row is whole offline; without one it carries an initial.
 const SUPPORTERS: { name: string; note: string; url: string; avatar?: string }[] = [
@@ -392,7 +392,7 @@ function OpenFilesRow() {
   });
 
   /// Asks again, on mount and whenever the menu opens — an editor installed
-  /// while Dray was running is otherwise absent until a restart, and the menu
+  /// while Wain was running is otherwise absent until a restart, and the menu
   /// opening is the one moment the list has to be current.
   const refresh = useCallback(() => {
     void load().then(setApps);
@@ -409,7 +409,7 @@ function OpenFilesRow() {
   const unavailable = !IS_MAC && !IS_LINUX && !IS_WINDOWS
     ? "Opening a file in another app needs macOS, Linux or Windows for now."
     : apps !== null && editors.length === 0
-      ? `No editor Dray knows about is installed, so filenames open in ${files}.`
+      ? `No editor Wain knows about is installed, so filenames open in ${files}.`
       : null;
 
   return (
@@ -902,7 +902,7 @@ function BrowserRow() {
         error ? (
           <span className="text-destructive">{error}</span>
         ) : confirming ? (
-          "Chromium will be downloaded again the next time Dray starts."
+          "Chromium will be downloaded again the next time Wain starts."
         ) : (
           describeChromium(status)
         )
@@ -983,7 +983,7 @@ function IssueTrackerRow({
           label="Issue tracker"
           description={
             confirming
-              ? "Dray will forget the key. Sessions keep the issues they are tagged with."
+              ? "Wain will forget the key. Sessions keep the issues they are tagged with."
               : // The mark rather than the word, since the word is already the row's
                 // subject — and it is what makes this row findable at a glance in a
                 // dialog of sentences.
@@ -1052,7 +1052,7 @@ function SupportBlock() {
   return (
     <div className="flex flex-col gap-2.5">
       <p className="text-ui text-muted-foreground">
-        Dray is free and open source. Sponsoring or starring the repo keeps it going.
+        Wain is free and open source. Sponsoring or starring the repo keeps it going.
       </p>
       <div className="flex items-center gap-1.5">
         <Button variant="secondary" size="sm" onClick={() => void openUrl(SPONSOR_URL)}>
@@ -1096,7 +1096,7 @@ const ISLAND_TAPS = [
   { id: "double", label: "Double tap" },
 ] as const;
 
-/// Dray Island's picks. The switch and the key are Dray's to keep, in local
+/// Wain Island's picks. The switch and the key are Wain's to keep, in local
 /// storage, and handed to the island at every launch; the rest are the island's
 /// own preferences, which its right-click menu writes too, so they are read
 /// back from it — on arrival and every few seconds while the window is in
@@ -1129,7 +1129,7 @@ function IslandSettings() {
   return (
     <>
       <Section>
-        <SettingRow id={onId} label="Dray Island" description="A composer that floats over every app, for prompts, dictation and answering cards.">
+        <SettingRow id={onId} label="Wain Island" description="A composer that floats over every app, for prompts, dictation and answering cards.">
           <Switch
             id={onId}
             checked={on}
@@ -1141,7 +1141,7 @@ function IslandSettings() {
         </SettingRow>
       </Section>
       <Section>
-        <SettingRow id={keyId} label="Shortcut" description="Press and let go of this key on its own to open Dray Island. Do it again while it is open to dictate.">
+        <SettingRow id={keyId} label="Shortcut" description="Press and let go of this key on its own to open Wain Island. Do it again while it is open to dictate.">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button id={keyId} type="button" size="sm" variant="ghost" className="justify-between">
@@ -1481,7 +1481,7 @@ const TAB_SUBTITLES: Partial<Record<SettingsTab, string>> = {
   accounts: "Manage each harness's sign-in. Switch one off to hide it from the model picker.",
   composer:
     "The buttons that rise out of the composer's top edge on hover. Each sends its prompt as if you had typed it.",
-  // Agents add machines with `dray machine add`, which nothing here would say.
+  // Agents add machines with `wain machine add`, which nothing here would say.
   servers: "Ask your bot or any session to set one up for you. No need to add each by hand.",
   // Nothing on the island says it has a menu.
   island: "Right-click the island to change these from the island itself.",

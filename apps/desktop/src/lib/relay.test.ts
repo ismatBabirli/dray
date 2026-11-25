@@ -23,17 +23,17 @@ describe("stripSenderPrefix", () => {
   // Pinned against the string `attribute` builds for a bot sender.
   it("takes off the line naming a bot", () => {
     const bot = { sessionId: "abc-123", title: "Ops", machine: null, botId: "b1" };
-    expect(senderPrefix(bot)).toBe('[message from the Dray bot "Ops" (abc-123)]\n\n');
+    expect(senderPrefix(bot)).toBe('[message from the Wain bot "Ops" (abc-123)]\n\n');
     expect(stripSenderPrefix(`${senderPrefix(bot)}hi`, bot)).toBe("hi");
     // An ask and its passed-back answer, as `attribute` words them.
     const ask = { ...bot, ask: true };
     expect(senderPrefix(ask)).toBe(
-      '[message from the Dray bot "Ops" (abc-123); it asks for an answer: end your turn with it, written for that bot, and Dray passes it back]\n\n',
+      '[message from the Wain bot "Ops" (abc-123); it asks for an answer: end your turn with it, written for that bot, and Wain passes it back]\n\n',
     );
     const reply = { ...bot, reply: true };
     expect(stripSenderPrefix(`${senderPrefix(reply)}green`, reply)).toBe("green");
     expect(senderPrefix(reply)).toBe(
-      '[reply from the Dray bot "Ops" (abc-123) to your question, passed back by Dray; it needs no answer]\n\n',
+      '[reply from the Wain bot "Ops" (abc-123) to your question, passed back by Wain; it needs no answer]\n\n',
     );
   });
 
@@ -45,13 +45,13 @@ describe("stripSenderPrefix", () => {
   // Pinned against the string `attribute` builds in orchestration.rs.
   it("takes off the line naming a sender on another machine", () => {
     const remote = { sessionId: "abc-123", title: "Fan out", machine: "Yogesh's Mac" };
-    const text = `[message from the Dray session "Fan out" (abc-123) on Yogesh's Mac]\n\ngo`;
+    const text = `[message from the Wain session "Fan out" (abc-123) on Yogesh's Mac]\n\ngo`;
     expect(stripSenderPrefix(text, remote)).toBe("go");
   });
 
   it("takes off the one-way wording older transcripts carry", () => {
     const remote = { sessionId: "abc-123", title: "Fan out", machine: "Yogesh's Mac" };
-    const text = `[message from the Dray session "Fan out" (abc-123) on Yogesh's Mac, which this machine cannot message back]\n\ngo`;
+    const text = `[message from the Wain session "Fan out" (abc-123) on Yogesh's Mac, which this machine cannot message back]\n\ngo`;
     expect(stripSenderPrefix(text, remote)).toBe("go");
   });
 

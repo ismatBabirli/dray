@@ -19,9 +19,9 @@ export function slugify(text: string): string {
     .replace(/-+$/, "");
 }
 
-// Names a username may one day need to stand for Dray itself.
+// Names a username may one day need to stand for Wain itself.
 const RESERVED_USERNAMES = new Set([
-  "admin", "administrator", "api", "app", "dray", "help", "root", "settings", "support", "system",
+  "admin", "administrator", "api", "app", "wain", "help", "root", "settings", "support", "system",
 ]);
 
 /// Why `username` can't be one, or null when it can.

@@ -1,7 +1,7 @@
-/// Who may upload (#1501): Dray's own contributors, so the bucket holds PR
+/// Who may upload (#1501): Wain's own contributors, so the bucket holds PR
 /// media for this repo and nothing from anybody else's, often private, work.
 
-export const REPO = "monorepo-labs/dray";
+export const REPO = "ismatbabirli/wain";
 const ORG = REPO.split("/")[0];
 /// Open PRs read before giving up on an author, 100 a page.
 const MAX_PR_PAGES = 10;
@@ -11,7 +11,7 @@ export type Verdict = "contributor" | "stranger" | "lookup_refused" | "unreachab
 /// Whether `user` contributes to `REPO`: a collaborator of it (which takes in
 /// org members through teams and the org's base permission), a member of its
 /// org, or the author of a PR open there, so an outside contributor can attach
-/// media to their own PR. Asked with Dray's `token`, never the caller's.
+/// media to their own PR. Asked with Wain's `token`, never the caller's.
 export async function contributes(
   user: { id: number; login: string },
   token: string,
@@ -22,7 +22,7 @@ export async function contributes(
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
-        "User-Agent": "dray-upload",
+        "User-Agent": "wain-upload",
         "X-GitHub-Api-Version": "2022-11-28",
       },
       // GitHub's 302 here means the token cannot see private org members.

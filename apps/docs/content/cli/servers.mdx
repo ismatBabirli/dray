@@ -1,22 +1,22 @@
 ---
 title: Servers
-description: Make a machine a Dray server with dray server, give it a public address, pair an iPhone, link it to an org, and manage the list of machines it reaches with dray machine.
+description: Make a machine a Wain server with wain server, give it a public address, pair an iPhone, link it to an org, and manage the list of machines it reaches with wain machine.
 sidebar:
   order: 9
 ---
 
 Two command groups, for two sides of the same setup:
 
-- `dray server` runs on the machine that will **be** a server: a Linux box, or a Mac with no Dray app. It installs what is missing and keeps the server running.
-- `dray machine` edits the list of **other machines** this one reaches. On a Mac with the app, that is the app's list in Settings → Servers.
+- `wain server` runs on the machine that will **be** a server: a Linux box, or a Mac with no Wain app. It installs what is missing and keeps the server running.
+- `wain machine` edits the list of **other machines** this one reaches. On a Mac with the app, that is the app's list in Settings → Servers.
 
-For the full walkthrough of putting Dray on a Linux server, see [Connect a server](/server).
+For the full walkthrough of putting Wain on a Linux server, see [Connect a server](/server).
 
-## dray server
+## wain server
 
 ```bash
-dray server install
-dray server status
+wain server install
+wain server status
 ```
 
 | Command | What it does |
@@ -27,82 +27,82 @@ dray server status
 | `stop` | Stops the server and removes it from the background. |
 | `status` | Says whether the server is running, and its public address if it has one. |
 | `tunnel on` / `tunnel off` | Puts a public address in front of the server, or takes it down. |
-| `pair` | Prints a QR code the Dray iPhone app scans to add this server. |
-| `dray login` / `dray logout` | Links this server to an org at drayhq.com, or unlinks it. See [Link to an org](#link-to-an-org). |
+| `pair` | Prints a QR code the Wain iPhone app scans to add this server. |
+| `wain login` / `wain logout` | Links this server to an org at wainhq.com, or unlinks it. See [Link to an org](#link-to-an-org). |
 
 ### Install
 
 ```bash
-dray server install
-dray server install --tools git,gh,claude_code
+wain server install
+wain server install --tools git,gh,claude_code
 ```
 
-Lists what is already here, asks what to install from what is missing, then starts the server. The choices are git, the GitHub CLI and the six agents (`claude_code`, `codex`, `pi`, `fx`, `grok`, `opencode`). On Linux it also offers **Browser for agents**, the system libraries `dray browser` needs, and **ffmpeg**, which `dray browser record` needs. Those two install with apt only.
+Lists what is already here, asks what to install from what is missing, then starts the server. The choices are git, the GitHub CLI and the six agents (`claude_code`, `codex`, `pi`, `fx`, `grok`, `opencode`). On Linux it also offers **Browser for agents**, the system libraries `wain browser` needs, and **ffmpeg**, which `wain browser record` needs. Those two install with apt only.
 
 `--tools` installs the ones you name without asking. With no terminal to ask in and no `--tools`, it installs nothing and says what is missing. Anything that needs admin rights it cannot get is printed for you to run yourself.
 
 It then lists the agent logins still to do, and ends by printing the SSH line to paste into the app's **Add server**.
 
-A first install from `install.sh` runs this for you on any machine without the Dray app.
+A first install from `install.sh` runs this for you on any machine without the Wain app.
 
 ### Start, run, stop
 
 ```bash
-dray server start
-dray server run --port 7317
-dray server stop
+wain server start
+wain server run --port 7317
+wain server stop
 ```
 
-On Linux, `start` installs a systemd user service, `dray.service`. If your user has no linger, the server stops when you log out, and `start` prints `sudo loginctl enable-linger <user>` to fix that. Read its log with `journalctl --user -u dray`. systemd restarts the server if it crashes. When the machine runs out of memory and the kernel kills one process, such as an agent's compiler, only that process goes: the server and its other sessions keep running. `start` writes the service file every time, so an older server picks this up the next time it starts. With no systemd user session at all, `start` refuses; run `dray server run` under tmux or nohup instead.
+On Linux, `start` installs a systemd user service, `wain.service`. If your user has no linger, the server stops when you log out, and `start` prints `sudo loginctl enable-linger <user>` to fix that. Read its log with `journalctl --user -u wain`. systemd restarts the server if it crashes. When the machine runs out of memory and the kernel kills one process, such as an agent's compiler, only that process goes: the server and its other sessions keep running. `start` writes the service file every time, so an older server picks this up the next time it starts. With no systemd user session at all, `start` refuses; run `wain server run` under tmux or nohup instead.
 
-On a Mac with no Dray app, `start` installs a login agent. Its log is `~/.dray/server.log`. It runs only while your user is logged in, so a headless Mac wants automatic login. For the app on another Mac to reach it, turn on Remote Login in System Settings → General → Sharing.
+On a Mac with no Wain app, `start` installs a login agent. Its log is `~/.wain/server.log`. It runs only while your user is logged in, so a headless Mac wants automatic login. For the app on another Mac to reach it, turn on Remote Login in System Settings → General → Sharing.
 
 `run` passes what follows to the server. Its one option is `--port`: the port it listens on, 7317 by default, or `0` to pick a free one.
 
-`start` never restarts a server that is already running, since that stops its agents. After `dray update`, it prints the command that restarts it onto the new version.
+`start` never restarts a server that is already running, since that stops its agents. After `wain update`, it prints the command that restarts it onto the new version.
 
-`stop` stops the background server and removes the service. It removes only the server `dray server start` installed.
+`stop` stops the background server and removes the service. It removes only the server `wain server start` installed.
 
 ### Public address
 
 ```bash
-dray server tunnel on
+wain server tunnel on
 ```
 
 Gives the server a public address that stays the same across restarts, and waits for it, up to two minutes. In a terminal it prints the address and a line to paste into the app: Settings → Servers → Add server → Use an address and token. Anyone holding that line can use the server.
 
-`dray server tunnel off` takes the address down. The server is then reachable over SSH alone. The address is off until you turn it on.
+`wain server tunnel off` takes the address down. The server is then reachable over SSH alone. The address is off until you turn it on.
 
 Each connect, drop and reconnect of the address is written to the server's log, with the time. See [Logs](/reference/troubleshooting#logs-and-parse-failures).
 
 ### Pair an iPhone
 
 ```bash
-dray server pair
+wain server pair
 ```
 
-Prints a QR code holding the server's public address, its token and the machine's name. Point the iPhone's Camera at it, or scan it from **Add server** in the [Dray app for iPhone](https://apps.apple.com/app/id6824145317). Anyone holding the code can use the server. It needs the public address, so run `dray server tunnel on` first. On a Mac with the app, **Pair a phone** in Settings → Servers does the same; see [Pair your iPhone](/reference/remote-access#pair-your-iphone).
+Prints a QR code holding the server's public address, its token and the machine's name. Point the iPhone's Camera at it, or scan it from **Add server** in the [Wain app for iPhone](https://apps.apple.com/app/id6824145317). Anyone holding the code can use the server. It needs the public address, so run `wain server tunnel on` first. On a Mac with the app, **Pair a phone** in Settings → Servers does the same; see [Pair your iPhone](/reference/remote-access#pair-your-iphone).
 
 ### Link to an org
 
 ```bash
-dray login
-dray logout
+wain login
+wain logout
 ```
 
-`login` links this machine's server to an org on your Dray account at drayhq.com. On a Mac, signing in to the app already links its server; use `login` on a server you reach over SSH or by address, or press **Link** on its row in Settings → Servers. It prints a page and a code, then waits. Open the page, check the code matches, pick the org and approve. On a phone or another computer, go to `drayhq.com/link` and type the code instead. The code works for 10 minutes. Only an org's owners and admins can link servers to it.
+`login` links this machine's server to an org on your Wain account at wainhq.com. On a Mac, signing in to the app already links its server; use `login` on a server you reach over SSH or by address, or press **Link** on its row in Settings → Servers. It prints a page and a code, then waits. Open the page, check the code matches, pick the org and approve. On a phone or another computer, go to `wainhq.com/link` and type the code instead. The code works for 10 minutes. Only an org's owners and admins can link servers to it.
 
 The server gets its own credential for that one link, never your sign-in. You become the only person on its allow list.
 
 A server links to one org at a time. Running `login` again and approving in another org moves it there: the old org loses it, and the allow list starts again with you.
 
-`logout` unlinks the server, on drayhq.com too. If drayhq.com can't be reached, the server forgets the link anyway and says so; unlink it on the org's Servers page as well. Unlinking there also revokes the server's credential at once; the server itself forgets the link the next time it's asked where it stands.
+`logout` unlinks the server, on wainhq.com too. If wainhq.com can't be reached, the server forgets the link anyway and says so; unlink it on the org's Servers page as well. Unlinking there also revokes the server's credential at once; the server itself forgets the link the next time it's asked where it stands.
 
-### On a Mac with the Dray app
+### On a Mac with the Wain app
 
-The app runs this Mac's server, so `start`, `run` and `status` are refused with `the Dray app runs this Mac's server`. `install` still installs tools and then stops. `tunnel on` and `tunnel off` work, and do the same as the Remote access switch in Settings → Servers.
+The app runs this Mac's server, so `start`, `run` and `status` are refused with `the Wain app runs this Mac's server`. `install` still installs tools and then stops. `tunnel on` and `tunnel off` work, and do the same as the Remote access switch in Settings → Servers.
 
-To run a second server beside the app anyway, give it its own data directory with `DRAY_HOME`.
+To run a second server beside the app anyway, give it its own data directory with `WAIN_HOME`.
 
 ### Older spellings
 
@@ -110,18 +110,18 @@ These still work, because the app runs them on servers with older CLIs:
 
 | Older | Now |
 |---|---|
-| `dray setup` (`--install <tools>`) | `dray server install` (`--tools`) |
-| `dray serve` | `dray server run` |
-| `dray service start` / `status` / `uninstall` / `tunnel on\|off` | `dray server start` / `status` / `stop` / `tunnel on\|off` |
+| `wain setup` (`--install <tools>`) | `wain server install` (`--tools`) |
+| `wain serve` | `wain server run` |
+| `wain service start` / `status` / `uninstall` / `tunnel on\|off` | `wain server start` / `status` / `stop` / `tunnel on\|off` |
 
-## dray machine
+## wain machine
 
 ```bash
-dray machine add vps root@203.0.113.7
-dray machine ls
+wain machine add vps root@203.0.113.7
+wain machine ls
 ```
 
-Edits the list of machines this one reaches. On a Mac with the app, that is the list in Settings → Servers, and changes show there as you run them. On a Linux server, or a Mac with no app, it is that server's own list. Either way, it is the list `--machine <name>` picks from: any `dray` command run with it, such as `dray session new --machine vps`, runs on that machine instead. `dray machine` and `dray server` themselves act on this machine alone.
+Edits the list of machines this one reaches. On a Mac with the app, that is the list in Settings → Servers, and changes show there as you run them. On a Linux server, or a Mac with no app, it is that server's own list. Either way, it is the list `--machine <name>` picks from: any `wain` command run with it, such as `wain session new --machine vps`, runs on that machine instead. `wain machine` and `wain server` themselves act on this machine alone.
 
 | Command | What it does |
 |---|---|
@@ -140,20 +140,20 @@ Each name belongs to one server; `add` and `rename` refuse a name another server
 The address is the line you log in with, or a `ws://` or `wss://` address, such as a Mac's Remote access address:
 
 ```bash
-dray machine add vps root@203.0.113.7
-dray machine add vps ssh -p 2222 root@203.0.113.7
-dray machine add vps my-ssh-alias
-cat serve-token | dray machine add vps ws://127.0.0.1:7317
-dray machine add --token-file token mac wss://….opentunnel.xyz
+wain machine add vps root@203.0.113.7
+wain machine add vps ssh -p 2222 root@203.0.113.7
+wain machine add vps my-ssh-alias
+cat serve-token | wain machine add vps ws://127.0.0.1:7317
+wain machine add --token-file token mac wss://….opentunnel.xyz
 ```
 
-For SSH, everything after the name is the login, so it needs no quotes. Dray logs in with the machine's own `ssh` and reads the server's token over that login. A login can take most of a minute.
+For SSH, everything after the name is the login, so it needs no quotes. Wain logs in with the machine's own `ssh` and reads the server's token over that login. A login can take most of a minute.
 
-A `ws://` or `wss://` address needs the server's token, from `~/.dray/serve-token` on the server, or a Mac's **Copy token** in Settings → Servers. Pass it with `--token-file`, which must come before the name, or on standard input. There is no flag that takes the token itself, so it never lands in your shell history.
+A `ws://` or `wss://` address needs the server's token, from `~/.wain/serve-token` on the server, or a Mac's **Copy token** in Settings → Servers. Pass it with `--token-file`, which must come before the name, or on standard input. There is no flag that takes the token itself, so it never lands in your shell history.
 
-If the connection fails, `add` saves nothing and says why: an unknown host key, a login that wants a password, no Dray on the server.
+If the connection fails, `add` saves nothing and says why: an unknown host key, a login that wants a password, no Wain on the server.
 
 ## Limits
 
-- `dray server` installs browser libraries and ffmpeg with apt alone.
+- `wain server` installs browser libraries and ffmpeg with apt alone.
 - On a Mac, the background server runs only while you are logged in.

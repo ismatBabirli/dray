@@ -135,7 +135,7 @@ function Demo() {
         <div className="flex flex-col gap-1">
           <h1 className="text-lg font-medium">Issue card in a bot's chat</h1>
           <p className="text-ui text-muted-foreground">
-            A row opens its issue in Dray in the app; the play button (Work on it) hands it to the bot and turns
+            A row opens its issue in Wain in the app; the play button (Work on it) hands it to the bot and turns
             Started. The merge card after the first is the real one, for comparing the two.
           </p>
           <div>

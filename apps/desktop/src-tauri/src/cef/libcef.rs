@@ -12,7 +12,7 @@
 //! **The list must name every `cef_*` function the bindings declare.** One
 //! missing binds straight to libcef.so and puts the `DT_NEEDED` back, which
 //! fails loudly: the app refuses to start on a machine without Chromium.
-//! `readelf -d target/debug/dray | grep libcef` is the check; regenerate from
+//! `readelf -d target/debug/wain | grep libcef` is the check; regenerate from
 //! `cef-dll-sys`'s `src/bindings/x86_64_unknown_linux_gnu.rs` on a version bump.
 
 use std::ffi::{c_void, CString};

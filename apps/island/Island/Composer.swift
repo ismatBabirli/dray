@@ -41,7 +41,7 @@ struct Checkout: Identifiable, Hashable {
     var group: String { project.remote ?? id }
 }
 
-/// A machine Dray's window is connected to, as the server's `island_links` answers.
+/// A machine Wain's window is connected to, as the server's `island_links` answers.
 struct IslandLink: Decodable {
     let id: String
     let name: String
@@ -107,7 +107,7 @@ final class Composer {
         didSet { UserDefaults.standard.set(mode.rawValue, forKey: "island.mode") }
     }
     /// The session's newest turn over the input, or the input alone.
-    /// A string, as Dray's Settings writes every island pick.
+    /// A string, as Wain's Settings writes every island pick.
     var transcript = UserDefaults.standard.string(forKey: "island.transcript") != "hidden" {
         didSet { UserDefaults.standard.set(transcript ? "shown" : "hidden", forKey: "island.transcript") }
     }
@@ -157,7 +157,7 @@ final class Composer {
         didSet { UserDefaults.standard.set(placement.rawValue, forKey: "island.placement") }
     }
 
-    /// Takes what Dray's Settings wrote. Assigned only where it moved, or the write-back would bump the menu for nothing.
+    /// Takes what Wain's Settings wrote. Assigned only where it moved, or the write-back would bump the menu for nothing.
     func reloadPrefs() {
         let d = UserDefaults.standard
         if let p = Placement(rawValue: d.string(forKey: "island.placement") ?? ""), p != placement { placement = p }
@@ -230,7 +230,7 @@ final class Composer {
     var listing: Bool { asksListed && attention.count > 1 }
     /// Every ask's id in the order it arrived, which is the order the tabs are in.
     private var askOrder: [String] = []
-    /// Asks the reader put away: still waiting in Dray, out of the pill and the cards until a new ask comes.
+    /// Asks the reader put away: still waiting in Wain, out of the pill and the cards until a new ask comes.
     private var dismissed: Set<String> = []
 
     @ObservationIgnored var hide: () -> Void = {}
@@ -321,7 +321,7 @@ final class Composer {
             if attention.count < 2 { asksListed = false }
             // A new ask brings back every one put away: dismissing quiets the pill, it answers nothing.
             if fresh.isEmpty { dismissed.formIntersection(ids) } else { dismissed = [] }
-            // A dismissed ask answered in Dray is no card leaving, so it closes nothing here.
+            // A dismissed ask answered in Wain is no card leaving, so it closes nothing here.
             let live = ids.filter { !dismissed.contains($0) }
             if !fresh.isEmpty {
                 // An idle open panel draws the card at once, which says enough.
@@ -362,9 +362,9 @@ final class Composer {
         }
     }
 
-    /// Dray in front sounds its own notice, so a chime here would double it.
+    /// Wain in front sounds its own notice, so a chime here would double it.
     private func chime() {
-        if !Self.drayInFront { Sound.done?.playInBackground() }
+        if !Self.wainInFront { Sound.done?.playInBackground() }
     }
 
     /// The panel shut: what was held is shown now, as the pill, with its one sound.
@@ -407,12 +407,12 @@ final class Composer {
     }
 
     /// A dev build shares the release identifier, so this answers for both.
-    static var drayInFront: Bool { NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.yogesh.dray" }
+    static var wainInFront: Bool { NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.wainhq.wain" }
 
     var isQuestions: Bool { if case .questionsAsked = ask?.event.payload { true } else { false } }
 
-    /// Sessions that finished while Dray was out of sight, newest last: the
-    /// done pill, in place of Dray's banner, until its clock runs out.
+    /// Sessions that finished while Wain was out of sight, newest last: the
+    /// done pill, in place of Wain's banner, until its clock runs out.
     var done: [SessionKey] = [] {
         didSet {
             notes = notes.filter { done.contains($0.key) }
@@ -450,7 +450,7 @@ final class Composer {
         if refusal?.server == alert.server { refusal = nil }
         pillChanged()
     }
-    /// Why the last Extend didn't take: a trial's cap, Dray being closed. Kept with the sandbox it was said of, so it
+    /// Why the last Extend didn't take: a trial's cap, Wain being closed. Kept with the sandbox it was said of, so it
     /// is drawn under that one's warning alone and goes when the warning does.
     private var refusal: (server: String, why: String)?
     var boatRefused: String? {
@@ -469,10 +469,10 @@ final class Composer {
         }
     }
 
-    /// Dray says a session finished, or with `note` what it waits on, where its banner would have.
+    /// Wain says a session finished, or with `note` what it waits on, where its banner would have.
     func finished(_ id: String, note: String? = nil, rows: [WaitingTask]? = nil) {
         guard let key = store.items.keys.first(where: { $0.id == id }) else {
-            // Dray reports a remote session over its own socket, which can be ahead
+            // Wain reports a remote session over its own socket, which can be ahead
             // of this island's read of that machine. A pill keyed to a guess opens
             // nothing, so it waits for the index a while and is dropped after.
             Task {
@@ -525,13 +525,13 @@ final class Composer {
         present()
     }
 
-    /// The done pill's Open in app: Dray comes forward, and its sidebar already marks the rest unread.
+    /// The done pill's Open in app: Wain comes forward, and its sidebar already marks the rest unread.
     func openDoneInApp(_ key: SessionKey) {
         done = []
         Task { await showInApp(key) }
     }
 
-    /// A waiting task's card clicked: Dray comes forward on the task, as the bot chat card's ⌘-click.
+    /// A waiting task's card clicked: Wain comes forward on the task, as the bot chat card's ⌘-click.
     func openWaiting(_ chat: SessionKey, _ task: WaitingTask) {
         openDoneInApp(taskKey(chat, task.id))
     }
@@ -541,8 +541,8 @@ final class Composer {
     func mergeWaiting(_ chat: SessionKey, _ task: WaitingTask, method: String) async -> String? {
         guard let pr = task.pr else { return nil }
         let key = taskKey(chat, task.id)
-        // The app names a remote task's repo `dray://<machine>/<path>`; its own server wants the path.
-        let cwd = store.items[key]?.projectPath ?? task.projectPath.replacing(/^dray:\/\/[^\/]+/, with: "")
+        // The app names a remote task's repo `wain://<machine>/<path>`; its own server wants the path.
+        let cwd = store.items[key]?.projectPath ?? task.projectPath.replacing(/^wain:\/\/[^\/]+/, with: "")
         store.lastError = nil
         guard await store.mergeTask(key.server, taskId: task.id, cwd: cwd, number: pr.number,
                                     branch: pr.headRefName, method: method)
@@ -577,7 +577,7 @@ final class Composer {
         }
     }
 
-    /// Open in app on the done pill, ⌘⏎ under it, or ⌘-click on the title: Dray's window, on this session. A closed app is
+    /// Open in app on the done pill, ⌘⏎ under it, or ⌘-click on the title: Wain's window, on this session. A closed app is
     /// launched and asked again once its window can answer.
     func showInApp(_ key: SessionKey) async {
         let args: [String: JSON] = ["sessionId": .string(key.id)]
@@ -587,14 +587,14 @@ final class Composer {
                 return
             }
             if attempt == 0 {
-                // Bundled, the island sits at Dray.app/Contents/Helpers; in a dev build there is no Dray around it.
+                // Bundled, the island sits at Wain.app/Contents/Helpers; in a dev build there is no Wain around it.
                 let host = Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-                let app = host.pathExtension == "app" ? host : NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.yogesh.dray")
+                let app = host.pathExtension == "app" ? host : NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.wainhq.wain")
                 if let app { _ = try? await NSWorkspace.shared.openApplication(at: app, configuration: NSWorkspace.OpenConfiguration()) }
             }
             try? await Task.sleep(for: .seconds(1))
         }
-        notice = "Couldn't open Dray."
+        notice = "Couldn't open Wain."
     }
 
     func respond(_ optionId: String) async {
@@ -686,7 +686,7 @@ final class Composer {
         }
     }
 
-    /// What Dray sends as pixels (`attachments.rs`): these types, up to 5MB.
+    /// What Wain sends as pixels (`attachments.rs`): these types, up to 5MB.
     /// Anything else rides as a path the model opens itself.
     static func isImage(_ path: String) -> Bool {
         ["png", "jpg", "jpeg", "gif", "webp"].contains(URL(fileURLWithPath: path).pathExtension.lowercased())
@@ -696,7 +696,7 @@ final class Composer {
     /// Paths for `send_msg`, which reads each and sends an image as pixels, anything else as a path.
     var attachments: [String] { rows.compactMap(\.file) }
 
-    /// An image alone is a message, as it is in Dray's own composer.
+    /// An image alone is a message, as it is in Wain's own composer.
     var canSend: Bool { !capturing && !retryingCut && !rows.contains(where: \.pending) && (!prompt.isEmpty || !attachments.isEmpty) }
 
     var modelId: String {
@@ -728,7 +728,7 @@ final class Composer {
 
     // MARK: Opening
 
-    /// The session Dray's window has open, taken as the pick. Silent on any
+    /// The session Wain's window has open, taken as the pick. Silent on any
     /// failure — no app, the new-task page, a machine not loaded yet — which leaves the pick as it was.
     func adoptAppSelection() async {
         guard case .string(let id)? = try? await store.call(server, "selected_session", as: JSON.self, timeout: .milliseconds(500))
@@ -737,15 +737,15 @@ final class Composer {
         if let k = store.items.keys.first(where: { $0.id == id }) { pick(.session(k)) }
     }
 
-    /// A project path as Dray keys it: as is on This Mac, `dray://<machine>/…`
-    /// on another. Drafts are Dray's own list on This Mac, so a remote one is
+    /// A project path as Wain keys it: as is on This Mac, `wain://<machine>/…`
+    /// on another. Drafts are Wain's own list on This Mac, so a remote one is
     /// saved there under this spelling, as the app saves its own.
     private func qualified(_ path: String, on: UUID) -> String {
         guard on != server, let machine = machineIds.first(where: { $0.value == on })?.key else { return path }
-        return "dray://\(machine)\(path)"
+        return "wain://\(machine)\(path)"
     }
 
-    /// Takes the machines Dray's window is connected to as this island's own. The
+    /// Takes the machines Wain's window is connected to as this island's own. The
     /// island is its companion, so it holds no list and opens no login of its own.
     /// Left as it is when This Mac's server cannot answer, since that says nothing about them.
     func followApp() async {
@@ -846,7 +846,7 @@ final class Composer {
 
     // MARK: New session
 
-    /// Read on every new task: projects get attached in Dray. One row per
+    /// Read on every new task: projects get attached in Wain. One row per
     /// repository across every connected machine, This Mac's first. A machine
     /// that fails to answer just has no rows; only This Mac failing is worth saying.
     func loadPicks() async {
@@ -920,7 +920,7 @@ final class Composer {
         if let c = lastUsedCheckout(group) { pickCheckout(c) }
     }
 
-    /// Stamped on the server as Dray's own pick is, or the next read would land back
+    /// Stamped on the server as Wain's own pick is, or the next read would land back
     /// on the machine this moved away from.
     func pickCheckout(_ c: Checkout) {
         let now = Self.stamp.string(from: Date())
@@ -1059,7 +1059,7 @@ final class Composer {
     /// path on this Mac, so each is copied there first.
     private func landed(_ files: [String], on: UUID) async throws -> [String] {
         guard on != server, !files.isEmpty else { return files }
-        guard let c = store.connection(on) else { throw DrayError("Not connected") }
+        guard let c = store.connection(on) else { throw WainError("Not connected") }
         var paths: [String] = []
         for file in files {
             let url = URL(fileURLWithPath: file)
@@ -1115,7 +1115,7 @@ final class Composer {
         return f
     }()
 
-    /// ⌘S: the text becomes a draft in Dray's sidebar, a new task on the bar's
+    /// ⌘S: the text becomes a draft in Wain's sidebar, a new task on the bar's
     /// picks, or on the pinned session's own settings when one is up. Drafts hold
     /// text alone, so a draft with an image in it is refused rather than half kept.
     func saveDraft() async {
@@ -1221,7 +1221,7 @@ final class Composer {
         let value: JSON?
     }
 
-    /// Through the server to Dray's own recorder and model: one place sets up dictation.
+    /// Through the server to Wain's own recorder and model: one place sets up dictation.
     func startDictation() async {
         guard dictation == .idle else { return }
         dictation = .starting
@@ -1234,8 +1234,8 @@ final class Composer {
             if let refusal {
                 dictation = .idle
                 notice = refusal.kind == "needsModel"
-                    ? "Pick a dictation model in Dray → Settings → Transcription."
-                    : "Dray needs the microphone. Allow it in System Settings → Privacy & Security → Microphone."
+                    ? "Pick a dictation model in Wain → Settings → Transcription."
+                    : "Wain needs the microphone. Allow it in System Settings → Privacy & Security → Microphone."
                 return
             }
             dictation = .recording
@@ -1329,8 +1329,8 @@ final class Composer {
         case "empty":
             notice = "No words heard."
             return true
-        case "needsModel": notice = "Pick a dictation model in Dray → Settings → Transcription."
-        case "noAudio": notice = "Dray heard nothing. Check the microphone."
+        case "needsModel": notice = "Pick a dictation model in Wain → Settings → Transcription."
+        case "noAudio": notice = "Wain heard nothing. Check the microphone."
         default: notice = o.value?["message"]?.string ?? "Dictation failed."
         }
         // Set after the notice, whose own setter clears it.
@@ -1352,7 +1352,7 @@ final class Composer {
     }
 }
 
-/// Dray's own dictation tones, so the two dictate alike, and the island's send.
+/// Wain's own dictation tones, so the two dictate alike, and the island's send.
 enum Sound {
     static let start = NSSound(named: "dictate-start")
     static let stop = NSSound(named: "dictate-stop")

@@ -1,27 +1,27 @@
-//! Dray Cloud's control plane (#857), as the app speaks to it: list the
+//! Wain Cloud's control plane (#857), as the app speaks to it: list the
 //! machines, start one for a task, resume one, delete a settled task's. The connections are `servers.rs`'s, each
 //! machine a `Saved` marked `cloud`; this file only talks HTTP.
 //!
 //! The contract is fixed in the issue and shared with `apps/web` and
-//! `dray-serve`, so a field here changes there too.
+//! `wain-serve`, so a field here changes there too.
 
 use serde::Deserialize;
 use serde_json::Value;
 use std::time::Duration;
 
 /// Where the client key sits in `credentials.json`.
-pub const KEY: &str = "dray-cloud";
+pub const KEY: &str = "wain-cloud";
 
-const DEFAULT_URL: &str = "https://www.drayhq.com/api/cloud";
+const DEFAULT_URL: &str = "https://www.wainhq.com/api/cloud";
 
 /// Boat answers a fork or a create slower than a list, so one timeout for all
 /// would cut either short.
 const READ: Duration = Duration::from_secs(15);
 pub const START: Duration = Duration::from_secs(90);
 
-/// `DRAY_CLOUD_URL`, else drayhq.com's.
+/// `WAIN_CLOUD_URL`, else wainhq.com's.
 pub fn base() -> String {
-    std::env::var("DRAY_CLOUD_URL")
+    std::env::var("WAIN_CLOUD_URL")
         .ok()
         .filter(|u| !u.trim().is_empty())
         .unwrap_or_else(|| DEFAULT_URL.into())
@@ -72,7 +72,7 @@ async fn call(key: &str, method: reqwest::Method, path: &str, wait: Duration) ->
         .timeout(wait)
         .send()
         .await
-        .map_err(|e| format!("Couldn't reach Dray Cloud: {e}"))?;
+        .map_err(|e| format!("Couldn't reach Wain Cloud: {e}"))?;
     let status = answer.status().as_u16();
     let body: Value = answer.json().await.unwrap_or(Value::Null);
     match status {
@@ -86,17 +86,17 @@ async fn call(key: &str, method: reqwest::Method, path: &str, wait: Duration) ->
 pub fn refusal(status: u16, body: &Value) -> String {
     match (status, body["error"].as_str()) {
         // A machine already deleted; a key it doesn't take is a bare 404.
-        (404, Some("not_found")) => "Dray Cloud no longer has that machine.".into(),
-        (401 | 403 | 404, _) => "Dray Cloud didn't accept this key.".into(),
-        (500.., None) => format!("Dray Cloud isn't answering right now ({status})."),
-        (_, Some(error)) => format!("Dray Cloud said: {error}"),
-        _ => format!("Dray Cloud answered {status}."),
+        (404, Some("not_found")) => "Wain Cloud no longer has that machine.".into(),
+        (401 | 403 | 404, _) => "Wain Cloud didn't accept this key.".into(),
+        (500.., None) => format!("Wain Cloud isn't answering right now ({status})."),
+        (_, Some(error)) => format!("Wain Cloud said: {error}"),
+        _ => format!("Wain Cloud answered {status}."),
     }
 }
 
 pub async fn list(key: &str) -> Result<Listing, String> {
     let body = call(key, reqwest::Method::GET, "/machines", READ).await?;
-    serde_json::from_value(body).map_err(|e| format!("Dray Cloud answered in a shape this build can't read: {e}"))
+    serde_json::from_value(body).map_err(|e| format!("Wain Cloud answered in a shape this build can't read: {e}"))
 }
 
 /// A new machine for one task, created from the saved snapshot.
@@ -116,7 +116,7 @@ pub async fn resume(key: &str, id: &str) -> Result<Machine, String> {
 fn one(body: Value) -> Result<Machine, String> {
     serde_json::from_value::<One>(body)
         .map(|one| one.machine)
-        .map_err(|e| format!("Dray Cloud answered in a shape this build can't read: {e}"))
+        .map_err(|e| format!("Wain Cloud answered in a shape this build can't read: {e}"))
 }
 
 #[cfg(test)]
@@ -152,9 +152,9 @@ mod tests {
 
     #[test]
     fn refusals_read_as_sentences() {
-        assert_eq!(refusal(404, &Value::Null), "Dray Cloud didn't accept this key.");
-        assert_eq!(refusal(404, &json!({ "error": "not_found" })), "Dray Cloud no longer has that machine.");
-        assert_eq!(refusal(500, &json!({ "error": "boat down" })), "Dray Cloud said: boat down");
-        assert_eq!(refusal(502, &Value::Null), "Dray Cloud isn't answering right now (502).");
+        assert_eq!(refusal(404, &Value::Null), "Wain Cloud didn't accept this key.");
+        assert_eq!(refusal(404, &json!({ "error": "not_found" })), "Wain Cloud no longer has that machine.");
+        assert_eq!(refusal(500, &json!({ "error": "boat down" })), "Wain Cloud said: boat down");
+        assert_eq!(refusal(502, &Value::Null), "Wain Cloud isn't answering right now (502).");
     }
 }

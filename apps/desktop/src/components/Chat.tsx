@@ -43,7 +43,7 @@ type ChatProps = {
   session: SessionSnapshot | null;
   onOpenSubagent: (id: string) => void;
   /// Opens the session that relayed a prompt into this one, for the avatar a
-  /// `dray send` message draws. Selecting the session is all it does — the same
+  /// `wain send` message draws. Selecting the session is all it does — the same
   /// thing clicking its sidebar row does. `alone` is a bot chat's ⌘-click on a
   /// task, which opens it in place of the chat rather than as a tab beside it.
   onOpenSession: (sessionId: string, alone?: boolean) => void;

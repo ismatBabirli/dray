@@ -5,10 +5,10 @@
         <activity
             android:name=".ui.OrbDemoActivity"
             android:exported="true"
-            android:theme="@style/Theme.Dray" />
+            android:theme="@style/Theme.Wain" />
         <activity
             android:name=".ui.ReactionDemoActivity"
             android:exported="true"
-            android:theme="@style/Theme.Dray" />
+            android:theme="@style/Theme.Wain" />
     </application>
 </manifest>

@@ -2,7 +2,7 @@ import { readLocalStorage } from "@/hooks/useLocalStorage";
 import { HAS_ISLAND, IS_MAC, IS_WINDOWS } from "@/lib/platform";
 import { invoke, LOCAL, serverOfSession } from "@/lib/transport";
 
-/// The modifier tapped alone to open Dray Island, and again to dictate.
+/// The modifier tapped alone to open Wain Island, and again to dictate.
 export type IslandKey = "control" | "option" | "command";
 
 /// The Mac's names travel to every island; Linux and Windows read Option as
@@ -40,7 +40,7 @@ export async function applyIsland(pick: { on?: boolean; key?: IslandKey } = {}) 
   }
 }
 
-/// Whether Dray Island is up to take what would be a banner for `sessionId` —
+/// Whether Wain Island is up to take what would be a banner for `sessionId` —
 /// `asks`, the permission and question cards, or `done`, a finished session:
 /// asked of the process, since the switch says nothing about an island the
 /// reader quit. A failed ask reads as no island, so the banner is the one lost

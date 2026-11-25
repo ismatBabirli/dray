@@ -39,7 +39,7 @@ pub struct Bot {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub avatar: Option<BotAvatar>,
     /// Marks a bot whose chat opens on a welcome, drawn by the app and written
-    /// to the log when a session starts. Dray Bot's alone; a bot made with New
+    /// to the log when a session starts. Wain Bot's alone; a bot made with New
     /// bot greets with a real turn. The words drawn are `greeting`'s.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub welcome: Option<String>,
@@ -62,9 +62,9 @@ pub struct BotAvatar {
     pub hue: f64,
 }
 
-/// The bot's job and standing rules. `AGENTS.md` because every harness Dray
+/// The bot's job and standing rules. `AGENTS.md` because every harness Wain
 /// runs loads it from its cwd on its own: Codex, pi, fx and grok natively,
-/// Claude Code through [`CLAUDE_POINTER`]. Dray injects none of it.
+/// Claude Code through [`CLAUDE_POINTER`]. Wain injects none of it.
 pub const INSTRUCTIONS: &str = "AGENTS.md";
 /// Where a bot made before #1118 kept its instructions. Moved to
 /// [`INSTRUCTIONS`] at its next spawn; still read so an old Learned row undoes.
@@ -74,7 +74,7 @@ pub const LEGACY_INSTRUCTIONS: &str = "INSTRUCTIONS.md";
 /// both on it never loads an imported file twice, so the file lands once
 /// under every setting. Ignored by the folder's git, since grok skips an
 /// ignored rules file and would otherwise read the pointer beside the file it
-/// points at; that also keeps Dray's file out of the bot's history.
+/// points at; that also keeps Wain's file out of the bot's history.
 const CLAUDE_POINTER: &str = "CLAUDE.md";
 const POINTER_TEXT: &str = "@AGENTS.md\n";
 /// A folder, one `YYYY-MM-DD-title.md` per memory. Never put in the prompt:
@@ -98,13 +98,13 @@ async fn list_path() -> Result<PathBuf> {
     Ok(get_home_app_dir().await?.join("bots.json"))
 }
 
-/// Every bot on this server, oldest first. The app's own server makes Dray Bot
-/// the first time anything asks, so every user starts with one; a `dray-serve`
+/// Every bot on this server, oldest first. The app's own server makes Wain Bot
+/// the first time anything asks, so every user starts with one; a `wain-serve`
 /// makes none, or each remote added would put another in the sidebar.
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn list_bots() -> Result<Vec<Bot>, Fail> {
-    if let Err(e) = ensure_dray_bot().await {
-        eprintln!("[dray bot] {e:#}");
+    if let Err(e) = ensure_wain_bot().await {
+        eprintln!("[wain bot] {e:#}");
     }
     let mut bots = read_list().await?;
     for bot in &mut bots {
@@ -116,7 +116,7 @@ pub async fn list_bots() -> Result<Vec<Bot>, Fail> {
 }
 
 /// Every bot here as saved, with none made and no greeting worded: what a
-/// background reader wants, where `list_bots` makes Dray Bot on first ask.
+/// background reader wants, where `list_bots` makes Wain Bot on first ask.
 pub(crate) async fn bots_here() -> Vec<Bot> {
     read_list().await.unwrap_or_default()
 }
@@ -126,9 +126,9 @@ async fn read_list() -> Result<Vec<Bot>, Fail> {
 }
 
 /// The default bot's name, face and the welcome its chat opens on.
-pub const DRAY_BOT: &str = "Dray Bot";
-/// Dray Bot's welcome: who it is and what it does, as Grok Bot's opens. Built
-/// from the bot's name of the moment, so a renamed Dray Bot says its new one.
+pub const WAIN_BOT: &str = "Wain Bot";
+/// Wain Bot's welcome: who it is and what it does, as Grok Bot's opens. Built
+/// from the bot's name of the moment, so a renamed Wain Bot says its new one.
 fn welcome_text(name: &str, user: Option<&str>) -> String {
     let hello = match user {
         Some(user) => format!("Hi {user}!"),
@@ -162,7 +162,7 @@ impl UserName {
         }
     }
 
-    /// The message of its own Dray posts after a bot's first greeting, while
+    /// The message of its own Wain posts after a bot's first greeting, while
     /// the name is not known.
     pub fn question(&self) -> Option<String> {
         match self {
@@ -176,7 +176,7 @@ impl UserName {
 /// What the signed-in account's name gives the bots: its first word, as typed,
 /// since sign-up asks for a name. The exception is GitHub's fallback to the
 /// login where a profile has no name, which is offered back to confirm.
-fn account_name(user: &crate::dray_account::DrayUser) -> UserName {
+fn account_name(user: &crate::wain_account::WainUser) -> UserName {
     let Some(name) = clean_name(user.name.split('@').next().unwrap_or_default()) else {
         return UserName::Unknown;
     };
@@ -195,7 +195,7 @@ pub async fn name_for(bot: &Bot) -> UserName {
     if let Some(written) = clean_name(&read_file(&Path::new(&bot.path).join(USER_FILE)).await) {
         return UserName::Known(written);
     }
-    match crate::dray_account::signed_in_user().await {
+    match crate::wain_account::signed_in_user().await {
         Some(user) => account_name(&user),
         None => UserName::Unknown,
     }
@@ -213,7 +213,7 @@ fn greeting(bot: &Bot, user: &UserName) -> Vec<String> {
 }
 
 /// A bot writes the name the user wants to be called here, in its own folder,
-/// where every harness's sandbox lets it write. Dray copies it to
+/// where every harness's sandbox lets it write. Wain copies it to
 /// [`user_name_path`] after the turn, so every bot shares one name.
 pub const USER_FILE: &str = "USER.md";
 
@@ -276,14 +276,14 @@ async fn learn_user_name(bot: &Bot, commit: &str, sink: &Sink) {
     sink.emit(BOTS_CHANGED, ()).ok();
 }
 
-/// Makes Dray Bot once per home, on the app's own server alone. A marker file
+/// Makes Wain Bot once per home, on the app's own server alone. A marker file
 /// rather than a look at the list, so a reader who deletes it is not handed it
 /// back on the next read.
-async fn ensure_dray_bot() -> Result<()> {
+async fn ensure_wain_bot() -> Result<()> {
     if !cfg!(feature = "desktop") {
         return Ok(());
     }
-    let marker = bots_dir().await?.join(".dray-bot-made");
+    let marker = bots_dir().await?.join(".wain-bot-made");
     if tokio::fs::try_exists(&marker).await.unwrap_or(false) {
         return Ok(());
     }
@@ -292,13 +292,13 @@ async fn ensure_dray_bot() -> Result<()> {
     if tokio::fs::try_exists(&marker).await.unwrap_or(false) {
         return Ok(());
     }
-    // A Dray Bot already in the list is one made before its marker could be
+    // A Wain Bot already in the list is one made before its marker could be
     // written — a stop between the two writes. Only it carries a welcome.
     if !read_list().await?.iter().any(|b| b.welcome.is_some()) {
         // The nub in blue (#1076). What is stored as the welcome only marks
         // the bot as one: `greeting` rebuilds the words on every read.
         let avatar = BotAvatar { shape: "nub".into(), hue: 250.0 };
-        make_bot(DRAY_BOT.into(), Some(avatar), Some(welcome_text(DRAY_BOT, None))).await?;
+        make_bot(WAIN_BOT.into(), Some(avatar), Some(welcome_text(WAIN_BOT, None))).await?;
     }
     tokio::fs::create_dir_all(bots_dir().await?).await?;
     write_atomic(&marker, "").await?;
@@ -323,7 +323,7 @@ async fn mark_welcome(session_id: &str, bot: &Bot) {
     restore_handover(
         session_id,
         format!(
-            "[Dray: your chat opened on these messages of yours, which the user has read:\n\n{}\n\nThe user's first message follows.]\n\n",
+            "[Wain: your chat opened on these messages of yours, which the user has read:\n\n{}\n\nThe user's first message follows.]\n\n",
             quoted.join("\n>\n")
         ),
     );
@@ -453,7 +453,7 @@ static SINCE: std::sync::Mutex<Vec<(String, Vec<(String, String, Vec<String>)>)>
 const SINCE_CAP: usize = 8;
 
 /// Merges a bot was already told of, by task and PR, so the watcher that
-/// catches one made outside Dray never repeats one Dray noted itself.
+/// catches one made outside Wain never repeats one Wain noted itself.
 static MERGES_TOLD: std::sync::LazyLock<std::sync::Mutex<std::collections::HashSet<(String, u64)>>> =
     std::sync::LazyLock::new(Default::default);
 
@@ -475,7 +475,7 @@ pub enum Act {
 
 /// Runs `run`, the reader's own `act` on `session_id`, and notes it for the
 /// bot whose task that is. Called from the client wire alone, never from
-/// `dray`, which is how the bot itself settles and stops its tasks.
+/// `wain`, which is how the bot itself settles and stops its tasks.
 pub async fn reader_did<T, E>(
     session_id: &str,
     act: Option<Act>,
@@ -621,7 +621,7 @@ pub async fn note_collected(act: &crate::remote_reports::KeptAct, parent: &str, 
 }
 
 /// A bot task's PR, at `url`, that the stalls judge saw go from open to
-/// merged. Told unless a merge through Dray already was: this one came from
+/// merged. Told unless a merge through Wain already was: this one came from
 /// GitHub, or from an agent. The mark matched the task by branch name alone,
 /// so the PR is read back first: a fork's answers no head, and a task moved
 /// off that branch holds work the merge did not land. False where GitHub
@@ -721,7 +721,7 @@ fn fold_since(tasks: &mut Vec<(String, String, Vec<String>)>, id: &str, title: &
 const WAKE_TRIES: u32 = 4;
 
 /// Wakes the bot at `path` once its acts stop coming for [`WAKE_AFTER`]: the
-/// list goes to its chat as Dray's hidden prompt, which every harness takes
+/// list goes to its chat as Wain's hidden prompt, which every harness takes
 /// like any other. Nothing is sent where a prompt carried the list first.
 fn wake(path: String, sink: Sink) {
     wake_in(path, sink, WAKE_AFTER, 1);
@@ -856,7 +856,7 @@ pub async fn take_since(session_id: &str) -> Option<String> {
     NOTES.lock().unwrap().retain(|(path, note)| {
         let mine = same_dir(path, &item.cwd);
         if mine {
-            lines.push(format!("[Dray: {note}]\n\n"));
+            lines.push(format!("[Wain: {note}]\n\n"));
         }
         !mine
     });
@@ -1001,7 +1001,7 @@ async fn handover_prompt(earlier: &[SessionIndexItem], harness: Harness) -> Stri
     let older = if cut { "Older messages are left out. " } else { "" };
 
     format!(
-        "[Dray: the user just moved you, this bot, to {agent}. You are the same bot, with the same instructions and memory; only the agent running you changed. Below is the conversation so far, oldest first, text only. {older}The full logs, one JSON event per line, are:\n{logs}{tasks}\n\nCarry on as if you had been here all along, and don't mention this note.]\n\n<conversation>\n{conversation}\n</conversation>\n\n{NEW_MESSAGE_CUE}\n\n",
+        "[Wain: the user just moved you, this bot, to {agent}. You are the same bot, with the same instructions and memory; only the agent running you changed. Below is the conversation so far, oldest first, text only. {older}The full logs, one JSON event per line, are:\n{logs}{tasks}\n\nCarry on as if you had been here all along, and don't mention this note.]\n\n<conversation>\n{conversation}\n</conversation>\n\n{NEW_MESSAGE_CUE}\n\n",
         agent = harness.label(),
         logs = logs.join("\n"),
     )
@@ -1238,7 +1238,7 @@ async fn task_handover_prompt(item: &SessionIndexItem, events: &[crate::events::
     };
     let middle = if cut { "Part of the middle is left out, marked […]. " } else { "" };
     format!(
-        "[Dray: {what}, oldest first: the user's messages and the agent's replies in full, and each tool call as one line with no output, since the files show the result. {middle}The full log, one JSON event per line, is {log}.\n\nCarry on as if you had been here all along, and don't mention this note.]\n\n<conversation>\n{conversation}\n</conversation>\n\n{NEW_MESSAGE_CUE}\n\n"
+        "[Wain: {what}, oldest first: the user's messages and the agent's replies in full, and each tool call as one line with no output, since the files show the result. {middle}The full log, one JSON event per line, is {log}.\n\nCarry on as if you had been here all along, and don't mention this note.]\n\n<conversation>\n{conversation}\n</conversation>\n\n{NEW_MESSAGE_CUE}\n\n"
     )
 }
 
@@ -1308,17 +1308,17 @@ fn head_and_newest_within(entries: &[String], head: usize, cap: usize) -> (Vec<S
 /// bot is told its job in its first message and writes it down itself.
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn create_bot(name: String, avatar: Option<BotAvatar>) -> Result<Bot, Fail> {
-    // Dray Bot first, so a new bot taking its name is refused here rather
-    // than Dray Bot being made beside it on the next read.
-    if let Err(e) = ensure_dray_bot().await {
-        eprintln!("[dray bot] {e:#}");
+    // Wain Bot first, so a new bot taking its name is refused here rather
+    // than Wain Bot being made beside it on the next read.
+    if let Err(e) = ensure_wain_bot().await {
+        eprintln!("[wain bot] {e:#}");
     }
     let _guard = BOTS_LOCK.lock().await;
     name_free(&read_list().await?, &name, None)?;
     make_bot(name, avatar, None).await
 }
 
-/// Told to the app whenever the list changes from outside it: `dray bot`.
+/// Told to the app whenever the list changes from outside it: `wain bot`.
 pub const BOTS_CHANGED: &str = "bots_changed";
 
 /// The shapes and hues a face can take, as the app's `SHAPES` and `HUES`
@@ -1326,7 +1326,7 @@ pub const BOTS_CHANGED: &str = "bots_changed";
 const SHAPES: [&str; 9] = ["round", "organic", "boxy", "capsule", "nub", "cloud", "hexagon", "sun", "triangle"];
 const HUES: [f64; 8] = [25.0, 50.0, 80.0, 145.0, 185.0, 250.0, 295.0, 340.0];
 
-/// A face from what `dray bot new` was given, the rest picked at random.
+/// A face from what `wain bot new` was given, the rest picked at random.
 pub fn face(shape: Option<&str>, hue: Option<f64>) -> Result<BotAvatar> {
     let roll = uuid::Uuid::new_v4().as_u128();
     let shape = match shape.map(|s| s.trim().to_lowercase()) {
@@ -1367,7 +1367,7 @@ fn named(bots: &[Bot], key: &str) -> Result<Bot> {
     }
     match bots.iter().filter(|b| same_name(&b.name, key)).collect::<Vec<_>>().as_slice() {
         [one] => Ok((*one).clone()),
-        [] => anyhow::bail!("no bot named {key:?} — `dray bot ls` lists them"),
+        [] => anyhow::bail!("no bot named {key:?} — `wain bot ls` lists them"),
         // Names made before they had to differ can still clash.
         several => anyhow::bail!(
             "{} bots are named {key:?} — name one by id: {}",
@@ -1377,7 +1377,7 @@ fn named(bots: &[Bot], key: &str) -> Result<Bot> {
     }
 }
 
-/// Renames a bot, and its open chat with it so `dray session ls` agrees.
+/// Renames a bot, and its open chat with it so `wain session ls` agrees.
 pub async fn rename_bot(key: &str, name: &str, sink: &Sink) -> Result<Bot> {
     update_bot(key, name, None, sink).await
 }
@@ -1421,7 +1421,7 @@ async fn update_bot(key: &str, name: &str, avatar: Option<BotAvatar>, sink: &Sin
     Ok(bot)
 }
 
-/// Held by `dray bot send` from finding a bot has no chat until it has one.
+/// Held by `wain bot send` from finding a bot has no chat until it has one.
 /// One per bot, so an agent slow to start delays no other bot's messages.
 pub fn first_chat_lock(bot_id: &str) -> std::sync::Arc<Mutex<()>> {
     static LOCKS: std::sync::Mutex<Vec<(String, std::sync::Arc<Mutex<()>>)>> = std::sync::Mutex::new(Vec::new());
@@ -1452,9 +1452,9 @@ pub async fn last_session_of(bot: &Bot) -> Option<SessionIndexItem> {
 }
 
 /// What the CLI is told about a bot it made, renamed or messaged.
-pub async fn summary(bot: Bot) -> dray_proto::BotSummary {
+pub async fn summary(bot: Bot) -> wain_proto::BotSummary {
     let session_id = chat_of(&bot).await.map(|i| i.session_id);
-    dray_proto::BotSummary {
+    wain_proto::BotSummary {
         session_id,
         shape: bot.avatar.as_ref().map(|a| a.shape.clone()),
         hue: bot.avatar.as_ref().map(|a| a.hue),
@@ -1467,15 +1467,15 @@ pub async fn summary(bot: Bot) -> dray_proto::BotSummary {
     }
 }
 
-/// What `dray bot ls` prints for a bot: [`summary`] with its role, whether it
+/// What `wain bot ls` prints for a bot: [`summary`] with its role, whether it
 /// is mid-turn, and its open tasks, so a bot can see who already works on what.
 /// `items` is the whole index, settled sessions too, for the tree walk.
-pub async fn listing(bot: Bot, items: &[SessionIndexItem]) -> dray_proto::BotSummary {
+pub async fn listing(bot: Bot, items: &[SessionIndexItem]) -> wain_proto::BotSummary {
     let role = role(&bot).await;
     let chat = chat_of(&bot).await;
     let tasks = open_tasks(&bot, items)
         .into_iter()
-        .map(|t| dray_proto::BotTask {
+        .map(|t| wain_proto::BotTask {
             session_id: t.session_id.clone(),
             title: t.title.clone(),
             project_path: t.project_path.clone(),
@@ -1521,7 +1521,7 @@ pub async fn overlap(project: &str, own: &Bot) -> Option<String> {
     }
     (!lines.is_empty()).then(|| {
         format!(
-            "Other bots have open tasks in this project:\n{}\nIf this task overlaps one of theirs, ask that bot with `dray bot send --ask` before going further.",
+            "Other bots have open tasks in this project:\n{}\nIf this task overlaps one of theirs, ask that bot with `wain bot send --ask` before going further.",
             lines.join("\n")
         )
     })
@@ -1581,7 +1581,7 @@ async fn roster_note(session_id: &str, cwd: &str) -> Option<String> {
         return None;
     }
     ROSTER_SEEN.lock().unwrap().insert(session_id.to_string(), now.clone());
-    Some(format!("[Dray: the other bots changed. This replaces the list you were given. {now}]\n\n"))
+    Some(format!("[Wain: the other bots changed. This replaces the list you were given. {now}]\n\n"))
 }
 
 /// The folder, both files and the list entry. Takes no lock: callers hold it.
@@ -1769,7 +1769,7 @@ struct ReplySender {
 
 impl ReplyPayload {
     /// The task a report came from: a relayed message from a session, not a
-    /// bot, and not a stall nudge, which is Dray's (`nudge_bot`) and gets no reply.
+    /// bot, and not a stall nudge, which is Wain's (`nudge_bot`) and gets no reply.
     fn report_from(&self) -> Option<&str> {
         let Self::UserMessage { text, from: Some(from) } = self else { return None };
         // Past the sender line `attribute` writes, which ends in a blank line.
@@ -1823,27 +1823,27 @@ fn reply_goes_on(line: &[u8], texts: &mut Vec<String>) -> bool {
     }
 }
 
-/// Dray's own prompts on their way into a bot's chat, as (session, text): a
+/// Wain's own prompts on their way into a bot's chat, as (session, text): a
 /// kickoff, or a review (#973). The transcript draws no bubble for either.
 /// Read where the prompt's event is built: threading a flag through
 /// `send_msg`'s twenty parameters for two callers would touch every other one.
 /// Keyed on the text too, so a message the reader sends meanwhile is never
 /// taken for one.
-static DRAY_PROMPTS: std::sync::Mutex<Vec<(String, String)>> = std::sync::Mutex::new(Vec::new());
+static WAIN_PROMPTS: std::sync::Mutex<Vec<(String, String)>> = std::sync::Mutex::new(Vec::new());
 
-pub fn mark_dray_prompt(session_id: &str, prompt: &str) {
-    DRAY_PROMPTS.lock().unwrap().push((session_id.to_string(), prompt.to_string()));
+pub fn mark_wain_prompt(session_id: &str, prompt: &str) {
+    WAIN_PROMPTS.lock().unwrap().push((session_id.to_string(), prompt.to_string()));
 }
 
-/// Whether `prompt` is Dray's own prompt for `session_id`, leaving the mark for
-/// [`take_dray_prompt`]: a prompt queued behind a running turn is logged later.
-pub fn is_dray_prompt(session_id: &str, prompt: &str) -> bool {
-    DRAY_PROMPTS.lock().unwrap().iter().any(|(s, p)| s == session_id && p == prompt)
+/// Whether `prompt` is Wain's own prompt for `session_id`, leaving the mark for
+/// [`take_wain_prompt`]: a prompt queued behind a running turn is logged later.
+pub fn is_wain_prompt(session_id: &str, prompt: &str) -> bool {
+    WAIN_PROMPTS.lock().unwrap().iter().any(|(s, p)| s == session_id && p == prompt)
 }
 
-/// Whether `prompt`, now being logged in `session_id`, is Dray's own, and forgets it.
-pub fn take_dray_prompt(session_id: &str, prompt: &str) -> bool {
-    let mut marks = DRAY_PROMPTS.lock().unwrap();
+/// Whether `prompt`, now being logged in `session_id`, is Wain's own, and forgets it.
+pub fn take_wain_prompt(session_id: &str, prompt: &str) -> bool {
+    let mut marks = WAIN_PROMPTS.lock().unwrap();
     let at = marks.iter().position(|(s, p)| s == session_id && p == prompt);
     at.map(|i| marks.remove(i)).is_some()
 }
@@ -1871,7 +1871,7 @@ pub async fn start_bot(
     let session_id = uuid::Uuid::now_v7().to_string();
     let user = name_for(&bot).await;
     let prompt = kickoff_prompt(&bot, &user).await;
-    mark_dray_prompt(&session_id, &prompt);
+    mark_wain_prompt(&session_id, &prompt);
     if let Some(question) = user.question() {
         NAME_ASKS.lock().unwrap().push((session_id.clone(), question));
     }
@@ -1882,7 +1882,7 @@ pub async fn start_bot(
         )
         .await;
     // A send that failed before logging the prompt left the mark behind.
-    take_dray_prompt(&session_id, &prompt);
+    take_wain_prompt(&session_id, &prompt);
     let item = sent?
         .snapshot
         .map(|s| s.index_item)
@@ -1897,7 +1897,7 @@ pub async fn start_bot(
 }
 
 /// Kickoff chats owed [`UserName::question`] once the greeting's turn ends.
-/// Dray asks rather than the bot, so the question is always a message of its
+/// Wain asks rather than the bot, so the question is always a message of its
 /// own, which one model turn cannot promise; the kickoff tells the bot it is
 /// coming.
 static NAME_ASKS: std::sync::Mutex<Vec<(String, String)>> = std::sync::Mutex::new(Vec::new());
@@ -1924,11 +1924,11 @@ async fn kickoff_prompt(bot: &Bot, user: &UserName) -> String {
         UserName::Known(user) => (format!("Greet the user as {user}"), String::new()),
         UserName::Handle(handle) => (
             "Greet the user without a name".to_string(),
-            format!(" Their account is named {handle}, which may not be what they go by, so don't call them that yet: Dray asks whether to in a message of its own right after yours, so don't ask that either."),
+            format!(" Their account is named {handle}, which may not be what they go by, so don't call them that yet: Wain asks whether to in a message of its own right after yours, so don't ask that either."),
         ),
         UserName::Unknown => (
             "Greet the user without a name".to_string(),
-            " Never guess their name, from git or anywhere: Dray asks what to call them in a message of its own right after yours, so don't ask that either.".to_string(),
+            " Never guess their name, from git or anywhere: Wain asks what to call them in a message of its own right after yours, so don't ask that either.".to_string(),
         ),
     };
     fill(KICKOFF_PROMPT, &[("name", &bot.name), ("projects", &projects), ("greet", &greet), ("unnamed", &unnamed)])
@@ -1956,7 +1956,7 @@ pub async fn bot_holding(path: &str) -> Option<Bot> {
     bots.into_iter().find(|b| holds(&b.path, path))
 }
 
-/// The session whose browser a `dray browser` step from `session_id` drives.
+/// The session whose browser a `wain browser` step from `session_id` drives.
 /// A bot chat is every session in its folder, and an agent switch starts a
 /// newer one, so its pages live on the oldest (#878); `botBrowser` in the
 /// frontend picks the same. Anything else, a bot's tasks included, its own.
@@ -2210,7 +2210,7 @@ async fn move_legacy_instructions(bot: &Bot) -> Result<()> {
 /// (a note on the file, never its text) filled at spawn.
 const BOT_PROMPT: &str = include_str!("bots/bot_prompt.md");
 /// Told to every task under a bot. Unaware its reply is relayed, a task also
-/// sent it with `dray session send`, and the bot read every report twice.
+/// sent it with `wain session send`, and the bot read every report twice.
 const TASK_PROMPT: &str = include_str!("bots/task_prompt.md");
 /// The bot's first turn, before anyone has written to it.
 const KICKOFF_PROMPT: &str = include_str!("bots/kickoff_prompt.md");
@@ -2242,7 +2242,7 @@ fn fill(template: &str, vars: &[(&str, &str)]) -> String {
     out.trim_end().to_string()
 }
 
-/// Whether Dray relays this session's turns to its parent: the check
+/// Whether Wain relays this session's turns to its parent: the check
 /// [`report_to_parent`](crate::orchestration::report_to_parent) makes, read
 /// off the index entry `send_msg` writes before the spawn.
 async fn reports_to_parent(session_id: &str) -> bool {
@@ -2272,7 +2272,7 @@ async fn start_history(bot: &Bot) -> Result<()> {
 }
 
 /// Commits what a turn of the bot at `cwd` changed in its folder, where `cwd`
-/// is a bot's, and reads back the lessons in it. Dray does it rather than the
+/// is a bot's, and reads back the lessons in it. Wain does it rather than the
 /// bot, which could forget. `None` where `cwd` is no bot's.
 pub async fn commit_turn(cwd: &str, notes: learn::TurnNotes, sink: &Sink) -> Option<learn::Turn> {
     let bot = bot_at(cwd).await?;
@@ -2346,7 +2346,7 @@ async fn commit_paths(bot: &Bot, message: &str, paths: &[&str]) -> Result<()> {
 /// would skip.
 async fn commit_as(bot: &Bot, args: &[&str]) -> Result<()> {
     let name = format!("user.name={}", bot.name);
-    let email = format!("user.email={}@bots.dray.local", bot.id);
+    let email = format!("user.email={}@bots.wain.local", bot.id);
     let mut all = vec!["-c", name.as_str(), "-c", email.as_str()];
     all.extend_from_slice(args);
     git(Path::new(&bot.path), &all).await.map(drop)
@@ -2425,13 +2425,13 @@ fn instructions_note(instructions: &str) -> String {
 fn bot_block(bot: &Bot, others: &str, instructions: &str, user: &UserName, harness: Harness) -> String {
     let user = match user {
         UserName::Known(user) => format!(
-            "Call the user {user}. If they ask to be called something else, write just that name to `{USER_FILE}` in your folder and use it from then on; Dray shares it with the other bots."
+            "Call the user {user}. If they ask to be called something else, write just that name to `{USER_FILE}` in your folder and use it from then on; Wain shares it with the other bots."
         ),
         UserName::Handle(handle) => format!(
-            "Your chat opens by asking the user \"Should I call you {handle}, or something else?\": {handle} is their Dray account's name and may be a username, so don't call them that until they say so. Their reply answers it. In that turn, before anything else, write the name to `{USER_FILE}` in your folder: just {handle} if they agree in any way (\"yes\", \"sure\", \"fine\"), else just the name they give. Then call them by it. Dray shares the file with the other bots."
+            "Your chat opens by asking the user \"Should I call you {handle}, or something else?\": {handle} is their Wain account's name and may be a username, so don't call them that until they say so. Their reply answers it. In that turn, before anything else, write the name to `{USER_FILE}` in your folder: just {handle} if they agree in any way (\"yes\", \"sure\", \"fine\"), else just the name they give. Then call them by it. Wain shares the file with the other bots."
         ),
         UserName::Unknown => format!(
-            "You don't know the user's name yet. Never guess it, from git, the computer's account or anywhere else. Your chat opens by asking what to call them; when they say, write just that name to `{USER_FILE}` in your folder and use it from then on. Dray shares it with the other bots."
+            "You don't know the user's name yet. Never guess it, from git, the computer's account or anywhere else. Your chat opens by asking what to call them; when they say, write just that name to `{USER_FILE}` in your folder and use it from then on. Wain shares it with the other bots."
         ),
     };
     fill(
@@ -2467,7 +2467,7 @@ mod tests {
     #[tokio::test]
     async fn task_reply_reads_the_bot_text_after_each_report() {
         let report = |id: &str, said: &str| {
-            let text = format!("[message from the Dray session \"{id}\" ({id})]\n\n{said}");
+            let text = format!("[message from the Wain session \"{id}\" ({id})]\n\n{said}");
             serde_json::json!({ "type": "user_message", "text": text, "from": { "sessionId": id, "title": id } })
         };
         let user = |text: &str| serde_json::json!({ "type": "user_message", "text": text, "from": null });
@@ -2560,7 +2560,7 @@ mod tests {
     fn a_role_is_the_first_line_of_agents_md_bare() {
         assert_eq!(role_line(""), None);
         assert_eq!(role_line("\n  \n# \n"), None);
-        assert_eq!(role_line("\n# Runs releases for dray.\n\nMore rules."), Some("Runs releases for dray.".into()));
+        assert_eq!(role_line("\n# Runs releases for wain.\n\nMore rules."), Some("Runs releases for wain.".into()));
         assert_eq!(role_line("- Watches CI"), Some("Watches CI".into()));
         let long = "é".repeat(ROLE_CAP + 5);
         assert_eq!(role_line(&long), Some(format!("{}…", "é".repeat(ROLE_CAP))));
@@ -2576,7 +2576,7 @@ mod tests {
         assert!(block.contains("YYYY-MM-DD-short-title.md"));
         assert!(block.contains(&format!("`{DOCS}/personal/`")));
         assert!(block.contains("never ask it to report back"));
-        assert!(block.contains("dray session settle <id> --delete-worktree"));
+        assert!(block.contains("wain session settle <id> --delete-worktree"));
         assert!(block.contains("- \"Research\": Reads papers."));
     }
 
@@ -2607,7 +2607,7 @@ mod tests {
         assert_eq!(named(&bots, "ops").unwrap().id, "1");
         assert_eq!(named(&bots, " Research ").unwrap().id, "2");
         assert_eq!(named(&bots, "2").unwrap().id, "2");
-        assert!(named(&bots, "nobody").unwrap_err().to_string().contains("dray bot ls"));
+        assert!(named(&bots, "nobody").unwrap_err().to_string().contains("wain bot ls"));
         assert!(named(&bots, "TWIN").unwrap_err().to_string().contains("3, 4"));
     }
 
@@ -2652,13 +2652,13 @@ mod tests {
         };
         let said = |text: &str| json!({"type": "assistant_text", "block": null, "text": text});
         let events = vec![
-            event(prompt("[Dray: greet]", true, json!(null)), false),
+            event(prompt("[Wain: greet]", true, json!(null)), false),
             event(said("Hi Yogesh"), false),
             event(prompt("ship it", false, json!(null)), false),
             event(said("subagent chatter"), true),
             event(json!({"type": "error", "source": "harness", "message": "boom", "fatal": false}), false),
             event(said("  "), false),
-            event(prompt("[message from the Dray session \"T\" (x)]\n\ndone", false, json!({"sessionId": "x", "title": "T"})), false),
+            event(prompt("[message from the Wain session \"T\" (x)]\n\ndone", false, json!({"sessionId": "x", "title": "T"})), false),
             event(said("It landed."), false),
         ];
         assert_eq!(
@@ -2666,7 +2666,7 @@ mod tests {
             vec![
                 "You: Hi Yogesh",
                 "User: ship it",
-                "[message from the Dray session \"T\" (x)]\n\ndone",
+                "[message from the Wain session \"T\" (x)]\n\ndone",
                 "You: It landed.",
             ]
         );
@@ -2729,12 +2729,12 @@ mod tests {
         // A switch away drops that replay whole, markers in its chat and all,
         // and keeps a lead-in queued before it.
         let id = "drop-a-stale-replay";
-        let note = format!("{note}\n<conversation>\n[Dray: quoted]");
-        lead_in(id, "[Dray: you report to Ops now.]\n\n".into());
+        let note = format!("{note}\n<conversation>\n[Wain: quoted]");
+        lead_in(id, "[Wain: you report to Ops now.]\n\n".into());
         lead_in(id, note.clone());
         TASK_REPLAYS.lock().unwrap().push((id.into(), note));
         drop_task_handover(id);
-        assert_eq!(take_handover(id).as_deref(), Some("[Dray: you report to Ops now.]\n\n"));
+        assert_eq!(take_handover(id).as_deref(), Some("[Wain: you report to Ops now.]\n\n"));
     }
 
     #[test]
@@ -2760,7 +2760,7 @@ mod tests {
     #[test]
     fn every_template_is_filled_whole() {
         let block = bot_block(&bot(), "", "a", &UserName::Known("Yogesh".into()), Harness::ClaudeCode);
-        let kickoff = fill(KICKOFF_PROMPT, &[("name", "Ops"), ("projects", "dray"), ("greet", "Hi"), ("unnamed", "")]);
+        let kickoff = fill(KICKOFF_PROMPT, &[("name", "Ops"), ("projects", "wain"), ("greet", "Hi"), ("unnamed", "")]);
         let review = fill(include_str!("bots/review_prompt.md"), &[("reason", "The user just corrected you.")]);
         for text in [&block, &kickoff, &review] {
             assert!(!text.contains('{'), "{text}");
@@ -2781,8 +2781,8 @@ mod tests {
         assert!(!handle.contains("Call the user yogesharc"));
     }
 
-    fn account(name: &str, github_login: Option<&str>) -> crate::dray_account::DrayUser {
-        crate::dray_account::DrayUser {
+    fn account(name: &str, github_login: Option<&str>) -> crate::wain_account::WainUser {
+        crate::wain_account::WainUser {
             id: "u".into(),
             name: name.into(),
             email: None,
@@ -2810,14 +2810,14 @@ mod tests {
 
     #[test]
     fn the_greeting_asks_the_name_only_while_nobody_knows_it() {
-        let dray = Bot { name: "Jarvis".into(), welcome: Some("old words".into()), ..bot() };
-        let asking = greeting(&dray, &UserName::Unknown);
+        let wain = Bot { name: "Jarvis".into(), welcome: Some("old words".into()), ..bot() };
+        let asking = greeting(&wain, &UserName::Unknown);
         assert_eq!(asking.len(), 2);
         assert!(asking[0].starts_with("Hi! I'm Jarvis,"));
         assert_eq!(asking[1], ASK_NAME);
-        assert_eq!(greeting(&dray, &UserName::Known("Yogesh".into())), vec![welcome_text("Jarvis", Some("Yogesh"))]);
+        assert_eq!(greeting(&wain, &UserName::Known("Yogesh".into())), vec![welcome_text("Jarvis", Some("Yogesh"))]);
         assert!(greeting(&bot(), &UserName::Unknown).is_empty());
-        let confirming = greeting(&dray, &UserName::Handle("yogesharc".into()));
+        let confirming = greeting(&wain, &UserName::Handle("yogesharc".into()));
         assert!(confirming[0].starts_with("Hi! I'm Jarvis,"));
         assert_eq!(confirming[1], "Should I call you yogesharc, or something else?");
     }
@@ -2845,7 +2845,7 @@ mod tests {
 
     #[tokio::test]
     async fn old_instructions_move_to_agents_md_in_a_commit_of_their_own() {
-        let dir = std::env::temp_dir().join(format!("dray-bot-{}", uuid::Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-bot-{}", uuid::Uuid::now_v7()));
         tokio::fs::create_dir_all(&dir).await.unwrap();
         tokio::fs::write(dir.join(LEGACY_INSTRUCTIONS), "# Ops\n\n- Watch CI\n").await.unwrap();
         let bot = Bot { path: dir.to_string_lossy().into_owned(), ..bot() };
@@ -2872,7 +2872,7 @@ mod tests {
 
     #[tokio::test]
     async fn an_older_bot_is_told_of_docs_once() {
-        let dir = std::env::temp_dir().join(format!("dray-bot-{}", uuid::Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-bot-{}", uuid::Uuid::now_v7()));
         tokio::fs::create_dir_all(&dir).await.unwrap();
         let bot = Bot { path: dir.to_string_lossy().into_owned(), ..bot() };
         let told = || NOTES.lock().unwrap().iter().filter(|(p, n)| p == &bot.path && n.contains("`docs/personal/`")).count();
@@ -2887,7 +2887,7 @@ mod tests {
 
     #[tokio::test]
     async fn old_instructions_join_an_agents_md_already_there() {
-        let dir = std::env::temp_dir().join(format!("dray-bot-{}", uuid::Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-bot-{}", uuid::Uuid::now_v7()));
         tokio::fs::create_dir_all(&dir).await.unwrap();
         tokio::fs::write(dir.join(LEGACY_INSTRUCTIONS), "- Old rule\n").await.unwrap();
         tokio::fs::write(dir.join(INSTRUCTIONS), "- New rule\n").await.unwrap();
@@ -2919,7 +2919,7 @@ mod tests {
 
     #[tokio::test]
     async fn history_starts_once_and_commits_only_a_change() {
-        let dir = std::env::temp_dir().join(format!("dray-bot-{}", uuid::Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-bot-{}", uuid::Uuid::now_v7()));
         tokio::fs::create_dir_all(&dir).await.unwrap();
         tokio::fs::write(dir.join(INSTRUCTIONS), "").await.unwrap();
         let bot = Bot { path: dir.to_string_lossy().into_owned(), ..bot() };

@@ -45,7 +45,7 @@ impl Effort {
         }
     }
 
-    /// The inverse, for a value arriving from outside the app — the `dray`
+    /// The inverse, for a value arriving from outside the app — the `wain`
     /// CLI's `--effort`. Strict for [`id_for_arg`]'s reason: a typo is worth
     /// reporting, where silently running a different effort is not.
     pub fn from_arg(alias: &str) -> Option<Self> {
@@ -154,7 +154,7 @@ pub fn default_model_for(harness: Harness) -> Option<ModelId> {
         Harness::Pi | Harness::Fx | Harness::OpenCode => None,
         // Single-vendor, unlike the two above, so a constant here names a model
         // every signed-in reader has. The list is still a probe — xAI ships
-        // models faster than Dray does — and nothing checks this against it:
+        // models faster than Wain does — and nothing checks this against it:
         // `grok::models::default_model` would, the guard Codex's default
         // takes, and has no caller.
         Harness::Grok => Some(ModelId::new("grok-4.7")),
@@ -535,7 +535,7 @@ pub fn find_model(id: &ModelId) -> Option<Model> {
     claude_code_models::find(id).or_else(|| every_codex_model().into_iter().find(|m| &m.id == id))
 }
 
-/// The id for a `--model` alias arriving from outside the app — the `dray`
+/// The id for a `--model` alias arriving from outside the app — the `wain`
 /// CLI's own flag — or `None` where this harness cannot run it.
 ///
 /// Deliberately strict for the two harnesses with a table: an unrecognized
@@ -821,7 +821,7 @@ mod tests {
     }
 
     /// fx's codex provider and Codex's own table share wire ids, and fx has to
-    /// keep running its own. A Dray alias for another harness is still refused.
+    /// keep running its own. A Wain alias for another harness is still refused.
     #[test]
     fn fx_runs_a_wire_id_the_codex_table_also_holds() {
         for wire in ["gpt-6-sol", "gpt-6-luna", "gpt-6.1-sol"] {
@@ -948,7 +948,7 @@ mod wire_tests {
     /// fast mode to anything whose resolved model does not name `opus-5`, and
     /// Opus 4.8's is retired. Pinned because `send_msg` clamps the pick against this: a row
     /// wrongly marked here would persist `fast: true` on a session running at
-    /// ordinary speed, and `dray new` hands that down to every child.
+    /// ordinary speed, and `wain new` hands that down to every child.
     #[test]
     fn claude_offers_fast_mode_on_opus_alone() {
         let offered: Vec<(String, bool)> = claude_models()

@@ -29,7 +29,7 @@ use permissions::PendingPermissions;
 /// the CLI does not carry one across `--resume`.
 const APPEND_SYSTEM_PROMPT: &str = include_str!("system_prompt.md");
 
-/// Tools the agent may use without being asked. Only `dray`, and only because
+/// Tools the agent may use without being asked. Only `wain`, and only because
 /// orchestration is meant to run unattended — the user approved the fan-out
 /// when they asked for it, and a card per session would make three issues three
 /// interruptions.
@@ -41,7 +41,7 @@ const APPEND_SYSTEM_PROMPT: &str = include_str!("system_prompt.md");
 /// `system`/`permission_denied`. Test it with a command that *mutates* — a
 /// read-only one like `echo` is auto-allowed whatever the rule says, so it
 /// reports success for a pattern that matches nothing.
-const ALLOWED_TOOLS: &str = "Bash(dray:*)";
+const ALLOWED_TOOLS: &str = "Bash(wain:*)";
 
 /// The CLI's own schedulers, OpenBot's list. Kept out of a bot's chat.
 const BOT_DISALLOWED_TOOLS: &str =
@@ -122,7 +122,7 @@ pub async fn init(
         args.extend(["--mcp-config", &mcp_config]);
     }
 
-    // A bot schedules through `dray bot routine`, which the reader can see and
+    // A bot schedules through `wain bot routine`, which the reader can see and
     // stop; the CLI's own schedulers are invisible to them (#972).
     if crate::bots::bot_at(session_cwd).await.is_some() {
         args.extend(["--disallowedTools", BOT_DISALLOWED_TOOLS]);
@@ -160,12 +160,12 @@ pub async fn init(
     let bin = crate::binpath::claude().await;
     let mut command = crate::binpath::command(&bin);
 
-    // Which app the agent's own `dray` calls reach. Set because dev and release
+    // Which app the agent's own `wain` calls reach. Set because dev and release
     // builds listen on different sockets and the CLI's default names the
     // release one — without this a dev session's agent would file its work into
     // the release app's sidebar.
     if let Some(endpoint) = crate::orchestration::child_endpoint() {
-        command.env("DRAY_ENDPOINT", endpoint);
+        command.env("WAIN_ENDPOINT", endpoint);
     }
     if bot {
         command.env(no_reply::TERMINAL_TOOLS_ENV, no_reply::TOOL_NAMES);
@@ -177,7 +177,7 @@ pub async fn init(
         .current_dir(cwd)
         // How the CLI knows which session is calling it, which is what links a
         // spawned session to its parent and what the depth cap reads.
-        .env("DRAY_SESSION_ID", session_id)
+        .env("WAIN_SESSION_ID", session_id)
         .env("PATH", crate::harness::agent_path(&bin))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -273,7 +273,7 @@ async fn read_stdout(
     // counter — a second counter would put gaps in the ordering key.
     let mut mapper = claude_code::mapper::Mapper::new(seq.clone(), pending_permissions);
 
-    // Everything past the mapper is Dray's, not Claude's, and lives in
+    // Everything past the mapper is Wain's, not Claude's, and lives in
     // `session` so a second harness cannot grow its own persistence rules.
     let ingest = crate::session::Ingest {
         session_id,
@@ -523,7 +523,7 @@ mod tests {
             .collect::<Vec<_>>()
             .join(" ");
 
-        assert!(prose.contains("parent session is the Dray session that spawned this one"));
+        assert!(prose.contains("parent session is the Wain session that spawned this one"));
         assert!(prose.contains("never a git parent"));
         assert!(prose.contains("`parentSessionId`"));
     }
@@ -537,7 +537,7 @@ mod tests {
             .collect::<Vec<_>>()
             .join(" ");
 
-        assert!(prose.contains("`dray session new --harness <name>`"));
+        assert!(prose.contains("`wain session new --harness <name>`"));
         assert!(prose.contains("never the vendor's own CLI or app"));
     }
 }

@@ -5,7 +5,7 @@ import { H1, LEAD, PAGE } from "@/components/account/styles";
 import { SiteNav } from "@/components/home/SiteNav";
 import { requireSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "New org - Dray" };
+export const metadata: Metadata = { title: "New org - Wain" };
 
 /// Makes another org, with the reader as its owner.
 export default async function NewOrgPage() {

@@ -561,7 +561,7 @@ struct State {
     tried: HashMap<String, i64>,
     cards: HashMap<String, BotStalls>,
     /// Each bot task's PR as last judged, by task: what tells a merge made
-    /// outside Dray, which nothing else reports.
+    /// outside Wain, which nothing else reports.
     pr_seen: HashMap<String, (u64, PrMarkState)>,
 }
 
@@ -1197,7 +1197,7 @@ mod tests {
         assert_eq!(s[0].row.kind, StallKind::Waiting);
     }
 
-    /// A merge made on GitHub reaches no merge path in Dray, so the bot hears
+    /// A merge made on GitHub reaches no merge path in Wain, so the bot hears
     /// of it from the judge seeing the PR go from open to merged, once.
     #[test]
     fn a_pr_seen_open_then_merged_is_told_once() {

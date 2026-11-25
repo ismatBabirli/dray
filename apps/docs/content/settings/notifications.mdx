@@ -1,13 +1,13 @@
 ---
 title: Notifications
-description: How Dray tells you a session finished, needs permission or asked a question — a desktop banner, Dray Island, an in-app card, or nothing — plus bots' Waiting on you alerts, the ready-to-merge card, push alerts on iPhone, ⌘G, the sidebar marks and the dock badge.
+description: How Wain tells you a session finished, needs permission or asked a question — a desktop banner, Wain Island, an in-app card, or nothing — plus bots' Waiting on you alerts, the ready-to-merge card, push alerts on iPhone, ⌘G, the sidebar marks and the dock badge.
 sidebar:
   order: 5
 ---
 
-Dray tells you when a session hands work back to you. It picks one way to tell you, based on where you are, so you never get the same news twice.
+Wain tells you when a session hands work back to you. It picks one way to tell you, based on where you are, so you never get the same news twice.
 
-## What Dray tells you about
+## What Wain tells you about
 
 - **Done** — a session's turn ended.
 - **Needs permission** — a session wants your approval before it runs a tool.
@@ -21,34 +21,34 @@ For the first three, the channel depends on where you are:
 
 | You are | You get |
 |---|---|
-| In another app | Dray Island, if it is running. Otherwise a desktop banner with the session's title; clicking it brings Dray forward on that session. |
-| In Dray, looking at something else | A card in the top-left corner of the window, and a sound. |
-| In Dray, looking at that session | Nothing. The transcript already shows it. |
+| In another app | Wain Island, if it is running. Otherwise a desktop banner with the session's title; clicking it brings Wain forward on that session. |
+| In Wain, looking at something else | A card in the top-left corner of the window, and a sound. |
+| In Wain, looking at that session | Nothing. The transcript already shows it. |
 
-**Ready to merge** works differently. It is always a card, never a banner, even when you are looking at the session — the PR tab's line changing quietly is easy to miss. It appears when a PR changes to ready, not for one that was already ready when Dray first saw it.
+**Ready to merge** works differently. It is always a card, never a banner, even when you are looking at the session — the PR tab's line changing quietly is easy to miss. It appears when a PR changes to ready, not for one that was already ready when Wain first saw it.
 
-Sessions filed in another [space](/using-dray/spaces) stay silent until you switch to that space. They keep running.
+Sessions filed in another [space](/using-wain/spaces) stay silent until you switch to that space. They keep running.
 
 ## Bots
 
-A bot's tasks report to the bot, so most of their news reaches you through the bot's chat rather than on its own. See [Bots](/using-dray/bots).
+A bot's tasks report to the bot, so most of their news reaches you through the bot's chat rather than on its own. See [Bots](/using-wain/bots).
 
 - A bot's task raises no **Done** and no **Ready to merge** card or banner. The bot tells you in its chat instead, and a merge card goes up there once the PR is ready (see [Merge card](/cli/sessions#merge-card)).
 - A bot's task that **needs permission** or **an answer** still tells you, the same way as any session: only you can answer it.
-- When new tasks join a bot's [Waiting on you](/using-dray/bots#waiting-on-you) card while you are in another app, you get one alert for that bot: a banner titled with the bot's name saying "2 tasks waiting on you", or Dray Island's pill when it is running. Clicking the banner opens the bot's chat. Tasks already waiting when Dray starts raise nothing.
+- When new tasks join a bot's [Waiting on you](/using-wain/bots#waiting-on-you) card while you are in another app, you get one alert for that bot: a banner titled with the bot's name saying "2 tasks waiting on you", or Wain Island's pill when it is running. Clicking the banner opens the bot's chat. Tasks already waiting when Wain starts raise nothing.
 - Settling a bot's task deletes its worktree without asking, so no **Delete worktree?** card appears for it.
 
-## Dray Island
+## Wain Island
 
-When Dray Island is running, it takes what a banner would have said while you are in another app.
+When Wain Island is running, it takes what a banner would have said while you are in another app.
 
 - **Done** shows as a pill naming the session, with **Open in app** (`⌘⏎`). Several finished sessions share one pill counting them; hover it to see each one.
-- A **permission request or question** waits in Dray Island, where you can answer it without opening Dray.
-- A bot's **Waiting on you** shows as a yellow pill, "2 tasks waiting on you", with the bot's face beside it. Hover the pill and it grows into the waiting tasks' cards: each task's title, its pull request, how long ago it moved and the bot's line about what it needs. Click a card to open Dray on that task.
+- A **permission request or question** waits in Wain Island, where you can answer it without opening Wain.
+- A bot's **Waiting on you** shows as a yellow pill, "2 tasks waiting on you", with the bot's face beside it. Hover the pill and it grows into the waiting tasks' cards: each task's title, its pull request, how long ago it moved and the bot's line about what it needs. Click a card to open Wain on that task.
 - A card whose PR is ready has **Merge**. Click it, then pick **Rebase**, **Merge** or **Squash** to merge it, or **Cancel**. The task is settled once the PR merges.
 - Several bots waiting at once share one pill, which counts every task and groups the cards under each bot's face and name.
 
-If Dray Island can't take an alert, you get the banner instead. Turn Dray Island on in Settings → Island.
+If Wain Island can't take an alert, you get the banner instead. Turn Wain Island on in Settings → Island.
 
 ## Cards
 
@@ -74,19 +74,19 @@ The keys work only while a card is showing. Hover the top card's button to see i
 
 A card going away does not mean the work is done. A session still waiting on you keeps its yellow mark in the sidebar until you answer.
 
-## Star Dray on GitHub
+## Star Wain on GitHub
 
-After the first pull request you merge from Dray, a card in the bottom-left corner asks "Liking Dray so far? A star would help us."
+After the first pull request you merge from Wain, a card in the bottom-left corner asks "Liking Wain so far? A star would help us."
 
-- **Star** stars Dray's repository on GitHub as the account `gh` is signed in to, then says "Thanks for the star!". If `gh` can't do it, Star opens the repository's page in your browser instead.
+- **Star** stars Wain's repository on GitHub as the account `gh` is signed in to, then says "Thanks for the star!". If `gh` can't do it, Star opens the repository's page in your browser instead.
 - **Not now** closes the card.
 
-If you didn't star, the card asks once more after your tenth merge, then never again. It doesn't appear if your account has already starred Dray.
+If you didn't star, the card asks once more after your tenth merge, then never again. It doesn't appear if your account has already starred Wain.
 
 ## Sounds
 
 - An in-app card plays a short sound.
-- On a Mac, a banner for a finished task plays the macOS default sound, and a banner asking for permission or an answer plays Ping. On Linux, banners play Dray's own sound.
+- On a Mac, a banner for a finished task plays the macOS default sound, and a banner asking for permission or an answer plays Ping. On Linux, banners play Wain's own sound.
 - Settling a session plays a short celebration.
 
 There is no setting to turn these off.
@@ -98,15 +98,15 @@ Each sidebar row carries a mark on its left edge:
 - **Green** — the turn is over and you haven't looked yet. Opening the row clears it.
 - **Yellow** — the session is waiting on you. Only answering clears it.
 
-Yellow wins when both apply. The Dray icon in the Dock shows a count of sessions with either mark, across every space, and clears itself at zero.
+Yellow wins when both apply. The Wain icon in the Dock shows a count of sessions with either mark, across every space, and clears itself at zero.
 
 ## Allow notifications in macOS
 
-macOS asks whether Dray may send notifications the first time it posts a banner. Choose **Allow**. If you declined, turn it back on in System Settings → Notifications → Dray. Cards, sounds, marks and the badge inside Dray work either way.
+macOS asks whether Wain may send notifications the first time it posts a banner. Choose **Allow**. If you declined, turn it back on in System Settings → Notifications → Wain. Cards, sounds, marks and the badge inside Wain work either way.
 
 ## Alerts on your iPhone
 
-The Dray app for iPhone gets push alerts from every server it has connected to, Dray on your Mac included, even while the iPhone app is closed.
+The Wain app for iPhone gets push alerts from every server it has connected to, Wain on your Mac included, even while the iPhone app is closed.
 
 | Alert | Says | From the alert |
 |---|---|---|
@@ -117,18 +117,18 @@ The Dray app for iPhone gets push alerts from every server it has connected to, 
 
 - Answer buttons appear only for a single question with one pick and up to four answers. For any other question, tap the alert and answer in the app.
 - Tapping an alert from a bot's task opens the bot's chat. An alert from the bot's own chat comes from the bot, with its face.
-- If an answer sent from an alert fails, a new alert says so: "Couldn't send your answer: … Tap to answer in Dray."
+- If an answer sent from an alert fails, a new alert says so: "Couldn't send your answer: … Tap to answer in Wain."
 - While the iPhone app is open on a chat, that chat's alerts are not shown.
 
-Turn alerts on or off in the iPhone app's Settings → Notifications: **Allow notifications**, then one switch per kind under **Tell me when**: **A task is done**, **A task needs permission**, **A task asks a question** and **A PR is ready to merge**. If iOS itself has notifications off for Dray, the page says so and links to iOS Settings.
+Turn alerts on or off in the iPhone app's Settings → Notifications: **Allow notifications**, then one switch per kind under **Tell me when**: **A task is done**, **A task needs permission**, **A task asks a question** and **A PR is ready to merge**. If iOS itself has notifications off for Wain, the page says so and links to iOS Settings.
 
 What stays quiet on the iPhone:
 
 - A bot's task's **Done**: its bot tells you in its chat.
 - Your own Stop, and a bot's routine run that found nothing new.
-- Anything from the computer you are at. Dray's server on a Mac or Linux desktop holds alerts while that computer has had keyboard or mouse input in the last two minutes, since the app there tells you instead. A server running without the app, such as one you [connected over SSH](/server), always sends.
+- Anything from the computer you are at. Wain's server on a Mac or Linux desktop holds alerts while that computer has had keyboard or mouse input in the last two minutes, since the app there tells you instead. A server running without the app, such as one you [connected over SSH](/server), always sends.
 
-Alerts go from your server to Apple through a relay on drayhq.com, which holds Dray's push key. The relay passes each alert's text on without storing it.
+Alerts go from your server to Apple through a relay on wainhq.com, which holds Wain's push key. The relay passes each alert's text on without storing it.
 
 ## Limits
 

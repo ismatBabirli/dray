@@ -1,9 +1,9 @@
 # Contributing
 
-Dray is a desktop app that runs coding-agent CLIs (Claude Code, Codex, pi, fx,
+Wain is a desktop app that runs coding-agent CLIs (Claude Code, Codex, pi, fx,
 Grok, OpenCode) in a chat UI. A Rust core spawns each agent, maps its output to one event
 model and streams it to a React frontend. The same core runs headless as
-`dray-serve`, which the phone apps and remote machines talk to.
+`wain-serve`, which the phone apps and remote machines talk to.
 
 [CLAUDE.md](CLAUDE.md) is the full rulebook, for people and agents alike
 (`AGENTS.md` links to it). This page is the short version.
@@ -13,15 +13,15 @@ model and streams it to a React frontend. The same core runs headless as
 | Path                  | What                                                              |
 | --------------------- | ----------------------------------------------------------------- |
 | `apps/desktop`        | The Tauri 2 app: React + Vite frontend, Rust core in `src-tauri`. |
-| `apps/cli`            | The `dray` CLI, its own crate and `cli-v*` release.               |
-| `apps/ios`            | iPhone and iPad client of a Dray server. SwiftUI, XcodeGen.       |
-| `apps/android`        | Android client of a Dray server. Kotlin, Compose, Gradle.         |
-| `apps/island`         | Dray Island, the Mac companion panel. SwiftUI.                    |
-| `apps/island-linux`   | Dray Island on Linux and Windows. Rust, GPUI.                     |
-| `apps/web`            | drayhq.com and Dray accounts. Next.js on Vercel.                  |
-| `apps/docs`           | drayhq.com/docs. Blume (Astro) on Vercel.                         |
-| `apps/upload-worker`  | `dray upload`'s endpoint. Cloudflare Worker and R2.               |
-| `crates/dray-proto`   | The CLI's socket protocol, shared by the CLI and the app.         |
+| `apps/cli`            | The `wain` CLI, its own crate and `cli-v*` release.               |
+| `apps/ios`            | iPhone and iPad client of a Wain server. SwiftUI, XcodeGen.       |
+| `apps/android`        | Android client of a Wain server. Kotlin, Compose, Gradle.         |
+| `apps/island`         | Wain Island, the Mac companion panel. SwiftUI.                    |
+| `apps/island-linux`   | Wain Island on Linux and Windows. Rust, GPUI.                     |
+| `apps/web`            | wainhq.com and Wain accounts. Next.js on Vercel.                  |
+| `apps/docs`           | wainhq.com/docs. Blume (Astro) on Vercel.                         |
+| `apps/upload-worker`  | `wain upload`'s endpoint. Cloudflare Worker and R2.               |
+| `crates/wain-proto`   | The CLI's socket protocol, shared by the CLI and the app.         |
 
 It is one pnpm workspace with one lockfile. The root `package.json` holds no
 dependencies, only `pnpm --filter` aliases. Run every other command from the
@@ -39,7 +39,7 @@ cd apps/desktop && pnpm tauri dev  # or `pnpm app` from the root
 ```
 
 A dev build skips the sign-in gate and keeps its data in its own home
-(`~/.dray-dev`, or `~/.dray-worktrees/<name>` inside a worktree), so it never
+(`~/.wain-dev`, or `~/.wain-worktrees/<name>` inside a worktree), so it never
 touches a release install. `pnpm dev` alone serves the frontend in a browser,
 which is good for CSS and nothing that calls the backend.
 
@@ -57,7 +57,7 @@ It diffs against `origin/main`, uncommitted files included. Per app:
 | -------------------- | -------------------------------------------------------------------- |
 | desktop frontend     | `cd apps/desktop && pnpm test` (vitest)                              |
 | desktop core         | `cd apps/desktop/src-tauri && cargo test`                            |
-| headless server      | `cd apps/desktop/src-tauri && cargo check --no-default-features --features serve --bin dray-serve --tests` |
+| headless server      | `cd apps/desktop/src-tauri && cargo check --no-default-features --features serve --bin wain-serve --tests` |
 | CLI                  | `cd apps/cli && cargo test`                                          |
 | web, upload-worker   | `pnpm test` in the app's directory                                   |
 | Android              | `cd apps/android && ./gradlew testDebugUnitTest`                     |
@@ -92,17 +92,17 @@ passes on its own.
 ### Screenshots and videos
 
 A change you can see wants a screenshot in its PR, and motion wants a video.
-Upload each with the `dray` CLI and paste the line it prints into the PR body:
+Upload each with the `wain` CLI and paste the line it prints into the PR body:
 
 ```bash
-dray upload before.png after.png
+wain upload before.png after.png
 ```
 
-`dray upload` is for Dray contributors only, which is why `dray --help` and
+`wain upload` is for Wain contributors only, which is why `wain --help` and
 the user docs leave it out. It takes a file from:
 
-- a collaborator of `monorepo-labs/dray`, or a member of the `monorepo-labs` org;
-- the author of an open pull request in `monorepo-labs/dray`. From outside,
+- a collaborator of `ismatbabirli/wain`, or a member of the `ismatbabirli` org;
+- the author of an open pull request in `ismatbabirli/wain`. From outside,
   open your PR first (a draft is fine), upload, then edit the body.
 
 Anyone else gets a 403. Details:
@@ -116,13 +116,13 @@ Anyone else gets a 403. Details:
 - Uploads are public. Upload only what belongs in a public PR.
 - Never commit images to the repo or push a branch to hold them.
 
-No `dray` CLI? Install it with
-`curl -fsSL https://www.drayhq.com/install.sh | sh`, or call the endpoint
+No `wain` CLI? Install it with
+`curl -fsSL https://www.wainhq.com/install.sh | sh`, or call the endpoint
 directly. It answers JSON with the public `url`:
 
 ```bash
 printf 'header = "Authorization: Bearer %s"\n' "$(gh auth token)" \
-  | curl -s -K - --data-binary @shot.png https://upload.drayhq.com/
+  | curl -s -K - --data-binary @shot.png https://upload.wainhq.com/
 ```
 
 The endpoint is [apps/upload-worker](apps/upload-worker); its
@@ -146,5 +146,5 @@ The full rules are in [CLAUDE.md](CLAUDE.md). In brief:
 
 ## Questions
 
-Open a [GitHub issue](https://github.com/monorepo-labs/dray/issues). It is the
+Open a [GitHub issue](https://github.com/ismatbabirli/wain/issues). It is the
 only tracker; the repo has no Discussions.

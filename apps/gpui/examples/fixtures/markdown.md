@@ -1,6 +1,6 @@
 ## Release checklist
 
-The **wire** stays as it is, and the `dray-serve` binary ships beside the app. See [SERVE-PLAN.md](https://github.com/monorepo-labs/dray/blob/main/apps/desktop/SERVE-PLAN.md) for the frames.
+The **wire** stays as it is, and the `wain-serve` binary ships beside the app. See [SERVE-PLAN.md](https://github.com/ismatbabirli/wain/blob/main/apps/desktop/SERVE-PLAN.md) for the frames.
 
 1. Pin the toolkit
 2. Port `buildTranscript` with its tests
@@ -27,4 +27,4 @@ fn frame_in(message: Message) -> Option<String> {
 
 ![GitHub](https://avatars.githubusercontent.com/u/9919?s=80)
 
-Inline `code`, *emphasis*, and a bare link: https://drayhq.com/docs
+Inline `code`, *emphasis*, and a bare link: https://wainhq.com/docs

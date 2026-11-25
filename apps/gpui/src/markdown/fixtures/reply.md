@@ -1,6 +1,6 @@
 ## What changed
 
-The **wire** stays as it is, and the `dray-serve` binary ships *beside* the app. See [SERVE-PLAN.md](https://github.com/monorepo-labs/dray/blob/main/apps/desktop/SERVE-PLAN.md) for the frames, or ~~the old notes~~ nothing at all.
+The **wire** stays as it is, and the `wain-serve` binary ships *beside* the app. See [SERVE-PLAN.md](https://github.com/ismatbabirli/wain/blob/main/apps/desktop/SERVE-PLAN.md) for the frames, or ~~the old notes~~ nothing at all.
 
 ### Steps
 
@@ -29,7 +29,7 @@ fn frame_in(message: Message) -> Option<String> {
 }
 ```
 
-> A quote, for the blockquote style, with `code` and a [link](https://drayhq.com).
+> A quote, for the blockquote style, with `code` and a [link](https://wainhq.com).
 
 Heading by underline
 ---
@@ -39,7 +39,7 @@ Heading by underline
 
 ***
 
-Inline `code` like `ls --all`, *emphasis*, a bare link https://drayhq.com/docs and a ``double `tick` span``. A <kbd>tag</kbd> and a price of $5.
+Inline `code` like `ls --all`, *emphasis*, a bare link https://wainhq.com/docs and a ``double `tick` span``. A <kbd>tag</kbd> and a price of $5.
 
 $$
 x^2

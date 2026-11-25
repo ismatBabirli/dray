@@ -314,7 +314,7 @@ fn find<'a>(list: &'a mut [Routine], key: &str, bot_id: Option<&str>) -> Result<
         .collect();
     match named.as_slice() {
         [one] => Ok(&mut list[*one]),
-        [] => anyhow::bail!("no routine {key:?} — `dray bot routine ls` lists them"),
+        [] => anyhow::bail!("no routine {key:?} — `wain bot routine ls` lists them"),
         _ => anyhow::bail!("several routines are named {key:?} — name one by id"),
     }
 }
@@ -457,7 +457,7 @@ const LATE_AFTER: chrono::Duration = chrono::Duration::minutes(2);
 /// session of its own; only a routine whose last run is still going waits,
 /// and stays due until it ends.
 ///
-/// A slot missed while the machine slept or Dray was down runs once, late,
+/// A slot missed while the machine slept or Wain was down runs once, late,
 /// for an `--every` routine; an `--at` one catches up only the same day and
 /// is otherwise recorded missed, since a morning digest at midnight is noise.
 async fn tick(sink: &Sink) -> Result<()> {
@@ -502,7 +502,7 @@ async fn tick(sink: &Sink) -> Result<()> {
                 r.next_run = r.schedule.next_after(now).map(rfc3339);
                 changed = true;
                 if r.schedule.at.is_some() && slot.date_naive() != now.date_naive() && !retry && !forced.contains(&r.id) {
-                    let text = format!("Missed {}: Dray was not running then", slot.format("%a %H:%M"));
+                    let text = format!("Missed {}: Wain was not running then", slot.format("%a %H:%M"));
                     r.last_result = Some(result("missed", Some(text)));
                     missed.push(r.id.clone());
                     continue;
@@ -655,7 +655,7 @@ async fn fire(
     };
     let when = match late {
         Some((slot, by)) => format!(
-            " This run is {} late: it was due {}, while the machine was asleep or Dray was not running. Judge what is still worth reporting.",
+            " This run is {} late: it was due {}, while the machine was asleep or Wain was not running. Judge what is still worth reporting.",
             span(by.num_minutes().max(1) as u32),
             slot.format("%a %H:%M"),
         ),
@@ -667,10 +667,10 @@ async fn fire(
         ""
     };
     let prompt = format!(
-        "You are one run of the routine \"{name}\" ({id}), which {bot} set up to run {schedule}. Dray started you in {bot}'s folder; \
+        "You are one run of the routine \"{name}\" ({id}), which {bot} set up to run {schedule}. Wain started you in {bot}'s folder; \
          you are not {bot}'s chat, and the user never sees what you write.{when}{again}\n\n\
          The routine's job:\n\n{job}{note}\n\n\
-         For context, look first in this folder: `AGENTS.md`, `USER.md` and `memory/` hold what {bot} knows. If only {bot} has it, ask with `dray session send {chat} \"<question>\"` and end your turn; its answer arrives here as a message. \
+         For context, look first in this folder: `AGENTS.md`, `USER.md` and `memory/` hold what {bot} knows. If only {bot} has it, ask with `wain session send {chat} \"<question>\"` and end your turn; its answer arrives here as a message. \
          When this run finds something {bot} should know, end with it in a line or two: that goes to {bot} as a report, and {bot} decides what the user hears. \
          When it finds nothing new, end with exactly `{NOTHING_NEW}` and nothing else, so {bot} is not woken. Don't make or change routines.",
         name = routine.name,

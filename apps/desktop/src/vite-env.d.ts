@@ -8,8 +8,8 @@ declare const __DEV_BRANCH__: string | null;
 
 interface ImportMetaEnv {
   /// `1` puts the sign-in gate back in a dev build; see `gatesSignIn`.
-  readonly VITE_DRAY_SIGN_IN?: string;
-  /// A changelog.json to read in place of drayhq.com's, for trying the
+  readonly VITE_WAIN_SIGN_IN?: string;
+  /// A changelog.json to read in place of wainhq.com's, for trying the
   /// what's-new card and dialog against a hand-written feed in a dev build.
-  readonly VITE_DRAY_CHANGELOG_URL?: string;
+  readonly VITE_WAIN_CHANGELOG_URL?: string;
 }

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Dray",
+  "productName": "Wain",
   "version": "0.34.2",
-  "identifier": "com.yogesh.dray",
+  "identifier": "com.wainhq.wain",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Dray",
+        "title": "Wain",
         "width": 1200,
         "height": 800,
         "minWidth": 720,
@@ -33,12 +33,12 @@
       "assetProtocol": {
         "enable": true,
         "scope": [
-          "$HOME/.dray/attachments/**",
-          "$HOME/.dray/browser/recordings/**",
-          "$HOME/.dray-dev/attachments/**",
-          "$HOME/.dray-dev/browser/recordings/**",
-          "$HOME/.dray-worktrees/*/attachments/**",
-          "$HOME/.dray-worktrees/*/browser/recordings/**"
+          "$HOME/.wain/attachments/**",
+          "$HOME/.wain/browser/recordings/**",
+          "$HOME/.wain-dev/attachments/**",
+          "$HOME/.wain-dev/browser/recordings/**",
+          "$HOME/.wain-worktrees/*/attachments/**",
+          "$HOME/.wain-worktrees/*/browser/recordings/**"
         ]
       }
     }
@@ -66,7 +66,7 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUyRjQxNERDMkE4NDU0MkEKUldRcVZJUXEzQlQwVWcxVUdGL1hkaGpibFBxOE5PVWc4WURveTh4MFpuZGMwVkNZVWQ5QkZtalEK",
-      "endpoints": ["https://monorepo-labs.github.io/dray/stable.json"]
+      "endpoints": ["https://ismatbabirli.github.io/wain/stable.json"]
     }
   }
 }

@@ -3,9 +3,9 @@
 
 use std::time::Duration;
 
-use dray_core::projects::Project;
-use dray_core::events::AgentEvent;
-use dray_core::store::SessionIndexItem;
+use wain_core::projects::Project;
+use wain_core::events::AgentEvent;
+use wain_core::store::SessionIndexItem;
 use futures::StreamExt;
 use futures::channel::mpsc::UnboundedReceiver;
 use gpui::{
@@ -30,7 +30,7 @@ const RIM: f32 = 8.;
 /// The sheet's corner (`rounded-[8px]`).
 const SHEET_RADIUS: f32 = 8.;
 
-gpui::actions!(dray, [NewTask, NextSession, PrevSession]);
+gpui::actions!(wain, [NewTask, NextSession, PrevSession]);
 
 /// The window's chords, as shortcuts.ts names them.
 pub fn bind_keys(cx: &mut App) {
@@ -427,7 +427,7 @@ pub fn open(cx: &mut App) {
             window_bounds: Some(gpui::WindowBounds::Windowed(bounds)),
             window_min_size: Some(gpui::size(px(720.), px(480.))),
             titlebar: Some(gpui::TitlebarOptions {
-                title: Some("Dray".into()),
+                title: Some("Wain".into()),
                 appears_transparent: true,
                 // tauri.conf.json's `trafficLightPosition` is { x: 9, y: 22 }.
                 traffic_light_position: Some(point(px(9.), px(22. - 7.))),
@@ -484,5 +484,5 @@ fn install_modules(wire: &Wire, cx: &mut App) {
         })
     });
 
-    crate::new_task::install(dray_core::harness::Harness::ClaudeCode, cx);
+    crate::new_task::install(wain_core::harness::Harness::ClaudeCode, cx);
 }

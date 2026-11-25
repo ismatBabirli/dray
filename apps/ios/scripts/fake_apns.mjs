@@ -39,7 +39,7 @@ server.on("stream", (stream, headers) => {
     // simctl push never runs a service extension, so an alert that needs one
     // (a question's options, a bot's face) is left for the app to dress and show.
     const dress = process.env.FAKE_APNS_DRESS_DIR;
-    const kind = payload.dray?.question ? "question" : payload.dray?.bot ? "bot" : null;
+    const kind = payload.wain?.question ? "question" : payload.wain?.bot ? "bot" : null;
     if (dress && kind) {
       writeFileSync(join(dress, `${kind}.tmp`), body);
       renameSync(join(dress, `${kind}.tmp`), join(dress, `${kind}.json`));

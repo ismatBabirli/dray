@@ -20,7 +20,7 @@ import "../App.css";
 const BOT: Bot = {
   id: "0b7e4a52-6f0d-4c1e-9a3b-2d5c8e1f4a70",
   name: "Release captain for the weekly desktop and CLI train",
-  path: "/Users/you/.dray/bots/release",
+  path: "/Users/you/.wain/bots/release",
   created: "2026-11-01T10:00:00Z",
   avatar: { shape: "blob", hue: 200 },
 };
@@ -45,7 +45,7 @@ const TAGS = `ask &Rework the onboarding flow so the setup prompt opens inline (
 
 const PROMPTS = [
   'done. their setup prompt "Fetch and execute the appropriate instructions to set me up for Revyl from https://revyl.com/agent-setup/prompt.md?src=first_run&ref=41ff02a965fb773144a6130f"',
-  "see https://github.com/monorepo-labs/dray/pull/1160/files#diff-6c1f0a9e2b7d4c3a8f5e1b0d9c7a6e4f2b3c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7 for the change",
+  "see https://github.com/ismatbabirli/wain/pull/1160/files#diff-6c1f0a9e2b7d4c3a8f5e1b0d9c7a6e4f2b3c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7 for the change",
   "Read [the setup guide for the agent that runs on first launch](https://revyl.com/agent-setup/prompt.md?src=first_run&ref=41ff02a965fb773144a6130f) and do what it says.",
   "Open www.example.com/a/very/long/path/that/keeps/going/and/going/without/any/spaces/at/all?with=query&and=more then report back.",
 ];

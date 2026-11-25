@@ -29,8 +29,8 @@ static SETTINGS_LOCK: Mutex<()> = Mutex::const_new(());
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     /// The old in-app analytics switch, **read by nothing**: Settings offers no
-    /// opt-out any more, so a stored `false` is ignored and `DRAY_NO_ANALYTICS`
-    /// is the only way off. Kept so an older build sharing `~/.dray` still finds
+    /// opt-out any more, so a stored `false` is ignored and `WAIN_NO_ANALYTICS`
+    /// is the only way off. Kept so an older build sharing `~/.wain` still finds
     /// the field it reads, and so a rewrite here carries its value through.
     #[serde(default = "enabled_by_default")]
     pub analytics_enabled: bool,
@@ -66,10 +66,10 @@ pub struct AppSettings {
     /// machine's reach, SSH logins included.
     #[serde(default)]
     pub share_machines: bool,
-    /// Dray Cloud's switch (#857). Here because Rust lists the machines at
+    /// Wain Cloud's switch (#857). Here because Rust lists the machines at
     /// launch; the key itself sits in `credentials.json`.
     #[serde(default)]
-    pub dray_cloud: bool,
+    pub wain_cloud: bool,
 }
 
 /// The transcription picks. Model and device mean "not chosen" when absent.
@@ -118,7 +118,7 @@ impl Default for AppSettings {
             transcription: TranscriptionSettings::default(),
             remote_access: false,
             share_machines: false,
-            dray_cloud: false,
+            wain_cloud: false,
         }
     }
 }
@@ -139,7 +139,7 @@ pub async fn read() -> AppSettings {
 }
 
 /// Takes the directory so a test can round-trip against a tempdir rather than
-/// the real `~/.dray`.
+/// the real `~/.wain`.
 async fn read_from(dir: &Path) -> Result<AppSettings> {
     read_json(&path_in(dir)).await
 }
@@ -186,7 +186,7 @@ pub async fn update(edit: impl FnOnce(&mut AppSettings)) -> Result<AppSettings> 
 /// This install's id, minted and persisted on first use.
 ///
 /// Every install gets one, a stored `analytics_enabled: false` included: the
-/// only opt-out is `DRAY_NO_ANALYTICS`, which [`crate::analytics`] checks before
+/// only opt-out is `WAIN_NO_ANALYTICS`, which [`crate::analytics`] checks before
 /// asking. Minting goes through [`update`], so a malformed file is recovered
 /// rather than silencing analytics for good, and an unreadable one is left
 /// untouched.
@@ -244,7 +244,7 @@ mod tests {
 
     fn tempdir() -> PathBuf {
         let dir = std::env::temp_dir().join(format!(
-            "dray-settings-{}-{}",
+            "wain-settings-{}-{}",
             std::process::id(),
             uuid::Uuid::now_v7()
         ));
@@ -286,7 +286,7 @@ mod tests {
             transcription: TranscriptionSettings::default(),
             remote_access: true,
             share_machines: true,
-            dray_cloud: true,
+            wain_cloud: true,
         };
 
         write_to(&dir, &off).await.unwrap();

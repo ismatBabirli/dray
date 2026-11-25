@@ -1,5 +1,5 @@
 # Where a release's Mac jobs run: the release Mac (a self-hosted runner labelled
-# `dray-mac`) when it is online, GitHub's `macos-latest` otherwise. GitHub's Mac
+# `wain-mac`) when it is online, GitHub's `macos-latest` otherwise. GitHub's Mac
 # pool runs short often enough to cancel whole releases, and the release Mac
 # never queues.
 #
@@ -39,11 +39,11 @@ jobs:
             online=1
           elif [ "$FORCE" != github ] && [ -n "$GH_TOKEN" ]; then
             online=$(gh api "repos/$REPO/actions/runners" \
-              -q '[.runners[] | select(.status == "online") | select(any(.labels[]; .name == "dray-mac"))] | length' \
+              -q '[.runners[] | select(.status == "online") | select(any(.labels[]; .name == "wain-mac"))] | length' \
               2>/dev/null || echo 0)
           fi
           if [ "${online:-0}" -gt 0 ]; then
-            echo 'mac=["self-hosted","dray-mac"]' >> "$GITHUB_OUTPUT"
+            echo 'mac=["self-hosted","wain-mac"]' >> "$GITHUB_OUTPUT"
             echo "Mac jobs: release Mac"
           else
             echo 'mac="macos-latest"' >> "$GITHUB_OUTPUT"

@@ -64,12 +64,12 @@ impl Refusal {
     pub fn to_bot(&self, to: &str) -> String {
         match self {
             Refusal::TooDeep => format!(
-                "not sent: this exchange between bots is already {MAX_HOPS} messages deep, Dray's limit. Stop \
+                "not sent: this exchange between bots is already {MAX_HOPS} messages deep, Wain's limit. Stop \
                  messaging and tell the user what is still open; their next message starts a new exchange."
             ),
             Refusal::Repeated => format!("not sent: you already sent \"{to}\" this same message in this exchange."),
             Refusal::TooFast => format!(
-                "not sent: {WINDOW_SENDS} messages between you and \"{to}\" in 5 minutes, Dray's limit. Stop \
+                "not sent: {WINDOW_SENDS} messages between you and \"{to}\" in 5 minutes, Wain's limit. Stop \
                  messaging \"{to}\" and tell the user what is still open."
             ),
         }
@@ -80,10 +80,10 @@ impl Refusal {
     pub fn notice(&self, from: &str, to: &str) -> Option<String> {
         match self {
             Refusal::TooDeep => Some(format!(
-                "Dray stopped {from} messaging {to}: they had gone back and forth {MAX_HOPS} times. A message from you starts fresh."
+                "Wain stopped {from} messaging {to}: they had gone back and forth {MAX_HOPS} times. A message from you starts fresh."
             )),
             Refusal::TooFast => {
-                Some(format!("Dray stopped {from} messaging {to}: {WINDOW_SENDS} messages between them in 5 minutes."))
+                Some(format!("Wain stopped {from} messaging {to}: {WINDOW_SENDS} messages between them in 5 minutes."))
             }
             Refusal::Repeated => None,
         }

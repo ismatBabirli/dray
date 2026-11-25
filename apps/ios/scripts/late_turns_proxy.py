@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stands in front of a scratch dray-serve for OpenAtBottomTests, to make a chat
+"""Stands in front of a scratch wain-serve for OpenAtBottomTests, to make a chat
 change the way it does on a phone:
 
 - every `/file` read is held a few seconds, so pictures and videos land late;
@@ -14,7 +14,7 @@ change the way it does on a phone:
 Each appended line is a copy of the log's own newest line of that type, so its
 shape is whatever the server wrote.
 
-    late_turns_proxy.py <listen port> <server port> <DRAY_HOME> [delay seconds]
+    late_turns_proxy.py <listen port> <server port> <WAIN_HOME> [delay seconds]
 
 Never point it at a real home: it writes to the logs.
 """

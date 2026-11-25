@@ -1,10 +1,10 @@
-// The whole app against two real `dray-serve`s, in a plain browser: one stands
+// The whole app against two real `wain-serve`s, in a plain browser: one stands
 // in for the in-process core, the other is a remote server. Tauri's IPC is
 // mocked, and the mock does in the page what `servers.rs` does in Rust — so
 // everything above the transport is the shipping code, talking to real agents.
 //
-//   DRAY_HOME=/tmp/l dray-serve --port 7320 &       # "Local Server"
-//   DRAY_HOME=/tmp/r dray-serve --port 7318 &       # a remote one
+//   WAIN_HOME=/tmp/l wain-serve --port 7320 &       # "Local Server"
+//   WAIN_HOME=/tmp/r wain-serve --port 7318 &       # a remote one
 //   open "/demo/servers.html?local=$(cat /tmp/l/serve-token)&remote=$(cat /tmp/r/serve-token)"
 //
 // `&localUrl=` and `&remoteUrl=` move them; put a TCP proxy in front of the
@@ -93,7 +93,7 @@ mockIPC(
       case "reconnect_servers":
         for (const r of remotes) r.conn.reconnect();
         return null;
-      // Updates are faked here: a real `update_server` would run `dray update`
+      // Updates are faked here: a real `update_server` would run `wain update`
       // beside the demo's own servers. A check always finds a release.
       case "set_server_beta":
       case "check_server_update":

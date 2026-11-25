@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 import { invoke, listen, LOCAL, type ServerId } from "@/lib/transport";
-import type { DrayAccountState, LinkState } from "@/types/events";
+import type { WainAccountState, LinkState } from "@/types/events";
 
-/// The servers' own recheck interval with drayhq.com.
+/// The servers' own recheck interval with wainhq.com.
 const RECHECK_MS = 60_000;
 
 /// Reads `cmd` now, again on `event` from `server`, and once a minute, while
@@ -41,7 +41,7 @@ function useServerState<T>(server: ServerId, enabled: boolean, cmd: string, even
   return state;
 }
 
-/// One server's link to an org at drayhq.com (#874): where it stands, and
+/// One server's link to an org at wainhq.com (#874): where it stands, and
 /// starting, cancelling and ending a link. Read while `connected`, and again
 /// on every reconnect, since a change made while the connection was down
 /// sends no event this side hears.
@@ -73,8 +73,8 @@ export function useOrgLink(server: ServerId, connected: boolean) {
   return { state, error: error ?? state?.error ?? null, start, cancel, unlink };
 }
 
-/// Who the app on this machine is signed in to drayhq.com as. The local
+/// Who the app on this machine is signed in to wainhq.com as. The local
 /// server holds it, since the browser sign-in comes back to it.
-export function useDrayAccount(connected: boolean) {
-  return useServerState<DrayAccountState>(LOCAL, connected, "account_state", "account_changed");
+export function useWainAccount(connected: boolean) {
+  return useServerState<WainAccountState>(LOCAL, connected, "account_state", "account_changed");
 }

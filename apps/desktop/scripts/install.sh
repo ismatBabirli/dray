@@ -17,7 +17,7 @@ die() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 # refuses to build at all when the config carries a public key with no private
 # one to match. CI passes the key as a secret; locally it is the file the
 # keypair was generated into.
-UPDATER_KEY="${TAURI_SIGNING_PRIVATE_KEY:-$HOME/.tauri/dray_updater.key}"
+UPDATER_KEY="${TAURI_SIGNING_PRIVATE_KEY:-$HOME/.tauri/wain_updater.key}"
 [ -f "$UPDATER_KEY" ] || die "no updater signing key at $UPDATER_KEY — generate one with \`pnpm tauri signer generate\` or set TAURI_SIGNING_PRIVATE_KEY"
 export TAURI_SIGNING_PRIVATE_KEY="$UPDATER_KEY"
 export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}"
@@ -34,7 +34,7 @@ SRC="$(find "$ROOT/src-tauri/target" -maxdepth 4 -name "$NAME.app" -type d \
 [ -n "$SRC" ] && [ -d "$SRC" ] || die "no $NAME.app under src-tauri/target after build"
 say "Built $SRC"
 
-# The app's own processes, without its background server. `dray --serve`
+# The app's own processes, without its background server. `wain --serve`
 # runs from this same bundle and is meant to outlive the app: it holds every
 # session, keeps the inodes it started from when the bundle is moved aside, and
 # restarts itself once idle on seeing the newer binary. Matched here, it read as

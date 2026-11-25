@@ -2,7 +2,7 @@
 //! the server, live events folded on after, in GPUI's virtualised `list`
 //! following the tail the way Chat.tsx's pin does.
 
-use dray_core::events::AgentEvent;
+use wain_core::events::AgentEvent;
 use gpui::{
     AnyElement, BoxShadow, Context, FollowMode, ListAlignment, ListState, Render, Window, div, list, point,
     prelude::*, px, rems,
@@ -192,7 +192,7 @@ impl Chat {
         // A preview before its first character, or a block of invisible
         // characters, takes no room; rows are never removed, only emptied.
         if let Row::Assistant { text, .. } = row
-            && !dray_core::events::has_text(text)
+            && !wain_core::events::has_text(text)
         {
             return div().into_any_element();
         }

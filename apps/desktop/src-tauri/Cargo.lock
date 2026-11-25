@@ -1395,75 +1395,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dray"
-version = "0.34.2"
-dependencies = [
- "anyhow",
- "base64 0.23.1",
- "block2",
- "bzip2",
- "cef",
- "chrono",
- "cpal",
- "dray-proto",
- "dunce",
- "earshot",
- "fff-search",
- "flate2",
- "form_urlencoded",
- "futures-util",
- "gdkx11",
- "gtk",
- "http-body-util",
- "hyper",
- "hyper-util",
- "libc",
- "memchr",
- "notify",
- "notify-rust",
- "objc2",
- "objc2-app-kit",
- "objc2-foundation",
- "opentunnel",
- "png",
- "qrcode",
- "reqwest",
- "rubato",
- "rustls",
- "semver",
- "serde",
- "serde_json",
- "sha2 0.11.1",
- "tar",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-macos-permissions",
- "tauri-plugin-opener",
- "tauri-plugin-updater",
- "tauri-plugin-window-state",
- "tokio",
- "tokio-tungstenite",
- "transcribe-cpp",
- "ts-rs",
- "unicode-segmentation",
- "uuid",
- "windows",
- "windows-sys 0.61.2",
- "x11",
- "zbus 5.19.0",
- "zip",
-]
-
-[[package]]
-name = "dray-proto"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "dtoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6424,6 +6355,75 @@ checksum = "fb067e4cbd1ff067d1df46c9194b5de0e98efd2810bbc95c5d5e5f25a3231150"
 dependencies = [
  "cc",
  "libc",
+]
+
+[[package]]
+name = "wain"
+version = "0.34.2"
+dependencies = [
+ "anyhow",
+ "base64 0.23.1",
+ "block2",
+ "bzip2",
+ "cef",
+ "chrono",
+ "cpal",
+ "dunce",
+ "earshot",
+ "fff-search",
+ "flate2",
+ "form_urlencoded",
+ "futures-util",
+ "gdkx11",
+ "gtk",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "libc",
+ "memchr",
+ "notify",
+ "notify-rust",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "opentunnel",
+ "png",
+ "qrcode",
+ "reqwest",
+ "rubato",
+ "rustls",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "tar",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-macos-permissions",
+ "tauri-plugin-opener",
+ "tauri-plugin-updater",
+ "tauri-plugin-window-state",
+ "tokio",
+ "tokio-tungstenite",
+ "transcribe-cpp",
+ "ts-rs",
+ "unicode-segmentation",
+ "uuid",
+ "wain-proto",
+ "windows",
+ "windows-sys 0.61.2",
+ "x11",
+ "zbus 5.19.0",
+ "zip",
+]
+
+[[package]]
+name = "wain-proto"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

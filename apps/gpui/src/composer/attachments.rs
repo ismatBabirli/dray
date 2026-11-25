@@ -52,7 +52,7 @@ pub fn write_pasted(image: &gpui::Image) -> anyhow::Result<PathBuf> {
     // Under home rather than the shared temp dir, where another user could make
     // the folder first and read every screenshot written into it.
     let home = std::env::var_os("HOME").ok_or_else(|| anyhow::anyhow!("no HOME"))?;
-    let dir = PathBuf::from(home).join(".cache/dray-gpui/pasted");
+    let dir = PathBuf::from(home).join(".cache/wain-gpui/pasted");
     let mut builder = std::fs::DirBuilder::new();
     builder.recursive(true);
     #[cfg(unix)]

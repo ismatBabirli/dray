@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Size and speed benchmarks for `dray` and `dray-serve` (#1130).
+"""Size and speed benchmarks for `wain` and `wain-serve` (#1130).
 
     bench.py run <label> [build flags] [--reuse-build] [--only GROUPS]
     bench.py build <label> [build flags]
     bench.py compare <before> <after>
 
-Results land in ~/dray-bench-results/<label>.json, binaries and logs beside it
-in ~/dray-bench-results/<label>/. Outside every worktree on purpose: a later
+Results land in ~/wain-bench-results/<label>.json, binaries and logs beside it
+in ~/wain-bench-results/<label>/. Outside every worktree on purpose: a later
 stage in another worktree reads the same baseline. See README.md.
 """
 
@@ -33,14 +33,14 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 # Another source tree to build, e.g. a `git archive` of a release tag.
-REPO = Path(os.environ.get("DRAY_BENCH_REPO", HERE.parent.parent.parent)).resolve()
+REPO = Path(os.environ.get("WAIN_BENCH_REPO", HERE.parent.parent.parent)).resolve()
 # The checkout this script lives in. The bench project is cloned from here, not
 # from REPO, which may be a `git archive` with no history to clone.
 HARNESS_REPO = HERE.parent.parent.parent
-RESULTS = Path(os.environ.get("DRAY_BENCH_RESULTS", Path.home() / "dray-bench-results"))
-# The cargo profile release-cli.yml builds dray-serve with. `release` builds
+RESULTS = Path(os.environ.get("WAIN_BENCH_RESULTS", Path.home() / "wain-bench-results"))
+# The cargo profile release-cli.yml builds wain-serve with. `release` builds
 # what shipped before it existed; a tree without `[profile.serve]` needs that.
-SERVE_PROFILE = os.environ.get("DRAY_BENCH_SERVE_PROFILE", "serve")
+SERVE_PROFILE = os.environ.get("WAIN_BENCH_SERVE_PROFILE", "serve")
 CLI_DIR = REPO / "apps" / "cli"
 SERVE_DIR = REPO / "apps" / "desktop" / "src-tauri"
 FIXTURE = SERVE_DIR / "src" / "harness" / "claude_code" / "fixtures" / "complex.jsonl"
@@ -61,7 +61,7 @@ RUNS = 20
 WARMUP = 3
 # For working on the harness itself: few runs, no quiet-machine gate. Numbers
 # taken this way are not results.
-QUICK = os.environ.get("DRAY_BENCH_QUICK") == "1"
+QUICK = os.environ.get("WAIN_BENCH_QUICK") == "1"
 # Extra environment for every bench server, from `run --server-env`: an
 # allocator preloaded, a glibc tunable. Recorded in the result.
 SERVER_ENV = {}
@@ -116,7 +116,7 @@ def wait_quiet(what, max_wait=1800):
     """
     if QUICK:
         return os.getloadavg()[0]
-    limit = float(os.environ.get("DRAY_BENCH_LOAD_LIMIT", max(1.0, (os.cpu_count() or 1) * 0.35)))
+    limit = float(os.environ.get("WAIN_BENCH_LOAD_LIMIT", max(1.0, (os.cpu_count() or 1) * 0.35)))
     deadline = time.time() + max_wait
     while True:
         builders = busy_builders()
@@ -143,7 +143,7 @@ def parse_env(pairs):
 
 
 def timed_build(cmd, cwd, env, logfile):
-    shown = {k: v for k, v in env.items() if k.startswith(("CARGO", "DRAY_CLI", "RUST"))}
+    shown = {k: v for k, v in env.items() if k.startswith(("CARGO", "WAIN_CLI", "RUST"))}
     t0 = time.monotonic()
     with open(logfile, "w") as f:
         f.write(f"$ {' '.join(cmd)}\n# cwd {cwd}\n# env {json.dumps(shown)}\n")
@@ -158,7 +158,7 @@ def build(label, args):
     """Builds both binaries as release-cli.yml does, clean, for the host target.
 
     A private target and build dir per label, so the shared `build-dir` in
-    ~/dray/.cargo/config.toml can never hand over a cached artifact and the
+    ~/wain/.cargo/config.toml can never hand over a cached artifact and the
     build time is a clean one.
     """
     out = RESULTS / label
@@ -179,39 +179,39 @@ def build(label, args):
         return env
 
     if args.cli_bin:
-        shutil.copy2(args.cli_bin, out / "dray")
-        info["dray_from"] = str(Path(args.cli_bin).resolve())
+        shutil.copy2(args.cli_bin, out / "wain")
+        info["wain_from"] = str(Path(args.cli_bin).resolve())
     else:
         tdir = work / "cli"
         shutil.rmtree(tdir, ignore_errors=True)
-        wait_quiet("building dray")
-        log("building dray (release, clean)…")
-        info["dray_build_s"] = timed_build(["cargo", "build", "--release", "--target", target], CLI_DIR,
-                                           env_for(info["cli_env"], tdir), out / "build-dray.log")
-        shutil.copy2(tdir / target / "release" / "dray", out / "dray")
-        log(f"  dray built in {info['dray_build_s']}s")
+        wait_quiet("building wain")
+        log("building wain (release, clean)…")
+        info["wain_build_s"] = timed_build(["cargo", "build", "--release", "--target", target], CLI_DIR,
+                                           env_for(info["cli_env"], tdir), out / "build-wain.log")
+        shutil.copy2(tdir / target / "release" / "wain", out / "wain")
+        log(f"  wain built in {info['wain_build_s']}s")
 
     if args.serve_bin:
-        shutil.copy2(args.serve_bin, out / "dray-serve.unstripped")
-        info["dray_serve_from"] = str(Path(args.serve_bin).resolve())
+        shutil.copy2(args.serve_bin, out / "wain-serve.unstripped")
+        info["wain_serve_from"] = str(Path(args.serve_bin).resolve())
     else:
         tdir = work / "serve"
         shutil.rmtree(tdir, ignore_errors=True)
         env = env_for(info["serve_env"], tdir)
-        env["DRAY_CLI_VERSION"] = cli_version()
-        wait_quiet("building dray-serve")
-        log(f"building dray-serve ({SERVE_PROFILE}, clean)…")
-        info["dray_serve_profile"] = SERVE_PROFILE
-        info["dray_serve_build_s"] = timed_build(
+        env["WAIN_CLI_VERSION"] = cli_version()
+        wait_quiet("building wain-serve")
+        log(f"building wain-serve ({SERVE_PROFILE}, clean)…")
+        info["wain_serve_profile"] = SERVE_PROFILE
+        info["wain_serve_build_s"] = timed_build(
             ["cargo", "build", "--profile", SERVE_PROFILE, "--no-default-features", "--features", "serve",
-             "--bin", "dray-serve", "--target", target], SERVE_DIR, env, out / "build-dray-serve.log")
-        shutil.copy2(tdir / target / SERVE_PROFILE / "dray-serve", out / "dray-serve.unstripped")
-        log(f"  dray-serve built in {info['dray_serve_build_s']}s")
+             "--bin", "wain-serve", "--target", target], SERVE_DIR, env, out / "build-wain-serve.log")
+        shutil.copy2(tdir / target / SERVE_PROFILE / "wain-serve", out / "wain-serve.unstripped")
+        log(f"  wain-serve built in {info['wain_serve_build_s']}s")
 
-    # release-cli.yml strips dray-serve after the build and tars both.
-    shutil.copy2(out / "dray-serve.unstripped", out / "dray-serve")
-    subprocess.run(["strip", str(out / "dray-serve")], check=True)
-    subprocess.run(["tar", "-czf", str(out / f"dray-{target}.tar.gz"), "-C", str(out), "dray", "dray-serve"], check=True)
+    # release-cli.yml strips wain-serve after the build and tars both.
+    shutil.copy2(out / "wain-serve.unstripped", out / "wain-serve")
+    subprocess.run(["strip", str(out / "wain-serve")], check=True)
+    subprocess.run(["tar", "-czf", str(out / f"wain-{target}.tar.gz"), "-C", str(out), "wain", "wain-serve"], check=True)
     info["source"] = str(REPO)
     try:
         info["commit"] = sh("git", "-C", str(REPO), "rev-parse", "HEAD").strip()
@@ -240,10 +240,10 @@ def sections(binary):
 
 def measure_sizes(out, target):
     m = {}
-    for name in ("dray", "dray-serve", "dray-serve.unstripped"):
+    for name in ("wain", "wain-serve", "wain-serve.unstripped"):
         m[f"size.{name}"] = value((out / name).stat().st_size, "bytes")
-    m["size.archive"] = value((out / f"dray-{target}.tar.gz").stat().st_size, "bytes")
-    for name in ("dray", "dray-serve"):
+    m["size.archive"] = value((out / f"wain-{target}.tar.gz").stat().st_size, "bytes")
+    for name in ("wain", "wain-serve"):
         for sec, size in sections(out / name).items():
             m[f"size.{name}.section{sec}"] = value(size, "bytes")
     return m
@@ -255,15 +255,15 @@ def measure_sizes(out, target):
 class Bench:
     """One run's scratch: a fake `claude`, a project clone, scrubbed env.
 
-    Every server gets a DRAY_HOME under here and an environment holding
-    nothing of the caller's, so DRAY_ENDPOINT, BOAT_ID and HOME can never point
+    Every server gets a WAIN_HOME under here and an environment holding
+    nothing of the caller's, so WAIN_ENDPOINT, BOAT_ID and HOME can never point
     it at the real server's home. The whole measure step already runs in a
     network namespace with only loopback up (see `run`).
     """
 
     def __init__(self, out):
         self.out = out
-        self.root = Path(tempfile.mkdtemp(prefix="dray-bench-"))
+        self.root = Path(tempfile.mkdtemp(prefix="wain-bench-"))
         self.bin = self.root / "bin"
         self.bin.mkdir()
         shutil.copy2(HERE / "fake_claude.sh", self.bin / "claude")
@@ -276,15 +276,15 @@ class Bench:
                         PROJECT_COMMIT], check=True)
         self.servers = []
 
-    def env(self, dray_home, **extra):
+    def env(self, wain_home, **extra):
         env = {
             "PATH": f"{self.bin}:/usr/local/bin:/usr/bin:/bin",
             "HOME": str(self.home),
             "SHELL": "/bin/sh",
             "LANG": "C.UTF-8",
-            "DRAY_HOME": str(dray_home),
-            "DRAY_NO_ANALYTICS": "1",
-            "DRAY_BENCH_DIR": str(self.root),
+            "WAIN_HOME": str(wain_home),
+            "WAIN_NO_ANALYTICS": "1",
+            "WAIN_BENCH_DIR": str(self.root),
             "GIT_CONFIG_NOSYSTEM": "1",
         }
         env.update(extra)
@@ -322,8 +322,8 @@ class Bench:
 
 
 class Server:
-    def __init__(self, bench, binary, dray_home, label):
-        self.home = Path(dray_home)
+    def __init__(self, bench, binary, wain_home, label):
+        self.home = Path(wain_home)
         self.home.mkdir(parents=True, exist_ok=True)
         with socket.socket() as s:
             s.bind(("127.0.0.1", 0))
@@ -346,7 +346,7 @@ class Server:
         deadline = time.perf_counter() + limit
         while time.perf_counter() < deadline:
             if self.proc.poll() is not None:
-                raise RuntimeError(f"dray-serve exited {self.proc.returncode}, see {self.errlog.name}")
+                raise RuntimeError(f"wain-serve exited {self.proc.returncode}, see {self.errlog.name}")
             try:
                 s = socket.create_connection(("127.0.0.1", self.port), timeout=5)
             except OSError:
@@ -357,7 +357,7 @@ class Server:
             ms = (time.perf_counter() - self.t0) * 1000
             ws.close()
             return ms
-        raise RuntimeError("dray-serve never became ready")
+        raise RuntimeError("wain-serve never became ready")
 
     def token(self):
         for _ in range(5000):
@@ -733,19 +733,19 @@ def mem(prefix, st):
 
 def measure_cli(bench, out, serve_bin, info):
     m = {}
-    dray = str(out / "dray")
-    wait_quiet("dray startup")
+    wain = str(out / "wain")
+    wait_quiet("wain startup")
     env = bench.env(bench.root / "cli-home")
-    m.update(timed_spawns("cli.version", [dray, "--version"], env))
-    m.update(timed_spawns("cli.help", [dray, "--help"], env))
+    m.update(timed_spawns("cli.version", [wain, "--version"], env))
+    m.update(timed_spawns("cli.help", [wain, "--help"], env))
     home = bench.root / "cli-server"
     populate(bench, home)
     srv = Server(bench, serve_bin, home, "cli")
     time.sleep(2)
-    env = bench.env(home, DRAY_ENDPOINT=str(home / "dray.sock"))
-    wait_quiet("dray session ls")
-    m.update(timed_spawns("cli.session_ls", [dray, "session", "ls"], env, cwd=str(bench.project)))
-    m.update(timed_spawns("cli.session_ls_all_json", [dray, "session", "ls", "--all", "--json"], env,
+    env = bench.env(home, WAIN_ENDPOINT=str(home / "wain.sock"))
+    wait_quiet("wain session ls")
+    m.update(timed_spawns("cli.session_ls", [wain, "session", "ls"], env, cwd=str(bench.project)))
+    m.update(timed_spawns("cli.session_ls_all_json", [wain, "session", "ls", "--all", "--json"], env,
                           cwd=str(bench.project)))
     srv.kill()
     return m
@@ -753,8 +753,8 @@ def measure_cli(bench, out, serve_bin, info):
 
 def measure_startup(bench, out, serve_bin, info):
     m = {}
-    serve = str(out / "dray-serve")
-    wait_quiet("dray-serve --version")
+    serve = str(out / "wain-serve")
+    wait_quiet("wain-serve --version")
     m.update(timed_spawns("serve.version", [serve, "--version"], bench.env(bench.root / "v-home")))
 
     wait_quiet("startup, empty home")
@@ -931,8 +931,8 @@ def measure(label, only):
     subprocess.run(["ip", "link", "set", "lo", "up"], check=True)
     out = RESULTS / label
     info = json.loads((out / "build.json").read_text())
-    serve_bin = out / "dray-serve"
-    binaries = {n: hashlib.sha256((out / n).read_bytes()).hexdigest() for n in ("dray", "dray-serve")}
+    serve_bin = out / "wain-serve"
+    binaries = {n: hashlib.sha256((out / n).read_bytes()).hexdigest() for n in ("wain", "wain-serve")}
     path = RESULTS / f"{label}.json"
     if path.exists() and set(only) != set(GROUPS):
         # A partial run adds to the label's other groups, so they must have
@@ -948,7 +948,7 @@ def measure(label, only):
                                                                "project_commit": PROJECT_COMMIT,
                                                                "server_env": SERVER_ENV}, "metrics": {}}
     m = result["metrics"]
-    for k in ("dray_build_s", "dray_serve_build_s"):
+    for k in ("wain_build_s", "wain_serve_build_s"):
         if k in info:
             m[f"build.{k.removesuffix('_s')}"] = value(info[k], "s")
     if "size" in only:
@@ -1124,10 +1124,10 @@ def bloat(label, binary, top):
 
 def build_flags(p):
     p.add_argument("--env", action="append", help="KEY=VALUE for both builds (repeatable)")
-    p.add_argument("--serve-env", action="append", help="KEY=VALUE for the dray-serve build only")
-    p.add_argument("--cli-env", action="append", help="KEY=VALUE for the dray build only")
-    p.add_argument("--serve-bin", help="skip building dray-serve; measure this binary (stripped here)")
-    p.add_argument("--cli-bin", help="skip building dray; measure this binary")
+    p.add_argument("--serve-env", action="append", help="KEY=VALUE for the wain-serve build only")
+    p.add_argument("--cli-env", action="append", help="KEY=VALUE for the wain build only")
+    p.add_argument("--serve-bin", help="skip building wain-serve; measure this binary (stripped here)")
+    p.add_argument("--cli-bin", help="skip building wain; measure this binary")
     p.add_argument("--build-dir", help="cargo target dir (default <results>/<label>/target, removed after)")
     p.add_argument("--keep-build", action="store_true", help="keep the cargo target dir")
 
@@ -1151,7 +1151,7 @@ def main():
     c.add_argument("--all-sections", action="store_true", help="list ELF sections under 64 KiB too")
     bl = sub.add_parser("bloat", help="size by crate and biggest functions, from an unstripped binary")
     bl.add_argument("label")
-    bl.add_argument("--bin", default="dray-serve.unstripped", help="file under <results>/<label>/")
+    bl.add_argument("--bin", default="wain-serve.unstripped", help="file under <results>/<label>/")
     bl.add_argument("--top", type=int, default=30)
     m = sub.add_parser("_measure")
     m.add_argument("label")

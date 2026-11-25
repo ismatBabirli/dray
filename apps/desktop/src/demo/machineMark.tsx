@@ -14,10 +14,10 @@ import type { PrMark, SessionIndexItem } from "@/types/events";
 import "../App.css";
 
 /// A bot's task on another machine: a server glyph on its Tasks row and on
-/// its tab, the name in the glyph's tooltip and at the titlebar's far end. A path under `dray://boat/` is how the
+/// its tab, the name in the glyph's tooltip and at the titlebar's far end. A path under `wain://boat/` is how the
 /// app keys a remote session, so `serverOfPath` names the machine `boat` here
 /// with no stub. Local tasks carry no mark.
-const BOAT = "dray://boat/repo";
+const BOAT = "wain://boat/repo";
 
 const task = (id: string, title: string, path = "/repo"): SessionIndexItem =>
   ({
@@ -79,7 +79,7 @@ function Header() {
   const remoteLit = lit === AUTO_POST.sessionId;
   return (
     <div className="flex h-10 w-full items-center gap-0.5 rounded-xl border border-border bg-surface-frame px-2">
-      <ItemTab icon={<ChatBubbleOvalLeftIcon className="size-4 shrink-0 text-muted-foreground" />} label="Dray" active={lit === "chat"} onPick={() => setLit("chat")} fixed />
+      <ItemTab icon={<ChatBubbleOvalLeftIcon className="size-4 shrink-0 text-muted-foreground" />} label="Wain" active={lit === "chat"} onPick={() => setLit("chat")} fixed />
       {[AUTO_POST, CUBICLE].map((item) => (
         <ItemTab
           key={item.sessionId}

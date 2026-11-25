@@ -3,7 +3,7 @@
 
 use std::collections::BTreeSet;
 
-use dray_core::store::{SessionIndexItem, SessionStatus};
+use wain_core::store::{SessionIndexItem, SessionStatus};
 use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement,
     Styled, div, prelude::*, px, svg,

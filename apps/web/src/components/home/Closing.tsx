@@ -49,7 +49,7 @@ export function Closing() {
       </div>
 
       <footer className="relative mx-auto mt-[120px] flex w-full max-w-[960px] flex-col gap-4 pb-[220px] sm:flex-row sm:items-center sm:justify-between lg:mt-[140px]">
-        <p className={LABEL}>© {new Date().getFullYear()} Dray</p>
+        <p className={LABEL}>© {new Date().getFullYear()} Wain</p>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2">
           {LINKS.map((l) => (
             <a

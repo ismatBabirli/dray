@@ -32,7 +32,7 @@ mod tools;
 use std::collections::HashSet;
 use std::rc::Rc;
 
-use dray_core::events::{
+use wain_core::events::{
     FileChange, FileEdit, PermissionBehavior, PermissionOption, PermissionOptionKind, Question, QuestionOption,
     ToolResult, ToolType,
 };
@@ -89,19 +89,19 @@ fn calls_owned() -> Vec<ToolCall> {
         unified_diff: Some("@@ -1,3 +1,3 @@\n export function truncate(s: string) {\n-  return s.slice(0, 80);\n+  return s.length > 80 ? `${s.slice(0, 80)}…` : s;\n }".into()),
     }];
     vec![
-        call("bash-live", "Bash", ToolType::Shell, json!({"command": "cargo test -p dray-gpui", "timeout": 300000}), None),
+        call("bash-live", "Bash", ToolType::Shell, json!({"command": "cargo test -p wain-gpui", "timeout": 300000}), None),
         call(
             "read-whole",
             "Read",
             ToolType::FileRead,
-            json!({"file_path": "/Users/me/dray/apps/gpui/src/theme.rs"}),
+            json!({"file_path": "/Users/me/wain/apps/gpui/src/theme.rs"}),
             result("     1\t//! The Default palette", false, None),
         ),
         call(
             "read-range",
             "Read",
             ToolType::FileRead,
-            json!({"file_path": "/Users/me/dray/apps/gpui/src/main.rs", "offset": 15, "limit": 6}),
+            json!({"file_path": "/Users/me/wain/apps/gpui/src/main.rs", "offset": 15, "limit": 6}),
             result(
                 "    15\tfn main() {\n    16\t    env_logger::init();\n    17\t    gpui_platform::application()\n    18\t        .with_assets(assets::Assets)\n    19\t        .run(|cx| workspace::open(cx));\n    20\t}",
                 false,
@@ -113,7 +113,7 @@ fn calls_owned() -> Vec<ToolCall> {
             "Edit",
             ToolType::FileEdit,
             json!({
-                "file_path": "/Users/me/dray/apps/gpui/src/sidebar.rs",
+                "file_path": "/Users/me/wain/apps/gpui/src/sidebar.rs",
                 "old_string": "    .gap(px(4.))\n    .child(title)",
                 "new_string": "    .gap(px(6.))\n    .child(title)\n    .child(badge)"
             }),
@@ -138,8 +138,8 @@ fn calls_owned() -> Vec<ToolCall> {
             "bash-routine",
             "Bash",
             ToolType::Shell,
-            json!({"command": "cat ~/.dray/serve-port"}),
-            result("cat: /Users/me/.dray/serve-port: No such file or directory", true, Some(1)),
+            json!({"command": "cat ~/.wain/serve-port"}),
+            result("cat: /Users/me/.wain/serve-port: No such file or directory", true, Some(1)),
         ),
         call(
             "mcp",
@@ -160,7 +160,7 @@ fn calls_owned() -> Vec<ToolCall> {
             "write",
             "Write",
             ToolType::FileEdit,
-            json!({"file_path": "/Users/me/dray/apps/gpui/README.md", "content": "# Dray on GPUI\n\nThe desktop app rewritten on GPUI.\n"}),
+            json!({"file_path": "/Users/me/wain/apps/gpui/README.md", "content": "# Wain on GPUI\n\nThe desktop app rewritten on GPUI.\n"}),
             None,
         ),
         call(

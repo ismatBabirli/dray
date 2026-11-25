@@ -1,11 +1,11 @@
-"""Seeds a dray-serve home for ImageRetryTests (#1347): a bot whose chat holds a
+"""Seeds a wain-serve home for ImageRetryTests (#1347): a bot whose chat holds a
 reply per picture, each a markdown image by absolute path. Even ones sit under
 `browser/recordings/`, which `/file` serves; odd ones outside it, read through
 `read_file` over the socket.
 
     python3 scripts/image_retry_seed.py            # prints the token
-    DRAY_HOME=/private/tmp/dray-img dray-serve --port <server port> &
-    python3 scripts/late_turns_proxy.py <port> <server port> /private/tmp/dray-img 0 &
+    WAIN_HOME=/private/tmp/wain-img wain-serve --port <server port> &
+    python3 scripts/late_turns_proxy.py <port> <server port> /private/tmp/wain-img 0 &
 
 Under /private/tmp, not /tmp: the server canonicalizes paths, and a bot's path
 that differs from its chat's cwd by that symlink matches no bot.
@@ -13,7 +13,7 @@ that differs from its chat's cwd by that symlink matches no bot.
 import json, os, shutil, struct, sys, uuid, zlib
 from datetime import datetime, timedelta, timezone
 
-ROOT = sys.argv[1] if len(sys.argv) > 1 else "/private/tmp/dray-img"
+ROOT = sys.argv[1] if len(sys.argv) > 1 else "/private/tmp/wain-img"
 TOKEN = "1347" * 16
 now = datetime.now(timezone.utc)
 stamp = lambda d: d.isoformat(timespec="milliseconds").replace("+00:00", "Z")

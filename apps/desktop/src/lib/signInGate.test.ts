@@ -8,7 +8,7 @@ describe("gatesSignIn", () => {
   });
 
   it("gates a release build whatever the opt-in says", () => {
-    expect(gatesSignIn({ DEV: false, VITE_DRAY_SIGN_IN: "0" })).toBe(true);
+    expect(gatesSignIn({ DEV: false, VITE_WAIN_SIGN_IN: "0" })).toBe(true);
   });
 
   it("skips the gate in a dev build", () => {
@@ -16,6 +16,6 @@ describe("gatesSignIn", () => {
   });
 
   it("gates a dev build that opts in", () => {
-    expect(gatesSignIn({ DEV: true, VITE_DRAY_SIGN_IN: "1" })).toBe(true);
+    expect(gatesSignIn({ DEV: true, VITE_WAIN_SIGN_IN: "1" })).toBe(true);
   });
 });

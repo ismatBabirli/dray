@@ -15,7 +15,7 @@
 //!
 //! **libcef.dll is delay-loaded** (`/DELAYLOAD` in build.rs). Linked
 //! normally it is an import the loader resolves before `main`, and a machine
-//! without the download could not start Dray at all. `load` maps it from
+//! without the download could not start Wain at all. `load` maps it from
 //! wherever it lives before the first `cef_*` call, and the delay-load helper
 //! then finds it already in the process by name.
 //!
@@ -40,7 +40,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 const PARKED_X: i32 = -20000;
 
 /// Maps libcef.dll from `dir`. `LOAD_WITH_ALTERED_SEARCH_PATH` finds its own
-/// imports (`chrome_elf.dll`) beside it rather than beside Dray. Once per
+/// imports (`chrome_elf.dll`) beside it rather than beside Wain. Once per
 /// process; the library is never freed.
 pub fn load(dir: &Path) -> Result<(), String> {
     let path = dir.join("libcef.dll");

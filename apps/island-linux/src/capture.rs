@@ -164,7 +164,7 @@ pub fn inked(still: &RgbaImage, marks: &[Mark], region: Rect) -> RgbaImage {
     out
 }
 
-/// PNG, unless that passes the API's 5MB image ceiling — over it Dray sends
+/// PNG, unless that passes the API's 5MB image ceiling — over it Wain sends
 /// the file as a path the model has to open — so a big region steps down
 /// through JPEG qualities until it fits. Into a folder of the island's own,
 /// swept of week-old captures on the way: a sent one is already copied into
@@ -208,7 +208,7 @@ pub fn write(image: &RgbaImage) -> std::io::Result<PathBuf> {
 /// folder in it is private already.
 #[cfg(windows)]
 fn private_folder() -> std::io::Result<PathBuf> {
-    let dir = std::env::temp_dir().join("dray-island");
+    let dir = std::env::temp_dir().join("wain-island");
     std::fs::create_dir_all(&dir)?;
     Ok(dir)
 }
@@ -220,7 +220,7 @@ fn private_folder() -> std::io::Result<PathBuf> {
 fn private_folder() -> std::io::Result<PathBuf> {
     use std::os::unix::fs::{DirBuilderExt, MetadataExt, PermissionsExt};
     let uid = whoami()?;
-    let dir = std::env::temp_dir().join(format!("dray-island-{uid}"));
+    let dir = std::env::temp_dir().join(format!("wain-island-{uid}"));
     match std::fs::DirBuilder::new().mode(0o700).create(&dir) {
         Ok(()) => {}
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}

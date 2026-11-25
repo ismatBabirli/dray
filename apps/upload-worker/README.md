@@ -1,13 +1,13 @@
 # Upload Worker
 
-`dray upload`'s endpoint (#1479): a Cloudflare Worker that takes one file per
+`wain upload`'s endpoint (#1479): a Cloudflare Worker that takes one file per
 `POST /`, checks the caller's GitHub token against `GET /user`, checks the
-caller contributes to Dray, sniffs the bytes, and streams the file into R2
+caller contributes to Wain, sniffs the bytes, and streams the file into R2
 through a binding. No S3 keys.
 
-- **Dray contributors only** (#1501): a collaborator of `monorepo-labs/dray`,
-  a member of the `monorepo-labs` org, or the author of a PR open there.
-  Anyone else gets 403 `not_a_contributor`. Asked in that order with Dray's own
+- **Wain contributors only** (#1501): a collaborator of `ismatbabirli/wain`,
+  a member of the `ismatbabirli` org, or the author of a PR open there.
+  Anyone else gets 403 `not_a_contributor`. Asked in that order with Wain's own
   token, the `GITHUB_LOOKUP_TOKEN` secret, never the caller's
   ([contributor.ts](src/contributor.ts)). Open PRs are matched on user id,
   since a login can be renamed and reused. No secret set = 503 `uploads_off`;
@@ -33,27 +33,27 @@ collaborator's.
 
 ```bash
 pnpm dev                                          # wrangler dev, local R2 and Durable Objects
-DRAY_UPLOAD_URL=http://127.0.0.1:8787 dray upload shot.png
+WAIN_UPLOAD_URL=http://127.0.0.1:8787 wain upload shot.png
 pnpm test                                         # unit tests, then wrangler dev against a fake GitHub
 ```
 
 Locally, the URLs answered point at `PUBLIC_URL`, which serves nothing. Read
 what landed through wrangler's local explorer:
-`http://127.0.0.1:8787/cdn-cgi/local/explorer/api/r2/buckets/dray-uploads/objects`.
+`http://127.0.0.1:8787/cdn-cgi/local/explorer/api/r2/buckets/wain-uploads/objects`.
 
 ## Deploy
 
 Not wired into CI. From this directory, signed in with `pnpm exec wrangler login`:
 
-1. **Bucket.** `pnpm exec wrangler r2 bucket create dray-uploads`, or point
+1. **Bucket.** `pnpm exec wrangler r2 bucket create wain-uploads`, or point
    `bucket_name` at an existing bucket.
 2. **Public access.** Dashboard → R2 → the bucket → Settings → Custom Domains →
-   Connect Domain → `img.drayhq.com`. Another domain works; change `PUBLIC_URL`
+   Connect Domain → `img.wainhq.com`. Another domain works; change `PUBLIC_URL`
    to match. Leave the `r2.dev` URL off; it is rate-limited and not for production.
 3. **Lookup token.** Create a fine-grained personal access token at
    GitHub → Settings → Developer settings → Fine-grained tokens, signed in as
-   an admin of `monorepo-labs`:
-   - Resource owner: `monorepo-labs`. Repository access: only `monorepo-labs/dray`.
+   an admin of `ismatbabirli`:
+   - Resource owner: `ismatbabirli`. Repository access: only `ismatbabirli/wain`.
    - Repository permissions: Metadata, read (set by default), and Pull
      requests, read.
    - Organization permissions: Members, read.
@@ -64,12 +64,12 @@ Not wired into CI. From this directory, signed in with `pnpm exec wrangler login
    the repo. Then `pnpm exec wrangler secret put GITHUB_LOOKUP_TOKEN` and paste
    it.
 4. **Deploy.** `pnpm run deploy`. That creates the Worker, the `Limiter` Durable
-   Object (migration `v1`), the R2 binding, and `upload.drayhq.com` as the
+   Object (migration `v1`), the R2 binding, and `upload.wainhq.com` as the
    Worker's custom domain, DNS record included. It fails if a record for that
    name already exists.
-5. **Check.** `curl -sI https://upload.drayhq.com/` answers a 302 to
-   CONTRIBUTING.md. `dray upload shot.png` as a contributor lands a file whose
-   URL opens; as anyone else it says uploads are for Dray contributors.
+5. **Check.** `curl -sI https://upload.wainhq.com/` answers a 302 to
+   CONTRIBUTING.md. `wain upload shot.png` as a contributor lands a file whose
+   URL opens; as anyone else it says uploads are for Wain contributors.
 
 Cloudflare's own request body cap on the Free and Pro plans is 100 MB, so a
 video just under the Worker's 100 MiB cap can be refused at the edge with

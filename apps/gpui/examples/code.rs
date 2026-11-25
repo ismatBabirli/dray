@@ -164,7 +164,7 @@ fn main() {
             write: Arc::new(Diff::new(
                 "new.json",
                 None,
-                "{\n  \"name\": \"dray\",\n  \"private\": true,\n  \"version\": 3\n}\n",
+                "{\n  \"name\": \"wain\",\n  \"private\": true,\n  \"version\": 3\n}\n",
             )),
             full: Arc::new(Diff::new("load.py", Some(&full_old), &full_new)),
         };

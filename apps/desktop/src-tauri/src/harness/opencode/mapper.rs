@@ -1,4 +1,4 @@
-//! OpenCode's ACP vocabulary onto Dray's.
+//! OpenCode's ACP vocabulary onto Wain's.
 //!
 //! grok's reading of the same protocol, minus grok's extensions. Three things
 //! are synthesized: `TurnStarted` on the first update after a prompt, since the
@@ -380,7 +380,7 @@ impl Mapper {
 /// What a delegated run is called where OpenCode names no agent type.
 const SUBAGENT_LABEL: &str = "Subagent";
 
-/// OpenCode's tool name onto Dray's row type, ACP's kind as the fallback —
+/// OpenCode's tool name onto Wain's row type, ACP's kind as the fallback —
 /// which calls `task` `think`, so it is named here.
 fn tool_type(name: &str, kind: ToolKind) -> ToolType {
     match name {

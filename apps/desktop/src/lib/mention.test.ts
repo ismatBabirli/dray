@@ -121,9 +121,9 @@ describe("highlightSegments", () => {
   });
 
   it("marks a bare host and gives it a scheme to open under", () => {
-    expect(highlightSegments("try drayhq.com/docs, or localhost:3000.")).toEqual([
+    expect(highlightSegments("try wainhq.com/docs, or localhost:3000.")).toEqual([
       { kind: "text", text: "try " },
-      { kind: "url", text: "drayhq.com/docs", href: "https://drayhq.com/docs" },
+      { kind: "url", text: "wainhq.com/docs", href: "https://wainhq.com/docs" },
       { kind: "text", text: ", or " },
       { kind: "url", text: "localhost:3000", href: "http://localhost:3000" },
       { kind: "text", text: "." },
@@ -180,9 +180,9 @@ describe("highlightSegments", () => {
   /// likely to break it. The run has to stop at the number's end like a
   /// Linear one, or the sentence after a tag is painted as an address.
   it("marks a github tag, slug and all", () => {
-    expect(highlightSegments("start on #monorepo-labs/dray#121 today")).toEqual([
+    expect(highlightSegments("start on #ismatbabirli/wain#121 today")).toEqual([
       { kind: "text", text: "start on " },
-      { kind: "issue", text: "#monorepo-labs/dray#121" },
+      { kind: "issue", text: "#ismatbabirli/wain#121" },
       { kind: "text", text: " today" },
     ]);
 
@@ -194,7 +194,7 @@ describe("highlightSegments", () => {
   /// read the joined run, and a segmentation that loses a character shows up as
   /// ghosting in the overlay.
   it("round-trips a github tag carrying a title", () => {
-    roundTrips("#monorepo-labs/dray#12 Some title");
+    roundTrips("#ismatbabirli/wain#12 Some title");
   });
 
   /// All three can share one sentence, which is why the three colours are
@@ -409,7 +409,7 @@ describe("splitMention", () => {
 
 
 describe("withLineBreaks", () => {
-  /// An agent relaying through `dray send` writes its message inside a shell
+  /// An agent relaying through `wain send` writes its message inside a shell
   /// string, where the escape is left uninterpreted, so the two characters
   /// arrive verbatim and the whole report drew as one paragraph.
   it("turns a literal backslash-n into a break", () => {
@@ -519,7 +519,7 @@ describe("findPromptPaths under-matches", () => {
   });
 
   it("links nothing for a path anchored outside the cwd", () => {
-    expect(found("read ~/.dray/parse_failures.jsonl after")).toEqual([]);
+    expect(found("read ~/.wain/parse_failures.jsonl after")).toEqual([]);
     expect(found("read $HOME/x/a.ts after")).toEqual([]);
   });
 

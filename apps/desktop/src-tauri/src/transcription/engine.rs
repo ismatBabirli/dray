@@ -407,7 +407,7 @@ fn init_backends() -> Result<()> {
 #[cfg(target_os = "linux")]
 fn bundled_modules() -> Option<PathBuf> {
     let exe = std::env::current_exe().ok()?;
-    let dir = exe.parent()?.join("../lib/Dray/transcribe");
+    let dir = exe.parent()?.join("../lib/Wain/transcribe");
     dir.is_dir().then_some(dir)
 }
 

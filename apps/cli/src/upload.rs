@@ -1,10 +1,10 @@
-//! `dray upload`: put screenshots and recordings somewhere a Dray PR body can
-//! show them (#1477, #1479). For Dray's own contributors only (#1501), so it is
+//! `wain upload`: put screenshots and recordings somewhere a Wain PR body can
+//! show them (#1477, #1479). For Wain's own contributors only (#1501), so it is
 //! hidden from `--help` and documented in CONTRIBUTING.md, not the user docs.
 //!
 //! GitHub takes uploads only through its web editor, so this sends each file
-//! to Dray's upload Worker (`apps/upload-worker`), which checks the caller
-//! contributes to monorepo-labs/dray and stores the file in R2. Through `curl`, as `dray update`
+//! to Wain's upload Worker (`apps/upload-worker`), which checks the caller
+//! contributes to ismatbabirli/wain and stores the file in R2. Through `curl`, as `wain update`
 //! already is, so this binary links no HTTP stack.
 
 use std::io::Write;
@@ -37,7 +37,7 @@ pub fn run(args: Upload) -> Result<(), String> {
         match upload(file, &token, &endpoint) {
             Ok(stored) => println!("{}", markdown(file, &stored)),
             Err(why) => {
-                eprintln!("dray: {}: {why}", file.display());
+                eprintln!("wain: {}: {why}", file.display());
                 failed += 1;
             }
         }
@@ -48,12 +48,12 @@ pub fn run(args: Upload) -> Result<(), String> {
     }
 }
 
-/// upload.drayhq.com, or `DRAY_UPLOAD_URL` for a local `wrangler dev` or another deploy.
+/// upload.wainhq.com, or `WAIN_UPLOAD_URL` for a local `wrangler dev` or another deploy.
 fn endpoint() -> String {
-    std::env::var("DRAY_UPLOAD_URL")
+    std::env::var("WAIN_UPLOAD_URL")
         .ok()
         .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(|| "https://upload.drayhq.com".into())
+        .unwrap_or_else(|| "https://upload.wainhq.com".into())
         .trim()
         .trim_end_matches('/')
         .into()
@@ -137,7 +137,7 @@ fn read_reply(output: &str) -> Result<Stored, String> {
             "GitHub refused the token. Run `gh auth login`, or set GITHUB_TOKEN to a user's token".into()
         }
         ("401", _) => "the upload service wants a GitHub token".into(),
-        ("403", _) => "uploads are for Dray contributors: collaborators of monorepo-labs/dray and authors of an \
+        ("403", _) => "uploads are for Wain contributors: collaborators of ismatbabirli/wain and authors of an \
                        open pull request there. Open your PR first, then upload"
             .into(),
         ("413", _) => match json["max_bytes"].as_u64() {
@@ -177,9 +177,9 @@ mod tests {
 
     #[test]
     fn reads_the_url_and_type_out_of_a_success() {
-        let out = "{\"url\":\"https://img.drayhq.com/ab.png\",\"type\":\"image/png\",\"size\":3}\n200";
+        let out = "{\"url\":\"https://img.wainhq.com/ab.png\",\"type\":\"image/png\",\"size\":3}\n200";
         let stored = read_reply(out).unwrap();
-        assert_eq!(stored.url, "https://img.drayhq.com/ab.png");
+        assert_eq!(stored.url, "https://img.wainhq.com/ab.png");
         assert_eq!(stored.kind, "image/png");
     }
 
@@ -188,7 +188,7 @@ mod tests {
         assert!(read_reply("{\"error\":\"github_token_invalid\"}\n401").err().unwrap().contains("gh auth login"));
         assert!(read_reply("{\"error\":\"not_accepted\"}\n415").err().unwrap().contains("mp4, webm or mov"));
         assert!(read_reply("{\"error\":\"slow_down\"}\n429").err().unwrap().contains("300 an hour"));
-        assert!(read_reply("{\"error\":\"not_a_contributor\"}\n403").err().unwrap().contains("Dray contributors"));
+        assert!(read_reply("{\"error\":\"not_a_contributor\"}\n403").err().unwrap().contains("Wain contributors"));
         assert_eq!(
             read_reply("{\"error\":\"too_large\",\"max_bytes\":20971520}\n413").err().unwrap(),
             "over the 20 MB limit for this kind of file"

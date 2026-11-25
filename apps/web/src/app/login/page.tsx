@@ -8,7 +8,7 @@ import { Heading, Label } from "@/components/account/SignInParts";
 import { SignInShell } from "@/components/account/SignInShell";
 import { auth, emailSignIn, LAST_METHOD_COOKIE } from "@/lib/auth";
 
-export const metadata: Metadata = { title: "Sign in - Dray" };
+export const metadata: Metadata = { title: "Sign in - Wain" };
 
 /// Only a path on this site, so a crafted `?next=` can't send a fresh
 /// sign-in somewhere else. `//host` is a path to the browser's eye too.
@@ -30,7 +30,7 @@ function lastMethod(value: string | undefined): Method | null {
   return value === "github" || value === "google" || value === "email" ? value : null;
 }
 
-/// Sign in to Dray with GitHub, Google or email. A reader already signed in
+/// Sign in to Wain with GitHub, Google or email. A reader already signed in
 /// goes straight on, unless the desktop app sent them, which asks whether
 /// that is the account they want; `via` is the method the app picked.
 export default async function LoginPage({
@@ -49,7 +49,7 @@ export default async function LoginPage({
     return (
       <SignInShell>
         <Label danger>This sign-in link is broken</Label>
-        <Heading>Start again from Dray.</Heading>
+        <Heading>Start again from Wain.</Heading>
       </SignInShell>
     );
 

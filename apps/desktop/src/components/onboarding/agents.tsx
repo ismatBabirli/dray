@@ -138,7 +138,7 @@ export function useGithubSetup(): GithubSetup {
         .then(async (found) => {
           await read();
           if (found) signIn();
-          else setDoing({ state: "failed", error: "GitHub CLI installed, but Dray can't find it" });
+          else setDoing({ state: "failed", error: "GitHub CLI installed, but Wain can't find it" });
         })
         .catch((err) => {
           if (String(err) === "no-brew") {

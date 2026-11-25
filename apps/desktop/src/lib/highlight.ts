@@ -93,7 +93,7 @@ export const SEGMENT_COLOR: Record<Segment["kind"], string> = {
 /// only where the URL opened one, as Wikipedia's do.
 const URL_TAIL = /[.,;:!?'"»›]+$/;
 
-/// A bare host in prose — `drayhq.com/docs`, `localhost:3000` — with no scheme
+/// A bare host in prose — `wainhq.com/docs`, `localhost:3000` — with no scheme
 /// in front of it.
 ///
 /// The TLD list is the guess, and it is short on purpose: a file name is the
@@ -185,7 +185,7 @@ export function splitMention(text: string): { dir: string; name: string } {
 /// typed is what the box has to keep holding, and a break drawn there reads
 /// back as a newline nobody typed.
 ///
-/// The sender is why this exists. An agent relaying through `dray send` writes
+/// The sender is why this exists. An agent relaying through `wain send` writes
 /// its message inside a shell string, where `\n` is left uninterpreted, so the
 /// two characters arrive verbatim and the whole report drew as one paragraph.
 /// Applied before anything is segmented, so a mark cannot span the break and a

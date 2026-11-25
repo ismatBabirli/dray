@@ -457,8 +457,8 @@ describe("findBareUrls", () => {
   const hrefs = (text: string) => findBareUrls(text).map((u) => u.href);
 
   it("links a bare host, with its path, minus the sentence's punctuation", () => {
-    expect(hrefs("See drayhq.com/docs, then docs.github.com.")).toEqual([
-      "https://drayhq.com/docs",
+    expect(hrefs("See wainhq.com/docs, then docs.github.com.")).toEqual([
+      "https://wainhq.com/docs",
       "https://docs.github.com",
     ]);
     expect(hrefs("(example.co.uk)")).toEqual(["https://example.co.uk"]);
@@ -488,7 +488,7 @@ describe("findBareUrls", () => {
   it("leaves file names, paths, emails and versions alone", () => {
     expect(
       hrefs(
-        "README.md main.rs app.py Dray.app libx.so Node.js Makefile.in config.h.in src/foo.com me@example.com v1.2.3 e.g. example.community config.dev.ts",
+        "README.md main.rs app.py Wain.app libx.so Node.js Makefile.in config.h.in src/foo.com me@example.com v1.2.3 e.g. example.community config.dev.ts",
       ),
     ).toEqual([]);
   });
@@ -499,8 +499,8 @@ describe("linkBareUrls", () => {
     const tree: Hast = {
       type: "root",
       children: [
-        { type: "text", value: "go to drayhq.com now" },
-        { type: "element", tagName: "code", children: [{ type: "text", value: "drayhq.com" }] },
+        { type: "text", value: "go to wainhq.com now" },
+        { type: "element", tagName: "code", children: [{ type: "text", value: "wainhq.com" }] },
         {
           type: "element",
           tagName: "a",
@@ -517,8 +517,8 @@ describe("linkBareUrls", () => {
       "code",
       "a",
     ]);
-    expect(tree.children?.[1].properties?.href).toBe("https://drayhq.com");
-    expect(tree.children?.[3].children?.[0].value).toBe("drayhq.com");
+    expect(tree.children?.[1].properties?.href).toBe("https://wainhq.com");
+    expect(tree.children?.[3].children?.[0].value).toBe("wainhq.com");
   });
 });
 
@@ -539,13 +539,13 @@ describe("local images", () => {
   it("marks every shape of local source an agent writes", () => {
     const html = render(
       [
-        "![hero](/Users/me/.dray/browser/recordings/abc/hero.png)",
+        "![hero](/Users/me/.wain/browser/recordings/abc/hero.png)",
         "![a](docs/shot.png) ![b](./shot.png) ![c](file:///Users/me/a%20b.png)",
         "![d](</Users/me/My Shots/a.png>)",
       ].join("\n\n"),
     );
     expect(marked(html)).toEqual([
-      "/Users/me/.dray/browser/recordings/abc/hero.png",
+      "/Users/me/.wain/browser/recordings/abc/hero.png",
       "docs/shot.png",
       "./shot.png",
       "/Users/me/a b.png",
@@ -626,22 +626,22 @@ describe("image rows", () => {
     const html = render(
       [
         "Screens:",
-        "![a](https://img.drayhq.com/a.png)\n![b](https://img.drayhq.com/b.png)",
+        "![a](https://img.wainhq.com/a.png)\n![b](https://img.wainhq.com/b.png)",
         "![c](/tmp/c.png)",
-        "![d](https://img.drayhq.com/d.png)",
+        "![d](https://img.wainhq.com/d.png)",
         "And the desktop one:",
-        "![e](https://img.drayhq.com/e.png)",
+        "![e](https://img.wainhq.com/e.png)",
       ].join("\n\n"),
     );
     expect(rows(html)).toEqual([
-      ["https://img.drayhq.com/a.png", "https://img.drayhq.com/b.png", "/tmp/c.png", "https://img.drayhq.com/d.png"],
-      ["https://img.drayhq.com/e.png"],
+      ["https://img.wainhq.com/a.png", "https://img.wainhq.com/b.png", "/tmp/c.png", "https://img.wainhq.com/d.png"],
+      ["https://img.wainhq.com/e.png"],
     ]);
   });
 
   it("leaves an image in a sentence or a link where it is", () => {
     const html = render(
-      "See ![x](https://img.drayhq.com/x.png) here.\n\n[![badge](https://img.shields.io/b.svg)](https://example.com)",
+      "See ![x](https://img.wainhq.com/x.png) here.\n\n[![badge](https://img.shields.io/b.svg)](https://example.com)",
     );
     expect(html).not.toContain(IMAGE_ROW_CLASS);
   });

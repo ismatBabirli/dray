@@ -1,18 +1,18 @@
-"""Seeds one dray-serve home per LoneBotTests case (#1169), all on one token.
+"""Seeds one wain-serve home per LoneBotTests case (#1169), all on one token.
 
     python3 scripts/lone_bot_seed.py
     for c in lone hidden visible two fresh; do   # ports 47101-47105 in this order
-      DRAY_HOME=/private/tmp/dray-lone-bot/$c dray-serve --port <port> &
+      WAIN_HOME=/private/tmp/wain-lone-bot/$c wain-serve --port <port> &
     done
 
 Under /private/tmp, not /tmp: the server canonicalizes paths, and a bot's path
-that differs from its chat's cwd by that symlink matches no bot. dray-serve
+that differs from its chat's cwd by that symlink matches no bot. wain-serve
 must know bots; build it from the repo if the installed one is older.
 """
 import json, os, shutil, sys, uuid
 from datetime import datetime, timedelta, timezone
 
-ROOT = sys.argv[1] if len(sys.argv) > 1 else "/private/tmp/dray-lone-bot"
+ROOT = sys.argv[1] if len(sys.argv) > 1 else "/private/tmp/wain-lone-bot"
 TOKEN = "1169" * 16
 now = datetime.now(timezone.utc)
 stamp = lambda d: d.isoformat(timespec="milliseconds").replace("+00:00", "Z")

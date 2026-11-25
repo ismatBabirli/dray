@@ -1,4 +1,4 @@
-//! Dray Cloud on the machine's side (#857): a `dray-serve` on the boat sandbox
+//! Wain Cloud on the machine's side (#857): a `wain-serve` on the boat sandbox
 //! the control plane started for one task. It names its sandbox and keeps it
 //! up while it works.
 
@@ -14,7 +14,7 @@ const CLOUD_FILE: &str = "cloud.json";
 const HEARTBEAT_EVERY: Duration = Duration::from_secs(60);
 
 /// This sandbox's id, or `None` off boat. `BOAT_ID` is set for a login alone,
-/// and the systemd unit that runs `dray-serve` is not one, so it is read
+/// and the systemd unit that runs `wain-serve` is not one, so it is read
 /// through a login shell, once, at start.
 pub async fn boat_id() -> Option<String> {
     if let Some(id) = std::env::var("BOAT_ID").ok().filter(|id| sandbox_id(id)) {
@@ -30,14 +30,14 @@ pub async fn boat_id() -> Option<String> {
         let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into());
         // Behind a marker, since an rc file is free to print on its own.
         let run = tokio::process::Command::new(shell)
-            .args(["-l", "-c", "echo __DRAY_BOAT__; printenv BOAT_ID"])
+            .args(["-l", "-c", "echo __WAIN_BOAT__; printenv BOAT_ID"])
             .stdin(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())
             .kill_on_drop(true)
             .output();
         let out = tokio::time::timeout(Duration::from_secs(10), run).await.ok()?.ok()?;
         let out = String::from_utf8(out.stdout).ok()?;
-        let id = out.rsplit_once("__DRAY_BOAT__\n")?.1.trim();
+        let id = out.rsplit_once("__WAIN_BOAT__\n")?.1.trim();
         sandbox_id(id).then(|| id.to_string())
     }
 }
@@ -104,7 +104,7 @@ mod tests {
     use super::*;
 
     fn temp_home() -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("dray-cloud-{}", uuid::Uuid::new_v4().simple()));
+        let dir = std::env::temp_dir().join(format!("wain-cloud-{}", uuid::Uuid::new_v4().simple()));
         std::fs::create_dir_all(dir.join("sessions")).unwrap();
         dir
     }

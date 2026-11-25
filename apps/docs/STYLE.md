@@ -1,12 +1,12 @@
-# Writing the Dray docs
+# Writing the Wain docs
 
-Pages live in `content/`, served at drayhq.com/docs. Blume builds the sidebar
+Pages live in `content/`, served at wainhq.com/docs. Blume builds the sidebar
 from folders, and `llms.txt` / `llms-full.txt` from every page.
 
 ## Who reads this
 
-People first. A person who just installed Dray, or one who wants to know if it
-can do a thing. Second: an AI that was handed these docs and asked "can Dray do
+People first. A person who just installed Wain, or one who wants to know if it
+can do a thing. Second: an AI that was handed these docs and asked "can Wain do
 X, and how?" Write for the person; the AI is served by the same page if it is
 complete and concrete.
 
@@ -24,7 +24,7 @@ So every page answers three questions, in this order:
 - Normal grammar. No marketing ("powerful", "seamless", "simply").
 - Say what happens, not how it is built. No file names from the source, no
   Rust types, no wire formats, no event names. A path the reader will see or
-  type (`~/.dray`, `~/.claude/skills`) is fine.
+  type (`~/.wain`, `~/.claude/skills`) is fine.
 
 ## Truth
 
@@ -45,7 +45,7 @@ So every page answers three questions, in this order:
   "Fast mode". Not "Overview".
 - Limits go in a closing `## Limits` section, as a short list.
 - Each fact lives on one page. Link to it from others rather than repeating it.
-- Links are root-relative without `/docs`: `[Worktrees](/using-dray/worktrees)`.
+- Links are root-relative without `/docs`: `[Worktrees](/using-wain/worktrees)`.
 - Where a screenshot would help, leave `{/* screenshot: what it shows */}`.
 
 ## Components
@@ -62,8 +62,8 @@ No imports needed. Use them sparingly.
 | Folder | Covers |
 |---|---|
 | `get-started/` | Install, first launch and sign-in, first session, updates and channels |
-| `using-dray/` | Agents (one page for all six), composer, prompts, permissions, worktrees, sessions, bots, pull requests, spaces |
-| `cli/` | The `dray` command line, every command and flag, bots, orchestration |
+| `using-wain/` | Agents (one page for all six), composer, prompts, permissions, worktrees, sessions, bots, pull requests, spaces |
+| `cli/` | The `wain` command line, every command and flag, bots, orchestration |
 | `settings/` | Accounts, issue trackers, dictation, appearance, notifications, shortcuts |
 | `reference/` | Remote access and sharing, data on disk, privacy, troubleshooting |
 | `server.mdx` | Connecting a Linux server over SSH (kept at its URL) |

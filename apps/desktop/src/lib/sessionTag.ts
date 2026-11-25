@@ -6,13 +6,13 @@
 /// appear any number of times, so the caret finds its own token here rather
 /// than the token being found once up front.
 ///
-/// **The id is in the text because the id is the address.** `dray send` takes
+/// **The id is in the text because the id is the address.** `wain send` takes
 /// a session id and matches it exactly — there is no prefix or title lookup —
 /// so a tag naming a session by title alone would leave the agent running
-/// `dray ls` and guessing between two sessions that share one. That is the same
+/// `wain ls` and guessing between two sessions that share one. That is the same
 /// bargain [issue.ts] makes by writing the identifier and the title both, and
 /// the same one Rust's `attribute` already makes when it prefixes a relayed
-/// message with `the Dray session "title" (id)`.
+/// message with `the Wain session "title" (id)`.
 ///
 /// So nothing crosses the bridge for this: no command, no wire field, no Rust.
 /// The picker writes text, the agent reads text.
@@ -125,7 +125,7 @@ export function applySession(
 
 /// A bot tag, the session tag's shape behind `@`: in a bot's composer `@` names
 /// bots, not files. The id is in the text for the reason a session's is —
-/// `dray bot send` matches it exactly, where a name stops naming the bot once
+/// `wain bot send` matches it exactly, where a name stops naming the bot once
 /// it is renamed. The name loses any `@`, `&`, newline or parenthesised id of
 /// its own, since each would end or misdirect the tag `BOT_TAG` reads back.
 export function botTag(name: string, id: string): string {

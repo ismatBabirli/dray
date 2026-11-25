@@ -246,7 +246,7 @@ pub fn hidden_console() {
     }
 }
 
-/// Windows refuses to rename over an `.exe` that is running — a `dray` an
+/// Windows refuses to rename over an `.exe` that is running — a `wain` an
 /// agent is in the middle of — but will rename the running one itself. So it
 /// moves aside first, and is deleted once nothing runs it: now, or by
 /// [`sweep_aside`] at a later launch.
@@ -275,7 +275,7 @@ pub fn replace_running(from: &Path, to: &Path) -> std::io::Result<()> {
 
 /// What [`replace_running`] names a file it moved aside.
 #[cfg(windows)]
-const ASIDE: &str = ".dray.old.";
+const ASIDE: &str = ".wain.old.";
 
 /// Deletes what [`replace_running`] moved aside in `dir` and nothing runs any
 /// more. One still running stays for the next sweep.
@@ -550,17 +550,17 @@ mod imp {
 mod windows_tests {
     /// What cli.rs does: a temp file beside, renamed over the target.
     fn put(dir: &std::path::Path, dest: &std::path::Path, bytes: &[u8]) -> std::io::Result<()> {
-        let tmp = dir.join(".dray.tmp");
+        let tmp = dir.join(".wain.tmp");
         std::fs::write(&tmp, bytes)?;
         super::replace_running(&tmp, dest)
     }
 
-    /// A `dray` an agent is running holds its file open, which is what the
+    /// A `wain` an agent is running holds its file open, which is what the
     /// move-aside in `replace_running` gets past.
     #[test]
     fn replaces_a_running_exe() {
-        let dir = std::env::temp_dir().join(format!("dray-cli-run-{}", std::process::id()));
-        let dest = dir.join("dray.exe");
+        let dir = std::env::temp_dir().join(format!("wain-cli-run-{}", std::process::id()));
+        let dest = dir.join("wain.exe");
         let ping = std::env::var("SystemRoot").unwrap() + r"\System32\PING.EXE";
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::copy(&ping, &dest).unwrap();
@@ -617,7 +617,7 @@ mod windows_tests {
         /// own `PATH`.
         #[test]
         fn writes_the_registry_once() {
-            let sub = format!("Software\\DrayTest\\cli-{}", std::process::id());
+            let sub = format!("Software\\WainTest\\cli-{}", std::process::id());
             let status = std::process::Command::new("reg")
                 .args(["add", &format!("HKCU\\{sub}"), "/v", "Path", "/t", "REG_EXPAND_SZ", "/d", r"%SystemRoot%;C:\a", "/f"])
                 .output()
@@ -625,7 +625,7 @@ mod windows_tests {
                 .status;
             assert!(status.success());
 
-            let dir = Path::new(r"C:\dray-test\bin");
+            let dir = Path::new(r"C:\wain-test\bin");
             assert!(ensure_in(&sub, dir).unwrap(), "missing: written");
             assert!(!ensure_in(&sub, dir).unwrap(), "present: left alone");
 
@@ -634,9 +634,9 @@ mod windows_tests {
                 .output()
                 .unwrap();
             let out = String::from_utf8_lossy(&out.stdout).into_owned();
-            let _ = std::process::Command::new("reg").args(["delete", r"HKCU\Software\DrayTest", "/f"]).output();
+            let _ = std::process::Command::new("reg").args(["delete", r"HKCU\Software\WainTest", "/f"]).output();
             assert!(out.contains("REG_EXPAND_SZ"), "{out}");
-            assert!(out.contains(r"%SystemRoot%;C:\a;C:\dray-test\bin"), "{out}");
+            assert!(out.contains(r"%SystemRoot%;C:\a;C:\wain-test\bin"), "{out}");
         }
     }
 }

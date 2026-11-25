@@ -7,12 +7,12 @@ import { DownloadCards } from "./cards";
 import { H1, LEDE } from "./styles";
 
 export const metadata: Metadata = {
-  title: "Download - Dray",
+  title: "Download - Wain",
   description:
-    "Download Dray for Mac, Linux (beta) and iPhone, or install it on a server. Free and open source.",
+    "Download Wain for Mac, Linux (beta) and iPhone, or install it on a server. Free and open source.",
 };
 
-/// Every way to get Dray, and nothing else: no ask, no auto-start. The
+/// Every way to get Wain, and nothing else: no ask, no auto-start. The
 /// Download for macOS buttons elsewhere go by way of `/thank-you`, which
 /// starts the dmg and asks for support.
 export default function Downloads() {
@@ -25,7 +25,7 @@ export default function Downloads() {
         <div className="mx-auto w-full max-w-[960px]">
           <SiteNav bare current="download" />
           <div className="lg:ml-[102px] lg:max-w-[756px]">
-            <h1 className={H1}>Download Dray</h1>
+            <h1 className={H1}>Download Wain</h1>
             <p className={`mt-4 leading-6 tracking-[-0.01em] ${LEDE}`}>For Mac, Linux, servers and iPhone.</p>
           </div>
           <div className="mt-16">

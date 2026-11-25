@@ -11,13 +11,13 @@ export interface Env {
   PUBLIC_URL: string;
   /// A stand-in for api.github.com, for tests. Unset in production.
   GITHUB_API_ORIGIN?: string;
-  /// Dray's own token, a secret, for asking GitHub whether a caller
+  /// Wain's own token, a secret, for asking GitHub whether a caller
   /// contributes. Unset, nobody can upload.
   GITHUB_LOOKUP_TOKEN?: string;
 }
 
 const DOCS = `https://github.com/${REPO}/blob/main/CONTRIBUTING.md#screenshots-and-videos`;
-const NOT_A_CONTRIBUTOR = `Uploads are for Dray contributors: collaborators of ${REPO}, members of its org, and authors of an open pull request there. Open your PR first, then upload.`;
+const NOT_A_CONTRIBUTOR = `Uploads are for Wain contributors: collaborators of ${REPO}, members of its org, and authors of an open pull request there. Open your PR first, then upload.`;
 const ACCEPTED = ["png", "jpg", "gif", "webp", "mp4", "webm", "mov"];
 const PER_ADDRESS: Window[] = [{ max: 600, secs: 3600 }];
 const PER_USER: Window[] = [
@@ -26,13 +26,13 @@ const PER_USER: Window[] = [
 ];
 
 export default {
-  /// One file for a Dray PR body (#1477, #1479), sent as the raw request body
+  /// One file for a Wain PR body (#1477, #1479), sent as the raw request body
   /// with the caller's GitHub token as a bearer. The token only says who is
   /// calling and is then dropped: never stored, logged or passed anywhere
-  /// else. Whether they contribute is asked with Dray's own token (#1501).
+  /// else. Whether they contribute is asked with Wain's own token (#1501).
   /// Answers the public URL.
   ///
-  /// 401 a token GitHub refuses, 403 not a Dray contributor, 411 no
+  /// 401 a token GitHub refuses, 403 not a Wain contributor, 411 no
   /// Content-Length, 413 too big, 415 not a type taken, 429 the rate limit,
   /// 503 no public URL or lookup token configured, or the lookup token refused.
   async fetch(req: Request, env: Env): Promise<Response> {
@@ -133,7 +133,7 @@ async function githubUser(
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
-        "User-Agent": "dray-upload",
+        "User-Agent": "wain-upload",
         "X-GitHub-Api-Version": "2022-11-28",
       },
       signal: AbortSignal.timeout(10_000),

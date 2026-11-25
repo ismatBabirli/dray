@@ -34,11 +34,11 @@ test("reads a highlight's apps and action, and keeps it out of the text", () => 
 
 test("takes -> for the arrow and an https target", () => {
   const out = parseChangelog(
-    "## 1.0.0\n### New\n- **X.** Y.\n  <!-- highlight: desktop · action: Read more -> https://drayhq.com/docs -->\n",
+    "## 1.0.0\n### New\n- **X.** Y.\n  <!-- highlight: desktop · action: Read more -> https://wainhq.com/docs -->\n",
   );
   assert.deepEqual(out[0].sections[0].items[0].highlight?.action, {
     label: "Read more",
-    target: "https://drayhq.com/docs",
+    target: "https://wainhq.com/docs",
   });
 });
 

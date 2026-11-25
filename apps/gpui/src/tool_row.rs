@@ -8,7 +8,7 @@
 use std::rc::Rc;
 use std::time::Duration;
 
-use dray_core::events::{FileEdit, ToolResult, ToolType};
+use wain_core::events::{FileEdit, ToolResult, ToolType};
 use gpui::{
     Animation, AnimationExt, AnyElement, App, ClickEvent, FontWeight, Hsla, InteractiveElement, IntoElement,
     ParentElement, RenderOnce, SharedString, StatefulInteractiveElement, Styled, Transformation, Window, div,

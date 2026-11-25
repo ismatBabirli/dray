@@ -10,8 +10,8 @@ import { StartDownload, SupportLink } from "@/app/download/client";
 import { H1, LEDE, LINK } from "@/app/download/styles";
 
 export const metadata: Metadata = {
-  title: "Thanks for downloading - Dray",
-  description: "Download Dray for macOS.",
+  title: "Thanks for downloading - Wain",
+  description: "Download Wain for macOS.",
   robots: { index: false },
 };
 
@@ -31,7 +31,7 @@ export default async function DownloadThanks() {
         <div className="mx-auto w-full max-w-[960px]">
           <SiteNav bare />
           <div className="lg:ml-[102px] lg:max-w-[756px]">
-            <h1 className={H1}>Thanks for downloading Dray.</h1>
+            <h1 className={H1}>Thanks for downloading Wain.</h1>
             <p className={`mt-4 ${LEDE}`}>
               The download starts on its own. If it didn&apos;t,{" "}
               <SupportLink href={DOWNLOAD} to="dmg" className={LINK}>

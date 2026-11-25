@@ -1,7 +1,7 @@
 name: CLI build
 description: >
-  Rust for one target, the cargo cache, and the release build of `dray` and
-  `dray-serve`. One place, so release-cli.yml and warm-cli-cache.yml compile
+  Rust for one target, the cargo cache, and the release build of `wain` and
+  `wain-serve`. One place, so release-cli.yml and warm-cli-cache.yml compile
   with the same steps, flags and env and meet on the same cache key.
 
 inputs:
@@ -29,8 +29,8 @@ outputs:
     description: Every path the key covers.
     value: ${{ steps.key.outputs.paths }}
   serve-bin:
-    description: The unstripped `dray-serve`, relative to the workspace.
-    value: apps/desktop/src-tauri/target/${{ inputs.target }}/serve/dray-serve
+    description: The unstripped `wain-serve`, relative to the workspace.
+    value: apps/desktop/src-tauri/target/${{ inputs.target }}/serve/wain-serve
 
 runs:
   using: composite
@@ -45,14 +45,14 @@ runs:
     # restored `target`, and every crate with a build script rebuilds.
     #
     # The lockfiles are hashed without the root package's `version` line. Every
-    # release bump moves that line and nothing else in them, and the `dray`
+    # release bump moves that line and nothing else in them, and the `wain`
     # crates rebuild on a tag whatever the cache holds, so leaving it in would
     # retire a still-exact cache once per release and re-warm two Macs for it.
     # The action itself is hashed too: a changed flag here is a new key.
     - id: key
       shell: bash
       run: |
-        strip_root() { awk 'skip { skip = 0; next } /^name = "dray"$/ { skip = 1 } { print }' "$1"; }
+        strip_root() { awk 'skip { skip = 0; next } /^name = "wain"$/ { skip = 1 } { print }' "$1"; }
         hash=$( {
           strip_root apps/cli/Cargo.lock
           strip_root apps/desktop/src-tauri/Cargo.lock
@@ -85,7 +85,7 @@ runs:
         restore-keys: ${{ steps.key.outputs.prefix }}
         lookup-only: ${{ inputs.lookup-only }}
 
-    - name: Build dray
+    - name: Build wain
       if: inputs.lookup-only != 'true'
       shell: bash
       working-directory: apps/cli
@@ -94,14 +94,14 @@ runs:
     # From the same commit as the CLI, so one tag is one version of both. The
     # CLI's version rides into the server, which reports it to the app so the
     # app can tell whether a newer release is out on its channel. It reaches
-    # the `dray` crate alone (`option_env!`), so it costs no dependency a
+    # the `wain` crate alone (`option_env!`), so it costs no dependency a
     # rebuild. `serve` is the server's own profile (Cargo.toml), so the app's
     # `tauri build` keeps the plain release one.
-    - name: Build dray-serve
+    - name: Build wain-serve
       if: inputs.lookup-only != 'true'
       shell: bash
       working-directory: apps/desktop/src-tauri
       run: |
-        export DRAY_CLI_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' "$GITHUB_WORKSPACE/apps/cli/Cargo.toml" | head -n 1)
+        export WAIN_CLI_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' "$GITHUB_WORKSPACE/apps/cli/Cargo.toml" | head -n 1)
         cargo build --profile serve --no-default-features --features serve \
-          --bin dray-serve --target ${{ inputs.target }}
+          --bin wain-serve --target ${{ inputs.target }}

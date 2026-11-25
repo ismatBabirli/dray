@@ -15,5 +15,5 @@ Measured against those references (ImageMagick `compare`, Q16):
 | 96pt@2x       | 71.1–72.2 dB | ≤ 1.3 / 65535 |
 | speech video, 748 frames at 24pt@2x | mean 70.1 dB, worst 67.1 dB | |
 
-To redo it: `dray-island --orb-csv <uniforms.csv> <size> <scale> <dir>`
+To redo it: `wain-island --orb-csv <uniforms.csv> <size> <scale> <dir>`
 renders every row, and `src/fixtures/orb-uniforms.csv` drives the motion test.

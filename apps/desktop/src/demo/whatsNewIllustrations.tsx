@@ -551,7 +551,7 @@ const ROWS: { title: string; takes: Record<string, { name: string; Art: () => Re
     },
   },
   {
-    title: "Dray on iPhone",
+    title: "Wain on iPhone",
     takes: {
       "iphone-permission": { name: "A · Allow from anywhere", Art: IPhonePermission },
       "iphone-app": { name: "B · The app in a real frame", Art: IPhoneApp },
@@ -559,7 +559,7 @@ const ROWS: { title: string; takes: Record<string, { name: string; Art: () => Re
     },
   },
   {
-    title: "OpenCode in Dray",
+    title: "OpenCode in Wain",
     takes: {
       "opencode-composer": { name: "A · Picked in the composer", Art: OpenCodeComposer },
       "opencode-chat": { name: "B · OpenCode answers", Art: OpenCodeChat },

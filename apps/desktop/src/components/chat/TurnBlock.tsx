@@ -149,7 +149,7 @@ export default memo(function TurnBlock({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* A bot's kickoff is Dray's own prompt: its chat opens on the reply. */}
+      {/* A bot's kickoff is Wain's own prompt: its chat opens on the reply. */}
       {turn.prompt && !isKickoff(turn) && <UserMessage {...userProps(turn)} onOpenSession={onOpenSession} />}
 
       {/* The work is cut at each queued prompt and each stretch collapses

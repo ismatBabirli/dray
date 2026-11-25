@@ -9,7 +9,7 @@
 //! and how long it shows, so recording costs a file append per frame and no
 //! encoder. `avconvert` is AVFoundation behind a command line and ships with
 //! every Mac, which is what keeps the app free of ffmpeg and of new crates; a
-//! server asks for ffmpeg in `dray setup` instead.
+//! server asks for ffmpeg in `wain setup` instead.
 
 use base64::Engine;
 use std::fs::File;
@@ -68,7 +68,7 @@ impl Recorder {
             return Err(if cfg!(windows) {
                 "recording needs ffmpeg on this machine; install it with `winget install Gyan.FFmpeg`".into()
             } else {
-                "recording needs ffmpeg on this server; run `dray setup` and pick it".into()
+                "recording needs ffmpeg on this server; run `wain setup` and pick it".into()
             });
         }
         std::fs::create_dir_all(dir).map_err(|e| format!("could not create {}: {e}", dir.display()))?;
@@ -190,7 +190,7 @@ fn unclaimed(dir: &Path, stem: &str) -> PathBuf {
 }
 
 /// `<stem>.<ext>` in `dir` or the first free `<stem>-n.<ext>`, created empty so
-/// two `dray video add`s running at once, each on its own connection, can
+/// two `wain video add`s running at once, each on its own connection, can
 /// never pick the same name.
 fn claim(dir: &Path, stem: &str, ext: &str) -> Result<PathBuf, String> {
     for n in 1.. {
@@ -208,7 +208,7 @@ fn claim(dir: &Path, stem: &str, ext: &str) -> Result<PathBuf, String> {
 }
 
 /// Files a video or screenshot the agent made some other way into `dir`, for
-/// `dray video add` and `dray image add`, and answers the file the chat draws.
+/// `wain video add` and `wain image add`, and answers the file the chat draws.
 /// An MP4, PNG or JPEG is copied and any other video converted, built under a
 /// hidden name of its own so a failed run leaves no player on half a file. One
 /// already in `dir` under a name the chat matches is answered as it stands.
@@ -246,7 +246,7 @@ pub fn add(source: &Path, dir: &Path, name: Option<&str>) -> Result<PathBuf, Str
     Ok(dest)
 }
 
-/// Whether `path` holds a PNG or JPEG, for `dray image add`.
+/// Whether `path` holds a PNG or JPEG, for `wain image add`.
 pub fn is_image(path: &Path) -> bool {
     image_kind(path).is_some()
 }
@@ -293,7 +293,7 @@ fn to_mp4(source: &Path, mp4: &Path) -> Result<(), String> {
         Some(ffmpeg) => ffmpeg_convert(&ffmpeg, source, mp4),
         None => Err(format!(
             "{refused}. Converting it needs ffmpeg on this machine and there is none: \
-             install ffmpeg (on a server, `dray setup` offers it), or send an H.264 MP4."
+             install ffmpeg (on a server, `wain setup` offers it), or send an H.264 MP4."
         )),
     }
 }
@@ -320,7 +320,7 @@ fn avconvert(mov: &Path, mp4: &Path) -> Result<(), String> {
 
 #[cfg(not(target_os = "macos"))]
 fn convert(mov: &Path, mp4: &Path) -> Result<(), String> {
-    let ffmpeg = ffmpeg().ok_or("ffmpeg is gone; run `dray setup` and pick it")?;
+    let ffmpeg = ffmpeg().ok_or("ffmpeg is gone; run `wain setup` and pick it")?;
     ffmpeg_convert(&ffmpeg, mov, mp4)
 }
 
@@ -528,7 +528,7 @@ mod tests {
     use super::*;
 
     fn temp_dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("dray-add-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain-add-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir
@@ -639,7 +639,7 @@ mod tests {
             include_str!("harness/pi/system_prompt.md"),
             include_str!("../../../cli/skill/SKILL.md"),
         ] {
-            assert!(prompt.contains("dray video add"));
+            assert!(prompt.contains("wain video add"));
             assert!(prompt.contains("another machine"));
         }
     }
@@ -667,7 +667,7 @@ mod tests {
         match Recorder::start(dir, stem) {
             Ok(recorder) => Some(recorder),
             Err(e) if !cfg!(target_os = "macos") && ffmpeg().is_none() => {
-                assert!(e.contains("dray setup"), "{e}");
+                assert!(e.contains("wain setup"), "{e}");
                 None
             }
             Err(e) => panic!("{e}"),
@@ -678,7 +678,7 @@ mod tests {
     /// AVFoundation cannot read fails here rather than on the reader's screen.
     #[test]
     fn records_frames_into_a_playable_mp4() {
-        let dir = std::env::temp_dir().join(format!("dray-recording-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain-recording-{}", std::process::id()));
         let Some(recorder) = started(&dir, "test") else { return };
         let t = Instant::now();
         let b64 = |b: &[u8]| base64::engine::general_purpose::STANDARD.encode(b);
@@ -711,7 +711,7 @@ mod tests {
 
     #[test]
     fn a_discarded_recording_leaves_no_file() {
-        let dir = std::env::temp_dir().join(format!("dray-recording-discard-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain-recording-discard-{}", std::process::id()));
         let Some(recorder) = started(&dir, "gone") else { return };
         recorder.frame(base64::engine::general_purpose::STANDARD.encode(FRAME1), Instant::now());
         recorder.discard();
@@ -756,7 +756,7 @@ mod tests {
 
     #[test]
     fn a_recording_with_no_frames_says_so() {
-        let dir = std::env::temp_dir().join(format!("dray-recording-empty-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain-recording-empty-{}", std::process::id()));
         let Some(recorder) = started(&dir, "empty") else { return };
         let err = recorder.finish(None).unwrap_err();
         assert!(err.contains("no frames"), "{err}");

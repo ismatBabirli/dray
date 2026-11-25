@@ -27,7 +27,7 @@ export function AppNav({ org, orgs, user }: { org: Org; orgs: Org[]; user: User 
 
   return (
     <nav aria-label="Account" className="flex h-10 items-start justify-between">
-      <Link href="/" aria-label="Dray home" className="flex h-10 w-[120px] items-center pl-4">
+      <Link href="/" aria-label="Wain home" className="flex h-10 w-[120px] items-center pl-4">
         <Wordmark className="h-[11px] w-auto text-white light:text-[#0A0A0A]" />
       </Link>
       <div className="flex h-10 border-r border-b border-white/20 light:border-black/15">

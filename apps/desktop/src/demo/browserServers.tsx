@@ -98,7 +98,7 @@ function Row({ bot, label, page }: { bot: boolean; label: string; page: boolean 
     <div className="flex h-10 shrink-0 items-center gap-0.5 bg-surface-frame px-2">
       {bot ? (
         <>
-          <ItemTab icon={<ChatBubbleOvalLeftIcon className={MARK} />} label="Dray" active={false} onPick={() => {}} fixed />
+          <ItemTab icon={<ChatBubbleOvalLeftIcon className={MARK} />} label="Wain" active={false} onPick={() => {}} fixed />
           <ItemTab icon={face(FIX)} label={FIX.title} active={false} onPick={() => {}} onClose={() => {}} />
           <ItemTab icon={face(AUDIT)} label={AUDIT.title} active={false} onPick={() => {}} onClose={() => {}} machine="boat" />
         </>
@@ -343,7 +343,7 @@ function B({ win }: { win: Win }) {
       toolbar={<Toolbar value={page ? `localhost:${page.port}` : ""} page={!!page} />}
       empty={
         <div className="flex h-full flex-col gap-4 px-6 pt-5 text-ui">
-          <h3 className="text-muted-foreground">{win.bot ? "Running in Dray's tasks" : `Running on ${win.machine}`}</h3>
+          <h3 className="text-muted-foreground">{win.bot ? "Running in Wain's tasks" : `Running on ${win.machine}`}</h3>
           <div className="grid grid-cols-2 gap-3">
             {win.servers.map((s) => (
               <button

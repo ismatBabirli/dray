@@ -83,7 +83,7 @@ function codePlugin(pair: CodeThemePair, streaming: boolean) {
 // tabbed to either.
 const CONTROLS = { table: false, code: { copy: true, download: false } };
 
-// A link opens in Dray's browser; ⌘-click leaves for the system one.
+// A link opens in Wain's browser; ⌘-click leaves for the system one.
 // Passing `a` replaces Streamdown's renderer and its classes with it, so the
 // look is restated here — the same classes `FileLink` copies for a file link.
 function Anchor({ href, children, className, ...rest }: React.ComponentProps<"a">) {
@@ -224,7 +224,7 @@ function MarkdownImpl({
         // styling reads in one place. Break-word rather than anywhere: only a
         // word wider than the whole cap breaks — a file path in a cell — so a
         // column can never collapse below its longest ordinary word.
-        "[&_.dray-table-cell]:max-w-md [&_.dray-table-cell]:wrap-break-word",
+        "[&_.wain-table-cell]:max-w-md [&_.wain-table-cell]:wrap-break-word",
         // The header cell's `whitespace-nowrap` has to lift, or a capped
         // header column overflows instead of wrapping.
         "[&_th]:whitespace-normal",
@@ -255,11 +255,11 @@ function MarkdownImpl({
   );
 }
 
-/// Where `dray browser record` and `dray video add` write, the one place the
-/// asset protocol lets a video be read from. Any home, since `DRAY_HOME` moves
+/// Where `wain browser record` and `wain video add` write, the one place the
+/// asset protocol lets a video be read from. Any home, since `WAIN_HOME` moves
 /// it; one that holds no video draws no player.
 const RECORDING = /\/browser(-dev)?\/recordings\/[^/]+\/[^/]+\.mp4$/;
-/// A screenshot `dray image add` filed there, under the extension it gave it.
+/// A screenshot `wain image add` filed there, under the extension it gave it.
 const SCREENSHOT = /\/browser(-dev)?\/recordings\/[^/]+\/[^/]+\.(png|jpg)$/;
 
 /// Every `span` in the rendered markdown, passed through untouched unless

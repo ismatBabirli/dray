@@ -254,12 +254,12 @@ function Machines({ layout: { id, viewBox, className, place, bus, bands } }: { l
 const REST =
   "Start a task on your MacBook, run it on the Mac mini or a Linux server, and keep it going when you close the lid.";
 
-/// "Run Dray on all your machines": the headline over the machines, a task
+/// "Run Wain on all your machines": the headline over the machines, a task
 /// travelling between them. Phones get the headline's grey rest under them.
 export function Everywhere() {
   return (
     <Section id="everywhere" className="pt-20 pb-8">
-      <Title lead="Run Dray on all your machines.">
+      <Title lead="Run Wain on all your machines.">
         <span className="max-sm:hidden">{REST}</span>
       </Title>
       <PlayWhenVisible className="mt-12 lg:mt-20">

@@ -31,7 +31,7 @@ const HARDEN = [
 /// `Markdown` hangs the cell's width cap on. The name is spelled again in
 /// `Markdown`'s class list — Tailwind only reads literal class strings, so the
 /// two cannot share the constant.
-export const TABLE_CELL_CLASS = "dray-table-cell";
+export const TABLE_CELL_CLASS = "wain-table-cell";
 
 /// Wraps each table cell's content in one block, so a width cap has an element
 /// it actually works on. A wide table is meant to scroll in its wrapper, not
@@ -119,18 +119,18 @@ export const REHYPE_PLUGINS = [
 /// spelled `[Footer.js](/Users/me/Footer.js)` has a label of its own that has to
 /// survive. `title` is what the reader wants on hover either way, so it is
 /// carrying a fact rather than being smuggled.
-export const FILE_PATH_CLASS = "dray-file-path";
+export const FILE_PATH_CLASS = "wain-file-path";
 
 /// Set beside [FILE_PATH_CLASS] on a run that was a markdown link before it was
 /// a file link, so it can be drawn as the link its author wrote rather than as
 /// a path found in a sentence. Two classes rather than one, because "is ours"
 /// and "was written as a link" are two facts and only the first decides whether
 /// this opens anything.
-export const FILE_LINK_CLASS = "dray-file-path-link";
+export const FILE_LINK_CLASS = "wain-file-path-link";
 
 /// Set beside [FILE_PATH_CLASS] on inline code that is a path and nothing
 /// else: it opens, and its text is drawn as written rather than as `@name`.
-export const FILE_CODE_CLASS = "dray-file-path-code";
+export const FILE_CODE_CLASS = "wain-file-path-code";
 
 /// Enough of hast to walk it. Typed here rather than pulled from `@types/hast`,
 /// which is not a dependency and would be one for four fields.
@@ -331,7 +331,7 @@ export function walk(node: HastNode) {
 /// The marker `rehypeLocalImages` puts on an image whose source is a file on
 /// this machine. The path rides `title` as a file link's does, and the alt text
 /// `data-alt`, which is not a child so the path pass never reads it as prose.
-export const LOCAL_IMAGE_CLASS = "dray-local-image";
+export const LOCAL_IMAGE_CLASS = "wain-local-image";
 
 const URL_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 
@@ -401,7 +401,7 @@ function markLocalImages(node: HastNode) {
 
 /// The marker `rehypeImageRows` puts on a run of pictures standing on their own,
 /// which `Markdown` draws as one side-by-side gallery.
-export const IMAGE_ROW_CLASS = "dray-image-row";
+export const IMAGE_ROW_CLASS = "wain-image-row";
 
 function isPicture(node: HastNode): boolean {
   if (node.type !== "element") return false;

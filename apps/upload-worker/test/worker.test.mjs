@@ -14,7 +14,7 @@ import { after, before, describe, test } from "node:test";
 
 const MB = 1024 * 1024;
 const PUBLIC_URL = "https://img.test";
-const BUCKET = "dray-uploads";
+const BUCKET = "wain-uploads";
 
 async function freePort() {
   const server = createNetServer();
@@ -48,11 +48,11 @@ async function fakeGithub({ users, collaborators = [], members = [], openPulls =
     }
     if (auth !== `Bearer ${LOOKUP}` || fake.refuseLookup) return send(401, { message: "Bad credentials" });
     let m;
-    if ((m = url.pathname.match(/^\/repos\/monorepo-labs\/dray\/collaborators\/([^/]+)$/)))
+    if ((m = url.pathname.match(/^\/repos\/ismatbabirli\/wain\/collaborators\/([^/]+)$/)))
       return send(collaborators.includes(m[1]) ? 204 : 404);
-    if ((m = url.pathname.match(/^\/orgs\/monorepo-labs\/members\/([^/]+)$/)))
+    if ((m = url.pathname.match(/^\/orgs\/ismatbabirli\/members\/([^/]+)$/)))
       return send(members.includes(m[1]) ? 204 : 404);
-    if (url.pathname === "/repos/monorepo-labs/dray/pulls" && url.searchParams.get("state") === "open") {
+    if (url.pathname === "/repos/ismatbabirli/wain/pulls" && url.searchParams.get("state") === "open") {
       const per = Number(url.searchParams.get("per_page") ?? 30);
       const page = Number(url.searchParams.get("page") ?? 1);
       return send(200, openPulls.slice((page - 1) * per, page * per).map((id, i) => ({ number: i + 1, user: { id } })));
@@ -68,7 +68,7 @@ async function fakeGithub({ users, collaborators = [], members = [], openPulls =
 /// `wrangler dev` with `vars` over the config's, state in a fresh directory.
 async function wranglerDev(vars) {
   const port = await freePort();
-  const state = mkdtempSync(join(tmpdir(), "dray-upload-worker-"));
+  const state = mkdtempSync(join(tmpdir(), "wain-upload-worker-"));
   const flags = Object.entries(vars).flatMap(([k, v]) => ["--var", `${k}:${v}`]);
   const child = spawn(
     "node_modules/.bin/wrangler",
@@ -168,7 +168,7 @@ describe("the upload Worker", () => {
     assert.equal(res.status, 302);
     assert.equal(
       res.headers.get("location"),
-      "https://github.com/monorepo-labs/dray/blob/main/CONTRIBUTING.md#screenshots-and-videos",
+      "https://github.com/ismatbabirli/wain/blob/main/CONTRIBUTING.md#screenshots-and-videos",
     );
   });
 
@@ -192,7 +192,7 @@ describe("the upload Worker", () => {
     // A collaborator is answered by the first lookup alone.
     assert.deepEqual(
       github.seen.slice(asked).map((s) => s.path),
-      ["/user", "/repos/monorepo-labs/dray/collaborators/octo"],
+      ["/user", "/repos/ismatbabirli/wain/collaborators/octo"],
     );
     const member = await upload(png("member"), MEMBER);
     assert.equal(member.status, 200, JSON.stringify(member.json));
@@ -207,15 +207,15 @@ describe("the upload Worker", () => {
     const { status, json } = await upload(png("stranger"), STRANGER);
     assert.equal(status, 403);
     assert.equal(json.error, "not_a_contributor");
-    assert.match(json.message, /Dray contributors/);
+    assert.match(json.message, /Wain contributors/);
     assert.deepEqual(
       github.seen.slice(asked).map((s) => s.path),
       [
         "/user",
-        "/repos/monorepo-labs/dray/collaborators/stranger",
-        "/orgs/monorepo-labs/members/stranger",
-        "/repos/monorepo-labs/dray/pulls?state=open&per_page=100&page=1",
-        "/repos/monorepo-labs/dray/pulls?state=open&per_page=100&page=2",
+        "/repos/ismatbabirli/wain/collaborators/stranger",
+        "/orgs/ismatbabirli/members/stranger",
+        "/repos/ismatbabirli/wain/pulls?state=open&per_page=100&page=1",
+        "/repos/ismatbabirli/wain/pulls?state=open&per_page=100&page=2",
       ],
     );
   });

@@ -1,11 +1,11 @@
 [package]
-name = "dray-gpui"
+name = "wain-gpui"
 version = "0.1.0"
 edition = "2024"
 publish = false
 
 [[bin]]
-name = "dray-gpui"
+name = "wain-gpui"
 path = "src/main.rs"
 
 [dependencies]
@@ -20,7 +20,7 @@ gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features =
 
 # The core, for its types and its half of the serve wire. Default features off,
 # so no Tauri; `serve` for `machines::admit_with` and the protocol constants.
-dray_core = { package = "dray", path = "../desktop/src-tauri", default-features = false, features = ["serve"] }
+wain_core = { package = "wain", path = "../desktop/src-tauri", default-features = false, features = ["serve"] }
 
 anyhow = "1"
 chrono = "0.4"

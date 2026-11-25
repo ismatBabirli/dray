@@ -291,7 +291,7 @@ function BotWindow({ slots, tasks }: { slots: Slots; tasks: Task[] }) {
       sideRight={slots.botSide?.(tasks, lit, (s, t) => open(s, t))}
       tabs={
         <>
-          <ItemTab icon={<ChatBubbleOvalLeftIcon className={MARK} />} label="Dray" active={false} onPick={() => {}} fixed />
+          <ItemTab icon={<ChatBubbleOvalLeftIcon className={MARK} />} label="Wain" active={false} onPick={() => {}} fixed />
           {shown.map((t) => (
             <ItemTab
               key={t.id}

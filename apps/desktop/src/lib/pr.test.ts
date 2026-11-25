@@ -673,12 +673,12 @@ describe("marksRepo", () => {
   });
 
   it("reads host, owner and name off a PR's URL", () => {
-    expect(marksRepo([at("https://github.com/Monorepo-Labs/dray/pull/1075")])).toBe("github.com/monorepo-labs/dray");
+    expect(marksRepo([at("https://github.com/IsmatBabirli/wain/pull/1075")])).toBe("github.com/ismatbabirli/wain");
   });
 
   it("knows nothing for a repo with no PRs or an odd URL", () => {
     expect(marksRepo([])).toBeUndefined();
-    expect(marksRepo([at("https://github.com/monorepo-labs/dray/issues/3")])).toBeUndefined();
+    expect(marksRepo([at("https://github.com/ismatbabirli/wain/issues/3")])).toBeUndefined();
   });
 });
 

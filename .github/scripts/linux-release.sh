@@ -12,7 +12,7 @@
 #     before the .deb only ever asks for that and `-appimage`.
 #   linux-release.sh latest <dir> <tag>
 #     Copies each file on R2 from under <tag>/ to its versionless name, the
-#     one a download link names: Dray_amd64.AppImage, Dray_arm64.deb, …
+#     one a download link names: Wain_amd64.AppImage, Wain_arm64.deb, …
 set -euo pipefail
 
 files() {
@@ -67,8 +67,8 @@ case "${1:-}" in
       name=$(basename "$f")
       arch=$(debian_arch "$(arch_of "$name")")
       case "$name" in
-        *.AppImage) to="Dray_$arch.AppImage" type=application/vnd.appimage ;;
-        *.deb) to="Dray_$arch.deb" type=application/vnd.debian.binary-package ;;
+        *.AppImage) to="Wain_$arch.AppImage" type=application/vnd.appimage ;;
+        *.deb) to="Wain_$arch.deb" type=application/vnd.debian.binary-package ;;
       esac
       aws s3 cp "s3://${R2_BUCKET}/${tag}/${name}" "s3://${R2_BUCKET}/${to}" \
         --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \

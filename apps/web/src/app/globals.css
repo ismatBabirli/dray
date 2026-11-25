@@ -253,7 +253,7 @@ body {
   --color-surface-thumb: oklch(0.99 0 0);
 }
 
-/* The light window is the app's Dray light: frame and sheet one white, so
+/* The light window is the app's Wain light: frame and sheet one white, so
    the shadows alone draw the card, copied from the app's `[data-mode="light"]`
    block. The sheet wears the composer's 6% ring and three short drops, plus a
    soft drop along its top; the lit tab wears the same soft drop, the drops,

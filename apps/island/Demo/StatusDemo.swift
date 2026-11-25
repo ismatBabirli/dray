@@ -103,7 +103,7 @@ private struct Case: Identifiable {
     /// The session the panel is pinned to, when open on no card.
     var pinned: String? = nil
     var bots: [Bot] = []
-    /// Bot chats' waiting tasks by session id, as Dray hands them over with its note.
+    /// Bot chats' waiting tasks by session id, as Wain hands them over with its note.
     var waiting: [String: [WaitingTask]] = [:]
 }
 
@@ -117,7 +117,7 @@ private let sections: [(String, [Case])] = [
         Case(name: "Five sessions done at once", items: [s1, s2, s3, s4, s5], done: [s1, s2, s3, s4, s5].map(\.sessionId)),
         Case(name: "A card waiting and a session done", note: "The card outranks the news; the done pill shows once it is answered.",
              items: [s1, s4], asks: [bash(s1)], done: [s4.sessionId]),
-        Case(name: "A bot's tasks waiting on you", note: "Hover grows the bot card's rows; a click opens the task in Dray.",
+        Case(name: "A bot's tasks waiting on you", note: "Hover grows the bot card's rows; a click opens the task in Wain.",
              items: [opsChat], done: [opsChat.sessionId], bots: bots, waiting: [opsChat.sessionId: waitingRows]),
         Case(name: "Two bots waiting on you", note: "One pill counts every task; hover groups them under each bot.",
              items: [opsChat, botChat], done: [botChat.sessionId, opsChat.sessionId], bots: bots, waiting: twoBots),
@@ -158,7 +158,7 @@ private let sections: [(String, [Case])] = [
 // MARK: Seeds
 
 private func session(_ id: String, _ title: String, status: String = "idle", branch: String? = nil,
-                     cwd: String = "/Users/me/dray") -> SessionItem {
+                     cwd: String = "/Users/me/wain") -> SessionItem {
     var o: [String: Any] = [
         "sessionId": id, "harness": "claude_code", "cwd": cwd, "projectPath": cwd,
         "title": title, "model": "opus", "effort": "high", "permissionMode": "auto", "status": status,
@@ -179,28 +179,28 @@ private let withPr = session("s8", "Sidebar globe icon for Mac remote", branch: 
 private let workingPr = session("s9", "Integrate Devin CLI harness", status: "in_progress", branch: "worktree-globe")
 
 private let bots = [
-    Bot(id: "01a1cfc8-e538-77dc-a2dd-d46b79ecc851", name: "Dray Bot", path: "/Users/me/.dray/bots/01a1cfc8-e538-77dc-a2dd-d46b79ecc851",
+    Bot(id: "01a1cfc8-e538-77dc-a2dd-d46b79ecc851", name: "Wain Bot", path: "/Users/me/.wain/bots/01a1cfc8-e538-77dc-a2dd-d46b79ecc851",
         avatar: BotAvatar(shape: "cloud", hue: 80)),
-    Bot(id: "019a7c2e-5b10-7c3d-9e1f-2a3b4c5d6e7f", name: "Ops", path: "/Users/me/.dray/bots/019a7c2e-5b10-7c3d-9e1f-2a3b4c5d6e7f",
+    Bot(id: "019a7c2e-5b10-7c3d-9e1f-2a3b4c5d6e7f", name: "Ops", path: "/Users/me/.wain/bots/019a7c2e-5b10-7c3d-9e1f-2a3b4c5d6e7f",
         avatar: BotAvatar(shape: "hexagon", hue: 185)),
 ]
-private let botChat = session("b1", "Dray", cwd: bots[0].path)
+private let botChat = session("b1", "Wain", cwd: bots[0].path)
 private let opsChat = session("b2", "Ops", status: "in_progress", cwd: bots[1].path)
 private let waitingRows = [
-    WaitingTask(id: "019a7d11-0c4e-7a21-8f3b-5e6d7c8b9a01", title: "Sidebar globe icon for Mac remote", projectPath: "/Users/me/dray",
+    WaitingTask(id: "019a7d11-0c4e-7a21-8f3b-5e6d7c8b9a01", title: "Sidebar globe icon for Mac remote", projectPath: "/Users/me/wain",
                 modified: stamp(ago: 40 * 60), need: "Try the globe on a remote Mac before merging; the hover was not tested.", ready: true,
                 pr: PrMark(number: 573, headRefName: "worktree-globe", isDraft: false, state: "OPEN", checksState: "CLEAR")),
-    WaitingTask(id: "019a7d11-0c4e-7a21-8f3b-5e6d7c8b9a02", title: "Integrate Devin CLI harness", projectPath: "/Users/me/dray",
+    WaitingTask(id: "019a7d11-0c4e-7a21-8f3b-5e6d7c8b9a02", title: "Integrate Devin CLI harness", projectPath: "/Users/me/wain",
                 modified: stamp(ago: 3 * 3600), need: "Which login should it use: your Devin API key, or the one in 1Password?", ready: false, pr: nil),
-    WaitingTask(id: "019a7d11-0c4e-7a21-8f3b-5e6d7c8b9a03", title: "Theme swatches in settings", projectPath: "/Users/me/dray",
+    WaitingTask(id: "019a7d11-0c4e-7a21-8f3b-5e6d7c8b9a03", title: "Theme swatches in settings", projectPath: "/Users/me/wain",
                 modified: stamp(ago: 5 * 60), need: nil, ready: false,
                 pr: PrMark(number: 581, headRefName: "worktree-swatches", isDraft: false, state: "OPEN", checksState: "CLEAR")),
 ]
-/// Ops waits on two tasks, Dray Bot on one.
+/// Ops waits on two tasks, Wain Bot on one.
 private let twoBots = [opsChat.sessionId: Array(waitingRows.prefix(2)), botChat.sessionId: [waitingRows[2]]]
 
 private func pr(_ state: String, _ checks: String) -> [String: [String: PrMark]] {
-    ["/Users/me/dray": ["worktree-globe": PrMark(number: 573, headRefName: "worktree-globe", isDraft: false, state: state, checksState: checks)]]
+    ["/Users/me/wain": ["worktree-globe": PrMark(number: 573, headRefName: "worktree-globe", isDraft: false, state: state, checksState: checks)]]
 }
 
 private func ask(_ s: SessionItem, _ payload: [String: Any]) -> AgentEvent {
@@ -222,14 +222,14 @@ private func bash(_ s: SessionItem) -> AgentEvent {
 
 private func edit(_ s: SessionItem) -> AgentEvent {
     ask(s, ["type": "permission_requested", "requestId": "e-\(s.sessionId)", "toolName": "Edit", "title": "Edit a file",
-            "input": ["file_path": "/Users/me/dray/apps/desktop/src/components/ThemeSwatches.tsx"],
+            "input": ["file_path": "/Users/me/wain/apps/desktop/src/components/ThemeSwatches.tsx"],
             "options": options([("Allow", "allow"), ("Allow edits this session", "allow"), ("Deny", "deny")])])
 }
 
 private func longBash(_ s: SessionItem) -> AgentEvent {
     ask(s, ["type": "permission_requested", "requestId": "l-\(s.sessionId)", "toolName": "Bash", "title": "Run a command",
             "description": "Rebuild the island, swap it for the running one and relaunch it against the release server",
-            "input": ["command": "sh apps/island/build.sh /tmp/out && pkill -x 'Dray Island'; sleep 1; open -g '/tmp/out/Dray Island.app' && pgrep -lf 'Dray Island' | head -2 && echo relaunched"],
+            "input": ["command": "sh apps/island/build.sh /tmp/out && pkill -x 'Wain Island'; sleep 1; open -g '/tmp/out/Wain Island.app' && pgrep -lf 'Wain Island' | head -2 && echo relaunched"],
             "options": options([("Allow once", "allow"), ("Always allow sh", "allow"), ("Always allow pkill", "allow"),
                                 ("Always allow open", "allow"), ("Allow everything in this session", "allow"),
                                 ("Always allow in this project", "allow"), ("Deny", "deny"), ("Deny and stop", "deny")])])
@@ -259,7 +259,7 @@ private func multiSelect(_ s: SessionItem) -> AgentEvent {
 
 private func threeQuestions(_ s: SessionItem) -> AgentEvent {
     ask(s, ["type": "questions_asked", "requestId": "t-\(s.sessionId)", "questions": [
-        q("Replace Dray's banner or show beside it?", [("Replace", nil), ("Both", nil)]),
+        q("Replace Wain's banner or show beside it?", [("Replace", nil), ("Both", nil)]),
         q("What shape?", [("Pill, fades", "Hover holds it."), ("Pill until clicked", nil), ("Open the panel", nil)]),
         q("Show it when the session is on screen?", [("No", nil), ("Always", nil)]),
     ]])
@@ -437,16 +437,16 @@ private func marks(_ turn: MockTurn, _ pull: Pull) -> Marks {
 /// One row per state, so the marks can be read against each other.
 private struct ListMock: View {
     private let rows: [(String, String, Marks, Bot?)] = [
-        ("Dray", "01a1cfc8", marks(.idle, .none), bots[0]),
+        ("Wain", "01a1cfc8", marks(.idle, .none), bots[0]),
         ("Ops", "019a7c2e", marks(.working, .none), bots[1]),
-        ("Fix the login redirect", "dray", marks(.asking, .none), nil),
-        ("Island status in the task list", "dray", marks(.working, .checks), nil),
-        ("Paste images into the composer", "dray", marks(.done, .open), nil),
-        ("Theme swatches in settings", "dray", marks(.idle, .failing), nil),
-        ("Orb lab", "dray", marks(.working, .none), nil),
+        ("Fix the login redirect", "wain", marks(.asking, .none), nil),
+        ("Island status in the task list", "wain", marks(.working, .checks), nil),
+        ("Paste images into the composer", "wain", marks(.done, .open), nil),
+        ("Theme swatches in settings", "wain", marks(.idle, .failing), nil),
+        ("Orb lab", "wain", marks(.working, .none), nil),
         ("Docs for remote access", "web", marks(.idle, .draft), nil),
         ("Changelog for 0.12", "web", marks(.done, .merged), nil),
-        ("Spike: CEF memory", "dray", marks(.idle, .none), nil),
+        ("Spike: CEF memory", "wain", marks(.idle, .none), nil),
     ]
 
     var body: some View {
@@ -477,10 +477,10 @@ private struct BoatMock: View {
     @State private var cases = Self.makeCases()
 
     private static func makeCases() -> [(String, BoatAlert, String?)] { [
-        ("Nine minutes left", alert("boat-dray", in: 9 * 60 + 12), nil),
-        ("Last two minutes, red", alert("boat-dray", in: 95), nil),
+        ("Nine minutes left", alert("boat-wain", in: 9 * 60 + 12), nil),
+        ("Last two minutes, red", alert("boat-wain", in: 95), nil),
         ("Long server name", alert("a-sandbox-with-a-very-long-name", in: 7 * 60), nil),
-        ("Extend refused", alert("boat-dray", in: 6 * 60), "Free trial sandboxes stop within 2 hours."),
+        ("Extend refused", alert("boat-wain", in: 6 * 60), "Free trial sandboxes stop within 2 hours."),
     ] }
 
     var body: some View {

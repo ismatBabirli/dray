@@ -255,7 +255,7 @@ fn normalize_space(space: Option<String>) -> Option<String> {
 }
 
 /// The edit [`retag_space`] makes, split from the file so it can be tested
-/// without a `~/.dray` to write into. Answers whether anything moved.
+/// without a `~/.wain` to write into. Answers whether anything moved.
 fn retag(projects: &mut [Project], from: &str, to: Option<String>) -> bool {
     let to = normalize_space(to);
     let mut moved = false;
@@ -299,8 +299,8 @@ pub async fn retag_space(from: &str, to: Option<String>) -> Result<Vec<Project>,
 // ── attaching from GitHub ─────────────────────────────────────────────────────
 
 /// Where a picked repo is cloned, under the reader's real home — never
-/// `DRAY_HOME`, which moves Dray's data, where a clone is the reader's work.
-const CLONE_DIR: &str = "dray";
+/// `WAIN_HOME`, which moves Wain's data, where a clone is the reader's work.
+const CLONE_DIR: &str = "wain";
 /// Under `CLONE_DIR`, where a clone runs until it is finished. Never a clone's
 /// own root, so `local_copies` passes over it.
 const STAGING_DIR: &str = ".cloning";
@@ -315,7 +315,7 @@ pub struct GithubRepo {
     #[serde(default)]
     pub description: Option<String>,
     /// Where it already lives on this machine: an attached project, or a
-    /// directory in `~/dray` whose GitHub remote names it. Picking one of these
+    /// directory in `~/wain` whose GitHub remote names it. Picking one of these
     /// attaches it rather than cloning again.
     #[serde(default)]
     pub path: Option<String>,
@@ -397,7 +397,7 @@ async fn local_copies(home: &Path) -> HashMap<String, String> {
     found
 }
 
-/// Clones `slug` into `~/dray/<name>` and attaches it, emitting git's progress
+/// Clones `slug` into `~/wain/<name>` and attaches it, emitting git's progress
 /// as `clone_progress` while it runs.
 ///
 /// A folder already there is attached where it is a clone of `slug` — the
@@ -424,7 +424,7 @@ pub async fn clone_github_repo(slug: String, sink: Sink) -> Result<Vec<Project>,
         };
     }
 
-    // Cloned beside the destination and renamed in, so `~/dray/<name>` only
+    // Cloned beside the destination and renamed in, so `~/wain/<name>` only
     // ever holds a finished clone: a half-downloaded or failed one is never
     // listed as Cloned or attached by a second pick. A leftover from a clone
     // that was killed is cleared first, or every retry fails on it; one clone
@@ -440,7 +440,7 @@ pub async fn clone_github_repo(slug: String, sink: Sink) -> Result<Vec<Project>,
     add_project(&path).await
 }
 
-/// A clone into `~/dray/<name>` in flight, released on drop so a failed or
+/// A clone into `~/wain/<name>` in flight, released on drop so a failed or
 /// cancelled clone frees the name too.
 struct Running(String);
 
@@ -647,10 +647,10 @@ mod tests {
 
     #[test]
     fn repo_name_takes_what_github_spells_and_nothing_else() {
-        assert_eq!(repo_name("monorepo-labs/dray"), Some("dray"));
+        assert_eq!(repo_name("ismatbabirli/wain"), Some("wain"));
         assert_eq!(repo_name("acme/.github"), Some(".github"));
         assert_eq!(repo_name("a_b/c.d-e"), Some("c.d-e"));
-        for bad in ["dray", "/dray", "acme/", "acme/..", "acme/.", "-x/y", "x/-y", "a/b/c", "a/b c", "a/b;rm"] {
+        for bad in ["wain", "/wain", "acme/", "acme/..", "acme/.", "-x/y", "x/-y", "a/b/c", "a/b c", "a/b;rm"] {
             assert_eq!(repo_name(bad), None, "{bad}");
         }
     }

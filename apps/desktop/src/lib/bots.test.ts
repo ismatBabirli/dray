@@ -27,7 +27,7 @@ describe("botNamed", () => {
   const twin = (id: string, name: string): Bot => ({ ...bot, id, name });
   const list = [bot, twin("r", "Research"), twin("t1", "Twin"), twin("t2", "twin")];
 
-  it("finds a bot by id or by its name in any case, as `dray bot send` does", () => {
+  it("finds a bot by id or by its name in any case, as `wain bot send` does", () => {
     expect(botNamed(list, "ops")).toBe(bot);
     expect(botNamed(list, "r")?.name).toBe("Research");
     expect(botNamed(list, "nobody")).toBeUndefined();

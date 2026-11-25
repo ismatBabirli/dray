@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Copies the desktop's file icons (vscode-material-icons) into the iOS app.
 
-Writes one vector imageset per icon under Dray/Assets.xcassets/FileIcons and
-the name lookup to Dray/file-icons.json, so the phone picks the same glyph the
+Writes one vector imageset per icon under Wain/Assets.xcassets/FileIcons and
+the name lookup to Wain/file-icons.json, so the phone picks the same glyph the
 desktop's FileIcon does. Run after bumping the package in apps/desktop:
 
     python3 apps/ios/scripts/file_icons.py
@@ -18,7 +18,7 @@ pkg = (desktop / "node_modules" / "vscode-material-icons").resolve()
 icons = pkg / "generated" / "icons"
 iconmap = json.loads((pkg / "generated" / "icon-map.json").read_text())
 
-out = ios / "Dray" / "Assets.xcassets" / "FileIcons"
+out = ios / "Wain" / "Assets.xcassets" / "FileIcons"
 shutil.rmtree(out, ignore_errors=True)
 out.mkdir()
 (out / "Contents.json").write_text(json.dumps({"info": {"author": "xcode", "version": 1}}, indent=2) + "\n")
@@ -39,5 +39,5 @@ for name in sorted(names):
     }, indent=2) + "\n")
 
 lookup = {k: iconmap[k] for k in ("fileNames", "fileExtensions", "folderNames")}
-(ios / "Dray" / "file-icons.json").write_text(json.dumps(lookup, separators=(",", ":"), sort_keys=True) + "\n")
+(ios / "Wain" / "file-icons.json").write_text(json.dumps(lookup, separators=(",", ":"), sort_keys=True) + "\n")
 print(f"{len(list(out.glob('*.imageset')))} icons")

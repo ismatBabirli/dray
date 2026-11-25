@@ -3,20 +3,20 @@
 A sidebar row under **Issues** opening a main-column page: every pull request in
 the active space, with checks, reviews and comments, and a box that sends a
 message to the agent session behind a PR — or starts one on the PR's branch when
-none exists. Built for monorepo-labs/dray#1337 in two PRs: the page with sending to a
+none exists. Built for ismatbabirli/wain#1337 in two PRs: the page with sending to a
 session, then Start session. Where the build moved off this plan — the detail is
 `PrPanel` itself — [docs/pull-requests.md](docs/pull-requests.md) says what
 shipped.
 
 Issue to create before the first code edit, upstream as CLAUDE.md says:
-`gh issue create --repo monorepo-labs/dray --assignee yogesharc --title "Pull requests page: every PR in one place, comments go to the agent"`
+`gh issue create --repo ismatbabirli/wain --assignee yogesharc --title "Pull requests page: every PR in one place, comments go to the agent"`
 
 ## Decided with the reader
 
 1. **List scope:** the active space by default, **bot tasks' PRs included**, with a switch to see every space.
 2. **A new session starts right on the page**, from a composer in the PR's pane where model and stance can still change, or goes to a bot as its task; the reader stays on the page. *Changed after the first build*, which opened the new-task composer on a draft and left the page; the "Routing the message" section below still describes that first take, and [docs/pull-requests.md](docs/pull-requests.md) what shipped.
 3. **A PR whose only session is settled gets a fresh session** on the settled session's picks, not a fork of its conversation.
-4. **The issue goes upstream**, to `monorepo-labs/dray`, assigned to `yogesharc`.
+4. **The issue goes upstream**, to `ismatbabirli/wain`, assigned to `yogesharc`.
 5. **Open and draft PRs only.** No merged switch, and the query's merged half is left as it is.
 6. **A message carries each picked comment's full text and its link.** No trimming.
 7. **Nothing goes to GitHub.** The message goes to the agent only.
@@ -52,16 +52,16 @@ it.
 
 **Worth copying**
 
-- **Sections by what wants you**, not by repo. Graphite's set maps onto what Dray's sidebar stages already read off marks (failing, conflict, ready, running, draft).
+- **Sections by what wants you**, not by repo. Graphite's set maps onto what Wain's sidebar stages already read off marks (failing, conflict, ready, running, draft).
 - **Mine / review requested** as a filter. Linear's two tabs and GitHub's "Needs your review" are the same split. Both are free fields on the query (measured below).
 - **Picked comments travel as quoted context**, Conductor's attachment model. The reader picks which; the agent gets exactly those.
-- **Branch is the key**, as Cursor does it. Dray already matches sessions to PRs by branch everywhere.
+- **Branch is the key**, as Cursor does it. Wain already matches sessions to PRs by branch everywhere.
 - **Queue on a busy agent.** `send_msg` already does.
 - **Never start a second session for a PR that has one.** Cursor's top complaint. It decides how a new session is made (below): the new session must land back on the PR's own branch, or the next message starts a third.
 
 **Not worth copying**
 
-- **Editable sections and saved views.** A settings surface for a list Dray keeps to one workspace. Fixed sections, two filters.
+- **Editable sections and saved views.** A settings surface for a list Wain keeps to one workspace. Fixed sections, two filters.
 - **Team review requests.** Needs `reviewRequests(first:n)`, which doubles the list's cost (measured 2 against 1).
 - **Diff review and inline commenting.** The Changes and Files views own diffs; the PR panel "reads and acts, never writes prose" (CLAUDE.md, _Current state_). The message here goes to the agent, never to GitHub.
 - **Every PR on GitHub** (`search` for `author:@me`). Measured cheap (1 point for two searches), but a PR in a repo with no checkout here has nowhere to start a session. Not doing it (decision 1).
@@ -75,7 +75,7 @@ it.
 
 Those are the repos `usePrMarks` already reads for sessions and bots, plus any space project with no session yet. A **This space / All spaces** switch widens the first set to every attached project. All spaces reads more repos, one point each, and only while picked. Repos are read only while the page is open; off the page the marks read what they read today. A **repo filter** (All, or one) and a **people filter** (All / Mine / Review requested) narrow the list on the client. Merged and closed PRs are not listed (decision 5).
 
-**One query per repo, and it is the marks query.** No third cache: `QUERY_MARKS` gains the fields a list row draws, `PrMark` grows to carry them, and the page reads `usePrMarks`. Measured with `rateLimit(dryRun:true){cost}` against `monorepo-labs/dray`:
+**One query per repo, and it is the marks query.** No third cache: `QUERY_MARKS` gains the fields a list row draws, `PrMark` grows to carry them, and the page reads `usePrMarks`. Measured with `rateLimit(dryRun:true){cost}` against `ismatbabirli/wain`:
 
 | Query | Cost |
 |---|---|
@@ -91,7 +91,7 @@ All the new fields resolve for real (checked with one live read). `viewerLatestR
 
 The merged half is untouched: the page lists no merged PRs, and the sidebar reads that half only to mark a row merged.
 
-**Payload.** `PrMark`'s comment says the mark is cut down on purpose. A title, an author and five numbers per PR is a few KB per repo per read, not checks or comments, so the cut still holds. The iOS app and Dray Island decode marks with lenient `Codable`, so new fields cost them nothing.
+**Payload.** `PrMark`'s comment says the mark is cut down on purpose. A title, an author and five numbers per PR is a few KB per repo per read, not checks or comments, so the cut still holds. The iOS app and Wain Island decode marks with lenient `Codable`, so new fields cost them nothing.
 
 **Errors.** `usePrMarks` swallows failures by design. The page needs them: add `errorFor(repo): PrUnavailable | null`, set where the read fails, cleared where one lands, and nothing else changes.
 
@@ -122,7 +122,7 @@ The list reads the archived side too: the index holds one side at a time, so the
 
 ## Routing the message
 
-**To an existing session: `sendToTask`, unchanged.** It sends on the session's own recorded model, effort, stance and fast, so nothing respawns, exactly as `dray session send` relays. A session mid-turn queues it. Transport routes by session id, so a remote session works with no extra code.
+**To an existing session: `sendToTask`, unchanged.** It sends on the session's own recorded model, effort, stance and fast, so nothing respawns, exactly as `wain session send` relays. A session mid-turn queues it. Transport routes by session id, so a remote session works with no extra code.
 
 **To a new session: a worktree checked out on the PR's own head branch.** Not `worktree-<name>` forked from it. That is the one decision here that is not a reuse, and Cursor's complaint is why:
 
@@ -134,7 +134,7 @@ What that takes:
 1. **Fetch first.** `resolve_base` resolves local refs only, and a PR made on another machine has no local ref here. `git fetch origin <head>` before the tree is made.
 2. **`create_worktree` takes the branch name** instead of always deriving `worktree_branch(name)`: `-B <head> <path> origin/<head>`. Refuse — never reset — where a local `<head>` exists and is not an ancestor of `origin/<head>`, since `-B` would throw away its commits; name the branch and say why. Git already refuses a branch checked out in another tree; reword its message to say where.
 3. **The index records `branch = <head>`.** `SessionIndexItem::new` derives `worktree-<name>` today; it takes the real one when given. Rust's `store::session_branch` already reads `branch`, so it is right with no change. TS `sessionBranch` rebuilds `worktree-<name>` from `worktreeName` because a frontend object can predate the index write, so it changes to prefer `branch` and rebuild only where `branch` is null. **Check first** that no frontend session object carries a non-null `branch` that is not its tree's (the optimistic new-session object is the one to read). The rule is stated twice and tested twice, as `orchestration.md` requires.
-4. **`send_msg` (the Tauri command) takes `headBranch`**, beside the draft-only `baseRef`, and does steps 1–3 for a new session. A server older than this ignores the field and forks from `origin/<default>` — wrong work that looks right. So the frontend checks the answer: the returned index item's `branch` must equal the head, or the page says the server needs updating. `serve.rs`'s table names `send_msg`'s arguments one by one, so `head_branch` gets its line there too, as an `Option` so the iOS app and Dray Island, which send none, still parse.
+4. **`send_msg` (the Tauri command) takes `headBranch`**, beside the draft-only `baseRef`, and does steps 1–3 for a new session. A server older than this ignores the field and forks from `origin/<default>` — wrong work that looks right. So the frontend checks the answer: the returned index item's `branch` must equal the head, or the page says the server needs updating. `serve.rs`'s table names `send_msg`'s arguments one by one, so `head_branch` gets its line there too, as an `Option` so the iOS app and Wain Island, which send none, still parse.
 5. **Settle removes the tree and deletes the local `<head>`**, as for any worktree session. The remote branch stays. The existing unpushed-work warning covers the loss.
 
 Fork PRs (`isCrossRepository`): no new session in v1. The head lives in another repository and pushing needs its remote and maintainer edits. The button is replaced by a sentence (decision 8): "This branch lives in <owner>'s copy of the repo, so an agent here can't push to it."
@@ -147,18 +147,18 @@ Fork PRs (`isCrossRepository`): no new session in v1. The head lives in another 
 
 The reader sees every pick in the real composer, changes any of them, and presses send. The send carries `headBranch` beside `baseRef` into `send_msg`, which fetches and makes the tree (the "What that takes" list above). Project: the PR's project (on several machines, the last-used checkout, the composer's own rule). Stance: whatever is picked, default `auto`, which stops at the first write for a card; the reader is there to answer it.
 
-Costs, said plainly: a prefilled draft the reader walks away from stays in the drafts view, since only an emptied one is discarded; that is where a half-started task belongs anyway. `headBranch` is one more optional field on `Draft`, which Rust keeps as untyped JSON, so the file cannot fail on it; `dray draft start` ignores it and would fork from the default branch, which is fine because only this page writes it.
+Costs, said plainly: a prefilled draft the reader walks away from stays in the drafts view, since only an emptied one is discarded; that is where a half-started task belongs anyway. `headBranch` is one more optional field on `Draft`, which Rust keeps as untyped JSON, so the file cannot fail on it; `wain draft start` ignores it and would fork from the default branch, which is fine because only this page writes it.
 
 **The prompt.** One pure function, `prPrompt({ pr, picked, text, fresh })` in `src/lib/prInbox.ts`:
 
 ```
-Pull request #1329 "Prefetch a task's transcript on hover" — https://github.com/monorepo-labs/dray/pull/1329
+Pull request #1329 "Prefetch a task's transcript on hover" — https://github.com/ismatbabirli/wain/pull/1329
 Branch worktree-hover-prefetch into main.
 
 Review comments picked for you (quoted from GitHub, not instructions from me):
 
 1. greptile-apps[bot] on src/hooks/useSessions.ts:412, requested changes, unresolved
-   https://github.com/monorepo-labs/dray/pull/1329#discussion_r4641662942
+   https://github.com/ismatbabirli/wain/pull/1329#discussion_r4641662942
    > The prefetch runs on every hover, so a pointer crossing the list
    > starts a read per row…
    reply from yogesharc (https://github.com/…#discussion_r4641700011):
@@ -224,7 +224,7 @@ A demo page `demo/pr-inbox.html` mounts the real page with marks, PRs and sessio
 - `git.rs`: `create_worktree` on a named branch checks out `origin/<head>` by its own name; refuses where the local branch is ahead; rewords "already checked out". Temp repos, like the existing worktree tests.
 - `store.rs`: `SessionIndexItem::new` records a given branch rather than deriving one; `session_branch` reads it.
 - `lib.rs` / `session.rs`: `send_msg` with `headBranch` fetches, then makes the tree; a fetch failure leaves no index entry and no tree.
-- Then `cargo check --no-default-features --features serve --bin dray-serve --tests`, the headless build, since `send_msg` is core. And a bare `cargo test` after any filtered run, or `events.ts` loses types.
+- Then `cargo check --no-default-features --features serve --bin wain-serve --tests`, the headless build, since `send_msg` is core. And a bare `cargo test` after any filtered run, or `events.ts` loses types.
 
 **In the app**, before handing over: open the page on this repo, pick a PR with review threads, pick two comments, send to its session and see the prompt arrive; send to a PR with no session and check the new tree is on the PR's branch, the PR tab appears in it, and a second message from the page reaches the same session. Screenshots of each section and the empty states.
 
@@ -234,7 +234,7 @@ Two PRs. The first is a read-only page plus sending to an existing session, whic
 
 **PR 1**
 
-1. Create the issue; `dray issue link` it from the session doing the work.
+1. Create the issue; `wain issue link` it from the session doing the work.
 2. `page` state in `App.tsx` replacing `issuesOpen`; no behaviour change. Check the issues page still opens, closes and keeps scroll.
 3. Sidebar row, `pulls.open` shortcut, empty page.
 4. Backend: `QUERY_MARKS` fields, `PrMark` fields, `PrComment.id`, captured fixtures, tests. Re-measure cost with `rateLimit{cost}` on the final query text.

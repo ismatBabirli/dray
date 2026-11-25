@@ -27,7 +27,7 @@ describe("projectForIssue", () => {
     expect(projectForIssue([project("/code/web", "github.com/acme/web"), hit], gh)).toBe(hit);
   });
   it("prefers This Mac over another machine", () => {
-    const far = project("dray://box/home/app", "github.com/acme/app", "2");
+    const far = project("wain://box/home/app", "github.com/acme/app", "2");
     const here = project("/code/app", "github.com/acme/app", "1");
     expect(projectForIssue([far, here], gh)).toBe(here);
   });

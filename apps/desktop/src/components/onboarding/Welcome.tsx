@@ -16,7 +16,7 @@ export const MUSIC_AT = TEXT_AT;
 const WORD_STEP = 120;
 const NEXT_AT = 9200;
 
-/// The Dray wordmark, mark and letters, as apps/web's `Wordmark` draws it.
+/// The Wain wordmark, mark and letters, as apps/web's `Wordmark` draws it.
 const WORDMARK = [
   "M48.2787 0C49.9989 5.053e-08 51.3934 1.4046 51.3934 3.13726V8.78431C51.3934 17.4476 58.3661 24.4706 66.9672 24.4706H72.8852C74.6055 24.4706 76 25.8752 76 27.6078V68.3922C76 70.1248 74.6055 71.5294 72.8852 71.5294H66.9672C58.3661 71.5294 51.3934 78.5524 51.3934 87.2157V92.8627C51.3934 94.5954 49.9989 96 48.2787 96H0.155738C0.0697261 96 0 95.9298 0 95.8431V64.7843C0 64.6977 0.0697261 64.6275 0.155738 64.6275H29.2787C37.8798 64.6275 44.8525 57.6045 44.8525 48.9412V47.0588C44.8525 38.3955 37.8798 31.3726 29.2787 31.3726H0.155738C0.0697261 31.3726 0 31.3023 0 31.2157V0.156863C0 0.0702299 0.0697261 0 0.155738 0H48.2787Z",
   "M444.983 12H466L427.416 53.7405V84H407.477V53.8378L369 12H390.017L417.177 41.773L444.983 12Z",
@@ -39,7 +39,7 @@ const MASK: CSSProperties = {
   WebkitMaskRepeat: "no-repeat",
 };
 
-/// Onboarding's first screen: the Dray wordmark, a light passing over it, the
+/// Onboarding's first screen: the Wain wordmark, a light passing over it, the
 /// wordmark fading, then the welcome in its place, and on to setup by itself.
 export default function Welcome({ onNext }: { onNext: () => void }) {
   const next = useRef(onNext);
@@ -66,7 +66,7 @@ export default function Welcome({ onNext }: { onNext: () => void }) {
         </div>
       </div>
       <h1 className="col-start-1 row-start-1 flex gap-[0.25em] text-[44px] leading-[52px] font-light tracking-[-0.03em] text-white">
-        {["Welcome", "to", "Dray"].map((word, i) => (
+        {["Welcome", "to", "Wain"].map((word, i) => (
           <span key={word} className="ob-in inline-block" style={delay(TEXT_AT + i * WORD_STEP)}>
             {word}
           </span>

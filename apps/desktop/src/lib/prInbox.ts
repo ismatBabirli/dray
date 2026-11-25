@@ -122,7 +122,7 @@ export function inboxSection(mark: PrMark): InboxSection {
   return "waiting";
 }
 
-/// Who a PR is about. All lists the projects added to Dray, through their
+/// Who a PR is about. All lists the projects added to Wain, through their
 /// marks; each of the others is one GitHub search across every repo
 /// (`involves:@me`, `author:@me`, `review-requested:@me`).
 export type PeopleFilter = "all" | "involving" | "mine" | "review";
@@ -305,6 +305,6 @@ export type PrCheckout =
   | { kind: "clone"; slug: string; server?: ServerId };
 
 /// Where Start Task can run a PR's task, for the machine picker: the repo's
-/// checkouts, and a stand-in at `~/dray/<name>` on each connected machine
+/// checkouts, and a stand-in at `~/wain/<name>` on each connected machine
 /// holding none, which a start there clones first. `initial` is the pick.
 export type PrMachines = { projects: Project[]; clones: string[]; initial: string };

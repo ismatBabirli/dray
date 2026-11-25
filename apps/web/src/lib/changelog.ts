@@ -32,7 +32,7 @@ export type Release = {
 
 /// Media lives in this site's `public/changelog/`. Absolute, since the app
 /// reads the same URLs out of `/changelog.json`.
-const MEDIA_BASE = "https://www.drayhq.com";
+const MEDIA_BASE = "https://www.wainhq.com";
 
 const SECTIONS: Record<string, SectionKind> = {
   New: "new",

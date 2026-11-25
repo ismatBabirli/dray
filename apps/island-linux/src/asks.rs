@@ -153,7 +153,7 @@ pub struct Asks {
     by_session: HashMap<String, Vec<Ask>>,
     /// Request ids in arrival order: the order sessions are offered in.
     order: Vec<String>,
-    /// Put away by the reader: still waiting in Dray, out of the pill and the
+    /// Put away by the reader: still waiting in Wain, out of the pill and the
     /// cards until a new ask comes.
     dismissed: HashSet<String>,
     /// Background tasks per session. A session with one running can still
@@ -173,7 +173,7 @@ impl Asks {
         self.settle(&[id])
     }
 
-    /// Answered, here or in Dray, or taken back by the CLI.
+    /// Answered, here or in Wain, or taken back by the CLI.
     pub fn decided(&mut self, session_id: &str, request_id: &str) {
         if let Some(list) = self.by_session.get_mut(session_id) {
             list.retain(|a| a.request_id != request_id);

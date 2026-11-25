@@ -9,7 +9,7 @@
 
 use std::rc::Rc;
 
-use dray_core::events::{PermissionOption, PermissionOptionKind};
+use wain_core::events::{PermissionOption, PermissionOptionKind};
 use gpui::{
     AnyElement, App, BoxShadow, Context, EventEmitter, FocusHandle, Focusable, FontWeight, Hsla, InteractiveElement,
     IntoElement, KeyDownEvent, Keystroke, ParentElement, Render, SharedString, StatefulInteractiveElement, Styled,

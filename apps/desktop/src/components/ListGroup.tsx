@@ -76,7 +76,7 @@ export function ListGroup({
 /// The rows are the repositories of attached projects with a `github.com`
 /// remote, which is the list this app can name without a network call.
 ///
-/// **The repository, not the whole slug.** `monorepo-labs/dray` is most of this
+/// **The repository, not the whole slug.** `ismatbabirli/wain` is most of this
 /// row's width spent on a word that is the same for most of the list, and the
 /// owner is only ever needed to tell two same-named repositories apart — which
 /// is a question asked where the pick is made. So the menu rows carry the slug

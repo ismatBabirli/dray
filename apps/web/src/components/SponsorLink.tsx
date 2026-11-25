@@ -17,8 +17,8 @@ export function SponsorLink({
   children: React.ReactNode;
 }) {
   const url = new URL(href);
-  url.searchParams.set("ref", "drayhq.com");
-  url.searchParams.set("utm_source", "dray");
+  url.searchParams.set("ref", "wainhq.com");
+  url.searchParams.set("utm_source", "wain");
   url.searchParams.set("utm_medium", "referral");
   url.searchParams.set("utm_campaign", "sponsors");
   url.searchParams.set("utm_content", destination);

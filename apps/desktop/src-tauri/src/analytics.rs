@@ -2,12 +2,12 @@
 //!
 //! A launch, a day the app was used, a session starting, a feature being
 //! used, something breaking, a bot made and a routine set up — carrying no
-//! content and no identity beyond a random id minted on this machine. What they answer is how many people run Dray, on which version,
+//! content and no identity beyond a random id minted on this machine. What they answer is how many people run Wain, on which version,
 //! whether they come back, which of the things built here anybody actually
 //! uses, and whether the build is failing under them in a way nothing else
 //! would ever tell us.
 //!
-//! **`DRAY_NO_ANALYTICS` is the only opt-out.** Settings has no switch, and a
+//! **`WAIN_NO_ANALYTICS` is the only opt-out.** Settings has no switch, and a
 //! stored `analytics_enabled: false` from a build that had one is ignored. The
 //! install id is minted on first use by [`settings::ensure_install_id`] and
 //! never cleared. A uuid v4 rather than the v7 used for session ids elsewhere:
@@ -80,7 +80,7 @@ const TIMEOUT: Duration = Duration::from_secs(10);
 /// Whether the environment has turned reporting off for this run — the only
 /// opt-out there is.
 fn env_opt_out() -> bool {
-    std::env::var_os("DRAY_NO_ANALYTICS").is_some()
+    std::env::var_os("WAIN_NO_ANALYTICS").is_some()
 }
 
 /// What the webview needs to speak to PostHog for itself.
@@ -112,7 +112,7 @@ pub struct SurveyIdentity {
 /// The SDK on the other side exists for **surveys**, which are drawn by
 /// `posthog-js` and by nothing else — there is no way to render one from here.
 /// It captures no events of its own. `None` on exactly the grounds [`send`]
-/// refuses on — no key compiled in, or `DRAY_NO_ANALYTICS` — plus an install id
+/// refuses on — no key compiled in, or `WAIN_NO_ANALYTICS` — plus an install id
 /// that could not be persisted.
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn analytics_identity() -> Option<SurveyIdentity> {
@@ -128,7 +128,7 @@ pub async fn analytics_identity() -> Option<SurveyIdentity> {
     let mut person_properties = base_properties().clone();
 
     // How many sessions this install has ever held, so a survey can be aimed at
-    // somebody who has used Dray enough to have an opinion of it. PostHog has
+    // somebody who has used Wain enough to have an opinion of it. PostHog has
     // no other way to know — nothing it receives counts sessions, and the index
     // is the only place the answer lives.
     //
@@ -149,7 +149,7 @@ pub async fn analytics_identity() -> Option<SurveyIdentity> {
     })
 }
 
-/// Enqueues one event, or drops it under `DRAY_NO_ANALYTICS`.
+/// Enqueues one event, or drops it under `WAIN_NO_ANALYTICS`.
 ///
 /// Deliberately **not** `async` and takes no `AppHandle`: an event is
 /// fire-and-forget, and a call that had to be awaited would put a file read and
@@ -217,14 +217,14 @@ fn claim_day(key: String, day: String) -> bool {
 /// Three call sites, each covering a hole the others leave. **Launch** is the
 /// only one guaranteed to fire: `focus.ts` seeds itself from
 /// `document.hasFocus()` and reports changes alone, so a window that comes up
-/// already frontmost never reports *gaining* focus and somebody who opens Dray,
+/// already frontmost never reports *gaining* focus and somebody who opens Wain,
 /// works and quits without switching apps would go uncounted. **Focus gained**
 /// catches coming back to check on a session an agent is running, which reaches
 /// no prompt at all and is real use of an app about parallel agents. **The
 /// `send_msg` command** covers a reader who leaves the app open and frontmost
 /// across a date boundary — the *command*, not `SessionManager::send_msg` one
 /// call down, since the orchestration socket reaches that directly to relay a
-/// `dray session send` and to start a session `dray session new` asked for.
+/// `wain session send` and to start a session `wain session new` asked for.
 /// Only a client somebody is typing into reaches the command — the app, the
 /// island, a phone — and one that counts for itself is skipped
 /// ([`client_counts`]).
@@ -258,7 +258,7 @@ pub fn feature_used(feature: &'static str) {
 }
 
 tokio::task_local! {
-    /// Set around a serve call from a Dray app that reports the sessions it
+    /// Set around a serve call from a Wain app that reports the sessions it
     /// starts on this server itself, which it says in its hello.
     pub static CLIENT_COUNTS: bool;
 }
@@ -266,7 +266,7 @@ tokio::task_local! {
 /// Whether the call being served came from an app that reports what it
 /// starts here, so this process must not report it a second time under its
 /// own install id. False outside a serve call: the composer on this machine,
-/// an agent's `dray new`, a phone.
+/// an agent's `wain new`, a phone.
 pub fn client_counts() -> bool {
     CLIENT_COUNTS.try_with(|counts| *counts).unwrap_or(false)
 }
@@ -286,7 +286,7 @@ pub fn session_started(item: &SessionIndexItem) {
 /// Reports a session the reader's app just started on an external server.
 /// `os` is what the server's welcome said, `None` from one too old to say.
 ///
-/// The app owns this count rather than the server: a Linux `dray-serve`
+/// The app owns this count rather than the server: a Linux `wain-serve`
 /// carries no key and sends nothing, and a remote Mac would count it under
 /// its own install as a local session of somebody else.
 ///
@@ -339,7 +339,7 @@ fn session_properties(item: &SessionIndexItem, role: BotRole, remote: Option<Opt
 }
 
 /// Reports a bot made: `via` `app` from New bot (desktop or phone), `cli`
-/// from `dray bot new`. The harness rides only where it is known: a bot made
+/// from `wain bot new`. The harness rides only where it is known: a bot made
 /// from the CLI gets its agent at its first message, and that chat's
 /// `session_started` (`bot: true`) says which.
 pub fn bot_created(harness: Option<Harness>, via: &'static str) {
@@ -494,7 +494,7 @@ async fn send(event: &'static str, daily_key: Option<String>, properties: Value)
     props.insert(
         "$raw_user_agent".into(),
         format!(
-            "Dray/{} ({}; {})",
+            "Wain/{} ({}; {})",
             env!("CARGO_PKG_VERSION"),
             std::env::consts::OS,
             std::env::consts::ARCH
@@ -571,7 +571,7 @@ mod tests {
     /// sessions is the only place this process stays quiet.
     #[tokio::test]
     async fn only_a_counting_client_silences_the_server() {
-        assert!(!client_counts(), "the composer on this machine, an agent's `dray new`");
+        assert!(!client_counts(), "the composer on this machine, an agent's `wain new`");
         assert!(CLIENT_COUNTS.scope(true, async { client_counts() }).await);
         assert!(!CLIENT_COUNTS.scope(false, async { client_counts() }).await, "a phone");
     }

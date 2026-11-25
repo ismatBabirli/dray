@@ -4,13 +4,13 @@ import { after, before, describe, test } from "node:test";
 import { fakeBoat } from "./fake-boat.mjs";
 import { nextDev } from "./next-dev.mjs";
 
-/// The Dray Cloud routes (#857) under a real `next dev`, against a faked boat.
+/// The Wain Cloud routes (#857) under a real `next dev`, against a faked boat.
 /// Run with `pnpm test` from apps/web.
 
 const KEY = "client-key";
 const SECRET = "cloud-secret";
 const BOAT_KEY = "boat_test";
-const ORG = "dray-cloud-org";
+const ORG = "wain-cloud-org";
 const hmac = (what) => createHmac("sha256", SECRET).update(what).digest("hex");
 const SERVE_TOKEN = hmac("serve-token");
 const MACHINE_SECRET = hmac("machine");
@@ -24,10 +24,10 @@ const ROUTES = [
   ["POST", "/api/cloud/heartbeat"],
 ];
 
-describe("without DRAY_CLOUD_KEY", () => {
+describe("without WAIN_CLOUD_KEY", () => {
   let app;
   before(async () => {
-    app = await nextDev("/api/cloud/machines", { DRAY_CLOUD_KEY: "", DRAY_CLOUD_SECRET: SECRET, BOAT_API_KEY: BOAT_KEY });
+    app = await nextDev("/api/cloud/machines", { WAIN_CLOUD_KEY: "", WAIN_CLOUD_SECRET: SECRET, BOAT_API_KEY: BOAT_KEY });
   });
   after(() => app?.stop());
 
@@ -39,14 +39,14 @@ describe("without DRAY_CLOUD_KEY", () => {
   });
 });
 
-describe("with DRAY_CLOUD_KEY", () => {
+describe("with WAIN_CLOUD_KEY", () => {
   let app;
   let boat;
   before(async () => {
     boat = await fakeBoat({ key: BOAT_KEY, org: ORG });
     app = await nextDev("/api/cloud/machines", {
-      DRAY_CLOUD_KEY: KEY,
-      DRAY_CLOUD_SECRET: SECRET,
+      WAIN_CLOUD_KEY: KEY,
+      WAIN_CLOUD_SECRET: SECRET,
       BOAT_API_KEY: BOAT_KEY,
       BOAT_ORG: ORG,
       BOAT_API_URL: boat.url,
@@ -97,14 +97,14 @@ describe("with DRAY_CLOUD_KEY", () => {
     const [create] = callsTo("POST", "/sandboxes");
     assert.equal(create.org, ORG);
     assert.deepEqual(create.body, {
-      from: "dray-cloud",
+      from: "wain-cloud",
       noEnv: true,
-      labels: { dray: "cloud" },
+      labels: { wain: "cloud" },
       ttlSeconds: 900,
       hostedPorts: [{ port: 7317, public: true, localhost: true }],
       files: [
-        { path: ".dray/serve-token", content: SERVE_TOKEN },
-        { path: ".dray/cloud.json", content: JSON.stringify({ url: `${app.base}/api/cloud`, secret: MACHINE_SECRET }) },
+        { path: ".wain/serve-token", content: SERVE_TOKEN },
+        { path: ".wain/cloud.json", content: JSON.stringify({ url: `${app.base}/api/cloud`, secret: MACHINE_SECRET }) },
       ],
     });
     first = boat.sandboxes.get(json.machine.id);
@@ -170,7 +170,7 @@ describe("with DRAY_CLOUD_KEY", () => {
   });
 
   test("delete deletes a settled task's machine, and again is no error", async () => {
-    const third = [...boat.sandboxes.values()].find((s) => s.labels.dray && s !== first && s !== second);
+    const third = [...boat.sandboxes.values()].find((s) => s.labels.wain && s !== first && s !== second);
     const { status } = await call("DELETE", `/api/cloud/machines/${third.id}`);
     assert.equal(status, 204);
     const [del] = callsTo("DELETE", `/sandboxes/${third.id}`);
@@ -180,7 +180,7 @@ describe("with DRAY_CLOUD_KEY", () => {
     assert.equal(callsTo("DELETE", `/sandboxes/${third.id}`).length, 1);
   });
 
-  test("a sandbox outside Dray Cloud is not found", async () => {
+  test("a sandbox outside Wain Cloud is not found", async () => {
     const other = [...boat.sandboxes.values()].find((s) => s.labels.other);
     assert.equal((await call("POST", `/api/cloud/machines/${other.id}/stop`)).status, 404);
     assert.equal((await call("POST", "/api/cloud/machines/not-an-id/resume")).status, 404);

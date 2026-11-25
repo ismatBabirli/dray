@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, createPrivateKey, randomBytes, sign } from "node:crypto";
 import http2 from "node:http2";
 
-/// The push relay (#1299). A Dray server hands an alert here and this sends it
+/// The push relay (#1299). A Wain server hands an alert here and this sends it
 /// through APNs to an iPhone or FCM to an Android phone, the one place either
 /// key lives. A server never sees a phone's token: the phone trades it here for
 /// a sealed handle, and only a handle this relay sealed can be sent to.
@@ -11,8 +11,8 @@ export type PushEnv = "sandbox" | "production";
 /// What a handle reaches: an iPhone through APNs in one of its environments, or an Android phone through FCM.
 export type Phone = { platform: "apns"; token: string; env: PushEnv } | { platform: "fcm"; token: string };
 
-/// The iPhone app's bundle id: every push is pinned to it, so a handle can only ever reach Dray.
-const TOPIC = "com.yogesh.dray.ios";
+/// The iPhone app's bundle id: every push is pinned to it, so a handle can only ever reach Wain.
+const TOPIC = "com.wainhq.wain.ios";
 
 /// Whether the relay can reach a platform at all; without its keys a register or send for it answers 503.
 export function pushReady(platform: Phone["platform"]): boolean {
@@ -154,7 +154,7 @@ export function readAlert(v: Record<string, unknown>): Alert | null {
     kind,
     server,
     session,
-    title: str(v.title, 100) || "Dray",
+    title: str(v.title, 100) || "Wain",
     body: str(v.body, 240) ?? "",
     open: str(v.open, 128),
   };
@@ -192,18 +192,18 @@ export function readAlert(v: Record<string, unknown>): Alert | null {
   return alert;
 }
 
-/// The APNs payload: `aps` for the system, `dray` for the app's extension and its actions.
+/// The APNs payload: `aps` for the system, `wain` for the app's extension and its actions.
 /// `mutable-content` lets the extension put a bot's face on and a question's options in.
 export function apnsPayload(a: Alert): object {
-  const { kind, title, body, ...dray } = a;
+  const { kind, title, body, ...wain } = a;
   return {
     aps: {
       alert: { title, body },
       sound: "default",
       "thread-id": a.open ?? a.session,
       "mutable-content": 1,
-      category: `dray.${kind}`,
+      category: `wain.${kind}`,
     },
-    dray: { kind, ...dray },
+    wain: { kind, ...wain },
   };
 }

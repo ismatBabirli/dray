@@ -1,13 +1,13 @@
-# Remote MCP — a chat front door to every Dray server
+# Remote MCP — a chat front door to every Wain server
 
-monorepo-labs/dray#858. Every Dray server — the Mac's background server, a
-Linux `dray-serve` — answers the Model Context Protocol at `/mcp`, so Grok Bot,
+ismatbabirli/wain#858. Every Wain server — the Mac's background server, a
+Linux `wain-serve` — answers the Model Context Protocol at `/mcp`, so Grok Bot,
 Claude or ChatGPT can list, start, message, follow and stop sessions, answer
 their cards, and read and message the server's bots, by chat or voice. The app and the iPhone app stay the place
 to watch and steer; MCP is for firing work off and checking on it.
 
 **MCP sits on top of the server, never in place of it.** Something on the
-machine still spawns the agents and owns `~/.dray`; MCP only replaces the
+machine still spawns the agents and owns `~/.wain`; MCP only replaces the
 client.
 
 ## Where it is reached
@@ -95,8 +95,8 @@ code — and [auth.rs](src-tauri/src/mcp/auth.rs) copies it:
   (`mcp_pair`), so a code for a Linux box is minted on that box. The row lists
   its assistants with **Sign out** (`mcp_assistants`, `mcp_revoke`, refreshed
   on `mcp_assistants_changed`).
-- **`dray server assistant add [--read-only] | ls | revoke <id>`** on a
-  headless box, over the socket (protocol v15). Not `dray server pair`, which
+- **`wain server assistant add [--read-only] | ls | revoke <id>`** on a
+  headless box, over the socket (protocol v15). Not `wain server pair`, which
   already prints the phone's QR.
 - **Asking for a code turns Remote access on** and waits for its address, up
   to 150s: a first start provisions a certificate.
@@ -110,7 +110,7 @@ code — and [auth.rs](src-tauri/src/mcp/auth.rs) copies it:
 
 - **Start, send and stop take the socket's own path**
   (`orchestration::answer_here`), so a session started from a chat gets its
-  worktree, its defaults, its title and its sidebar row exactly as `dray
+  worktree, its defaults, its title and its sidebar row exactly as `wain
   session new` gives them, in the server's default stance. **Never through
   `route`**, which sends a session id this index lacks on to other machines
   under their own tokens: an assistant is signed in to this server alone.
@@ -139,7 +139,7 @@ code — and [auth.rs](src-tauri/src/mcp/auth.rs) copies it:
   and `list_sessions` never shows them, so this is the only way an assistant
   learns one is blocked; a task's card also ends `wait_for_bot`, as the app's
   crew column surfaces it.
-- **`send_to_bot` is `dray bot send` with no sender**, so it lands as the
+- **`send_to_bot` is `wain bot send` with no sender**, so it lands as the
   user's own message, unsigned, and starts the bot's chat where it has none.
   No creating, renaming or deleting bots.
 

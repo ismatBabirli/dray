@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn a_socket_nobody_listens_on_is_unreachable() {
-        let dir = std::env::temp_dir().join(format!("dray-ibus-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain-ibus-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("sock");
         let listener = std::os::unix::net::UnixListener::bind(&path).unwrap();
@@ -162,7 +162,7 @@ mod tests {
 
     #[test]
     fn an_escaped_path_reaches_its_socket() {
-        let dir = std::env::temp_dir().join(format!("dray ibus {}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain ibus {}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("sock");
         let _listener = std::os::unix::net::UnixListener::bind(&path).unwrap();

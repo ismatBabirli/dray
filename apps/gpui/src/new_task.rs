@@ -6,10 +6,10 @@
 //! goes out as a [`NewTaskEvent`], so the window wires it to the serve wire and
 //! this file never names it. Picks apply locally at once, as React's state does.
 
-use dray_core::git::BranchList;
-use dray_core::harness::Harness;
-use dray_core::models::{Effort, Model, ModelId, default_model_for};
-use dray_core::projects::Project;
+use wain_core::git::BranchList;
+use wain_core::harness::Harness;
+use wain_core::models::{Effort, Model, ModelId, default_model_for};
+use wain_core::projects::Project;
 use gpui::{
     AnyElement, App, ClickEvent, Context, Entity, EventEmitter, FontWeight, Hsla, InteractiveElement, IntoElement,
     ParentElement, Pixels, SharedString, StatefulInteractiveElement, Styled, Window, canvas, deferred, div, prelude::*,
@@ -428,7 +428,7 @@ impl Render for NewTask {
                         // down the box. GPUI masks an svg to `text_color` too.
                         div().h(px(40.)).mb_4().flex().items_center().child(
                             svg()
-                                .path("icons/dray-logo.svg")
+                                .path("icons/wain-logo.svg")
                                 .w(px(120.))
                                 .h(px(120. * 96. / 466.))
                                 .text_color(theme.foreground.opacity(0.1)),

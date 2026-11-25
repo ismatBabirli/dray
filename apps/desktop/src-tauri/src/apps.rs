@@ -67,7 +67,7 @@ pub struct ExternalApp {
 struct Known {
     /// The macOS bundle's file name, matched **exactly**, never as a substring.
     /// `Cloudflare WARP.app` is not `Warp.app`, and a contains-check lists it
-    /// as a terminal that then ignores the directory. `None` for an app Dray
+    /// as a terminal that then ignores the directory. `None` for an app Wain
     /// only knows on Linux.
     #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     bundle: Option<&'static str>,
@@ -102,7 +102,7 @@ pub(crate) struct Term {
     /// leaves the directory to the process's own cwd, which xterm reads.
     pub dir: Option<&'static str>,
     /// Flag before the command. `Some("")` is a terminal taking the command
-    /// as its positional arguments; `None` is one Dray cannot ask to run one.
+    /// as its positional arguments; `None` is one Wain cannot ask to run one.
     pub exec: Option<&'static str>,
 }
 
@@ -116,7 +116,7 @@ const fn terminal(bundle: &'static str, name: &'static str) -> Known {
     Known { bundle: Some(bundle), ..other(ExternalAppKind::Terminal, name) }
 }
 
-/// A row with no Mac bundle: an app Dray knows on Linux or Windows alone.
+/// A row with no Mac bundle: an app Wain knows on Linux or Windows alone.
 const fn other(kind: ExternalAppKind, name: &'static str) -> Known {
     Known { bundle: None, desktop: &[], bins: &[], name, kind, term: NO_TERM, files_only: false, windows: &[] }
 }
@@ -421,7 +421,7 @@ fn read_icon(bundle: &Path) -> Option<String> {
     let icon = icns_path(bundle).and_then(|icns| {
         // A temp file rather than stdout: `sips` writes the paths it worked on
         // to stdout and only ever writes the image to a path.
-        let out = std::env::temp_dir().join(format!("dray-appicon-{}.png", uuid::Uuid::now_v7()));
+        let out = std::env::temp_dir().join(format!("wain-appicon-{}.png", uuid::Uuid::now_v7()));
         let ok = Command::new("sips")
             .args(["-s", "format", "png", "-Z", "64"])
             .arg(&icns)
@@ -497,7 +497,7 @@ fn detect() -> Vec<ExternalApp> {
 ///
 /// Re-scanned on every call rather than held for the process: the walk is a
 /// handful of `read_dir`s, and only the icons are dear enough to cache — so an
-/// editor installed while Dray is running shows up the next time the panel
+/// editor installed while Wain is running shows up the next time the panel
 /// asks, instead of needing a restart the way the slash-command cache does.
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn list_open_apps() -> Vec<ExternalApp> {
@@ -545,13 +545,13 @@ pub async fn open_in_app(app_path: String, path: String) -> Result<(), String> {
     Err(crate::git::stderr_or(&out, || format!("could not open {path}")))
 }
 
-/// Writes the modifier that opens Dray Island (`control`, `option`, `command`)
+/// Writes the modifier that opens Wain Island (`control`, `option`, `command`)
 /// into the island's own preferences, which it reads at every tap, and starts it
 /// to match — or quits it, for `off`.
 ///
 /// Its own defaults domain rather than `settings.json`, since the island is the
 /// one that reads it. `open` without `-n` is a no-op for an island already up,
-/// and it outlives Dray on purpose: it talks to the background server, which
+/// and it outlives Wain on purpose: it talks to the background server, which
 /// does too — so the launch also pings it, and an island left on a binary an
 /// update replaced restarts onto the new one. A build with no island inside it
 /// (`tauri dev`) only writes the pick. On Linux and Windows the island is the app's child
@@ -573,15 +573,15 @@ async fn configure_mac_island(key: String) -> Result<(), String> {
     async fn run(cmd: &mut Command) -> Result<std::process::Output, String> {
         cmd.output().await.map_err(|err| format!("could not configure the island: {err}"))
     }
-    run(Command::new("defaults").args(["write", "com.yogesh.dray.island", "island.key", "-string", &key])).await?;
+    run(Command::new("defaults").args(["write", "com.wainhq.wain.island", "island.key", "-string", &key])).await?;
     if key == "off" {
         // Exit 1 is "nothing running", which is what was asked for.
-        run(Command::new("pkill").args(["-x", "Dray Island"])).await?;
+        run(Command::new("pkill").args(["-x", "Wain Island"])).await?;
         return Ok(());
     }
     let Some(app) = std::env::current_exe()
         .ok()
-        .and_then(|exe| Some(exe.parent()?.parent()?.join("Helpers/Dray Island.app")))
+        .and_then(|exe| Some(exe.parent()?.parent()?.join("Helpers/Wain Island.app")))
         .filter(|app| app.exists())
     else {
         return Ok(());
@@ -590,18 +590,18 @@ async fn configure_mac_island(key: String) -> Result<(), String> {
     open.arg("-g");
     // The island finds its server through the home, so a moved one must ride along.
     if let Some(home) = crate::store::home_override() {
-        open.arg("--env").arg(format!("DRAY_HOME={}", home.display()));
+        open.arg("--env").arg(format!("WAIN_HOME={}", home.display()));
     }
     let out = run(open.arg(&app)).await?;
     if out.status.success() {
-        run(Command::new("notifyutil").args(["-p", "com.yogesh.dray.island.update"])).await?;
+        run(Command::new("notifyutil").args(["-p", "com.wainhq.wain.island.update"])).await?;
         return Ok(());
     }
-    Err(crate::git::stderr_or(&out, || "could not start Dray Island".into()))
+    Err(crate::git::stderr_or(&out, || "could not start Wain Island".into()))
 }
 
-/// The session Dray's window has open, which the island opens on when tapped
-/// over a frontmost Dray. Held here since the island asks through the server,
+/// The session Wain's window has open, which the island opens on when tapped
+/// over a frontmost Wain. Held here since the island asks through the server,
 /// and the server can only ask the app's Rust side.
 static APP_SELECTION: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
 
@@ -722,7 +722,7 @@ mod x11_idle {
     }
 }
 
-/// Whether Dray Island is running, asked at each permission or question so a
+/// Whether Wain Island is running, asked at each permission or question so a
 /// island the reader quit never swallows the banner that would have replaced it.
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn island_running() -> bool {
@@ -730,13 +730,13 @@ pub async fn island_running() -> bool {
     return crate::island::running();
     #[cfg(not(all(feature = "desktop", any(target_os = "linux", windows))))]
     tokio::process::Command::new("pgrep")
-        .args(["-x", "Dray Island"])
+        .args(["-x", "Wain Island"])
         .output()
         .await
         .is_ok_and(|out| out.status.success())
 }
 
-/// Hands a session to Dray Island's done pill, which shows it in place of the
+/// Hands a session to Wain Island's done pill, which shows it in place of the
 /// banner: a finished one, or with `note`, what it says instead of "Done" — a
 /// bot's "2 tasks waiting on you". A Darwin notification carries no payload,
 /// so each event is a file named for its session in `island_done_dir`, holding the
@@ -772,7 +772,7 @@ async fn island_done_mac(session_id: String, note: String, rows: Option<serde_js
     // it gets the bare id, and a note it cannot draw goes to the banner.
     let current = island_reads_events(&dir).await;
     if !current && !note.is_empty() {
-        return Err("this Dray Island draws no notes".into());
+        return Err("this Wain Island draws no notes".into());
     }
     static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -791,7 +791,7 @@ async fn island_done_mac(session_id: String, note: String, rows: Option<serde_js
     let tmp = dir.with_file_name(&name);
     tokio::fs::write(&tmp, note).await.map_err(reach)?;
     tokio::fs::rename(&tmp, dir.join(&name)).await.map_err(reach)?;
-    tokio::process::Command::new("notifyutil").args(["-p", "com.yogesh.dray.island.done"]).output().await.ok();
+    tokio::process::Command::new("notifyutil").args(["-p", "com.wainhq.wain.island.done"]).output().await.ok();
     Ok(())
 }
 
@@ -801,7 +801,7 @@ async fn island_done_mac(session_id: String, note: String, rows: Option<serde_js
 #[cfg(not(all(feature = "desktop", any(target_os = "linux", windows))))]
 async fn island_reads_events(dir: &std::path::Path) -> bool {
     let Ok(pid) = tokio::fs::read_to_string(dir.with_file_name("events-pid")).await else { return false };
-    let Ok(out) = tokio::process::Command::new("pgrep").args(["-x", "Dray Island"]).output().await else {
+    let Ok(out) = tokio::process::Command::new("pgrep").args(["-x", "Wain Island"]).output().await else {
         return false;
     };
     String::from_utf8_lossy(&out.stdout).lines().any(|line| line.trim() == pid.trim())
@@ -810,7 +810,7 @@ async fn island_reads_events(dir: &std::path::Path) -> bool {
 /// The island's inbox for finished sessions; `Delegate.doneDir` in the island names it too.
 #[cfg(not(all(feature = "desktop", any(target_os = "linux", windows))))]
 fn island_done_dir() -> Option<std::path::PathBuf> {
-    Some(std::env::home_dir()?.join("Library/Caches/com.yogesh.dray.island/done"))
+    Some(std::env::home_dir()?.join("Library/Caches/com.wainhq.wain.island/done"))
 }
 
 /// The island preferences Settings draws. The island's own right-click menu
@@ -848,7 +848,7 @@ pub async fn island_prefs() -> std::collections::HashMap<String, String> {
 async fn island_prefs_mac() -> std::collections::HashMap<String, String> {
     let reads = ISLAND_PREFS.map(|name| async move {
         let out = tokio::process::Command::new("defaults")
-            .args(["read", "com.yogesh.dray.island", name])
+            .args(["read", "com.wainhq.wain.island", name])
             .output()
             .await
             .ok()
@@ -875,7 +875,7 @@ pub async fn set_island_pref(name: String, value: String) -> Result<(), String> 
 async fn set_island_pref_mac(name: String, value: String) -> Result<(), String> {
     use tokio::process::Command;
     let out = Command::new("defaults")
-        .args(["write", "com.yogesh.dray.island", &name, "-string", &value])
+        .args(["write", "com.wainhq.wain.island", &name, "-string", &value])
         .output()
         .await
         .map_err(|err| format!("could not save the island setting: {err}"))?;
@@ -885,8 +885,8 @@ async fn set_island_pref_mac(name: String, value: String) -> Result<(), String> 
     // An island that is not running reads the file when it starts. Position and
     // layout, and the transcript, are only judged on screen, so those open the panel to show them.
     let ping = match name.as_str() {
-        "island.placement" | "island.mode" | "island.transcript" => "com.yogesh.dray.island.show",
-        _ => "com.yogesh.dray.island.prefs",
+        "island.placement" | "island.mode" | "island.transcript" => "com.wainhq.wain.island.show",
+        _ => "com.wainhq.wain.island.prefs",
     };
     Command::new("notifyutil").args(["-p", ping]).output().await.ok();
     Ok(())
@@ -979,7 +979,7 @@ pub(crate) async fn run_in_terminal(command: &str, cwd: &str) -> Result<(), Stri
     };
     let script = format!("#!/bin/sh\n{enter}{command}\nrm -f -- \"$0\"\n");
 
-    let path = std::env::temp_dir().join(format!("dray-login-{}.command", uuid::Uuid::now_v7()));
+    let path = std::env::temp_dir().join(format!("wain-login-{}.command", uuid::Uuid::now_v7()));
     write_script(&path, &script)
         .map_err(|err| format!("could not write the login script: {err}"))?;
 
@@ -1082,7 +1082,7 @@ mod tests {
     /// last. Icons are not read, so nothing spawns.
     #[test]
     fn resolves_in_table_order_with_finder_last() {
-        let tmp = std::env::temp_dir().join(format!("dray-apps-{}", uuid::Uuid::now_v7()));
+        let tmp = std::env::temp_dir().join(format!("wain-apps-{}", uuid::Uuid::now_v7()));
         let apps_dir = bundle(&tmp, "Applications");
         // Deliberately created in the order that would be wrong if read_dir
         // order leaked through.
@@ -1105,7 +1105,7 @@ mod tests {
     /// Services. A `HashMap` insert in the other order would silently flip it.
     #[test]
     fn first_directory_wins() {
-        let tmp = std::env::temp_dir().join(format!("dray-apps-{}", uuid::Uuid::now_v7()));
+        let tmp = std::env::temp_dir().join(format!("wain-apps-{}", uuid::Uuid::now_v7()));
         let system = bundle(&tmp, "Applications");
         let user = bundle(&tmp, "home/Applications");
         let expected = bundle(&system, "Zed.app");
@@ -1122,7 +1122,7 @@ mod tests {
     /// count to pin. Kept because detection failing silently — an empty menu —
     /// is the one failure here that looks exactly like "nothing is installed".
     ///
-    /// `cargo test -p dray --lib apps -- --ignored --nocapture`
+    /// `cargo test -p wain --lib apps -- --ignored --nocapture`
     #[test]
     #[ignore = "reports what is installed; asserts nothing"]
     fn report_detected_apps() {

@@ -1,8 +1,8 @@
-// End-to-end check of a running `dray-serve`: handshake, a new Claude Code
+// End-to-end check of a running `wain-serve`: handshake, a new Claude Code
 // session in a throwaway repo, one turn streamed back. See SERVE-PLAN.md.
 //
-//   DRAY_HOME=/tmp/dray-serve-home dray-serve --port 7317 &
-//   DRAY_HOME=/tmp/dray-serve-home node scripts/serve-smoke.mjs
+//   WAIN_HOME=/tmp/wain-serve-home wain-serve --port 7317 &
+//   WAIN_HOME=/tmp/wain-serve-home node scripts/serve-smoke.mjs
 //
 // Exits non-zero on anything but a completed turn.
 
@@ -11,12 +11,12 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const home = process.env.DRAY_HOME;
-if (!home) throw new Error("set DRAY_HOME to the server's data directory");
-const url = process.env.DRAY_SERVER ?? "ws://127.0.0.1:7317";
+const home = process.env.WAIN_HOME;
+if (!home) throw new Error("set WAIN_HOME to the server's data directory");
+const url = process.env.WAIN_SERVER ?? "ws://127.0.0.1:7317";
 const token = readFileSync(join(home, "serve-token"), "utf8").trim();
 
-const repo = mkdtempSync(join(tmpdir(), "dray-smoke-"));
+const repo = mkdtempSync(join(tmpdir(), "wain-smoke-"));
 execFileSync("git", ["init", "-q", repo]);
 execFileSync("git", ["-C", repo, "commit", "-q", "--allow-empty", "-m", "init"]);
 

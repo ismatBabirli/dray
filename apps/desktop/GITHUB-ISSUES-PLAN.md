@@ -97,8 +97,8 @@ them, don't relitigate.
   `github_repo(cwd) -> Option<String>`; register in `lib.rs`.
 - `expand_tags` / `bare_ref`: tracker by shape per tag; GitHub tags resolve
   through `github::get_issue`, best-effort like Linear's.
-- `IssueUnavailable` Display `NotConnected`: "Dray is not connected to an issue
-  tracker. Connect Linear in Dray's settings, or sign in to GitHub with `gh
+- `IssueUnavailable` Display `NotConnected`: "Wain is not connected to an issue
+  tracker. Connect Linear in Wain's settings, or sign in to GitHub with `gh
   auth login`."
 - `orchestration.rs::link_issues`: `tracker: IssueTracker::of(&identifier)`
   instead of the literal.
@@ -106,7 +106,7 @@ them, don't relitigate.
 Tests: `parse_identifier` both shapes + `#fff`/heading regressions;
 `IssueTracker::of`; `remote_path` forms; mapping from committed fixtures
 `src-tauri/src/fixtures/gh_issue_list.json` (real capture — `gh issue list -R
-monorepo-labs/dray --state all --json …` already returns one OPEN and one
+ismatbabirli/wain --state all --json …` already returns one OPEN and one
 CLOSED/COMPLETED; add a NOT_PLANNED row by hand and say so) and
 `gh_issue_view.json` (real capture with comments). **After any filtered `cargo
 test`, run a bare `cargo test`** — ts-rs regenerates `events.ts`.
@@ -140,7 +140,7 @@ test`, run a bare `cargo test`** — ts-rs regenerates `events.ts`.
   connected only); `FilterMenu` under github draws one "Repository" section
   from `filters.teams`, no Project section; github empty states per decision
   4; `PriorityMenu` gated on tracker; `Connect` gains one line under the
-  Linear form: "Or sign in to GitHub with `gh auth login` — Dray reads GitHub
+  Linear form: "Or sign in to GitHub with `gh auth login` — Wain reads GitHub
   issues through the `gh` CLI." `unavailableText` tracker-aware as above.
 - `IssuePanel.tsx`: `PriorityMenu` gated; `UNAVAILABLE.not_connected` →
   "Connect a tracker on the Issues page to see this issue."
@@ -154,7 +154,7 @@ test`, run a bare `cargo test`** — ts-rs regenerates `events.ts`.
   the two traps (bare `#123` refused on purpose; `team_id` is the repo slug
   under GitHub). Keep it to that.
 - `apps/cli/skill/SKILL.md`: one GitHub example beside the Linear ones
-  (`dray issue link owner/repo#12 --title … --url …`).
+  (`wain issue link owner/repo#12 --title … --url …`).
 
 ## Out of scope, on purpose
 

@@ -8,7 +8,7 @@
 //! bundle, which is the same binary behaving differently by how it was started.
 //!
 //! Resolved once and reused: the login-shell probe below costs real time (a
-//! shell reading the user's whole rc chain). Only Dray's own installs and the
+//! shell reading the user's whole rc chain). Only Wain's own installs and the
 //! `gh` recheck throw an answer away.
 
 use crate::harness::Harness;
@@ -22,7 +22,7 @@ use tokio::process::Command;
 use tokio::sync::Mutex;
 
 /// One agent's resolved path. Not a `OnceCell`, so [`forget_agent`] can empty it
-/// once Dray has installed that agent itself. The answer sits behind a std lock
+/// once Wain has installed that agent itself. The answer sits behind a std lock
 /// that never waits on a resolve, so [`resolved_bin_dirs`] always sees it; the
 /// async mutex only keeps two resolves of one agent from running at once.
 struct Slot {
@@ -87,7 +87,7 @@ async fn cached(slot: &'static Slot, resolve: impl Future<Output = PathBuf>) -> 
 }
 
 /// Forgets where `harness` is, so the next ask resolves it again. Called after
-/// Dray installed it, or the miss cached before the install would stand until
+/// Wain installed it, or the miss cached before the install would stand until
 /// the server restarts.
 pub async fn forget_agent(harness: Harness) {
     let slot = match harness {
@@ -225,11 +225,11 @@ static PI_PATH: Slot = Slot::new();
 /// **There is no version floor here, and one is coming.** pi below 0.80.6 does
 /// not send `agent_settled`, which is the only line that closes a turn — so a
 /// turn opens and never ends, the session sits `in_progress` forever with the
-/// transcript complete on screen, and that reads as Dray being broken.
+/// transcript complete on screen, and that reads as Wain being broken.
 ///
 /// It is deliberately not a version compare. A number is a proxy for the
 /// question actually worth asking, which is whether *this* pi answers the
-/// commands Dray drives it with — and the model probe already has to spawn
+/// commands Wain drives it with — and the model probe already has to spawn
 /// `pi --mode rpc` and ask, so the real check costs nothing extra there and a
 /// constant here would be a second thing to keep true.
 pub async fn pi() -> PathBuf {
@@ -293,7 +293,7 @@ mod pi_resolution_tests {
 /// but cannot be driven" is the same answer to the reader as "not installed".
 ///
 /// A CLI the reader installs by hand while the app runs still reads as missing
-/// until restart; one Dray installs is forgotten by [`forget_agent`].
+/// until restart; one Wain installs is forgotten by [`forget_agent`].
 pub async fn agent_available(harness: Harness) -> bool {
     harness.names_a_cli() && agent_installed(harness).await
 }
@@ -302,7 +302,7 @@ pub async fn agent_available(harness: Harness) -> bool {
 ///
 /// Split from [`agent_available`] because the two are different questions with
 /// different cures, and folding them cost the reader the useful half: a pi that
-/// is genuinely missing was reported as "Dray can't run pi yet", which names no
+/// is genuinely missing was reported as "Wain can't run pi yet", which names no
 /// cure, while an installed one was never looked for at all.
 pub async fn agent_installed(harness: Harness) -> bool {
     agent_binary(harness).await.is_absolute()
@@ -358,10 +358,10 @@ async fn speaks_app_server(bin: &Path) -> bool {
     String::from_utf8_lossy(&output.stdout).contains("app-server")
 }
 
-/// The `dray` the reader's own shell runs, which a CLI installed with
-/// `DRAY_INSTALL_DIR` can put ahead of the app's copy in `~/.local/bin`.
-pub async fn shell_dray() -> Option<PathBuf> {
-    login_shell_which("dray").await
+/// The `wain` the reader's own shell runs, which a CLI installed with
+/// `WAIN_INSTALL_DIR` can put ahead of the app's copy in `~/.local/bin`.
+pub async fn shell_wain() -> Option<PathBuf> {
+    login_shell_which("wain").await
 }
 
 /// Looks for `bin` on the inherited `PATH`, then in the usual install
@@ -470,7 +470,7 @@ fn known_dirs() -> Vec<PathBuf> {
     let appdata = std::env::var_os("APPDATA").map(PathBuf::from);
     let local = std::env::var_os("LOCALAPPDATA").map(PathBuf::from);
     [
-        // Claude Code's native installer, and `dray`'s own.
+        // Claude Code's native installer, and `wain`'s own.
         Some(home.join(".local").join("bin")),
         // `npm install -g` lands its shims here.
         appdata.map(|a| a.join("npm")),
@@ -746,7 +746,7 @@ async fn login_shell_path() -> Option<OsString> {
 
     let mut cmd = Command::new(shell);
     // AppRun puts the AppImage's own usr/bin first on `PATH`, and the shell
-    // keeps it, so `dray` could resolve to the app's own binary.
+    // keeps it, so `wain` could resolve to the app's own binary.
     #[cfg(all(target_os = "linux", feature = "desktop"))]
     for (key, value) in crate::serve::appimage_env_undo() {
         match value {
@@ -758,7 +758,7 @@ async fn login_shell_path() -> Option<OsString> {
         // Behind a marker, since an rc file is free to print on its own.
         // `printenv` rather than `$PATH`, which fish expands as a list, and by
         // absolute path, since the `PATH` being read need not hold it.
-        .args(["-l", "-c", "echo __DRAY_PATH__; /usr/bin/printenv PATH"])
+        .args(["-l", "-c", "echo __WAIN_PATH__; /usr/bin/printenv PATH"])
         .stdin(Stdio::null())
         .stderr(Stdio::null())
         .output()
@@ -770,7 +770,7 @@ async fn login_shell_path() -> Option<OsString> {
     }
 
     let out = String::from_utf8(output.stdout).ok()?;
-    let (_, path) = out.rsplit_once("__DRAY_PATH__\n")?;
+    let (_, path) = out.rsplit_once("__WAIN_PATH__\n")?;
     Some(path.trim_end().into())
 }
 
@@ -823,7 +823,7 @@ mod tests {
     #[test]
     #[cfg(windows)]
     fn unwraps_a_bat_shim() {
-        let dir = std::env::temp_dir().join(format!("dray-bat-shim-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain-bat-shim-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let shim = dir.join("claude.bat");
@@ -858,7 +858,7 @@ mod tests {
     /// path that fails only at spawn time.
     #[tokio::test]
     async fn a_missing_binary_resolves_to_none() {
-        assert!(resolve("dray-definitely-not-a-real-binary").await.is_none());
+        assert!(resolve("wain-definitely-not-a-real-binary").await.is_none());
     }
 
     /// The marker is what separates the `PATH` from anything an rc file
@@ -874,7 +874,7 @@ mod tests {
     #[test]
     #[cfg(unix)]
     fn finds_a_binary_nested_under_a_version_dir() {
-        let root = std::env::temp_dir().join("dray-binpath-versioned-test");
+        let root = std::env::temp_dir().join("wain-binpath-versioned-test");
         let _ = std::fs::remove_dir_all(&root);
         let place = |rel: &str| {
             let bin = root.join(rel);
@@ -931,7 +931,7 @@ mod tests {
     async fn the_app_server_probe_finds_the_interpreter_beside_the_candidate() {
         use std::os::unix::fs::PermissionsExt;
 
-        let dir = std::env::temp_dir().join("dray-binpath-probe-test");
+        let dir = std::env::temp_dir().join("wain-binpath-probe-test");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let script = |name: &str, body: &str| {
@@ -940,8 +940,8 @@ mod tests {
             std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
             path
         };
-        script("dray-fake-node", "#!/bin/sh\necho 'codex app-server'\n");
-        let codex = script("codex", "#!/usr/bin/env dray-fake-node\n");
+        script("wain-fake-node", "#!/bin/sh\necho 'codex app-server'\n");
+        let codex = script("codex", "#!/usr/bin/env wain-fake-node\n");
 
         assert!(speaks_app_server(&codex).await);
 

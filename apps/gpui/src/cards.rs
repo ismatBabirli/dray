@@ -10,7 +10,7 @@
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
-use dray_core::events::{AgentEvent, AgentEventPayload, PermissionOption, Question};
+use wain_core::events::{AgentEvent, AgentEventPayload, PermissionOption, Question};
 use gpui::{
     AnyElement, App, Global, IntoElement, Keystroke, ParentElement, RenderOnce, SharedString, Styled, Task, Window,
     div, px,

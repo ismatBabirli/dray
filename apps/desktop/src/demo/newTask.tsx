@@ -18,7 +18,7 @@ const AGENTS: [Harness, string][] = [
 ];
 
 const PROJECTS: Project[] = [
-  { path: "/Users/you/code/dray", name: "dray", space: null, lastSelected: "2026-11-06T00:00:00Z" },
+  { path: "/Users/you/code/wain", name: "wain", space: null, lastSelected: "2026-11-06T00:00:00Z" },
 ];
 
 const MODELS: Model[] = [

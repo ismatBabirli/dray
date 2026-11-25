@@ -77,12 +77,12 @@ struct AskCard: View {
                     .onTapGesture {
                         if NSEvent.modifierFlags.contains(.command) { Task { await composer.showInApp(key) } }
                     }
-                    .help("⌘-click to open in Dray")
+                    .help("⌘-click to open in Wain")
             }
             Spacer(minLength: 0)
             DismissButton { composer.dismissAsks(key) }
             if keys.count > 1 {
-                DismissButton(label: "Dismiss all", help: "Hide all until a new task needs you. They still wait in Dray.") {
+                DismissButton(label: "Dismiss all", help: "Hide all until a new task needs you. They still wait in Wain.") {
                     composer.dismissAsks()
                 }
             }
@@ -120,7 +120,7 @@ private struct WaitingSwitch: View {
 }
 
 /// One waiting session in the opened list, by title. A click opens its card,
-/// ⌘-click opens it in Dray.
+/// ⌘-click opens it in Wain.
 struct WaitingRow: View {
     let title: String
     /// What it asks, drawn dim after the title; the panel's list leaves it out, a demo layout shows it.
@@ -195,7 +195,7 @@ struct AskBody: View {
 /// beside it, so it reads as a way out and not as an answer.
 struct DismissButton: View {
     var label = "Dismiss"
-    var help = "Hide until a new task needs you. It still waits in Dray."
+    var help = "Hide until a new task needs you. It still waits in Wain."
     let action: () -> Void
     @State private var hover = false
 

@@ -100,7 +100,7 @@ const BANNER_MS: u32 = 60_000;
 /// Marks the window urgent, Linux's nearest thing to the Mac's dock badge:
 /// the taskbar or dock highlights it until it is cleared. A no-op elsewhere.
 ///
-/// Skipped on GNOME, whose shell answers an urgent window with a "Dray is
+/// Skipped on GNOME, whose shell answers an urgent window with a "Wain is
 /// ready" banner of its own — a second banner for an event that already
 /// posted one.
 #[tauri::command]
@@ -151,7 +151,7 @@ mod linux {
             None => notification.auto_icon(),
         };
         notification
-            .appname("Dray")
+            .appname("Wain")
             .summary(&title)
             .body(&body)
             // The spec's key for a click on the body. GNOME, KDE and dunst
@@ -210,7 +210,7 @@ mod linux {
     }
 
     /// The app's icon as a file, written once a process. A banner names its
-    /// icon by theme name or path, and nothing installs Dray into an icon
+    /// icon by theme name or path, and nothing installs Wain into an icon
     /// theme — an AppImage installs nothing at all — so the name drew a
     /// broken image.
     fn icon() -> Option<&'static str> {
@@ -225,7 +225,7 @@ mod linux {
                 .filter(|d| !d.is_empty())
                 .map(std::path::PathBuf::from)
                 .or_else(|| std::env::home_dir().map(|h| h.join(".cache")))?;
-            let path = cache.join("dray").join(name);
+            let path = cache.join("wain").join(name);
             std::fs::create_dir_all(path.parent()?).ok()?;
             std::fs::write(&path, bytes).ok()?;
             path.into_os_string().into_string().ok()

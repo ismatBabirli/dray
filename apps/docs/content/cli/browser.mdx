@@ -1,18 +1,18 @@
 ---
 title: Browser
-description: Drive a session's own browser with dray browser — open pages, read them, click and type, take screenshots and record videos — and what the app's browser shows on a new tab or a stopped dev server.
+description: Drive a session's own browser with wain browser — open pages, read them, click and type, take screenshots and record videos — and what the app's browser shows on a new tab or a stopped dev server.
 sidebar:
   order: 7
 ---
 
-Every session has its own browser, drawn in the app beside the chat. `dray browser` drives it from the command line. It is mostly for agents: an agent checks the dev server it just changed, fills a form, or records a video of a feature working, and you watch the same tabs it acts on.
+Every session has its own browser, drawn in the app beside the chat. `wain browser` drives it from the command line. It is mostly for agents: an agent checks the dev server it just changed, fills a form, or records a video of a feature working, and you watch the same tabs it acts on.
 
 Each command acts on one session's tabs: the session running the command, or the one `--session` names. It cannot reach another session's pages. Every verb lands on that session's active tab, and `open` makes a tab if there is none.
 
 ```bash
-dray browser open http://localhost:3000
-dray browser snapshot -i
-dray browser click @e4
+wain browser open http://localhost:3000
+wain browser snapshot -i
+wain browser click @e4
 ```
 
 ## Flags
@@ -36,7 +36,7 @@ A flag given to a verb that does not use it is refused.
 ## Read a page
 
 ```bash
-dray browser snapshot -i
+wain browser snapshot -i
 ```
 
 `snapshot` lists the page's elements, one per line, each with a ref like `@e12`. Other verbs take that ref as their target. Refs are numbered fresh on every snapshot, so take a new one after anything that changes the page.
@@ -75,10 +75,10 @@ A target is a ref from the last snapshot, or a CSS selector.
 `find` locates an element the way a person would describe it, then runs a verb on it:
 
 ```bash
-dray browser find role button click --name "Sign in"
-dray browser find text "Forgot password" click
-dray browser find label "Email" fill "me@example.com"
-dray browser find nth 2 ".result" click
+wain browser find role button click --name "Sign in"
+wain browser find text "Forgot password" click
+wain browser find label "Email" fill "me@example.com"
+wain browser find nth 2 ".result" click
 ```
 
 `find` takes `role`, `text`, `label`, `placeholder`, `alt`, `title`, `testid`, `first <selector>`, `last <selector>` or `nth <index> <selector>`, then the value, then any verb that takes a target.
@@ -86,10 +86,10 @@ dray browser find nth 2 ".result" click
 ### Wait
 
 ```bash
-dray browser wait ".results"
-dray browser wait 1500
-dray browser wait --text "Saved"
-dray browser wait --url /done
+wain browser wait ".results"
+wain browser wait 1500
+wain browser wait --text "Saved"
+wain browser wait --url /done
 ```
 
 Waits for an element to appear, for a number of milliseconds (up to a minute), for text or a URL, or with `--load load` for the page to finish loading.
@@ -111,12 +111,12 @@ A tab nobody has looked at for a while is put to sleep to save memory. It is lis
 ## Screenshots
 
 ```bash
-dray browser screenshot
-dray browser screenshot --full
-dray browser screenshot docs/login.png
+wain browser screenshot
+wain browser screenshot --full
+wain browser screenshot docs/login.png
 ```
 
-Prints the PNG's path. With no path, it saves under `~/.dray/browser/shots`. A path of your own must be inside the session's checkout.
+Prints the PNG's path. With no path, it saves under `~/.wain/browser/shots`. A path of your own must be inside the session's checkout.
 
 Screenshots lay the page out at 1440×900, whatever the size of the pane on screen, or at the size you set:
 
@@ -133,42 +133,42 @@ Device names: `iPhone SE`, `iPhone 15`, `Pixel 8`, `iPad Mini`, `iPad Air`, `Lap
 ## Record a video
 
 ```bash
-dray browser record start
-dray browser click @e4
-dray browser fill @e2 "hello"
-dray browser record stop "checkout flow"
+wain browser record start
+wain browser click @e4
+wain browser fill @e2 "hello"
+wain browser record stop "checkout flow"
 ```
 
 `record start` films the active tab at the screenshot size. `record stop` ends it and prints the MP4's path, named after what you pass: `checkout-flow.mp4`. Without a name, the file is named by when it started.
 
-Recordings are saved under `~/.dray/browser/recordings/<session-id>/` and deleted with the session. When an agent puts a recording's path in its reply, the app plays it inline in the transcript.
+Recordings are saved under `~/.wain/browser/recordings/<session-id>/` and deleted with the session. When an agent puts a recording's path in its reply, the app plays it inline in the transcript.
 
-Any other video, like a screen recording, plays the same way once `dray video add <file>` has filed it. It converts anything that isn't an MP4, with `avconvert` on a Mac and `ffmpeg` where that cannot read it and on Linux, and prints the path. Run it on the machine serving the session. A machine with no way to convert the file says so.
+Any other video, like a screen recording, plays the same way once `wain video add <file>` has filed it. It converts anything that isn't an MP4, with `avconvert` on a Mac and `ffmpeg` where that cannot read it and on Linux, and prints the path. Run it on the machine serving the session. A machine with no way to convert the file says so.
 
-A screenshot shows inline the same way once `dray image add <file>` has filed it. It takes a PNG or JPEG, keeps it as it is, and prints the path.
+A screenshot shows inline the same way once `wain image add <file>` has filed it. It takes a PNG or JPEG, keeps it as it is, and prints the path.
 
 While a recording runs, the pane shows a notice in place of the page, and you cannot switch the session's tabs. Screenshots still work. One recording per session at a time.
 
 ## On a server
 
-On a Linux server, `dray browser` runs its own Chromium with no window. It needs the system libraries Chromium uses, and `record` needs ffmpeg. `dray server install` offers both as **Browser for agents** and **ffmpeg**. See [Servers](/cli/servers).
+On a Linux server, `wain browser` runs its own Chromium with no window. It needs the system libraries Chromium uses, and `record` needs ffmpeg. `wain server install` offers both as **Browser for agents** and **ffmpeg**. See [Servers](/cli/servers).
 
 That Chromium closes after 5 minutes with nothing driving it, and keeps the session's tabs. The next command opens the same pages again. A recording, a command in progress or a screenshot keeps it open.
 
-Screenshots and recordings land in the same folders, under `~/.dray/browser` on the server.
+Screenshots and recordings land in the same folders, under `~/.wain/browser` on the server.
 
 ## The browser in the app
 
-The pages `dray browser` drives are the session's Browser tab in the app, so you can watch and take over.
+The pages `wain browser` drives are the session's Browser tab in the app, so you can watch and take over.
 
 **A new tab** opens on a start page:
 
 - **Diff** and **Files** cards at the top. Click one and the tab becomes that view.
 - The dev servers the session can reach, under **Running locally**, or **Running on** a server's name. Click one to open it. **Get shareable link** gives it a public address; see [Share a dev server](/reference/remote-access#share-a-dev-server).
-- In a bot's browser, its tasks' dev servers too, each group headed by the task, with its machine's name when the task runs elsewhere. See [Bots](/using-dray/bots).
+- In a bot's browser, its tasks' dev servers too, each group headed by the task, with its machine's name when the task runs elsewhere. See [Bots](/using-wain/bots).
 - **Recently visited** pages.
 
-**A dev server that stops answering** shows Dray's own page instead of the browser's error: **Nothing is answering on localhost:`<port>`**, with the task that ran it, its machine, and how long ago it stopped. **Ask the task to restart it**, or **Ask the agent to restart it** in the session's own browser, sends the agent a message to start it again, and the button then reads **Asked**. **Retry** loads the page again. Once the server answers again, the page reloads by itself. Other servers still running are listed below.
+**A dev server that stops answering** shows Wain's own page instead of the browser's error: **Nothing is answering on localhost:`<port>`**, with the task that ran it, its machine, and how long ago it stopped. **Ask the task to restart it**, or **Ask the agent to restart it** in the session's own browser, sends the agent a message to start it again, and the button then reads **Asked**. **Retry** loads the page again. Once the server answers again, the page reloads by itself. Other servers still running are listed below.
 
 {/* screenshot: the stopped dev server page, with the task, machine and "stopped 3 min ago", and the two buttons */}
 

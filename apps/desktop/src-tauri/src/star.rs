@@ -1,4 +1,4 @@
-//! Asking the reader to star Dray on GitHub, after a merge made in the app.
+//! Asking the reader to star Wain on GitHub, after a merge made in the app.
 //!
 //! Asked after the first merge and, where that did not end in a star, once
 //! more after the tenth; never after that. The count lives in the app's
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{github, store};
 
-const REPO: &str = "monorepo-labs/dray";
+const REPO: &str = "ismatbabirli/wain";
 
 /// The merge counts each ask waits for, in order.
 const ASK_AT: [u32; 2] = [1, 10];
@@ -53,7 +53,7 @@ fn home() -> Option<String> {
     std::env::home_dir()?.to_str().map(str::to_string)
 }
 
-/// `gh api` on Dray's star, against github.com whatever `GH_HOST` says, since
+/// `gh api` on Wain's star, against github.com whatever `GH_HOST` says, since
 /// that is where the card sends the reader.
 async fn star_api(method: &str) -> Result<String, String> {
     let home = home().ok_or("no home directory")?;
@@ -64,7 +64,7 @@ async fn star_api(method: &str) -> Result<String, String> {
         .unwrap_or_else(|_| Err("gh timed out".into()))
 }
 
-/// Whether the reader's `gh` login has starred Dray, or `None` where it could
+/// Whether the reader's `gh` login has starred Wain, or `None` where it could
 /// not say — no `gh`, logged out, offline. The API answers 204 or 404.
 async fn has_starred() -> Option<bool> {
     match star_api("GET").await {
@@ -99,10 +99,10 @@ pub async fn note_merge_for_star() -> bool {
     ask
 }
 
-/// Stars Dray as the reader's `gh` login. An error tells the card to open the
+/// Stars Wain as the reader's `gh` login. An error tells the card to open the
 /// repo page instead.
 #[tauri::command]
-pub async fn star_dray() -> Result<(), String> {
+pub async fn star_wain() -> Result<(), String> {
     star_api("PUT").await?;
     crate::analytics::feature_used("github_starred");
     let _guard = store::lock_across_processes("star-prompt").await;

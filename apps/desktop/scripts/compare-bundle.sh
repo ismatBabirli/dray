@@ -1,5 +1,5 @@
 #!/bin/sh
-# Describes two Dray.app bundles the same way and diffs the descriptions: what
+# Describes two Wain.app bundles the same way and diffs the descriptions: what
 # a dry run of release.yml checks a pipeline change against the last release
 # with. Every file with its size, then per signed piece its signature, its
 # entitlements and its arches, then each Info.plist.

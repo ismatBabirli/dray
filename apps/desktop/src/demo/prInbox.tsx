@@ -65,28 +65,28 @@ const mark = (repo: string, number: number, over: Partial<PrMark>, l: Partial<Pr
   listing: listing(l),
 });
 
-const DRAY = "/Users/you/code/dray";
+const WAIN = "/Users/you/code/wain";
 const SITE = "/Users/you/code/site";
 
 const MARKS: Record<string, PrMark[]> = {
-  [DRAY]: [
-    mark("monorepo-labs/dray", 1340, { checksState: "FAILING" }, {
+  [WAIN]: [
+    mark("ismatbabirli/wain", 1340, { checksState: "FAILING" }, {
       title: "Pull requests page: every PR in one place",
       updatedAt: ago(4),
       commentCount: 4,
       additions: 812,
       deletions: 40,
     }),
-    mark("monorepo-labs/dray", 1338, { mergeStateStatus: "CLEAN", reviewDecision: "APPROVED" }, {
+    mark("ismatbabirli/wain", 1338, { mergeStateStatus: "CLEAN", reviewDecision: "APPROVED" }, {
       title: "Prefetch a bot chat's transcript on hover",
       updatedAt: ago(25),
       commentCount: 2,
     }),
-    mark("monorepo-labs/dray", 1335, { checksState: "RUNNING" }, {
-      title: "Add dray session detach, so a bot can hand a task to the user",
+    mark("ismatbabirli/wain", 1335, { checksState: "RUNNING" }, {
+      title: "Add wain session detach, so a bot can hand a task to the user",
       updatedAt: ago(60),
     }),
-    mark("monorepo-labs/dray", 1324, { headRefName: "fix/bot-panel" }, {
+    mark("ismatbabirli/wain", 1324, { headRefName: "fix/bot-panel" }, {
       title: "Bot chat panel: icon switcher at the bottom",
       viewerDidAuthor: false,
       author: "ada",
@@ -94,20 +94,20 @@ const MARKS: Record<string, PrMark[]> = {
       updatedAt: ago(180),
       commentCount: 1,
     }),
-    mark("monorepo-labs/dray", 1301, { headRefName: "patch-1" }, {
+    mark("ismatbabirli/wain", 1301, { headRefName: "patch-1" }, {
       title: "Fix a typo in the README",
       viewerDidAuthor: false,
       author: "drive-by",
       isCrossRepository: true,
       updatedAt: ago(60 * 26),
     }),
-    mark("monorepo-labs/dray", 1290, { isDraft: true }, {
+    mark("ismatbabirli/wain", 1290, { isDraft: true }, {
       title: "Spike: island on Windows",
       updatedAt: ago(60 * 50),
     }),
   ],
   [SITE]: [
-    mark("monorepo-labs/site", 88, { mergeStateStatus: "CLEAN" }, {
+    mark("ismatbabirli/site", 88, { mergeStateStatus: "CLEAN" }, {
       title: "Docs: the pull requests page",
       updatedAt: ago(90),
     }),
@@ -118,8 +118,8 @@ const session = (sessionId: string, title: string, branch: string, over: Partial
   ({
     sessionId,
     title,
-    projectPath: DRAY,
-    cwd: `${DRAY}/.claude/worktrees/${branch}`,
+    projectPath: WAIN,
+    cwd: `${WAIN}/.claude/worktrees/${branch}`,
     branch,
     worktreeName: null,
     worktreeRemoved: false,
@@ -138,7 +138,7 @@ const SESSIONS: SessionIndexItem[] = [
   session("s-1340", "Plan and build the pull requests page", "worktree-pr-1340"),
   session("s-1338", "Hover prefetch for bot chats", "worktree-pr-1338"),
   session("s-1338b", "Review the hover prefetch", "worktree-pr-1338", { modified: ago(40) }),
-  session("s-1335", "dray session detach", "worktree-pr-1335", { archived: true }),
+  session("s-1335", "wain session detach", "worktree-pr-1335", { archived: true }),
 ];
 
 const comment = (over: Partial<PrComment>): PrComment => ({
@@ -147,7 +147,7 @@ const comment = (over: Partial<PrComment>): PrComment => ({
   avatar: null,
   body: "",
   createdAt: ago(20),
-  url: "https://github.com/monorepo-labs/dray/pull/1340",
+  url: "https://github.com/ismatbabirli/wain/pull/1340",
   kind: "comment",
   path: null,
   resolved: false,
@@ -238,7 +238,7 @@ function Demo() {
 
   const [owner, setOwner] = useState<string | null>(null);
   const [people, setPeople] = useState<PeopleFilter>("all");
-  const keys = scope === "space" ? [DRAY] : [DRAY, SITE];
+  const keys = scope === "space" ? [WAIN] : [WAIN, SITE];
   const rows = useMemo(() => inboxRows(keys, (key) => MARKS[key]), [scope]); // eslint-disable-line react-hooks/exhaustive-deps
   const sessionsFor = (row: InboxRow) => sessionsForPr(row, SESSIONS, () => undefined);
   const pr = picked && detail(picked);

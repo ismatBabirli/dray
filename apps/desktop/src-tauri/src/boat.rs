@@ -108,7 +108,7 @@ fn said(out: &std::process::Output) -> String {
 }
 
 /// Resumes a stopped sandbox and returns once it can run a command, which is
-/// before SSH and Dray are up on it.
+/// before SSH and Wain are up on it.
 pub async fn resume(id: &str) -> Result<(), String> {
     let out = run(&["resume", id], RESUMING).await.ok_or_else(|| format!("boat isn't installed on {}.", crate::ssh::HERE_MID))?;
     let out = out.map_err(|e| format!("Could not run boat: {e}"))?;
@@ -179,9 +179,9 @@ impl Refused {
     pub fn sentence(&self, dest: &str) -> String {
         match self {
             Refused::NotOurs => format!(
-                "It's running again, but the Host {dest} block in ~/.ssh/config doesn't point at this sandbox any more, so Dray left it alone."
+                "It's running again, but the Host {dest} block in ~/.ssh/config doesn't point at this sandbox any more, so Wain left it alone."
             ),
-            Refused::Failed(why) => format!("It's running again, but Dray couldn't update its SSH details: {why}"),
+            Refused::Failed(why) => format!("It's running again, but Wain couldn't update its SSH details: {why}"),
         }
     }
 }
@@ -381,7 +381,7 @@ async fn write_config(
     // Through a symlink, or a dotfile manager's link becomes a plain file.
     let real = dunce::canonicalize(config).map_err(|e| format!("could not read {}: {e}", config.display()))?;
     let mode = std::fs::metadata(&real).map_err(|e| e.to_string())?.permissions();
-    let tmp = real.with_file_name(format!(".config.dray-{}", uuid::Uuid::now_v7()));
+    let tmp = real.with_file_name(format!(".config.wain-{}", uuid::Uuid::now_v7()));
     let done = async {
         std::fs::write(&tmp, text).map_err(|e| format!("could not write {}: {e}", tmp.display()))?;
         std::fs::set_permissions(&tmp, mode).map_err(|e| e.to_string())?;
@@ -434,11 +434,11 @@ mod tests {
         assert_eq!(parse_info("not json"), None);
     }
 
-    const CONFIG: &str = "# mine\nHost other\n  HostName 9.9.9.9\n  Port 2200\n\nHost boat-dray\n    HostName 37.187.24.197\n    Port 19042\n    User user\n    HostKeyAlias ascii-sandbox-0b1f\n\nHost *\n  ServerAliveInterval 60\n";
+    const CONFIG: &str = "# mine\nHost other\n  HostName 9.9.9.9\n  Port 2200\n\nHost boat-wain\n    HostName 37.187.24.197\n    Port 19042\n    User user\n    HostKeyAlias ascii-sandbox-0b1f\n\nHost *\n  ServerAliveInterval 60\n";
 
     #[test]
     fn edits_only_the_matching_block() {
-        let out = repoint_block(CONFIG, "boat-dray", "5.6.7.8", 2222).unwrap();
+        let out = repoint_block(CONFIG, "boat-wain", "5.6.7.8", 2222).unwrap();
         assert_eq!(out, CONFIG.replace("37.187.24.197", "5.6.7.8").replace("19042", "2222"));
     }
 

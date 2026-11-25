@@ -7,9 +7,9 @@ import { pool } from "@/lib/db";
 import { normalizeCode, showCode } from "@/lib/link";
 import { managesServers, requireSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Link a server - Dray" };
+export const metadata: Metadata = { title: "Link a server - Wain" };
 
-/// Where a server's link code is approved: `dray login` prints this page's
+/// Where a server's link code is approved: `wain login` prints this page's
 /// address with the code, or the bare page and the code to type here.
 export default async function LinkPage({
   searchParams,
@@ -84,7 +84,7 @@ function CodeForm({ problem }: { problem?: string }) {
   return (
     <form action="/link">
       {problem ? <Label danger>{problem}</Label> : <Label>Link a server</Label>}
-      <Heading>{problem ? "Run dray login again for a new code." : "Enter the code your server printed."}</Heading>
+      <Heading>{problem ? "Run wain login again for a new code." : "Enter the code your server printed."}</Heading>
       <Cards>
         <FieldCard label="Code">
           <input

@@ -51,7 +51,7 @@ use tokio::{
     sync::Mutex,
 };
 
-/// Dray's rules. Each harness keeps its own copy, since each names the tools
+/// Wain's rules. Each harness keeps its own copy, since each names the tools
 /// its own agent has — OpenCode's are `skill` and `task`.
 const SYSTEM_PROMPT: &str = include_str!("system_prompt.md");
 
@@ -107,13 +107,13 @@ pub async fn init(
     let agents = agents_refusing_edits(&bin, permission_mode, cwd, session_cwd).await;
     let mut command = Command::new(&bin);
     if let Some(endpoint) = crate::orchestration::child_endpoint() {
-        command.env("DRAY_ENDPOINT", endpoint);
+        command.env("WAIN_ENDPOINT", endpoint);
     }
 
     let mut child = command
         .arg("acp")
         .current_dir(cwd)
-        .env("DRAY_SESSION_ID", session_id)
+        .env("WAIN_SESSION_ID", session_id)
         .env("PATH", crate::harness::agent_path(&bin))
         .env("OPENCODE_PERMISSION", global_rules(permission_mode, agents.as_deref()).to_string())
         .env(
@@ -203,7 +203,7 @@ async fn write_rules(session_id: &str, session_cwd: &str) -> Result<String> {
     Ok(path.to_string_lossy().into_owned())
 }
 
-/// Dray's stance as OpenCode permission rules, for the agent Dray runs.
+/// Wain's stance as OpenCode permission rules, for the agent Wain runs.
 ///
 /// Set whole rather than left to the reader's config, because OpenCode's own
 /// default allows everything and a stance that said otherwise would be a lie.
@@ -269,7 +269,7 @@ fn global_rules(mode: ApprovalPolicy, agents: Option<&[String]>) -> Value {
     rules
 }
 
-/// `OPENCODE_CONFIG_CONTENT`: Dray's rules file, the stance whole for `build`
+/// `OPENCODE_CONFIG_CONTENT`: Wain's rules file, the stance whole for `build`
 /// and `plan` over [`global_rules`], and edits refused for every other agent
 /// in `agents`.
 ///
@@ -386,12 +386,12 @@ async fn open_session(
                 // No `fs` and no `terminal`: OpenCode reads and writes through
                 // its own tools.
                 "clientCapabilities": {},
-                "clientInfo": {"name": "dray", "title": "Dray", "version": env!("CARGO_PKG_VERSION")},
+                "clientInfo": {"name": "wain", "title": "Wain", "version": env!("CARGO_PKG_VERSION")},
             }),
         )
         .await?;
 
-    // MCP is OpenCode's own: it reads the reader's config, so Dray hands over
+    // MCP is OpenCode's own: it reads the reader's config, so Wain hands over
     // nothing.
     let (id, mut config) = match open {
         Open::Resume(id) => {
@@ -403,7 +403,7 @@ async fn open_session(
         }
         // The answer is the copy, opened. OpenCode replays the parent's history
         // ahead of it, which the read loop drops: nothing is drawn until the
-        // session is handed over, and Dray's own copied log is the transcript.
+        // session is handed over, and Wain's own copied log is the transcript.
         Open::Fork(parent) => {
             let answer = client
                 .request("session/fork", json!({"sessionId": parent, "cwd": session_cwd, "mcpServers": []}))
@@ -808,7 +808,7 @@ async fn answer_request(
         // too — unadvertised, so an editor client can refresh its buffer.
         // Refused quietly: measured, the edit has already landed.
         "fs/write_text_file" => {
-            let _ = handles.client.respond_err(rpc_id, -32601, "Dray does not write files for the agent.");
+            let _ = handles.client.respond_err(rpc_id, -32601, "Wain does not write files for the agent.");
         }
         _ => {
             record_failure(OpenCode, &handles.session_id, "unsupported_request", method, line).await;
@@ -891,8 +891,8 @@ mod tests {
         assert_eq!(permission_rules(ApprovalPolicy::BypassPermissions)["bash"], "allow");
     }
 
-    /// What would ask is refused for every agent but the two Dray runs, which
-    /// get the asking rules back — a subagent's ask never reaches Dray, and a
+    /// What would ask is refused for every agent but the two Wain runs, which
+    /// get the asking rules back — a subagent's ask never reaches Wain, and a
     /// refused tool leaves its list rather than hanging the turn.
     #[test]
     fn subagents_are_refused_what_they_cannot_ask_for() {
@@ -938,7 +938,7 @@ mod tests {
             assert!(config["agent"]["plan"]["permission"].get("edit").is_none(), "{mode:?}");
         }
 
-        // Where the stance asks before an edit, every agent but the two Dray
+        // Where the stance asks before an edit, every agent but the two Wain
         // runs is refused, the reader's own included: none of them can ask.
         let manual = stance_config("/r.md", ApprovalPolicy::Manual, Some(&agents));
         assert_eq!(manual["agent"]["build"]["permission"]["edit"], "ask");
@@ -1060,7 +1060,7 @@ mod tests {
 
     #[test]
     fn the_rules_name_opencodes_own_tools() {
-        assert!(SYSTEM_PROMPT.contains("You run inside Dray"));
+        assert!(SYSTEM_PROMPT.contains("You run inside Wain"));
         assert!(SYSTEM_PROMPT.contains("`skill` tool"));
         assert!(SYSTEM_PROMPT.contains("`task` tool"));
     }

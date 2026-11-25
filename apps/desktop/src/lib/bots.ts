@@ -82,7 +82,7 @@ export async function readPreviews(sessionIds: string[]): Promise<Record<string,
   return Object.assign({}, ...answers);
 }
 
-/// Keeps each server's list current while `dray bot` changes it from outside
+/// Keeps each server's list current while `wain bot` changes it from outside
 /// the app. A connect needs nothing here: `readServer` reads every server's
 /// bots on its `live_state`, which covers a change made while it was down.
 export function listenForBots(): () => void {
@@ -95,7 +95,7 @@ export function listenForBots(): () => void {
   };
 }
 
-/// The bot `key` names, the way `dray bot send` reads it: its id, else its
+/// The bot `key` names, the way `wain bot send` reads it: its id, else its
 /// name in any case, where only one bot has it.
 export function botNamed(list: readonly Bot[], key: string): Bot | undefined {
   const byId = list.find((b) => b.id === key);
@@ -183,7 +183,7 @@ export function botEntries(
   });
 }
 
-/// The messages a bot's chat opens on before it has a session: Dray Bot's
+/// The messages a bot's chat opens on before it has a session: Wain Bot's
 /// welcome, then the question for the reader's name while no bot knows it. A
 /// server from before the greeting sends the welcome alone.
 export function greetingOf(bot: Bot): string[] {

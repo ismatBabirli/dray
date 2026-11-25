@@ -102,7 +102,7 @@ import StalledTasks from "@/components/chat/StalledTasks";
 import { MergeCardHostContext, type MergeCardHost } from "@/components/chat/MergeCard";
 import { cardRepos } from "@/lib/mergeCard";
 import BotWelcome from "@/components/chat/BotWelcome";
-import { takeDrayBotAsk, useDrayBotAsk } from "@/components/onboarding/state";
+import { takeWainBotAsk, useWainBotAsk } from "@/components/onboarding/state";
 import SplitView, { DragGhost, DropZone, type PaneChat } from "@/components/SplitView";
 import SplitPanes, { cardOrder, SplitFile } from "@/components/SplitPanes";
 import { pruneSplits, removeSplit, useLitGroup, useSplitGroups, useSplitPanes, useSplitWeight } from "@/lib/splitPanes";
@@ -405,11 +405,11 @@ function App() {
     setTranscriptPrefetch((id) => prefetchRef.current(id));
     return () => setTranscriptPrefetch(null);
   }, []);
-  // Dray Island opens on this session when tapped over Dray's window.
+  // Wain Island opens on this session when tapped over Wain's window.
   useEffect(() => {
     void invoke("set_app_selection", { sessionId: selectedSessionId }).catch(() => {});
   }, [selectedSessionId]);
-  // `dray draft rm` or `start` can take the open draft away; leave it then.
+  // `wain draft rm` or `start` can take the open draft away; leave it then.
   useEffect(() => {
     if (openDraftId && !drafts.some((d) => d.id === openDraftId)) setOpenDraftId(null);
   }, [drafts, openDraftId]);
@@ -584,7 +584,7 @@ function App() {
   // The open session's server, while it cannot be reached. Shown in place of
   // the error a read or send would raise, and cleared by the reconnect itself.
   const allServers = useServers();
-  // A cloud machine is neither: it is Dray's own, and a send wakes it.
+  // A cloud machine is neither: it is Wain's own, and a send wakes it.
   const offlineServer = allServers.find(
     (s) => !!selectedSessionId && s.id === activeServer && s.status !== "connected" && !s.cloud,
   );
@@ -789,7 +789,7 @@ function App() {
   const pullsPeople: PeopleFilter = ["all", "involving", "mine", "review"].includes(storedPeople) ? storedPeople : "involving";
   const pullsScope: PullsScope = storedScope === "all" ? "all" : "space";
   // Every people filter but All lists from one GitHub search across every
-  // repo; All lists the projects added to Dray, through their marks.
+  // repo; All lists the projects added to Wain, through their marks.
   const pullsSearch = pullsPeople !== "all";
   const pullsFilter = pullsPeople === "mine" ? "author" : pullsPeople === "review" ? "review_requested" : "involves";
   // The owner the "involving me" search is narrowed to, or every one.
@@ -1009,7 +1009,7 @@ function App() {
     [subagents, selectedSubagentId],
   );
 
-  // A bot's folder is a git repository only for its own history, which Dray
+  // A bot's folder is a git repository only for its own history, which Wain
   // commits — so no Commit button, no branch and no pull request lookup.
   const inBotFolder = !!selectedSession && !!botAt(bots, selectedSession.cwd);
 
@@ -1647,7 +1647,7 @@ function App() {
     prBranch,
     panelShown && (panelTab === "pr" || panelTab === null),
     // No opening the pane when a PR appears: an agent posts a merge card in
-    // the chat for that (`dray session merge-card`), and the pane opens by hand.
+    // the chat for that (`wain session merge-card`), and the pane opens by hand.
     // A merge or a reopen changes what the sidebar's mark should say, and that
     // mark comes from a different read with a two-minute freshness window — so
     // without this the row keeps its open-PR glyph until the window expires or
@@ -1838,7 +1838,7 @@ function App() {
   /// What Start Task does about a checkout first. A key that is a checkout on
   /// disk — a bot task's, read for the page though nobody attached it — is
   /// attached; a `github:` key with no checkout anywhere is cloned into
-  /// `~/dray`, on This Mac, the attach dialog's own clone.
+  /// `~/wain`, on This Mac, the attach dialog's own clone.
   const prCheckoutPlan = (row: InboxRow): PrCheckout => {
     const here = prCheckout(row);
     if (here) return { kind: "here", path: here };
@@ -1849,7 +1849,7 @@ function App() {
   const prServer = (plan: PrCheckout) => (plan.kind === "clone" ? (plan.server ?? LOCAL) : serverOfPath(plan.path));
   /// The machines a plain task for `repo` (git's own spelling, `remote`) can
   /// run on: every checkout of it, or one `also` names, then a stand-in at
-  /// `~/dray/<name>` on each connected machine with none, never a Dray Cloud
+  /// `~/wain/<name>` on each connected machine with none, never a Wain Cloud
   /// one, which a start there clones first.
   const repoMachines = (
     repo: string,
@@ -1861,7 +1861,7 @@ function App() {
     const servers = [LOCAL, ...allServers.map((s) => s.id).filter((id) => id !== LOCAL && serverConnected(id) && !cloudServer(id))];
     const clones = servers
       .filter((server) => !real.some((p) => serverOfPath(p.path) === server))
-      .map((server): Project => ({ path: qualify(`/~/dray/${name}`, server), name, space: null, remote: repo, lastSelected: "" }));
+      .map((server): Project => ({ path: qualify(`/~/wain/${name}`, server), name, space: null, remote: repo, lastSelected: "" }));
     return { projects: [...real, ...clones], clones: clones.map((c) => c.path), initial: initial(real, clones) };
   };
   /// The machines Start Task offers for a PR. The pick starts on the checkout
@@ -1894,7 +1894,7 @@ function App() {
     });
   };
   /// Makes the checkout `plan` names where it is not one already: attaches a
-  /// checkout on disk, or clones `repo` into `~/dray`, git's lines going to
+  /// checkout on disk, or clones `repo` into `~/wain`, git's lines going to
   /// `onCloning`. Run only at a start, so opening a PR or an issue changes
   /// nothing on disk.
   const makeCheckout = async (
@@ -1939,7 +1939,7 @@ function App() {
       return {
         error:
           plan.kind === "clone"
-            ? `Could not clone ${plan.slug} into ~/dray: ${said}`
+            ? `Could not clone ${plan.slug} into ~/wain: ${said}`
             : `Could not attach ${plan.path}: ${said}`,
       };
     } finally {
@@ -2162,7 +2162,7 @@ function App() {
     [sessionIndexItems],
   );
   // A task a bot started, named in the bot's chat. Takes an id prefix, as
-  // `dray session send` does, so a message the bot sent finds its task. A new
+  // `wain session send` does, so a message the bot sent finds its task. A new
   // function only when a session or a title changes: every row of a bot's chat
   // is redrawn when it does, and `crew` moves on every status change.
   const taskOf = useCallback(
@@ -2399,7 +2399,7 @@ function App() {
     composerCwd,
     harness,
   );
-  // `true` wherever Dray has no answer: the list may not have landed, and pi
+  // `true` wherever Wain has no answer: the list may not have landed, and pi
   // picks its own model when none is named. A warning drawn on a guess is worse
   // than none, so absence reads as capable.
   const modelTakesImages =
@@ -3270,7 +3270,7 @@ function App() {
   };
   /// Starts a task for `issue` from the issues page without leaving it. It
   /// runs in `where` (a checkout or a clone stand-in), else the issue's own
-  /// checkout, cloned into `~/dray` where there is none. The prompt is the
+  /// checkout, cloned into `~/wain` where there is none. The prompt is the
   /// issue's tag, link and body, with the reader's note last; the task is
   /// linked to the issue and lands in the sidebar on `session_created`.
   const startIssueTask = async (
@@ -3783,32 +3783,32 @@ function App() {
   const selectedItem =sessionIndexItems.find((i) => i.sessionId === selectedSessionId);
   // The empty composer is a bot's first chat when it is aimed at the bot's folder.
   const newBot = !shownSession && projectPath ? botAt(bots, projectPath) : undefined;
-  // A bot whose empty chat opens on a welcome (Dray Bot) draws as a chat
+  // A bot whose empty chat opens on a welcome (Wain Bot) draws as a chat
   // already under way: the welcome in the transcript, the composer below it.
   const welcomeBot = newBot && greetingOf(newBot).length > 0 ? newBot : undefined;
-  // Onboarding (#1421) introduces Dray Bot and ends in its chat.
-  const drayBot = bots.find((b) => b.welcome) ?? bots[0];
-  const onDrayBot =
-    !!drayBot && ((welcomeBot?.id === drayBot.id && !selectedSessionId) || selectedBot?.id === drayBot.id);
+  // Onboarding (#1421) introduces Wain Bot and ends in its chat.
+  const wainBot = bots.find((b) => b.welcome) ?? bots[0];
+  const onWainBot =
+    !!wainBot && ((welcomeBot?.id === wainBot.id && !selectedSessionId) || selectedBot?.id === wainBot.id);
   // Focused once the bot's chat is on screen, which opening it takes a render.
   const [focusBot, setFocusBot] = useState(false);
   useEffect(() => {
-    if (!focusBot || !onDrayBot) return;
+    if (!focusBot || !onWainBot) return;
     setFocusBot(false);
     requestAnimationFrame(focusComposer);
-  }, [focusBot, onDrayBot]);
+  }, [focusBot, onWainBot]);
   // Onboarding's Continue asks for it, often before sign-in, when this app was
-  // not yet mounted to hear it; the ask waits until there is a Dray Bot to open.
-  const drayBotAsked = useDrayBotAsk();
+  // not yet mounted to hear it; the ask waits until there is a Wain Bot to open.
+  const wainBotAsked = useWainBotAsk();
   useEffect(() => {
-    if (!drayBotAsked || !drayBot) return;
-    takeDrayBotAsk();
+    if (!wainBotAsked || !wainBot) return;
+    takeWainBotAsk();
     setSettingsOpen(false);
-    if (!onDrayBot) openBot(drayBot);
+    if (!onWainBot) openBot(wainBot);
     setFocusBot(true);
-  }, [drayBotAsked, drayBot, onDrayBot, openBot]);
+  }, [wainBotAsked, wainBot, onWainBot, openBot]);
   // In a bot's chat `@` lists the other bots instead of files: those on its
-  // own server, the only ones `dray bot send` reaches from there.
+  // own server, the only ones `wain bot send` reaches from there.
   const composerBot = selectedBot ?? newBot;
   const composerBots = useMemo(() => {
     if (!composerBot) return undefined;

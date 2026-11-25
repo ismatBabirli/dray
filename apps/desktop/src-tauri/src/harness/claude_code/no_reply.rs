@@ -7,7 +7,7 @@
 //! nudge when the turn's last tool call is one named in
 //! `CLAUDE_CODE_TERMINAL_MCP_TOOLS` (v2.1.323, a comma list), so bots get two
 //! such tools, served in process as an SDK MCP server: the CLI sends each
-//! JSON-RPC message as a `control_request`/`mcp_message` and Dray answers on
+//! JSON-RPC message as a `control_request`/`mcp_message` and Wain answers on
 //! the same pipe.
 //!
 //! Each tool's result also carries `claude/endTurn`, so the turn ends on it
@@ -18,14 +18,14 @@
 
 use serde_json::{json, Value};
 
-const SERVER: &str = "dray";
+const SERVER: &str = "wain";
 const TOOL: &str = "no_reply_needed";
 const REACT: &str = "react";
 /// The name the model and `CLAUDE_CODE_TERMINAL_MCP_TOOLS` know it by.
-pub const TOOL_NAME: &str = "mcp__dray__no_reply_needed";
-pub const REACT_NAME: &str = "mcp__dray__react";
+pub const TOOL_NAME: &str = "mcp__wain__no_reply_needed";
+pub const REACT_NAME: &str = "mcp__wain__react";
 /// Both tools, for `--allowedTools` and [`TERMINAL_TOOLS_ENV`].
-pub const TOOL_NAMES: &str = "mcp__dray__no_reply_needed,mcp__dray__react";
+pub const TOOL_NAMES: &str = "mcp__wain__no_reply_needed,mcp__wain__react";
 /// The env var that exempts a turn ending on one of [`TOOL_NAMES`] from the nudge.
 pub const TERMINAL_TOOLS_ENV: &str = "CLAUDE_CODE_TERMINAL_MCP_TOOLS";
 /// The env var switching the silent-turn reminder; `0` turns it off for a bot,

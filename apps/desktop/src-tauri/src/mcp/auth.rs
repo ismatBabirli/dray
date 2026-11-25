@@ -60,7 +60,7 @@ pub enum Access {
     Read,
 }
 
-/// One connected assistant, as Settings → Servers and `dray server assistant
+/// One connected assistant, as Settings → Servers and `wain server assistant
 /// ls` list it.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export, export_to = "events.ts")]
@@ -292,7 +292,7 @@ pub fn resource_metadata(base: &str) -> Value {
         "resource": format!("{base}/mcp"),
         "authorization_servers": [base],
         "bearer_methods_supported": ["header"],
-        "resource_name": "Dray",
+        "resource_name": "Wain",
     })
 }
 
@@ -367,7 +367,7 @@ pub async fn register(body: &[u8]) -> (u16, Value) {
         memory.registrations.push_back(Instant::now());
     }
     let client = Client {
-        id: secret("dray-client-"),
+        id: secret("wain-client-"),
         name: ask.client_name.map(|n| n.chars().take(80).collect()),
         redirect_uris: ask.redirect_uris,
         created: now(),
@@ -459,7 +459,7 @@ async fn vet(ask: &AuthorizeAsk) -> Result<Client, String> {
         return Err("The address this sign-in returns to was not registered.".into());
     }
     if ask.response_type != "code" || ask.challenge.is_empty() || ask.method != "S256" {
-        return Err("This sign-in request is not one Dray answers: it needs PKCE (S256).".into());
+        return Err("This sign-in request is not one Wain answers: it needs PKCE (S256).".into());
     }
     Ok(client)
 }
@@ -492,7 +492,7 @@ pub async fn authorize(ask: &AuthorizeAsk, typed: &str) -> Page {
         return Page::Ask {
             client: client_label(&client),
             redirect_host: redirect_host(&ask.redirect_uri),
-            error: Some("That code is wrong or has expired. Make a new one in Dray."),
+            error: Some("That code is wrong or has expired. Make a new one in Wain."),
         };
     };
     let code = secret("");
@@ -528,8 +528,8 @@ fn token_error(error: &str, description: &str) -> (u16, Value) {
 /// Mints an access token and a fresh refresh token for `grant`, which the
 /// caller then saves.
 fn issue(grant: &mut Grant) -> Value {
-    let access = secret("dray_at_");
-    let refresh = secret("dray_rt_");
+    let access = secret("wain_at_");
+    let refresh = secret("wain_rt_");
     grant.refresh = hash(&refresh);
     grant.last_used = now();
     grant.expires = (chrono::Utc::now() + chrono::Duration::days(REFRESH_DAYS)).to_rfc3339();

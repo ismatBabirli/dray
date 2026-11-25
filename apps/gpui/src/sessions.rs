@@ -8,7 +8,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use dray_core::store::{SessionIndexItem, SessionStatus};
+use wain_core::store::{SessionIndexItem, SessionStatus};
 
 /// One drawn row: the session, how deep it sits, and the flags its rails are
 /// drawn from. See `SessionListRow`.

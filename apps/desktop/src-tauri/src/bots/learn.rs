@@ -1,6 +1,6 @@
 //! How a bot learns from its mistakes (#973): the lessons a turn left in its
 //! folder, drawn as "Learned" rows the reader can view and undo, and the hidden
-//! review Dray asks for after a correction or a failed task.
+//! review Wain asks for after a correction or a failed task.
 //!
 //! Lessons live where they fire: standing rules in `AGENTS.md`, which the
 //! agent loads every session; how-tos as skills, which the agent loads by description;
@@ -49,7 +49,7 @@ pub struct TurnNotes {
     failed: Vec<(String, String)>,
     /// A review is among the turn's prompts.
     review: bool,
-    /// Anything not Dray's is too: the reader, a task or another bot. Kept
+    /// Anything not Wain's is too: the reader, a task or another bot. Kept
     /// apart from `review` so arrival order cannot hide it: a review queued
     /// behind the reader's message joins that same turn.
     joined: bool,
@@ -66,12 +66,12 @@ impl TurnNotes {
 static NOTES: LazyLock<Mutex<HashMap<String, TurnNotes>>> = LazyLock::new(Default::default);
 static LAST_REVIEW: LazyLock<Mutex<HashMap<String, Instant>>> = LazyLock::new(Default::default);
 
-/// Notes a prompt as it is logged. `dray` marks Dray's own — a kickoff or a
+/// Notes a prompt as it is logged. `wain` marks Wain's own — a kickoff or a
 /// review — which nobody wrote and so corrects nothing.
-pub fn note_prompt(session_id: &str, prompt: &str, from: Option<&MessageSender>, dray: bool) {
+pub fn note_prompt(session_id: &str, prompt: &str, from: Option<&MessageSender>, wain: bool) {
     let mut notes = NOTES.lock().unwrap();
     let notes = notes.entry(session_id.to_string()).or_default();
-    if dray {
+    if wain {
         notes.review |= prompt.starts_with(REVIEW);
         return;
     }
@@ -79,7 +79,7 @@ pub fn note_prompt(session_id: &str, prompt: &str, from: Option<&MessageSender>,
     match from {
         None => notes.corrected |= is_correction(prompt),
         // Another bot's message is a colleague's, not a report, and a routine's
-        // is Dray's schedule, whose prompt and check text say "failed" freely.
+        // is Wain's schedule, whose prompt and check text say "failed" freely.
         Some(f) if f.bot_id.is_none() && f.routine != Some(true) => {
             // The relayed text opens with the sender line `attribute` adds.
             let text = prompt.split_once("\n\n").map_or(prompt, |(_, rest)| rest);
@@ -370,7 +370,7 @@ pub async fn undo(bot: &Bot, commit: &str, path: &str) -> Result<String> {
         bail!("that change is not in this bot's history");
     }
     let patch = if live == path { patch } else { retarget(&patch, path, live) };
-    let file = dir.join(".git").join("dray-undo.patch");
+    let file = dir.join(".git").join("wain-undo.patch");
     tokio::fs::write(&file, patch).await.context("could not write the undo")?;
     let applied = git(dir, &["apply", "-R", &file.to_string_lossy()]).await;
     tokio::fs::remove_file(&file).await.ok();
@@ -424,7 +424,7 @@ fn is_correction(text: &str) -> bool {
 }
 
 /// Whether a task's report says something failed. Read from its opening,
-/// where a task leads with the outcome. A stall nudge is Dray's, not a failure.
+/// where a task leads with the outcome. A stall nudge is Wain's, not a failure.
 fn is_failure(text: &str) -> bool {
     let t = normalized(text, 600);
     !t.starts_with("stall nudge:") && (t.starts_with("(the turn failed") || FAILING.iter().any(|w| has_word(&t, w)))
@@ -493,7 +493,7 @@ mod tests {
     fn a_task_report_is_read_past_its_sender_line() {
         let id = "learn-report-test";
         let from = MessageSender { session_id: "t1".into(), title: "Fork box".into(), machine: None, bot_id: None, routine: None, ..Default::default() };
-        note_prompt(id, "[message from the Dray session \"Fork box\" (t1)]\n\nCould not log in.", Some(&from), false);
+        note_prompt(id, "[message from the Wain session \"Fork box\" (t1)]\n\nCould not log in.", Some(&from), false);
         assert_eq!(take_notes(id).failed, vec![("t1".to_string(), "Fork box".to_string())]);
     }
 
@@ -541,7 +541,7 @@ mod tests {
     }
 
     fn scratch_bot() -> (Bot, std::path::PathBuf) {
-        let dir = std::env::temp_dir().join(format!("dray-learn-{}", uuid::Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-learn-{}", uuid::Uuid::now_v7()));
         std::fs::create_dir_all(&dir).unwrap();
         let bot = Bot {
             id: "b1".into(),

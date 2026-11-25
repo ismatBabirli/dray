@@ -11,7 +11,7 @@ export async function GET(req: Request) {
   return row ? Response.json(linkedAnswer(row)) : UNLINKED();
 }
 
-/// `dray logout`: the server unlinks itself. Deleting the row takes the
+/// `wain logout`: the server unlinks itself. Deleting the row takes the
 /// credential and the allow list with it, as unlinking on the site does.
 export async function DELETE(req: Request) {
   const token = bearer(req);

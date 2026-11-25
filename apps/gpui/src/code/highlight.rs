@@ -369,7 +369,7 @@ mod tests {
 
     #[test]
     fn json_keys_are_not_plain_strings() {
-        let code = "{\"name\": \"dray\"}";
+        let code = "{\"name\": \"wain\"}";
         let spans = highlight(Lang::Json, code);
         let token_at = |at: usize| spans.iter().find(|s| s.range.contains(&at)).map(|s| s.token);
         assert_eq!(token_at(1), Some(Token::Key));

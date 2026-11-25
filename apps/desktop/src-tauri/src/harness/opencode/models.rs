@@ -14,7 +14,7 @@ use std::process::Stdio;
 use std::sync::LazyLock;
 use std::time::Duration;
 
-/// Expiring for pi's reason: a provider connected while Dray is open is the
+/// Expiring for pi's reason: a provider connected while Wain is open is the
 /// one the reader will try next.
 const FRESH_FOR: Duration = Duration::from_secs(120);
 
@@ -126,7 +126,7 @@ fn row_to_model(header: &str, row: &Value) -> Option<Model> {
     })
 }
 
-/// The ladder out of `variants`, in Dray's order. OpenCode names levels it
+/// The ladder out of `variants`, in Wain's order. OpenCode names levels it
 /// alone has (`none`, `minimal`); those are dropped rather than added to
 /// [`Effort`], which an older build must still be able to read.
 fn efforts(variants: Option<&Value>) -> Vec<Effort> {

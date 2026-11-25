@@ -42,14 +42,14 @@ const NUDGE_HOLD_MS = 60_000;
 ///
 /// Each stall also goes to the bot, once, as a hidden message from the task
 /// (`nudge_bot`): a PR the task can mend; a task idle on the reader, which the
-/// bot either answers itself or names in a need line (`dray session need`)
+/// bot either answers itself or names in a need line (`wain session need`)
 /// that puts it on the card; or a ready PR, which gets a need line only where
 /// the task asked the reader to try something before merging.
 ///
 /// Read for every bot rather than the one on screen, since the notice is for a
 /// bot the reader is not looking at: once new card rows land while the window
 /// is in the background, one notice per bot says how many rows its card draws.
-/// Dray Island shows it while it runs, a banner otherwise. Each bot's first
+/// Wain Island shows it while it runs, a banner otherwise. Each bot's first
 /// read, once its chat is found, is taken in silence, or every row already
 /// standing would raise one.
 export function useStalledTasks({

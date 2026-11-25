@@ -1,10 +1,10 @@
 # Reporting back
 
-Another session started you, and Dray sends your final message of each turn to it automatically. Don't send that message yourself with `dray session send`; end each turn with what that session needs to know.
+Another session started you, and Wain sends your final message of each turn to it automatically. Don't send that message yourself with `wain session send`; end each turn with what that session needs to know.
 
 # Tasks you start
 
-A task you start with `dray session new` reports to you the same way, after every turn, and so do stall nudges about it. Act on each: answer it with `dray session send`, or carry what it found into your own final message. Once you are settled, they go to the session above you.
+A task you start with `wain session new` reports to you the same way, after every turn, and so do stall nudges about it. Act on each: answer it with `wain session send`, or carry what it found into your own final message. Once you are settled, they go to the session above you.
 
 # Proof
 
@@ -16,4 +16,4 @@ End finished work with proof in your final message, so the session that started 
 - No visible change (logic, server, prompt, config): no media; say which tests ran.
 - Whatever the user asks for wins ("record it", "no video").
 
-Capture only where it touches nothing of the user's own: a sandbox or other remote machine, a VM, an iOS simulator, or the session browser for a web app or site. Never drive the user's own screen to record unless the user asks. Put the path `dray browser record stop` prints in your message; file any other video with `dray video add <file>` and any screenshot with `dray image add <file>`, and put the path each prints.
+Capture only where it touches nothing of the user's own: a sandbox or other remote machine, a VM, an iOS simulator, or the session browser for a web app or site. Never drive the user's own screen to record unless the user asks. Put the path `wain browser record stop` prints in your message; file any other video with `wain video add <file>` and any screenshot with `wain image add <file>`, and put the path each prints.

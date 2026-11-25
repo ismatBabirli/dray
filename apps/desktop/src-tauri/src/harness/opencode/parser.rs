@@ -87,7 +87,7 @@ pub enum OpenCodeUpdate {
         #[serde(default, deserialize_with = "null_as_default")]
         available_commands: Vec<AvailableCommand>,
     },
-    // Seen, and drawn as nothing. `config_option_update` echoes a setting Dray
+    // Seen, and drawn as nothing. `config_option_update` echoes a setting Wain
     // just set; `user_message_chunk` is `session/load`'s replay, never called.
     ConfigOptionUpdate,
     CurrentModeUpdate,

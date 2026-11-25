@@ -12,7 +12,7 @@ import type { AgentAvailability, Harness } from "@/types/events";
 ///
 /// Read once per server per process. Rust caches the resolution, absence
 /// included, so refetching would spend a login shell to be told the same thing
-/// — until Dray installs an agent itself, which calls
+/// — until Wain installs an agent itself, which calls
 /// [`rereadAgentAvailability`].
 const answers = new Map<ServerId, AgentAvailability[]>();
 const inFlight = new Set<ServerId>();

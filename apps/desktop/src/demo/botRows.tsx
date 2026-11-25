@@ -1,7 +1,7 @@
 // The whole app with three bots and a few tasks, to look at the sidebar's bot
 // rows beside the task rows. Ops works for 4s, then finishes with one more
 // unread reply, then works again with the count still on its face, so the
-// typing dots and the glimpse that replaces them both get seen. Dray Bot has
+// typing dots and the glimpse that replaces them both get seen. Wain Bot has
 // no chat yet, as on a fresh install, so its row shows its welcome. Tauri's
 // IPC is mocked as in the new-task demo.
 
@@ -21,14 +21,14 @@ const PROJECTS: Project[] = [
 
 const BOTS: Bot[] = [
   {
-    id: "dray",
-    name: "Dray Bot",
-    path: "/Users/you/.dray/bots/dray",
+    id: "wain",
+    name: "Wain Bot",
+    path: "/Users/you/.wain/bots/wain",
     created: ago(9000),
-    welcome: "Hi! I'm **Dray Bot**, your assistant for everything you build.",
+    welcome: "Hi! I'm **Wain Bot**, your assistant for everything you build.",
   },
-  { id: "ops", name: "Ops", path: "/Users/you/.dray/bots/ops", created: ago(9000), avatar: { shape: "blob", hue: 200 } },
-  { id: "writer", name: "Writer", path: "/Users/you/.dray/bots/writer", created: ago(9000), avatar: { shape: "blob", hue: 30 } },
+  { id: "ops", name: "Ops", path: "/Users/you/.wain/bots/ops", created: ago(9000), avatar: { shape: "blob", hue: 200 } },
+  { id: "writer", name: "Writer", path: "/Users/you/.wain/bots/writer", created: ago(9000), avatar: { shape: "blob", hue: 30 } },
 ];
 
 const item = (id: string, title: string, cwd: string, modified: string, status: SessionStatus = "idle"): SessionIndexItem => ({

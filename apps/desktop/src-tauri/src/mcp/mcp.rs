@@ -1,4 +1,4 @@
-//! Remote MCP: every Dray server answers the Model Context Protocol at
+//! Remote MCP: every Wain server answers the Model Context Protocol at
 //! `/mcp`, on the listener the app's WebSocket uses and so at Remote access's
 //! public address, letting Grok Bot, Claude or ChatGPT start and follow
 //! sessions here (#858). Sign-in is OAuth with a pairing code ([`auth`]); the
@@ -196,8 +196,8 @@ fn initialize(params: &Value) -> Value {
     json!({
         "protocolVersion": version,
         "capabilities": { "tools": {} },
-        "serverInfo": { "name": "dray", "title": "Dray", "version": env!("CARGO_PKG_VERSION") },
-        "instructions": "Dray runs coding agents (Claude Code, Codex and others) on this machine. \
+        "serverInfo": { "name": "wain", "title": "Wain", "version": env!("CARGO_PKG_VERSION") },
+        "instructions": "Wain runs coding agents (Claude Code, Codex and others) on this machine. \
             start_session gives a task to an agent in its own git worktree and returns at once; \
             follow it with wait_for_session, calling again while timed_out is true. When a session \
             reports an open card, the agent is blocked on the user: ask the user, then answer with \
@@ -253,7 +253,7 @@ button{width:100%;padding:10px;border:0;border-radius:10px;background:var(--acce
 box-shadow:0 1px 2px rgba(0,0,0,.15)}.error{color:#d14343}.small{font-size:12px;margin:12px 0 0}";
 
 fn ask(client: &str, redirect_host: &str, error: Option<&str>, query: &str) -> String {
-    let machine = escape(&dray_proto::machine_name());
+    let machine = escape(&wain_proto::machine_name());
     let hidden: String = form_urlencoded::parse(query.as_bytes())
         .filter(|(k, _)| k != "pairing_code")
         .map(|(k, v)| format!("<input type=\"hidden\" name=\"{}\" value=\"{}\">", escape(&k), escape(&v)))
@@ -261,13 +261,13 @@ fn ask(client: &str, redirect_host: &str, error: Option<&str>, query: &str) -> S
     let error = error.map(|e| format!("<p class=\"error\">{}</p>", escape(e))).unwrap_or_default();
     format!(
         "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\
-         <title>Connect to Dray</title><style>{STYLE}</style></head><body><main>\
-         <h1>Connect {client} to Dray on {machine}</h1>\
+         <title>Connect to Wain</title><style>{STYLE}</style></head><body><main>\
+         <h1>Connect {client} to Wain on {machine}</h1>\
          <p>It will be able to list, start, message and stop coding sessions on this machine.</p>{error}\
          <form method=\"post\" action=\"/oauth/authorize\">{hidden}\
          <input name=\"pairing_code\" placeholder=\"ABCD-EFGH\" autocomplete=\"off\" autocapitalize=\"characters\" spellcheck=\"false\" autofocus required>\
          <button type=\"submit\">Connect</button></form>\
-         <p class=\"small\">Get a code in Dray: Settings, Servers, Connect an assistant. Or run <b>dray server assistant add</b>. \
+         <p class=\"small\">Get a code in Wain: Settings, Servers, Connect an assistant. Or run <b>wain server assistant add</b>. \
          Sends you back to <b>{redirect}</b>.</p></main></body></html>",
         client = escape(client),
         redirect = escape(redirect_host),
@@ -277,7 +277,7 @@ fn ask(client: &str, redirect_host: &str, error: Option<&str>, query: &str) -> S
 fn refused(why: &str) -> String {
     format!(
         "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\
-         <title>Connect to Dray</title><style>{STYLE}</style></head><body><main><h1>Can't connect</h1><p>{}</p></main></body></html>",
+         <title>Connect to Wain</title><style>{STYLE}</style></head><body><main><h1>Can't connect</h1><p>{}</p></main></body></html>",
         escape(why)
     )
 }

@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import DemoThemeBar from "@/demo/ThemeBar";
 import "../App.css";
 
-/// What the browser pane shows while `dray browser record` runs.
+/// What the browser pane shows while `wain browser record` runs.
 ///
 /// A recording only happens under an agent driving a CEF build, which a plain
 /// browser cannot be, so the real pane is mounted in a box that resizes like the

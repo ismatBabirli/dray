@@ -45,9 +45,9 @@ use rpc::{Incoming, RpcClient};
 ///
 /// Named rather than left blank because app-server records it for the
 /// compliance log, and an unnamed client is an unattributable one.
-const CLIENT_NAME: &str = "dray";
+const CLIENT_NAME: &str = "wain";
 
-/// Dray's own rules, appended to Codex's prompt the way `--append-system-prompt`
+/// Wain's own rules, appended to Codex's prompt the way `--append-system-prompt`
 /// appends them to Claude's. `developerInstructions`, not `baseInstructions`:
 /// the second *replaces* the built-in prompt, tool docs and all. Sent on
 /// resume as well as start — the rollout does not carry it. Verified live:
@@ -125,7 +125,7 @@ pub struct TurnSettings {
     /// sticks to the thread (measured on 0.164: a turn after a `readOnly` one
     /// with no override still could not write), so it is kept and resent.
     sandbox_policy: Option<Value>,
-    /// Dray's rules, with a bot's own block where the session is a bot's.
+    /// Wain's rules, with a bot's own block where the session is a bot's.
     developer_instructions: String,
 }
 
@@ -264,13 +264,13 @@ pub async fn init(
     let mut command = crate::binpath::command(&bin);
 
     if let Some(endpoint) = crate::orchestration::child_endpoint() {
-        command.env("DRAY_ENDPOINT", endpoint);
+        command.env("WAIN_ENDPOINT", endpoint);
     }
 
     let mut child = command
         .arg("app-server")
         .current_dir(cwd)
-        .env("DRAY_SESSION_ID", session_id)
+        .env("WAIN_SESSION_ID", session_id)
         .env("PATH", crate::harness::agent_path(&bin))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -428,7 +428,7 @@ async fn handshake(client: &RpcClient) -> Result<()> {
     let params = json!({
         "clientInfo": {
             "name": CLIENT_NAME,
-            "title": "Dray",
+            "title": "Wain",
             "version": env!("CARGO_PKG_VERSION"),
         }
     });
@@ -459,7 +459,7 @@ async fn start_thread(
 /// turns and remembers them, it works with the parent loaded in another
 /// app-server, and it resumes in a fresh process once its own goes. It carries
 /// the parent's own `developerInstructions` — the ones sent here are not read —
-/// so a Dray parent's rules come across with it. Its model and effort are the
+/// so a Wain parent's rules come across with it. Its model and effort are the
 /// config's rather than the parent's, which is why this restates them.
 async fn fork_thread(
     client: &RpcClient,
@@ -503,7 +503,7 @@ fn thread_id_from(answer: &Value) -> Option<String> {
         .map(str::to_string)
 }
 
-/// Dray's stance onto Codex's two settings.
+/// Wain's stance onto Codex's two settings.
 ///
 /// **Both values are kebab-case on the wire**, which the README gets wrong: it
 /// shows `workspaceWrite`, and passing that is refused outright with `unknown
@@ -511,7 +511,7 @@ fn thread_id_from(answer: &Value) -> Option<String> {
 ///
 /// Codex splits into "when do I ask" and "what may I touch" where Claude has one
 /// mode, so this is a widening rather than a rename. Codex's own UI presents
-/// three combinations, and Dray's stances land on them:
+/// three combinations, and Wain's stances land on them:
 ///
 /// - **Ask for approval** — `Manual`. Every command asks.
 /// - **Approve for me** — `Auto`. Runs inside the sandbox, asks to leave it.
@@ -1078,15 +1078,15 @@ mod tests {
     fn the_developer_instructions_name_nothing_codex_lacks() {
         assert!(!DEVELOPER_INSTRUCTIONS.contains("AskUserQuestion"));
         assert!(!DEVELOPER_INSTRUCTIONS.contains("Agent tool"));
-        assert!(DEVELOPER_INSTRUCTIONS.contains("~/.codex/skills/dray"));
-        assert!(DEVELOPER_INSTRUCTIONS.contains("dray issue link"));
+        assert!(DEVELOPER_INSTRUCTIONS.contains("~/.codex/skills/wain"));
+        assert!(DEVELOPER_INSTRUCTIONS.contains("wain issue link"));
     }
 
-    /// Dray spawns Codex into `workspace-write`, so a `dray` command hitting the
+    /// Wain spawns Codex into `workspace-write`, so a `wain` command hitting the
     /// sandbox is this app's own default path. The instructions have to name the
     /// cure, or the agent reports the user's running app as closed.
     #[test]
-    fn the_developer_instructions_name_the_cure_for_a_sandboxed_dray() {
+    fn the_developer_instructions_name_the_cure_for_a_sandboxed_wain() {
         // Prose, so match on the words rather than on where a line wraps, and on
         // whole clauses rather than a word out of one.
         let prose = DEVELOPER_INSTRUCTIONS
@@ -1094,11 +1094,11 @@ mod tests {
             .collect::<Vec<_>>()
             .join(" ");
 
-        assert!(prose.contains("permission denied reaching Dray"));
+        assert!(prose.contains("permission denied reaching Wain"));
         assert!(prose.contains("Retry that one command with escalated permissions"));
         // The two answers have to stay apart, since telling them apart is the
         // whole of what this paragraph teaches.
-        assert!(prose.contains(r#"only "Dray isn't running" says that"#));
+        assert!(prose.contains(r#"only "Wain isn't running" says that"#));
     }
 
     /// Told to report back to its parent, an agent with no definition of the
@@ -1111,7 +1111,7 @@ mod tests {
             .collect::<Vec<_>>()
             .join(" ");
 
-        assert!(prose.contains("parent session is the Dray session that spawned this one"));
+        assert!(prose.contains("parent session is the Wain session that spawned this one"));
         assert!(prose.contains("never a git parent"));
         assert!(prose.contains("`parentSessionId`"));
     }
@@ -1125,7 +1125,7 @@ mod tests {
             .collect::<Vec<_>>()
             .join(" ");
 
-        assert!(prose.contains("`dray session new --harness <name>`"));
+        assert!(prose.contains("`wain session new --harness <name>`"));
         assert!(prose.contains("never the vendor's own CLI or app"));
     }
 
@@ -1248,7 +1248,7 @@ mod tests {
     ///
     /// The regression this pins is a silent one. An item kind we have not typed
     /// lands in `ThreadItem::Other` and maps to nothing — no parse failure, no
-    /// row, nothing to notice it by. A real session made 62 tool calls and Dray
+    /// row, nothing to notice it by. A real session made 62 tool calls and Wain
     /// drew 34, and the only way that surfaced was reading Codex's own rollout
     /// beside our log. So the assert is on the *set* of tools drawn, and a kind
     /// dropping out of it fails here rather than going quiet in a transcript.
@@ -1689,7 +1689,7 @@ mod tests {
         assert_eq!(window.max_tokens, 258400);
     }
 
-    /// Codex echoes our prompt back as an item. Drawing it as well as Dray's
+    /// Codex echoes our prompt back as an item. Drawing it as well as Wain's
     /// own would show every prompt twice, and the echo only exists in a real
     /// capture — no hand-written test would have caught it.
     #[test]

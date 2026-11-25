@@ -1,6 +1,6 @@
-# Dray for iPhone
+# Wain for iPhone
 
-A native SwiftUI client for `dray-serve`. It runs no core and no agent: every
+A native SwiftUI client for `wain-serve`. It runs no core and no agent: every
 session lives on a server — This Mac through Remote access, or a VPS — and the
 phone reads and drives it over the same WebSocket the desktop uses
 ([SERVE-PLAN.md](../desktop/SERVE-PLAN.md)).
@@ -107,7 +107,7 @@ phone reads and drives it over the same WebSocket the desktop uses
   each with the desktop's Material glyph (`scripts/file_icons.py` copies the
   set and its lookup from `apps/desktop`). Every file opens a unified diff
   built on the phone from `file_change`'s two sides, lines wrapping. Only
-  calls `dray-serve` has had from the start. Reads only, like the repo view.
+  calls `wain-serve` has had from the start. Reads only, like the repo view.
 - **Dictation**, transcribed on the Mac or on the phone: the phone records a
   16kHz mono WAV, then either uploads it through `POST /upload` and calls
   `transcribe_upload` — only the Mac's server has that command, and its
@@ -166,19 +166,19 @@ from `project.yml`; the `.xcodeproj` is not committed, since a hand-merged
 `project.pbxproj` is the one file in an iOS repo nobody can review.
 
 ```bash
-cd apps/ios && xcodegen && open Dray.xcodeproj
+cd apps/ios && xcodegen && open Wain.xcodeproj
 ```
 
-Bundle id `com.yogesh.dray.ios`, team `7WYP3LRDL8`.
+Bundle id `com.wainhq.wain.ios`, team `7WYP3LRDL8`.
 
 **To TestFlight** — with Xcode signed in to the team's Apple ID and the app
 record made in App Store Connect:
 
 ```bash
 cd apps/ios && xcodegen
-xcodebuild -project Dray.xcodeproj -scheme Dray -destination generic/platform=iOS \
-  -archivePath build/Dray.xcarchive -allowProvisioningUpdates archive
-xcodebuild -exportArchive -archivePath build/Dray.xcarchive \
+xcodebuild -project Wain.xcodeproj -scheme Wain -destination generic/platform=iOS \
+  -archivePath build/Wain.xcarchive -allowProvisioningUpdates archive
+xcodebuild -exportArchive -archivePath build/Wain.xcarchive \
   -exportOptionsPlist ExportOptions.plist -exportPath build -allowProvisioningUpdates
 ```
 
@@ -189,7 +189,7 @@ the build, so `CURRENT_PROJECT_VERSION` never needs bumping by hand.
 
 Dark only, one palette: the desktop's dark tokens, its one yellow and its
 radius scale. **Every colour, size, radius, font and haptic is in
-[Theme.swift](Dray/Theme.swift)** and nowhere else; a view naming a hex or a
+[Theme.swift](Wain/Theme.swift)** and nowhere else; a view naming a hex or a
 point size is a bug. Yellow means *needs you* — a card, a refused token, an
 app to update — and nothing else, so the global tint is the page's ink.
 Rationale and the screens it was judged on are in #631.
@@ -199,7 +199,7 @@ Rationale and the screens it was judged on are in #631.
   and it has something in it, the project strip under them once there are two
   projects. Rows are one line; a child hangs off its parent on a solid elbow,
   and a waiting card sits under its row, a fill and no border.
-- **An empty list is the whole screen** ([EmptyArt.swift](Dray/EmptyArt.swift)),
+- **An empty list is the whole screen** ([EmptyArt.swift](Wain/EmptyArt.swift)),
   drawn in the middle: connect a server (no dock until one is paired),
   connecting, can't reach with its countdown (the dock dims), no tasks yet or
   nothing in this project with a line down to the orb, and all clear with
@@ -208,7 +208,7 @@ Rationale and the screens it was judged on are in #631.
   semibold only. Buttons are semibold: Headline full-width, `pill` compact;
   a text-only action stays regular.
 - **Each server reports its own trouble**, written by `Store.health`
-  ([ConnectionStatus.swift](Dray/ConnectionStatus.swift)): reconnecting,
+  ([ConnectionStatus.swift](Wain/ConnectionStatus.swift)): reconnecting,
   can't reach with a visible countdown, token refused, protocol behind in
   either direction, a list that failed to load. Each carries Retry or Fix, and
   none holds up another server. In the list it is a card at the top and that
@@ -218,7 +218,7 @@ Rationale and the screens it was judged on are in #631.
   offers Retry under it; a failed transcript read is the screen's own empty
   state with Try again; an action with nowhere of its own is a toast, never an
   alert.
-- **Orbs.** [Orb.swift](Dray/Orb.swift) is the one place app states map to
+- **Orbs.** [Orb.swift](Wain/Orb.swift) is the one place app states map to
   the package's: working, delegating (gyro), background (spiral), reconnecting
   (lighthouse, fast), loading. Dictation is the Island's `VoiceOrb`, shared by
   path from `apps/island/Island` the way the Island shares this app's client,
@@ -226,7 +226,7 @@ Rationale and the screens it was judged on are in #631.
 
 **Screens are checked by `DesignTests`**, which walks every screen and failure
 state and attaches a screenshot of each. Two stand-ins answer the failure
-states a real server cannot be made to show (`/tmp/dray631-fake.py` in #631).
+states a real server cannot be made to show (`/tmp/wain631-fake.py` in #631).
 
 ## The wire, as the phone speaks it
 
@@ -319,16 +319,16 @@ every one of these passes on a build that fails on a phone.
 
 ## Pairing
 
-A connect line is `<address> <64-hex token>`, what `dray server tunnel on`
-already prints. The QR encodes `dray://connect?url=<address>&token=<token>&name=<name>`,
+A connect line is `<address> <64-hex token>`, what `wain server tunnel on`
+already prints. The QR encodes `wain://connect?url=<address>&token=<token>&name=<name>`,
 which the phone registers as a URL scheme, so the system Camera opens it too.
 
 - **The Mac app** draws the QR on This Mac's Remote access row, beside the
   address, once the address is up.
-- **`dray server pair`** prints it in the terminal, for a VPS with no app.
+- **`wain server pair`** prints it in the terminal, for a VPS with no app.
 
 ## PRs
 
 1. The app: connect by paste, list, transcript, reply, cards.
 2. New session.
-3. QR: the desktop row, `dray server pair`, the phone's scanner.
+3. QR: the desktop row, `wain server pair`, the phone's scanner.

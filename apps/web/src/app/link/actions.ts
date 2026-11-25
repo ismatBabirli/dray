@@ -7,7 +7,7 @@ import { pool } from "@/lib/db";
 import { normalizeCode } from "@/lib/link";
 import { managesServers } from "@/lib/session";
 
-const GONE = "That code has expired or was already used. Run dray login again.";
+const GONE = "That code has expired or was already used. Run wain login again.";
 
 async function userId(): Promise<string> {
   const session = await auth.api.getSession({ headers: await headers() });

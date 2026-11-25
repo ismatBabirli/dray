@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import Spinner from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { useCopied } from "@/hooks/useCopied";
-import { useDrayAccount, useOrgLink } from "@/hooks/useOrgLink";
+import { useWainAccount, useOrgLink } from "@/hooks/useOrgLink";
 import { boatAsleep, resumeBoat } from "@/lib/boat";
 import { relativeTime } from "@/lib/format";
 import { MACHINE } from "@/lib/platform";
@@ -46,8 +46,8 @@ import type {
 
 type TrustHost = Extract<Fix, { kind: "trust_host" }>;
 
-/// Remote MCP's UI, dev builds only until Dray accounts land (#900).
-/// `dray_proto::REMOTE_MCP` is the server's half; flip both together.
+/// Remote MCP's UI, dev builds only until Wain accounts land (#900).
+/// `wain_proto::REMOTE_MCP` is the server's half; flip both together.
 const REMOTE_MCP = import.meta.env.DEV;
 
 const STAGE_LABELS: Record<Stage, string> = {
@@ -139,7 +139,7 @@ function LinkError({ link }: { link: OrgLink }) {
   return <p className="text-ui text-muted-foreground">{link.error}</p>;
 }
 
-/// Every Dray server this app shows, This Mac first. A remote one's
+/// Every Wain server this app shows, This Mac first. A remote one's
 /// projects and sessions join the sidebar while it is connected and stay,
 /// dimmed, while it is not — its agents keep running there either way.
 export default function ServersSettings() {
@@ -175,7 +175,7 @@ export default function ServersSettings() {
   // The host-key question for a saved row, whose loop parked on it.
   const [trusting, setTrusting] = useState<{ server: ServerInfo; fix: TrustHost } | null>(null);
   const [pairing, setPairing] = useState<ServerInfo | null>(null);
-  // A server with no Dray on it, being set up: from its row, or from Add.
+  // A server with no Wain on it, being set up: from its row, or from Add.
   const [installing, setInstalling] = useState<{
     line: string;
     name: string;
@@ -439,10 +439,10 @@ function UpdateLine({
       </>
     );
   } else if (connected && server.latest && server.app) {
-    // Another machine's Dray app serves this, so only that app's updater moves it.
+    // Another machine's Wain app serves this, so only that app's updater moves it.
     line = (
       <>
-        {label(`v${server.latest} is out · update Dray on that ${MACHINE}`)}
+        {label(`v${server.latest} is out · update Wain on that ${MACHINE}`)}
         <Button
           variant="ghost"
           size="sm"
@@ -493,7 +493,7 @@ function ThisMacRow() {
   const connected = server?.status === "connected";
   const link = useOrgLink(LOCAL, connected);
   // Signing in is what links This Mac, so Link is offered only once signed in.
-  const account = useDrayAccount(connected);
+  const account = useWainAccount(connected);
   const [unlinking, setUnlinking] = useState(false);
 
   useEffect(() => {
@@ -518,14 +518,14 @@ function ThisMacRow() {
   const detail = down ? (
     (server.error ?? `The server on this ${MACHINE} is not running.`)
   ) : !remote.on ? (
-    "Runs your sessions, with Dray open or closed"
+    "Runs your sessions, with Wain open or closed"
   ) : starting ? (
     <span className="inline-flex items-center gap-1.5">
       <Spinner className="size-3" />
       Starting remote access. The first time takes about 30 seconds.
     </span>
   ) : (
-    (remote.error ?? `Other ${MACHINE}s can reach it while this ${MACHINE} is awake, with Dray open or closed.`)
+    (remote.error ?? `Other ${MACHINE}s can reach it while this ${MACHINE} is awake, with Wain open or closed.`)
   );
 
   return (
@@ -635,7 +635,7 @@ function PairButton() {
           <DialogHeader>
             <DialogTitle>Pair a phone</DialogTitle>
             <DialogDescription>
-              Point the iPhone's Camera at this, or scan it from Dray's Add server. Anyone holding it can use this {MACHINE}.
+              Point the iPhone's Camera at this, or scan it from Wain's Add server. Anyone holding it can use this {MACHINE}.
             </DialogDescription>
           </DialogHeader>
           {/* White under the code whatever the theme: a scanner reads dark on light. */}
@@ -997,7 +997,7 @@ function Row({
   );
 }
 
-/// `dray tunnel` prints the address and the token as one line, so a paste of
+/// `wain tunnel` prints the address and the token as one line, so a paste of
 /// it fills both fields. Anything else is an address alone.
 function splitConnectLine(text: string): { url: string; token?: string } {
   const [url, token, ...rest] = text.trim().split(/\s+/);
@@ -1060,7 +1060,7 @@ function AddServerDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  /// Reached Dray's absence over a working login: set it up there.
+  /// Reached Wain's absence over a working login: set it up there.
   onInstall: (line: string, name: string) => void;
 }) {
   const [viaSsh, setViaSsh] = useState(true);
@@ -1078,7 +1078,7 @@ function AddServerDialog({
   // answers after Cancel writes nothing and opens nothing.
   const run = useRef(0);
   // That add's name on the Rust side, so Cancel stops it and no other: the
-  // `dray` CLI adds servers through the same commands.
+  // `wain` CLI adds servers through the same commands.
   const ticket = useRef<string | null>(null);
 
   useEffect(() => {
@@ -1158,8 +1158,8 @@ function AddServerDialog({
           <DialogTitle>Add server</DialogTitle>
           <DialogDescription>
             {viaSsh
-              ? "Run sessions on a machine you can SSH into. Dray uses your existing key."
-              : "Connect by the address dray tunnel prints, or any running dray serve."}
+              ? "Run sessions on a machine you can SSH into. Wain uses your existing key."
+              : "Connect by the address wain tunnel prints, or any running wain serve."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-3">
@@ -1178,7 +1178,7 @@ function AddServerDialog({
             </Field>
           ) : (
             <>
-              <Field label="Address" hint="Paste dray tunnel's whole line and the token fills in too.">
+              <Field label="Address" hint="Paste wain tunnel's whole line and the token fills in too.">
                 <Input
                   value={url}
                   onChange={(e) => {
@@ -1194,7 +1194,7 @@ function AddServerDialog({
                   autoCorrect="off"
                 />
               </Field>
-              <Field label="Token" hint="In serve-token, in the server's Dray directory.">
+              <Field label="Token" hint="In serve-token, in the server's Wain directory.">
                 <Input type="password" value={token} onChange={(e) => setToken(e.target.value)} required />
               </Field>
             </>

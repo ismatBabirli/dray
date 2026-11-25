@@ -60,7 +60,7 @@ export default function PullDetail({
   /// Where the task runs: the checkout's server, or This Mac, which clones one.
   server: ServerId;
   /// What Start Task does about a checkout first, said under the box: nothing,
-  /// attach a checkout already on disk, or clone the repo into `~/dray`.
+  /// attach a checkout already on disk, or clone the repo into `~/wain`.
   checkout: PrCheckout;
   /// Where a plain task can run, for the machine picker.
   machines: PrMachines;
@@ -293,9 +293,9 @@ function EarlierTasks({
 }
 
 /// The bot a PR task last went to, the default the next time.
-const LAST_BOT_KEY = "dray.prStartBot";
+const LAST_BOT_KEY = "wain.prStartBot";
 /// The switch's last side, so it opens where the reader left it.
-const LAST_MODE_KEY = "dray.prStartMode";
+const LAST_MODE_KEY = "wain.prStartMode";
 
 /// The box a task for the PR starts from, shaped like the task composer: the
 /// reader's words on top, and a row under them with a switch between a bot's

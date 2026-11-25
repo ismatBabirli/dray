@@ -1,5 +1,5 @@
-//! Dray Island on Linux and Windows: GPUI draws the panel and the pill,
-//! `server` keeps a socket to This computer's `dray --serve`, and `sys` —
+//! Wain Island on Linux and Windows: GPUI draws the panel and the pill,
+//! `server` keeps a socket to This computer's `wain --serve`, and `sys` —
 //! X11 or Win32 — watches for the reader's modifier tapped alone. See PLAN.md.
 
 // A release on Windows is a GUI binary, or the app's child would open a console.
@@ -57,12 +57,12 @@ const GAP: f32 = 8.;
 const DWELL: Duration = Duration::from_millis(150);
 /// How long the last answer's word stays before the panel closes.
 const FLASH: Duration = Duration::from_millis(900);
-/// What a dictation with no model says. Dray on Windows hides its
+/// What a dictation with no model says. Wain on Windows hides its
 /// Transcription tab (#1425), so there is no Settings to send the reader to.
 const NEEDS_MODEL: &str = if cfg!(windows) {
-    "Dictation isn't in Dray on Windows yet."
+    "Dictation isn't in Wain on Windows yet."
 } else {
-    "Pick a dictation model in Dray → Settings → Transcription."
+    "Pick a dictation model in Wain → Settings → Transcription."
 };
 /// How long news lights the pill's edge.
 const GLOW: Duration = Duration::from_secs(2);
@@ -93,14 +93,14 @@ enum Msg {
     /// Shift alone held, or let go: the pen armed while dictating.
     Shift(bool),
     Server(Update),
-    /// Dray says a session finished where its banner would have, or with
+    /// Wain says a session finished where its banner would have, or with
     /// `note` what a bot's tasks wait on, and `rows` those tasks.
     Done { id: String, note: Option<String>, rows: Vec<bots::WaitingTask> },
-    /// Dray's Settings changed a pick: read the prefs again and show it.
+    /// Wain's Settings changed a pick: read the prefs again and show it.
     Prefs,
     /// Esc or Super+⏎ under the done pill.
     DoneKey(sys::DoneKey),
-    /// Dray quit: the island does not outlive it.
+    /// Wain quit: the island does not outlive it.
     Quit,
 }
 
@@ -169,7 +169,7 @@ pub struct Island {
     /// The pill opened the panel, whose whole point is the cards: they show
     /// even over a draft under way.
     pub cards_first: bool,
-    /// Asking Dray which session its window has open, before the panel shows.
+    /// Asking Wain which session its window has open, before the panel shows.
     asking_app: bool,
     /// A tap landed while asking: the double tap that opens listening.
     dictate_on_open: bool,
@@ -200,8 +200,8 @@ pub struct Island {
     pub draw_hint: bool,
     /// The pointer is on the camera, which shows its key beside it.
     pub camera_hovered: bool,
-    /// Sessions that finished while Dray was out of sight, newest last: the
-    /// done pill, in place of Dray's banner, until its clock runs out.
+    /// Sessions that finished while Wain was out of sight, newest last: the
+    /// done pill, in place of Wain's banner, until its clock runs out.
     pub done: Vec<String>,
     /// Finished while the panel or the attention pill covered the done pill,
     /// so not yet seen: kept when the cover goes, where the rest are spent.
@@ -230,7 +230,7 @@ pub struct Island {
     stepped_aside: bool,
 }
 
-/// A bot's waiting notice as Dray writes it down the pipe.
+/// A bot's waiting notice as Wain writes it down the pipe.
 #[derive(serde::Deserialize)]
 struct Waiting {
     id: String,
@@ -398,7 +398,7 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     // Answers with no display, so the release can check the binary it ships runs.
     if args.iter().any(|a| a == "--version") {
-        return println!("dray-island {}", env!("CARGO_PKG_VERSION"));
+        return println!("wain-island {}", env!("CARGO_PKG_VERSION"));
     }
     if let Some(dir) = args.iter().position(|a| a == "--orb-png").and_then(|i| args.get(i + 1)) {
         return orb::write_references(std::path::Path::new(dir)).expect("orb frames written");
@@ -411,9 +411,9 @@ fn main() {
         return orb::write_from_csv(std::path::Path::new(csv), size, scale, std::path::Path::new(dir)).expect("orb frames written");
     }
     let (tx, mut rx) = mpsc::unbounded::<Msg>();
-    // Dray holds our stdin open for its life, so EOF is Dray gone however it
+    // Wain holds our stdin open for its life, so EOF is Wain gone however it
     // went — quit, crash or kill. Run by hand, the flag is left off.
-    // Dray's lines on the same pipe: `done <session id>` for a finished
+    // Wain's lines on the same pipe: `done <session id>` for a finished
     // session, `waiting <json>` for a bot's waiting notice, `prefs` after its
     // Settings wrote one.
     if std::env::args().any(|a| a == "--child") {
@@ -535,9 +535,9 @@ fn asks_changed(island: &Entity<Island>, fresh: bool, had_cards: bool, cx: &mut 
 }
 
 /// News reaching a shut panel: the pill's edge lit for a moment, and the
-/// chime unless Dray's own window is in front, which sounds its own.
+/// chime unless Wain's own window is in front, which sounds its own.
 fn announce(island: &Entity<Island>, cx: &mut App) {
-    if !sys::dray_in_front() {
+    if !sys::wain_in_front() {
         sound::chime();
     }
     let clock = island.update(cx, |island, cx| {
@@ -603,7 +603,7 @@ fn sync_pill(island: &Entity<Island>, cx: &mut App) {
                 is_resizable: false,
                 is_minimizable: false,
                 window_background: background(glass),
-                app_id: Some("dray-island".into()),
+                app_id: Some("wain-island".into()),
                 ..Default::default()
             },
             move |_, cx| {
@@ -695,9 +695,9 @@ fn call(island: &Entity<Island>, cmd: &str, args: serde_json::Value, cx: &App) -
     island.read(cx).server.as_ref().map(|s| s.call(cmd, args))
 }
 
-/// Through the server to Dray's own recorder and model: one place sets up
+/// Through the server to Wain's own recorder and model: one place sets up
 /// dictation — model, microphone, mute — and the server forwards these to the
-/// app over `host_call`. A server with no app answers "Open Dray to dictate".
+/// app over `host_call`. A server with no app answers "Open Wain to dictate".
 pub fn start_dictation(island: &Entity<Island>, cx: &mut App) {
     let d = island.read(cx).draft();
     if d.dictation != orb::Dictation::Idle || d.start_pending {
@@ -741,7 +741,7 @@ pub fn start_dictation(island: &Entity<Island>, cx: &mut App) {
                 Ok(serde_json::Value::Null) => None,
                 Ok(v) => Some(match v.get("kind").and_then(|k| k.as_str()) {
                     Some("needsModel") => NEEDS_MODEL.to_string(),
-                    _ => "Dray needs the microphone.".to_string(),
+                    _ => "Wain needs the microphone.".to_string(),
                 }),
                 Err(why) => Some(why.clone()),
             };
@@ -890,8 +890,8 @@ fn transcribe(island: &Entity<Island>, cmd: &str, args: serde_json::Value, then_
     cx.spawn(async move |cx| {
         let timer = cx.background_executor().timer(TRANSCRIBE_WITHIN);
         let answer = match futures::future::select(reply, Box::pin(timer)).await {
-            futures::future::Either::Left((answer, _)) => answer.unwrap_or_else(|_| Err("No answer from Dray.".into())),
-            futures::future::Either::Right(_) => Err("Dray didn't answer in time.".into()),
+            futures::future::Either::Left((answer, _)) => answer.unwrap_or_else(|_| Err("No answer from Wain.".into())),
+            futures::future::Either::Right(_) => Err("Wain didn't answer in time.".into()),
         };
         cx.update(|cx| {
             // Thrown away meanwhile: its words, its state and its send are void.
@@ -949,7 +949,7 @@ fn place_words(island: &mut Island, answer: server::Reply, cx: &mut App) -> (boo
         }
         Some("empty") => (Some("No words heard.".to_string()), true),
         Some("needsModel") => (Some(NEEDS_MODEL.to_string()), false),
-        Some("noAudio") => (Some("Dray heard nothing. Check the microphone.".to_string()), false),
+        Some("noAudio") => (Some("Wain heard nothing. Check the microphone.".to_string()), false),
         _ => (Some(value.get("message").and_then(|m| m.as_str()).unwrap_or("Dictation failed.").to_string()), false),
     };
     island.notice = notice;
@@ -1007,7 +1007,7 @@ pub fn open_cards(island: &Entity<Island>, cx: &mut App) {
     open(island, cx);
 }
 
-/// A tap over Dray's window opens on the session that window has open, asked
+/// A tap over Wain's window opens on the session that window has open, asked
 /// before the panel shows so the title never flips under the reader. The app
 /// answers nothing unless its window has focus, so every open asks, and gives
 /// up after half a second.
@@ -1041,7 +1041,7 @@ pub fn open(island: &Entity<Island>, cx: &mut App) {
 /// With nothing picked, or a pick gone from the index: the session last
 /// used, else the newest, else a new task.
 fn settle_target(island: &Entity<Island>, cx: &mut App) {
-    // A project attached in Dray while the draft sat on a new task would
+    // A project attached in Wain while the draft sat on a new task would
     // otherwise never reach the bar: its lists are read again at each open.
     if island.read(cx).draft().target == Some(Target::New) {
         return load_picks(island, cx);
@@ -1082,7 +1082,7 @@ fn show(island: &Entity<Island>, cx: &mut App) {
         let _ = server.call("island_opened", json!({}));
     }
     settle_target(island, cx);
-    // Read here, not on each frame: it names the key, which Dray's Settings can move.
+    // Read here, not on each frame: it names the key, which Wain's Settings can move.
     island.update(cx, |island, _| island.draft_mut().prompt = draft::placeholder());
     sync_card(island, cx);
     let glass = sys::compositing();
@@ -1103,7 +1103,7 @@ fn show(island: &Entity<Island>, cx: &mut App) {
             is_resizable: false,
             is_minimizable: false,
             window_background: background(glass),
-            app_id: Some("dray-island".into()),
+            app_id: Some("wain-island".into()),
             ..Default::default()
         },
         move |window, cx| {
@@ -1240,7 +1240,7 @@ pub fn set_placement(island: &Entity<Island>, placement: Placement, cx: &mut App
 }
 
 /// Puts one session's cards away unanswered, or every session's with none
-/// named. They still wait in Dray, and the next new ask brings them back.
+/// named. They still wait in Wain, and the next new ask brings them back.
 pub fn dismiss(island: &Entity<Island>, session_id: Option<String>, cx: &mut App) {
     let empty = island.update(cx, |island, cx| {
         island.asks.dismiss(session_id.as_deref());
@@ -1268,7 +1268,7 @@ pub fn pick(island: &Entity<Island>, session_id: String, cx: &mut App) {
     sync_card(island, cx);
 }
 
-/// Opens a session in Dray's window and puts the panel away.
+/// Opens a session in Wain's window and puts the panel away.
 pub fn show_in_app(island: &Entity<Island>, session_id: String, cx: &mut App) {
     let Some(reply) = island.read(cx).server.as_ref().map(|s| s.call("show_session", json!({ "sessionId": session_id })))
     else {
@@ -1319,8 +1319,8 @@ const ANSWER_WITHIN: Duration = Duration::from_secs(30);
 async fn wait(reply: futures::channel::oneshot::Receiver<server::Reply>, cx: &mut gpui::AsyncApp) -> server::Reply {
     let timer = cx.background_executor().timer(ANSWER_WITHIN);
     match futures::future::select(reply, Box::pin(timer)).await {
-        futures::future::Either::Left((answer, _)) => answer.unwrap_or_else(|_| Err("No answer from Dray.".into())),
-        futures::future::Either::Right(_) => Err("Dray didn't answer in time.".into()),
+        futures::future::Either::Left((answer, _)) => answer.unwrap_or_else(|_| Err("No answer from Wain.".into())),
+        futures::future::Either::Right(_) => Err("Wain didn't answer in time.".into()),
     }
 }
 
@@ -1505,7 +1505,7 @@ pub fn remove_row(island: &Entity<Island>, id: u64, cx: &mut App) {
 }
 
 /// Every connected list a new task's bar reads, fresh on every new task:
-/// projects get attached in Dray.
+/// projects get attached in Wain.
 pub fn load_picks(island: &Entity<Island>, cx: &mut App) {
     let Some((projects, agents)) = island
         .read(cx)
@@ -1557,7 +1557,7 @@ pub fn load_models(island: &Entity<Island>, cx: &mut App) {
     .detach();
 }
 
-/// Picks a project, stamped on the server as Dray's own pick is, so the next
+/// Picks a project, stamped on the server as Wain's own pick is, so the next
 /// new task in either lands on it.
 pub fn pick_project(island: &Entity<Island>, path: String, cx: &mut App) {
     if let Some(server) = &island.read(cx).server {
@@ -1638,7 +1638,7 @@ fn send_to_target(island: &Entity<Island>, pinned: Option<Pinned>, cx: &mut App)
     };
     let (text, files) = draft::compose(&rows, &typing);
     let Some(target) = target else { return };
-    // An image alone is a message, as in Dray's own composer; a screenshot
+    // An image alone is a message, as in Wain's own composer; a screenshot
     // still being taken is not yet one.
     if (text.is_empty() && files.is_empty()) || island.read(cx).draft().sending {
         return;
@@ -1725,7 +1725,7 @@ fn send_to_target(island: &Entity<Island>, pinned: Option<Pinned>, cx: &mut App)
                             });
                             match cx.update(|cx| state.read(cx).server.as_ref().map(|s| s.call("send_msg", args))) {
                                 Some(reply) => wait(reply, cx).await.map(|_| id.clone()),
-                                None => Err("Dray's server isn't reachable.".into()),
+                                None => Err("Wain's server isn't reachable.".into()),
                             }
                         }
                         Err(_) => Err("That task is gone.".into()),
@@ -1736,7 +1736,7 @@ fn send_to_target(island: &Entity<Island>, pinned: Option<Pinned>, cx: &mut App)
             (Target::New, _, Some((id, reply))) => {
                 wait(reply, cx).await.map(|_| id)
             }
-            _ => Err("Dray's server isn't reachable.".into()),
+            _ => Err("Wain's server isn't reachable.".into()),
         };
         cx.update(|cx| {
             match outcome {
@@ -1829,7 +1829,7 @@ fn overlay_options(glass: bool, focus: bool, cx: &App) -> WindowOptions {
         is_resizable: false,
         is_minimizable: false,
         window_background: background(glass),
-        app_id: Some("dray-island".into()),
+        app_id: Some("wain-island".into()),
         ..Default::default()
     }
 }
@@ -1845,8 +1845,8 @@ fn cut_dictation(island: &Entity<Island>, before: u64, cx: &mut App) -> Option<f
     cx.spawn(async move |cx| {
         let timer = cx.background_executor().timer(TRANSCRIBE_WITHIN);
         let answer = match futures::future::select(reply, Box::pin(timer)).await {
-            futures::future::Either::Left((answer, _)) => answer.unwrap_or_else(|_| Err("No answer from Dray.".into())),
-            futures::future::Either::Right(_) => Err("Dray didn't answer in time.".into()),
+            futures::future::Either::Left((answer, _)) => answer.unwrap_or_else(|_| Err("No answer from Wain.".into())),
+            futures::future::Either::Right(_) => Err("Wain didn't answer in time.".into()),
         };
         cx.update(|cx| {
             island.update(cx, |island, cx| {
@@ -2373,7 +2373,7 @@ pub fn drop_files(island: &Entity<Island>, paths: &[std::path::PathBuf], cx: &mu
 /// How long the done pill stays up on its own: the Mac's `doneFor`.
 const DONE_FOR: Duration = Duration::from_secs(6);
 
-/// Dray says `id` finished where its banner would have, or with `note` what
+/// Wain says `id` finished where its banner would have, or with `note` what
 /// a bot's tasks wait on. One this island has not read yet waits for the
 /// index a while, then is dropped: a pill keyed to a guess opens nothing.
 fn finished(island: &Entity<Island>, id: String, note: Option<String>, rows: Vec<bots::WaitingTask>, tries: u32, cx: &mut App) {
@@ -2536,14 +2536,14 @@ pub fn open_done(island: &Entity<Island>, id: String, cx: &mut App) {
     show(island, cx);
 }
 
-/// The done pill's Open in app: Dray comes forward on the session, and its
+/// The done pill's Open in app: Wain comes forward on the session, and its
 /// sidebar already marks the rest unread.
 pub fn open_done_in_app(island: &Entity<Island>, id: String, cx: &mut App) {
     clear_done(island, cx);
     show_in_app(island, id, cx);
 }
 
-/// A waiting task's card clicked: Dray comes forward on the task, as the bot
+/// A waiting task's card clicked: Wain comes forward on the task, as the bot
 /// chat card's Ctrl-click does.
 pub fn open_waiting(island: &Entity<Island>, task_id: String, cx: &mut App) {
     open_done_in_app(island, task_id, cx);
@@ -2570,7 +2570,7 @@ pub fn merge_waiting(island: &Entity<Island>, chat: String, task_id: String, met
         return;
     }
     set_merge(island, &task_id, |m| *m = MergeState { merging: true, ..Default::default() }, cx);
-    // The app names another machine's repo `dray://<machine>/<path>`, which
+    // The app names another machine's repo `wain://<machine>/<path>`, which
     // this computer's server cannot reach, so the card offers no Merge there.
     let cwd = island.read(cx).session(&task.id).map_or(task.project_path.clone(), |s| s.project_path.clone());
     let args = json!({ "cwd": cwd, "number": pr.number, "method": method, "settle": task.id });
@@ -2578,7 +2578,7 @@ pub fn merge_waiting(island: &Entity<Island>, chat: String, task_id: String, met
     let island = island.clone();
     cx.spawn(async move |cx| {
         // `wait`'s 30s is too short for a merge, which runs `gh` and may wait on GitHub.
-        let answer = reply.await.unwrap_or_else(|_| Err("The connection to Dray's server dropped.".into()));
+        let answer = reply.await.unwrap_or_else(|_| Err("The connection to Wain's server dropped.".into()));
         cx.update(|cx| match answer {
             Ok(_) => {
                 island.update(cx, |island, cx| {
@@ -2640,7 +2640,7 @@ fn done_key(island: &Entity<Island>, key: sys::DoneKey, cx: &mut App) {
     }
 }
 
-/// Dray's Settings wrote a pick: placement and layout read again, and the
+/// Wain's Settings wrote a pick: placement and layout read again, and the
 /// panel shown in them, since both are only judged on screen.
 fn prefs_changed(island: &Entity<Island>, cx: &mut App) {
     let p = prefs::read();

@@ -1,13 +1,13 @@
-//! The socket an agent reaches Dray through.
+//! The socket an agent reaches Wain through.
 //!
 //! Every other command in this app travels frontend → Rust. This one travels
-//! the other way: the `dray` CLI connects, asks for a session, and the frontend
+//! the other way: the `wain` CLI connects, asks for a session, and the frontend
 //! learns about it from an event rather than from the return value of something
 //! it called. That inversion is the whole of what this module adds — the work
 //! itself goes through [`SessionManager::send_msg`], the same function the
 //! composer reaches, so a session created here is not a second kind of session.
 //!
-//! Newline-delimited JSON over a unix socket at `~/.dray/dray.sock` — or
+//! Newline-delimited JSON over a unix socket at `~/.wain/wain.sock` — or
 //! the same name in this build's own home, see [`socket_path`] — one
 //! request per connection. Nothing on the network can reach it at all, and
 //! access control is the containing directory's `0700` — see
@@ -25,7 +25,7 @@ use crate::{
     store::{self, SessionIndexItem},
 };
 use anyhow::{bail, Context, Result};
-use dray_proto::{
+use wain_proto::{
     encode_line, CreateDraft, CreateSession, DraftSummary, Envelope, StartDraft, IssueInput, IssueLink, LinkIssues, ListSessions, Request,
     Response, SendMessage, SendToBot, SessionSummary, SetAside, MAX_LINE, OLDEST_SPOKEN, PROTOCOL_VERSION,
 };
@@ -63,13 +63,13 @@ pub struct SessionDeletedEvent {
     pub session_id: String,
 }
 
-/// `dray session model` moved a session's pick, carrying the entry as it now
+/// `wain session model` moved a session's pick, carrying the entry as it now
 /// stands. Apart from [`SESSION_CHANGED`] because a composer showing that
 /// session has to take the new pick over its own, which no other change to
 /// the entry may make it do.
 pub const SESSION_MODEL_CHANGED: &str = "session_model_changed";
 
-/// Emitted when `dray issue link` or `dray issue unlink` changes what a session
+/// Emitted when `wain issue link` or `wain issue unlink` changes what a session
 /// is tagged with, so the panel's Issue tab appears, redraws or goes away
 /// without a reselect.
 ///
@@ -94,28 +94,28 @@ pub struct IssuesChangedEvent {
 /// field free to disagree with the chain it describes.
 const MAX_DEPTH: usize = 2;
 
-/// The socket this build listens on: `dray.sock`, in its own home.
+/// The socket this build listens on: `wain.sock`, in its own home.
 ///
 /// Split by home because the release app is normally running while a dev build
 /// is being worked on, and one path between them means whichever started last
 /// owns the channel — `bind` unlinks the other's socket, so the app left behind
-/// keeps a listener no `dray` will ever reach again. A dev build always has a
+/// keeps a listener no `wain` will ever reach again. A dev build always has a
 /// home of its own (`store::home_override`), which the CLI's own resolver
 /// below knows nothing of.
 ///
-/// Under `DRAY_HOME` the socket moves with the data, so a second process on
+/// Under `WAIN_HOME` the socket moves with the data, so a second process on
 /// its own directory takes no channel from the app's.
 pub fn socket_path() -> Option<std::path::PathBuf> {
     if let Some(home) = store::home_override() {
-        return Some(home.join(dray_proto::SOCKET_NAME));
+        return Some(home.join(wain_proto::SOCKET_NAME));
     }
-    dray_proto::socket_path()
+    wain_proto::socket_path()
 }
 
-/// What a spawned agent's `DRAY_ENDPOINT` is set to.
+/// What a spawned agent's `WAIN_ENDPOINT` is set to.
 ///
 /// Injected rather than left to the CLI's own default, so a session started by
-/// the dev app reaches the dev app. Without it every `dray` call inside a dev
+/// the dev app reaches the dev app. Without it every `wain` call inside a dev
 /// session would go to the release app's socket and create sessions in the
 /// wrong sidebar.
 pub fn child_endpoint() -> Option<String> {
@@ -131,7 +131,7 @@ pub fn child_endpoint() -> Option<String> {
 pub async fn serve(app: Sink) -> Result<()> {
     let path = socket_path().context("could not resolve the socket path")?;
 
-    // Creates `~/.dray` and narrows it to `0700`, which is what actually
+    // Creates `~/.wain` and narrows it to `0700`, which is what actually
     // guards this socket. `bind` applies the process umask, so under a
     // permissive one the socket lands world-writable and stays that way until
     // `restrict` runs a moment later — a window another local account can
@@ -177,10 +177,10 @@ pub async fn serve(app: Sink) -> Result<()> {
 }
 
 /// Windows serves a named pipe in the socket's place, named after the socket
-/// path (`dray_proto::pipe_name`), so each home still keeps its own channel.
+/// path (`wain_proto::pipe_name`), so each home still keeps its own channel.
 /// A pipe is no file: nothing can unlink or replace it, so there is nothing to
 /// heal. `first_pipe_instance` refuses a name another live process already
-/// serves, which is the "a Dray already lives here" answer the unix bind gets
+/// serves, which is the "a Wain already lives here" answer the unix bind gets
 /// from its connect check.
 #[cfg(windows)]
 pub async fn serve(app: Sink) -> Result<()> {
@@ -188,7 +188,7 @@ pub async fn serve(app: Sink) -> Result<()> {
 
     let path = socket_path().context("could not resolve the socket path")?;
     store::get_home_app_dir().await?;
-    let name = dray_proto::pipe_name(&path.to_string_lossy());
+    let name = wain_proto::pipe_name(&path.to_string_lossy());
     let owner = crate::platform::OwnerOnly::new().context("could not make the pipe's security descriptor")?;
     let create = |first: bool| {
         let mut attributes = owner.attributes();
@@ -216,7 +216,7 @@ pub async fn serve(app: Sink) -> Result<()> {
         }
         let connected = server;
         // The next instance before this one is served, or a caller arriving
-        // meanwhile finds no pipe and reads Dray as closed.
+        // meanwhile finds no pipe and reads Wain as closed.
         server = next_instance(&create).await;
         let app = app.clone();
         tokio::spawn(async move {
@@ -248,7 +248,7 @@ async fn next_instance(
 }
 
 /// How often the socket path is checked against the file this process bound.
-/// One `stat` a tick; a longer gap is that much longer of every `dray` call
+/// One `stat` a tick; a longer gap is that much longer of every `wain` call
 /// failing.
 #[cfg(unix)]
 const SOCKET_CHECK: std::time::Duration = std::time::Duration::from_secs(5);
@@ -290,8 +290,8 @@ fn path_state(bound: FileId, seen: std::io::Result<FileId>) -> PathState {
 ///
 /// A listening socket is tied to its inode, not its name. Unlink the file or
 /// put another in its place and this listener keeps accepting on an inode no
-/// path reaches, while every `dray` call meets nothing or a dead file and reads
-/// it as Dray not running. Deleting `~/.dray` does it; so did a sandbox
+/// path reaches, while every `wain` call meets nothing or a dead file and reads
+/// it as Wain not running. Deleting `~/.wain` does it; so did a sandbox
 /// restored from a snapshot, whose disk was swapped under a running server and
 /// left a copied socket file behind (#801). [`Socket::heal`] binds again.
 #[cfg(unix)]
@@ -460,12 +460,12 @@ fn restrict(path: &Path) -> Result<()> {
 /// work out which half to touch.
 fn mismatch(theirs: u32) -> String {
     let cure = if theirs < PROTOCOL_VERSION {
-        "run `dray update`"
+        "run `wain update`"
     } else {
-        "update the Dray app"
+        "update the Wain app"
     };
 
-    format!("this dray CLI speaks protocol v{theirs}, the app speaks v{PROTOCOL_VERSION} — {cure}")
+    format!("this wain CLI speaks protocol v{theirs}, the app speaks v{PROTOCOL_VERSION} — {cure}")
 }
 
 /// Answered before the request is even looked at: a CLI older than
@@ -638,11 +638,11 @@ fn this_machine_only(request: &Request) -> bool {
 #[cfg(any(feature = "serve", feature = "desktop"))]
 async fn on_machine(machine: &str, request: Request, app: &Sink) -> Result<Response> {
     if this_machine_only(&request) {
-        bail!("`dray machine` and `dray server` act on this machine alone — drop --machine");
+        bail!("`wain machine` and `wain server` act on this machine alone — drop --machine");
     }
     if machine == "all" {
         let Request::ListSessions(list) = request else {
-            bail!("only `dray session ls` takes --machine all");
+            bail!("only `wain session ls` takes --machine all");
         };
         return elsewhere::list_everywhere(list).await;
     }
@@ -670,7 +670,7 @@ async fn on_machine(machine: &str, request: Request, app: &Sink) -> Result<Respo
     let creates = matches!(request, Request::CreateSession(_));
     let starts = creates || matches!(request, Request::StartDraft(_));
     if machine == elsewhere::CLOUD && !creates {
-        bail!("only `dray session new` takes --machine cloud — a cloud task's own machine is named on its row");
+        bail!("only `wain session new` takes --machine cloud — a cloud task's own machine is named on its row");
     }
     let asks_bot = match &request {
         Request::SendToBot(send) if send.ask => Some(send.bot.clone()),
@@ -865,7 +865,7 @@ async fn localize(request: &mut Request, origin: Option<&str>) -> Result<()> {
     }
     let attached: Vec<_> = projects.iter().map(|p| p.path.as_str()).collect();
     bail!(
-        "this machine has no checkout of {} — attach one in Dray, or pass --project with a path here. Its projects: {}",
+        "this machine has no checkout of {} — attach one in Wain, or pass --project with a path here. Its projects: {}",
         origin.unwrap_or(&path),
         if attached.is_empty() { "none".to_string() } else { attached.join(", ") }
     )
@@ -881,12 +881,12 @@ pub(crate) mod elsewhere {
     use anyhow::anyhow;
     use serde_json::json;
 
-    /// `--machine cloud`: a fresh Dray Cloud machine for one task, as the
+    /// `--machine cloud`: a fresh Wain Cloud machine for one task, as the
     /// composer's Cloud pick starts one.
     pub const CLOUD: &str = "cloud";
 
     /// Starts a cloud machine and clones the project there, answering the
-    /// machine's id. The app starts it, since it holds Dray Cloud's key and
+    /// machine's id. The app starts it, since it holds Wain Cloud's key and
     /// connections and writes the machine into `servers.json` once connected.
     pub async fn start_cloud(origin: Option<&str>) -> Result<String> {
         let slug = origin
@@ -896,7 +896,7 @@ pub(crate) mod elsewhere {
         let id = match crate::serve::host_call("start_cloud_machine", serde_json::Value::Null).await {
             Some(Ok(id)) => id.as_str().unwrap_or_default().to_string(),
             Some(Err(e)) => bail!("couldn't start a cloud machine: {}", e.as_str().unwrap_or(&e.to_string())),
-            None => bail!("Dray Cloud starts machines through the Dray app — open it and try again"),
+            None => bail!("Wain Cloud starts machines through the Wain app — open it and try again"),
         };
         let cloned = async {
             let saved = machines::on(&id).await?;
@@ -985,7 +985,7 @@ pub(crate) mod elsewhere {
     async fn forward_to(saved: &machines::Saved, forward: &Forward) -> Result<Response> {
         let answer = machines::call(&saved, "orchestrate", serde_json::to_value(forward)?).await.map_err(|e| {
             match e.starts_with("unknown command") {
-                true => anyhow!("{}'s Dray server is too old to take dray requests — update it", saved.name),
+                true => anyhow!("{}'s Wain server is too old to take wain requests — update it", saved.name),
                 false => anyhow!(e),
             }
         })?;
@@ -1003,7 +1003,7 @@ pub(crate) mod elsewhere {
         Ok(response)
     }
 
-    /// `dray session set-aside` for a session on `machine`, a name or an id:
+    /// `wain session set-aside` for a session on `machine`, a name or an id:
     /// written there, or held here when that machine does not answer (#1050).
     /// A machine turned off is held for too — turning it back on lands it.
     pub async fn set_aside(machine: &str, aside: SetAside, app: &Sink) -> Result<Response> {
@@ -1131,7 +1131,7 @@ pub(crate) mod elsewhere {
     /// The name a relayed sender gives this machine, which the far side may
     /// hold under a name of its own.
     async fn this_machine() -> String {
-        tokio::task::spawn_blocking(dray_proto::machine_name).await.unwrap_or_else(|_| "another machine".into())
+        tokio::task::spawn_blocking(wain_proto::machine_name).await.unwrap_or_else(|_| "another machine".into())
     }
 
     /// `session ls --machine all`: this machine's sessions, then each
@@ -1156,7 +1156,7 @@ pub(crate) mod elsewhere {
 
 /// Answers a request here and nowhere else, for a caller already inside this
 /// process: an MCP assistant's start, send and stop take the same path as
-/// `dray session new`, `send` and `stop`. Never through [`route`], which
+/// `wain session new`, `send` and `stop`. Never through [`route`], which
 /// sends a session id this index lacks on to other machines under their own
 /// tokens — an assistant is signed in to this server alone.
 #[cfg(any(feature = "serve", feature = "desktop"))]
@@ -1168,8 +1168,8 @@ pub async fn answer_here(request: Request, app: &Sink) -> Response {
 }
 
 #[cfg(any(feature = "serve", feature = "desktop"))]
-fn linked_org(org: crate::org_link::LinkedOrg, site: String) -> dray_proto::LinkedOrg {
-    dray_proto::LinkedOrg { name: org.name, slug: org.slug, site }
+fn linked_org(org: crate::org_link::LinkedOrg, site: String) -> wain_proto::LinkedOrg {
+    wain_proto::LinkedOrg { name: org.name, slug: org.slug, site }
 }
 
 #[cfg(any(feature = "serve", feature = "desktop"))]
@@ -1177,7 +1177,7 @@ fn assistants(list: Result<Vec<crate::mcp::AssistantSummary>, String>) -> Result
     let assistants = list
         .map_err(anyhow::Error::msg)?
         .into_iter()
-        .map(|a| dray_proto::AssistantSummary {
+        .map(|a| wain_proto::AssistantSummary {
             id: a.id,
             name: a.name,
             access: serde_json::to_value(a.access).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default(),
@@ -1189,7 +1189,7 @@ fn assistants(list: Result<Vec<crate::mcp::AssistantSummary>, String>) -> Result
 }
 
 async fn dispatch(request: Request, app: &Sink) -> Result<Response> {
-    if !dray_proto::REMOTE_MCP
+    if !wain_proto::REMOTE_MCP
         && matches!(request, Request::PairAssistant(_) | Request::ListAssistants | Request::RevokeAssistant(_))
     {
         anyhow::bail!("Assistants are not available in this build yet.");
@@ -1416,13 +1416,13 @@ pub async fn answer_host(cmd: &str, args: serde_json::Value) -> Result<serde_jso
             Ok(serde_json::Value::Null)
         }
         "island_links" => serde_json::to_value(crate::servers::island_links()).map_err(|e| e.to_string()),
-        // `dray session new --machine cloud`, which the server cannot start
+        // `wain session new --machine cloud`, which the server cannot start
         // itself: the cloud connections and their `servers.json` rows are the app's.
         // Refused while off, since a machine started then is never listed and
         // its start would only time out.
         "start_cloud_machine" => match crate::servers::cloud_info().await.on {
             true => crate::servers::start_cloud_machine().await.map(serde_json::Value::from),
-            false => Err("Dray Cloud is off. Turn it on in Settings, Servers.".into()),
+            false => Err("Wain Cloud is off. Turn it on in Settings, Servers.".into()),
         },
         "drop_cloud_machine" => {
             let id = args["id"].as_str().ok_or("drop_cloud_machine wants an id")?.to_string();
@@ -1436,16 +1436,16 @@ pub async fn answer_host(cmd: &str, args: serde_json::Value) -> Result<serde_jso
         }
         "show_session" => {
             let id = args["sessionId"].as_str().ok_or("show_session wants a sessionId")?;
-            let app = crate::transcription::app().ok_or("Dray is not ready yet.")?;
+            let app = crate::transcription::app().ok_or("Wain is not ready yet.")?;
             crate::notifications::activate(app, id);
             Ok(serde_json::Value::Null)
         }
-        // Only while the window has focus: the island opens on Dray's pick when
-        // tapped over Dray, and asking here rather than by bundle id there also
+        // Only while the window has focus: the island opens on Wain's pick when
+        // tapped over Wain, and asking here rather than by bundle id there also
         // covers `tauri dev`, whose bare binary has none.
         "selected_session" => {
             use tauri::Manager;
-            let app = crate::transcription::app().ok_or("Dray is not ready yet.")?;
+            let app = crate::transcription::app().ok_or("Wain is not ready yet.")?;
             let focused = app.get_webview_window("main").and_then(|w| w.is_focused().ok()).unwrap_or(false);
             Ok(serde_json::json!(focused.then(crate::apps::app_selection).flatten()))
         }
@@ -1474,12 +1474,12 @@ async fn answer_on_screen(request: Request) -> Result<Response> {
     }
 }
 
-/// `dray machine` on a server with no app to ask: a Linux `dray-serve`, a
+/// `wain machine` on a server with no app to ask: a Linux `wain-serve`, a
 /// headless Mac, the Mac's own server while the window is closed.
 #[cfg(any(feature = "serve", feature = "desktop"))]
 async fn machine_list(request: Request) -> Result<Response> {
     use crate::machines;
-    let summarize = |row: machines::Row| dray_proto::ServerSummary {
+    let summarize = |row: machines::Row| wain_proto::ServerSummary {
         address: row.saved.address(),
         id: row.saved.id,
         name: row.saved.name,
@@ -1499,7 +1499,7 @@ async fn machine_list(request: Request) -> Result<Response> {
                 Err(_) => Vec::new(),
             };
             let row = machines::remove(&server.name).await.map_err(anyhow::Error::msg)?;
-            return Ok(Response::Server { server: dray_proto::ServerSummary { unfinished, ..summarize(row) } });
+            return Ok(Response::Server { server: wain_proto::ServerSummary { unfinished, ..summarize(row) } });
         }
         Request::RenameServer(rename) => machines::rename(&rename.name, &rename.new_name).await,
         Request::SetServerOn(set) => machines::set_on(&set.name, set.on).await,
@@ -1508,14 +1508,14 @@ async fn machine_list(request: Request) -> Result<Response> {
     Ok(Response::Server { server: summarize(row.map_err(anyhow::Error::msg)?) })
 }
 
-/// `dray machine`, through Settings → Servers' own commands, so the CLI is
+/// `wain machine`, through Settings → Servers' own commands, so the CLI is
 /// refused exactly where the Add dialog would be and the page hears the same
 /// `servers_changed`.
 #[cfg(feature = "desktop")]
 mod server_list {
     use crate::servers::{self, ServerInfo, ServerStatus};
     use anyhow::{bail, Context, Result};
-    use dray_proto::{AddServer, Request, Response, ServerSummary};
+    use wain_proto::{AddServer, Request, Response, ServerSummary};
 
     pub async fn answer(request: Request) -> Result<Response> {
         match request {
@@ -1575,16 +1575,16 @@ mod server_list {
         Ok(Response::Server { server: ServerSummary { unfinished, ..summarize(server) } })
     }
 
-    async fn rename(rename: dray_proto::RenameServer) -> Result<Response> {
+    async fn rename(rename: wain_proto::RenameServer) -> Result<Response> {
         let id = find(&rename.name)?.id;
         servers::rename_server(id.clone(), rename.new_name).await.map_err(anyhow::Error::msg)?;
         Ok(Response::Server { server: summarize(current(&id)?) })
     }
 
-    /// On waits for the attempt to settle, so `dray machine connect` answers
+    /// On waits for the attempt to settle, so `wain machine connect` answers
     /// whether it connected rather than "connecting". A whole SSH connect is
     /// capped at 45s; past that the answer is the row as it stands.
-    async fn set_on(set: dray_proto::SetServerOn) -> Result<Response> {
+    async fn set_on(set: wain_proto::SetServerOn) -> Result<Response> {
         let id = find(&set.name)?.id;
         servers::set_server_on(id.clone(), set.on).await.map_err(anyhow::Error::msg)?;
         let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(50);
@@ -1610,10 +1610,10 @@ mod server_list {
     }
 }
 
-/// `dray share`: a public link to one of the session's dev servers, made on
+/// `wain share`: a public link to one of the session's dev servers, made on
 /// this machine. Every verb answers the session's links after it.
-async fn share_port(request: dray_proto::ShareRequest) -> Result<Response> {
-    use dray_proto::ShareAction;
+async fn share_port(request: wain_proto::ShareRequest) -> Result<Response> {
+    use wain_proto::ShareAction;
     let session = request.session_id;
     let done = match request.action {
         ShareAction::Start { port } => crate::share::start(&session, port, "cli").await.map(drop),
@@ -1626,7 +1626,7 @@ async fn share_port(request: dray_proto::ShareRequest) -> Result<Response> {
     })
 }
 
-/// `dray share ls`: links in the caller's project, or every one with `--all`.
+/// `wain share ls`: links in the caller's project, or every one with `--all`.
 async fn list_shares(list: ListSessions) -> Result<Response> {
     let scope = scope_of(&list).await?;
     let items = store::list_session_index_items(false).await?;
@@ -1643,7 +1643,7 @@ async fn list_shares(list: ListSessions) -> Result<Response> {
 
 /// Settles or unsettles through the sidebar's own command, which also stops
 /// a settled session's processes and carries its hidden children along.
-async fn settle_session(settle: dray_proto::SettleSession, app: &Sink) -> Result<Response> {
+async fn settle_session(settle: wain_proto::SettleSession, app: &Sink) -> Result<Response> {
     let id = settle.session_id.as_str();
     let item = store::get_session_index_item(id).await?.with_context(|| format!("no session {id}"))?;
     if settle.settled && manager().turn_in_flight(id).await {
@@ -1665,7 +1665,7 @@ async fn settle_session(settle: dray_proto::SettleSession, app: &Sink) -> Result
     answer_session(id).await
 }
 
-/// `dray session detach`: the sidebar's Detach from parent, so a bot can hand
+/// `wain session detach`: the sidebar's Detach from parent, so a bot can hand
 /// a hidden task to the reader. Refused where it would change nothing, since
 /// a caller detaching a top-level session has the wrong id.
 async fn detach_session(id: &str, app: &Sink) -> Result<Response> {
@@ -1680,7 +1680,7 @@ async fn detach_session(id: &str, app: &Sink) -> Result<Response> {
 
 /// Hands session `id` to the bot `bot` names (#1395), detach's reverse: it
 /// becomes that bot's task, hidden under its chat, reporting after each turn.
-/// The sidebar's Attach to bot, `dray session attach` and the iOS menu all
+/// The sidebar's Attach to bot, `wain session attach` and the iOS menu all
 /// come here, on the task's own machine. Only a bot there: the task's reports
 /// go out from there, and a bot elsewhere would need the outbox a
 /// cross-machine create sets up.
@@ -1713,7 +1713,7 @@ pub async fn attach_to_bot(id: &str, bot: &str, app: &Sink) -> Result<SessionInd
         bots::lead_in(
             id,
             format!(
-                "[Dray: the user handed this session to the bot \"{}\". Dray now sends your final message of each turn to it automatically, so end each turn with what it needs to know, and don't send that message yourself. It may message you with `dray session send`.]\n\n",
+                "[Wain: the user handed this session to the bot \"{}\". Wain now sends your final message of each turn to it automatically, so end each turn with what it needs to know, and don't send that message yourself. It may message you with `wain session send`.]\n\n",
                 bot.name.replace(['\n', '\r', ']', '"'], " ")
             ),
         );
@@ -1779,7 +1779,7 @@ pub async fn settle_merged(id: &str, head: &str, app: &Sink) -> Result<()> {
     if row.archived || branch.as_deref() != Some(head) {
         return Ok(());
     }
-    let settle = dray_proto::SettleSession {
+    let settle = wain_proto::SettleSession {
         session_id: id.to_string(),
         settled: true,
         delete_worktree: row.worktree_name.is_some() && !row.worktree_removed,
@@ -1810,12 +1810,12 @@ pub(crate) async fn announce_change(ids: &[String], app: &Sink) {
     }
 }
 
-/// `dray session model`: the composer's model picker, from outside it. Only the
+/// `wain session model`: the composer's model picker, from outside it. Only the
 /// pick is written, as the picker's is; the session's next send carries it out
 /// through `send_msg`, which compares it against what the child runs and
 /// applies it in place or respawns. A prompt already queued behind a running
 /// turn bypasses that, so [`SessionManager::carry_pick_to_queue`] covers it.
-async fn set_model(set: dray_proto::SetModel, app: &Sink) -> Result<Response> {
+async fn set_model(set: wain_proto::SetModel, app: &Sink) -> Result<Response> {
     let item = store::get_session_index_item(&set.session_id)
         .await?
         .with_context(|| format!("no session {}", set.session_id))?;
@@ -1975,9 +1975,9 @@ async fn answer_session(id: &str) -> Result<Response> {
     Ok(Response::Session { session: summarize(item) })
 }
 
-/// One `dray browser` step: CEF's tabs in the Mac app, a headless Chromium
+/// One `wain browser` step: CEF's tabs in the Mac app, a headless Chromium
 /// in a server or an app built without CEF.
-async fn browse(request: dray_proto::BrowserRequest) -> Result<Response> {
+async fn browse(request: wain_proto::BrowserRequest) -> Result<Response> {
     let answered = |answer: Result<_, String>| match answer {
         Ok((output, data)) => Response::Browser { output, data },
         Err(message) => Response::error(message),
@@ -1992,13 +1992,13 @@ async fn browse(request: dray_proto::BrowserRequest) -> Result<Response> {
 /// Files a video, or for `image` a screenshot, for a session's chat. The folder
 /// is worked out here because only the server knows its home, and it is the
 /// one the session's delete sweeps.
-async fn add_video(request: dray_proto::AddVideo, image: bool) -> Result<Response> {
-    let dray_proto::AddVideo { session_id, path, name } = request;
+async fn add_video(request: wain_proto::AddVideo, image: bool) -> Result<Response> {
+    let wain_proto::AddVideo { session_id, path, name } = request;
     store::get_session_index_item(&session_id).await?.with_context(|| format!("no session {session_id}"))?;
     let dir = store::get_home_app_dir().await?.join("browser/recordings").join(&session_id);
     let filed = tokio::task::spawn_blocking(move || {
         let source = Path::new(&path);
-        // Without this a video handed to `dray image add` would be filed as one.
+        // Without this a video handed to `wain image add` would be filed as one.
         if image && !crate::recording::is_image(source) {
             return Err(format!("{path} is not a PNG or JPEG"));
         }
@@ -2015,7 +2015,7 @@ async fn add_video(request: dray_proto::AddVideo, image: bool) -> Result<Respons
 /// The PR is looked up now, so an agent posting too early is told so rather
 /// than leaving a card with nothing to merge. Refused while the task is
 /// mid-turn, as the automatic card waits then.
-async fn post_merge_card(card: dray_proto::MergeCard, app: &Sink) -> Result<Response> {
+async fn post_merge_card(card: wain_proto::MergeCard, app: &Sink) -> Result<Response> {
     let chat = store::get_session_index_item(&card.session_id)
         .await?
         .with_context(|| format!("no session {}", card.session_id))?;
@@ -2278,14 +2278,14 @@ async fn apply_issue(link: &LinkIssues, input: &IssueInput) -> Result<Vec<IssueR
         store::link_session_issue(
             &link.session_id,
             IssueRef {
-                // By shape: `dray issue link` asks the tracker nothing, so
+                // By shape: `wain issue link` asks the tracker nothing, so
                 // the identifier is the only thing that can say which one
                 // this belongs to — `owner/repo#12` is GitHub's.
                 tracker: IssueTracker::of(&identifier),
                 // No tracker call, so no stable tracker id to record. The
                 // identifier stands in: `unlink_session_issue` already
                 // matches on either, so a link made here is removable by
-                // the panel's button and by `dray issue unlink` alike.
+                // the panel's button and by `wain issue unlink` alike.
                 id: identifier.clone(),
                 identifier,
                 title: input.title.clone().unwrap_or_default(),
@@ -2418,7 +2418,7 @@ async fn create_session(create: CreateSession, caller: Option<&Caller>, app: &Si
     })
 }
 
-/// Saves a task for later with the picks `dray new` would have given it, and
+/// Saves a task for later with the picks `wain new` would have given it, and
 /// always with a worktree: an agent that leaves work for the reader has no
 /// standing to put it in the reader's own checkout.
 async fn create_draft(create: CreateDraft, caller: Option<&Caller>, app: &Sink) -> Result<Response> {
@@ -2578,8 +2578,8 @@ async fn start_session(
 /// other ref.
 ///
 /// A session id is tried first, because it is the address everywhere else in
-/// `dray` — `ls` prints it, `send` takes it — and an agent holding one should
-/// not have to learn how Dray names branches to point at that session's work.
+/// `wain` — `ls` prints it, `send` takes it — and an agent holding one should
+/// not have to learn how Wain names branches to point at that session's work.
 /// A ref that happens to look like a session id is the only ambiguity, and a
 /// v7 UUID is not a branch name anybody types. A session's work is forked onto
 /// a branch of the new tree's own, so a reviewer never commits onto it.
@@ -2811,8 +2811,8 @@ async fn send_message(send: SendMessage, carried: Option<MessageSender>, app: &S
         Some(from) => Some(from),
         None => sender(send.from_session_id.as_deref()).await,
     };
-    // `dray session send` from one bot's chat into another's is the exchange
-    // `dray bot send` makes, and held to the same guards.
+    // `wain session send` from one bot's chat into another's is the exchange
+    // `wain bot send` makes, and held to the same guards.
     if let (true, Some(f)) = (self_sent, from.as_mut()) {
         if f.bot_id.is_some() && target.routine_run.is_none() {
             if let Some(to) = crate::bots::bot_at(&target.cwd).await {
@@ -2872,7 +2872,7 @@ async fn send_message(send: SendMessage, carried: Option<MessageSender>, app: &S
     })
 }
 
-/// `dray bot send`: a message into a bot's chat, by the bot's name.
+/// `wain bot send`: a message into a bot's chat, by the bot's name.
 ///
 /// Nothing reports back, unlike a task's turns: the bot answers, if it wants
 /// to, with a send of its own. A bot nobody has written to yet has no chat, so
@@ -2895,7 +2895,7 @@ async fn send_to_bot(
         (false, _) => None,
         (true, Some(id)) => Some(id),
         (true, None) => bail!(
-            "--ask can't reach this machine from yours: update the Dray server on the asking machine, which collects the answer"
+            "--ask can't reach this machine from yours: update the Wain server on the asking machine, which collects the answer"
         ),
     };
     let bot = bots::find_bot(&send.bot).await?;
@@ -2908,7 +2908,7 @@ async fn send_to_bot(
     }
     match from.as_mut() {
         // The exchange guards key on the sender's chat, which lives on its own
-        // machine, as a relayed `dray session send` skips them too.
+        // machine, as a relayed `wain session send` skips them too.
         Some(f) if f.bot_id.is_some() && !relayed => stamp_bot_message(f, &bot, &send.prompt, send.ask, app).await?,
         // A task or a routine run asking: no exchange to guard, and the answer
         // goes back to the session itself.
@@ -2961,7 +2961,7 @@ async fn send_into_bot_chat(
     if let Some(chat) = bots::chat_of(&bot).await {
         drop(first);
         // The sender passed on, so a run's one-way note to a bot never reads as
-        // a question it waits on (`asked` is for `dray session send` alone).
+        // a question it waits on (`asked` is for `wain session send` alone).
         let send = SendMessage { session_id: chat.session_id, prompt: send.prompt, from_session_id: send.from_session_id };
         let queued = matches!(send_message(send, from, app).await?, Response::Sent { queued: true });
         if let Some(run) = waiting_run {
@@ -2984,7 +2984,7 @@ async fn send_into_bot_chat(
 
 /// Starts `bot`'s chat on `prompt`, for a bot with none yet: on the agent its
 /// last chat ran, else `calling`'s, else Claude Code. `hidden` marks the
-/// prompt as Dray's own, drawn as nothing, as a kickoff is. The caller holds
+/// prompt as Wain's own, drawn as nothing, as a kickoff is. The caller holds
 /// the bot's first-chat lock.
 pub(crate) async fn open_bot_chat(
     bot: &bots::Bot,
@@ -3006,7 +3006,7 @@ pub(crate) async fn open_bot_chat(
     let fast = resolve_fast(None, like.as_ref(), harness);
     let session_id = uuid::Uuid::now_v7().to_string();
     if hidden {
-        bots::mark_dray_prompt(&session_id, prompt);
+        bots::mark_wain_prompt(&session_id, prompt);
     }
     let sent = manager()
         .send_msg(
@@ -3016,7 +3016,7 @@ pub(crate) async fn open_bot_chat(
         .await;
     // A send that failed before logging the prompt left the mark behind.
     if hidden {
-        bots::take_dray_prompt(&session_id, prompt);
+        bots::take_wain_prompt(&session_id, prompt);
     }
     let item = sent?.snapshot.map(|s| s.index_item).context("the bot's chat started but returned no index entry")?;
     app.emit(SESSION_CREATED, &item).ok();
@@ -3205,7 +3205,7 @@ fn idle_since(at: &str) -> String {
 ///
 /// Every turn, not only the last one, and mechanical rather than left to the
 /// child: a report the agent is asked to send is one it can forget, and the bot
-/// is where the user is. The same path as `dray session send`, so the bot sees
+/// is where the user is. The same path as `wain session send`, so the bot sees
 /// it exactly as it would a message the child sent itself.
 ///
 /// Boxed because the read loop calling it lives inside a harness's `init`, and
@@ -3246,7 +3246,7 @@ pub fn report_to_parent(
 }
 
 /// A task's report into the bot chat `parent_id`, from this machine's task or
-/// one collected from another (#958). The same path as `dray session send`, so
+/// one collected from another (#958). The same path as `wain session send`, so
 /// the bot sees it exactly as it would a message the task sent itself.
 pub fn deliver_report(
     parent_id: String,
@@ -3273,7 +3273,7 @@ pub fn deliver_report(
     })
 }
 
-/// Dray's hidden review into a bot's chat (#973): sent like the reader's own
+/// Wain's hidden review into a bot's chat (#973): sent like the reader's own
 /// message, signed by nobody, and drawn as nothing, as the kickoff is. Boxed
 /// for the reason [`report_to_parent`] is.
 pub fn send_review(
@@ -3288,21 +3288,21 @@ pub fn send_review(
         if chat.archived {
             return Ok(());
         }
-        crate::bots::mark_dray_prompt(&chat.session_id, &prompt);
+        crate::bots::mark_wain_prompt(&chat.session_id, &prompt);
         let send = SendMessage { session_id: chat.session_id.clone(), prompt: prompt.clone(), from_session_id: None };
         let sent = send_message(send, None, &app).await;
         if sent.is_err() {
-            crate::bots::take_dray_prompt(&chat.session_id, &prompt);
+            crate::bots::take_wain_prompt(&chat.session_id, &prompt);
         }
         sent.map(drop)
     })
 }
 
-/// What `dray bot routine` prints for a routine.
-async fn routine_summary(r: crate::routines::Routine) -> dray_proto::RoutineSummary {
+/// What `wain bot routine` prints for a routine.
+async fn routine_summary(r: crate::routines::Routine) -> wain_proto::RoutineSummary {
     let bot = bots::list_bots().await.ok().and_then(|l| l.into_iter().find(|b| b.id == r.bot_id));
     let last = r.last_result.as_ref();
-    dray_proto::RoutineSummary {
+    wain_proto::RoutineSummary {
         bot: bot.map_or(r.bot_id.clone(), |b| b.name),
         schedule: r.schedule.describe(),
         last_result: last.map(|l| match &l.text {
@@ -3385,9 +3385,9 @@ pub async fn start_routine_run(
 ///
 /// Both built from one [`MessageSender`], so the two cannot name different
 /// sessions. The id rides along because it is the address: the agent answers
-/// with `dray send <id>` rather than paying a `dray ls` to work out who asked.
+/// with `wain send <id>` rather than paying a `wain ls` to work out who asked.
 ///
-/// A sender on another machine is named with it. `dray session send <id>`
+/// A sender on another machine is named with it. `wain session send <id>`
 /// finds that machine where this one holds a token for it.
 fn attribute(prompt: &str, from: Option<&MessageSender>) -> String {
     let Some(MessageSender { session_id, title, machine, bot_id, routine, ask, reply, .. }) = from else {
@@ -3403,15 +3403,15 @@ fn attribute(prompt: &str, from: Option<&MessageSender>) -> String {
     let on = machine.as_deref().map(|m| format!(" on {m}")).unwrap_or_default();
     if *reply == Some(true) {
         return format!(
-            "[reply from the Dray {kind} \"{title}\" ({session_id}){on} to your question, passed back by Dray; it needs no answer]\n\n{prompt}"
+            "[reply from the Wain {kind} \"{title}\" ({session_id}){on} to your question, passed back by Wain; it needs no answer]\n\n{prompt}"
         );
     }
     let asks = if *ask == Some(true) {
-        "; it asks for an answer: end your turn with it, written for that bot, and Dray passes it back"
+        "; it asks for an answer: end your turn with it, written for that bot, and Wain passes it back"
     } else {
         ""
     };
-    format!("[message from the Dray {kind} \"{title}\" ({session_id}){on}{asks}]\n\n{prompt}")
+    format!("[message from the Wain {kind} \"{title}\" ({session_id}){on}{asks}]\n\n{prompt}")
 }
 
 /// Who this message is from, as data the transcript can draw.
@@ -3626,7 +3626,7 @@ mod tests {
         .unwrap()
     }
 
-    /// `dray session model`'s level: a named one the model lacks is refused
+    /// `wain session model`'s level: a named one the model lacks is refused
     /// rather than quietly swapped, and a model switched alone keeps the level
     /// the session ran at only where the new model has it.
     #[test]
@@ -3741,7 +3741,7 @@ mod tests {
         let prompt = attribute("review is done", Some(&from));
 
         assert!(prompt.starts_with(
-            "[message from the Dray session \"Fix the login redirect\" (abc-123)]\n\n"
+            "[message from the Wain session \"Fix the login redirect\" (abc-123)]\n\n"
         ));
         assert!(prompt.ends_with("review is done"));
     }
@@ -3760,7 +3760,7 @@ mod tests {
         };
         assert_eq!(
             attribute("go", Some(&from)),
-            "[message from the Dray session \"Fan out\" (abc-123) on Yogesh's Mac]\n\ngo"
+            "[message from the Wain session \"Fan out\" (abc-123) on Yogesh's Mac]\n\ngo"
         );
     }
 
@@ -3776,7 +3776,7 @@ mod tests {
             routine: None,
             ..Default::default()
         };
-        assert_eq!(attribute("hi", Some(&from)), "[message from the Dray bot \"Ops\" (abc-123)]\n\nhi");
+        assert_eq!(attribute("hi", Some(&from)), "[message from the Wain bot \"Ops\" (abc-123)]\n\nhi");
     }
 
     /// An `--ask` tells the receiver how to answer, and the answer passed back
@@ -3791,11 +3791,11 @@ mod tests {
             ..Default::default()
         };
         assert!(attribute("ci?", Some(&ask))
-            .starts_with("[message from the Dray bot \"Ops\" (abc); it asks for an answer: end your turn with it"));
+            .starts_with("[message from the Wain bot \"Ops\" (abc); it asks for an answer: end your turn with it"));
         let reply = MessageSender { ask: None, reply: Some(true), ..ask };
         assert_eq!(
             attribute("green", Some(&reply)),
-            "[reply from the Dray bot \"Ops\" (abc) to your question, passed back by Dray; it needs no answer]\n\ngreen"
+            "[reply from the Wain bot \"Ops\" (abc) to your question, passed back by Wain; it needs no answer]\n\ngreen"
         );
     }
 
@@ -3810,9 +3810,9 @@ mod tests {
     /// command that cannot fix what they have.
     #[test]
     fn the_mismatch_names_whichever_side_is_behind() {
-        assert!(mismatch(PROTOCOL_VERSION - 1).contains("dray update"));
-        assert!(mismatch(PROTOCOL_VERSION + 1).contains("update the Dray app"));
-        assert!(!mismatch(PROTOCOL_VERSION + 1).contains("dray update"));
+        assert!(mismatch(PROTOCOL_VERSION - 1).contains("wain update"));
+        assert!(mismatch(PROTOCOL_VERSION + 1).contains("update the Wain app"));
+        assert!(!mismatch(PROTOCOL_VERSION + 1).contains("wain update"));
     }
 
     /// CLI 0.9.0 stamps v6 on everything a stable 0.26.0 app can run, and
@@ -3824,10 +3824,10 @@ mod tests {
 
         assert_eq!(refusal(&line(OLDEST_SPOKEN)), None);
         assert_eq!(refusal(&line(PROTOCOL_VERSION)), None);
-        assert!(refusal(&line(OLDEST_SPOKEN - 1)).unwrap().contains("dray update"));
+        assert!(refusal(&line(OLDEST_SPOKEN - 1)).unwrap().contains("wain update"));
         assert!(refusal(&line(PROTOCOL_VERSION + 1))
             .unwrap()
-            .contains("update the Dray app"));
+            .contains("update the Wain app"));
     }
 
     /// Every harness the app can run is reachable by name from the CLI.
@@ -3864,7 +3864,7 @@ mod tests {
     fn socket_dir(name: &str) -> std::path::PathBuf {
         use std::os::unix::fs::DirBuilderExt;
 
-        let dir = std::env::temp_dir().join(format!("dray-sock-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain-sock-{}-{name}", std::process::id()));
         std::fs::remove_dir_all(&dir).ok();
         std::fs::DirBuilder::new().recursive(true).mode(0o700).create(&dir).unwrap();
         dir
@@ -3895,7 +3895,7 @@ mod tests {
     #[tokio::test]
     async fn a_socket_still_in_place_is_left_alone() {
         let dir = socket_dir("kept");
-        let path = dir.join("dray.sock");
+        let path = dir.join("wain.sock");
         let mut socket = Socket::bind(&path).unwrap();
 
         assert!(!socket.heal(&path).await);
@@ -3907,7 +3907,7 @@ mod tests {
     #[tokio::test]
     async fn a_deleted_socket_is_bound_again() {
         let dir = socket_dir("deleted");
-        let path = dir.join("dray.sock");
+        let path = dir.join("wain.sock");
         let mut socket = Socket::bind(&path).unwrap();
 
         std::fs::remove_file(&path).unwrap();
@@ -3918,7 +3918,7 @@ mod tests {
         std::fs::remove_dir_all(&dir).ok();
     }
 
-    /// `rm -rf ~/.dray` takes the directory too, and the rebind brings it back
+    /// `rm -rf ~/.wain` takes the directory too, and the rebind brings it back
     /// private.
     #[cfg(unix)]
     #[tokio::test]
@@ -3926,7 +3926,7 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
 
         let dir = socket_dir("dir-gone");
-        let path = dir.join("dray.sock");
+        let path = dir.join("wain.sock");
         let mut socket = Socket::bind(&path).unwrap();
 
         std::fs::remove_dir_all(&dir).unwrap();
@@ -3948,7 +3948,7 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
 
         let dir = socket_dir("dir-open");
-        let path = dir.join("dray.sock");
+        let path = dir.join("wain.sock");
         let mut socket = Socket::bind(&path).unwrap();
 
         std::fs::remove_dir_all(&dir).unwrap();
@@ -3966,7 +3966,7 @@ mod tests {
     #[tokio::test]
     async fn a_dead_socket_file_in_its_place_is_replaced() {
         let dir = socket_dir("dead");
-        let path = dir.join("dray.sock");
+        let path = dir.join("wain.sock");
         let mut socket = Socket::bind(&path).unwrap();
 
         let stale = dir.join("stale.sock");
@@ -3984,7 +3984,7 @@ mod tests {
     #[tokio::test]
     async fn a_live_socket_in_its_place_is_left_to_its_owner() {
         let dir = socket_dir("live");
-        let path = dir.join("dray.sock");
+        let path = dir.join("wain.sock");
         let mut socket = Socket::bind(&path).unwrap();
 
         let other = Socket::bind(&path).unwrap();

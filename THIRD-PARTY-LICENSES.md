@@ -1,6 +1,6 @@
 # Third-party licences
 
-Other people's work that Dray ships. Each is MIT or Apache-2.0, both of which
+Other people's work that Wain ships. Each is MIT or Apache-2.0, both of which
 ask that the notice travel with the work, so each licence is reproduced in
 full. Ported palettes live in `apps/desktop/src/App.css`.
 
@@ -212,7 +212,7 @@ Nothing else here is Handy's code. The silence trim borrows Handy's idea and
 its onset and padding timings, not its code.
 
 Handy's name, logo, icon and brand assets are excluded from this grant and are
-not used in Dray.
+not used in Wain.
 
 ```
 MIT License
@@ -244,8 +244,8 @@ SOFTWARE.
 
 <https://github.com/zed-industries/zed>
 
-Dray Island on Linux (`apps/island-linux`) draws its panel with GPUI, taken
-from one Zed commit, and the Linux AppImage ships it as `dray-island`. GPUI
+Wain Island on Linux (`apps/island-linux`) draws its panel with GPUI, taken
+from one Zed commit, and the Linux AppImage ships it as `wain-island`. GPUI
 and every Zed crate it pulls in are Apache-2.0; Zed ships no NOTICE file.
 
 ```
@@ -479,7 +479,7 @@ Apache License
 
 <https://www.greptile.com>
 
-A trademark note, not a licence. Dray marks a prompt running a Greptile command
+A trademark note, not a licence. Wain marks a prompt running a Greptile command
 with Greptile Green (`#28e99f`, from <https://www.greptile.com/design>). The
 colour identifies Greptile's own commands and nothing else. It is used with
 their permission. No Greptile artwork is used.

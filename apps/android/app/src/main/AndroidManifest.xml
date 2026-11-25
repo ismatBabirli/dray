@@ -17,14 +17,14 @@
     </queries>
 
     <application
-        android:name=".DrayApplication"
+        android:name=".WainApplication"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
-        android:label="Dray"
+        android:label="Wain"
         android:supportsRtl="true"
         android:networkSecurityConfig="@xml/network_security"
-        android:theme="@style/Theme.Dray">
+        android:theme="@style/Theme.Wain">
 
         <activity
             android:name=".MainActivity"
@@ -40,7 +40,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="dray" android:host="connect" />
+                <data android:scheme="wain" android:host="connect" />
             </intent-filter>
         </activity>
         <provider

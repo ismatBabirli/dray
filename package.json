@@ -6,13 +6,13 @@
   "type": "module",
   "packageManager": "pnpm@11.9.0",
   "scripts": {
-    "app": "pnpm --filter dray run app",
-    "tauri": "pnpm --filter dray run tauri",
-    "web": "pnpm --filter @dray/web run dev",
-    "docs": "pnpm --filter @dray/docs run dev",
-    "build:app": "pnpm --filter dray run build",
-    "build:web": "pnpm --filter @dray/web run build",
-    "test": "pnpm --filter dray run test",
+    "app": "pnpm --filter wain run app",
+    "tauri": "pnpm --filter wain run tauri",
+    "web": "pnpm --filter @wain/web run dev",
+    "docs": "pnpm --filter @wain/docs run dev",
+    "build:app": "pnpm --filter wain run build",
+    "build:web": "pnpm --filter @wain/web run build",
+    "test": "pnpm --filter wain run test",
     "test:affected": "node scripts/test-affected.mjs"
   }
 }

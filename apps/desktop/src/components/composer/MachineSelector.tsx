@@ -19,8 +19,8 @@ import type { Project } from "@/types/events";
 /// on This Mac draws nothing, since no name is what says local. One checkout on
 /// a server is named and disabled: worth saying, with nothing to choose.
 ///
-/// A Dray Cloud machine is never offered: each is one task's own, and
-/// `dray session new --machine cloud` is the only way to start one now.
+/// A Wain Cloud machine is never offered: each is one task's own, and
+/// `wain session new --machine cloud` is the only way to start one now.
 export default function MachineSelector({
   projects,
   value,

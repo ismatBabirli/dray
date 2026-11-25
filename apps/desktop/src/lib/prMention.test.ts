@@ -6,7 +6,7 @@ import type { PrMark } from "@/types/events";
 
 const pr = (number: number, title: string, headRefName = `branch-${number}`): PrMark => ({
   number,
-  url: `https://github.com/monorepo-labs/dray/pull/${number}`,
+  url: `https://github.com/ismatbabirli/wain/pull/${number}`,
   headRefName,
   isDraft: false,
   state: "OPEN",
@@ -31,7 +31,7 @@ const pr = (number: number, title: string, headRefName = `branch-${number}`): Pr
 describe("prIdentifier", () => {
   it("spells a PR the way an issue tag does, so the send resolves it", () => {
     const id = prIdentifier(pr(1349, "Pull requests page"));
-    expect(id).toBe("monorepo-labs/dray#1349");
+    expect(id).toBe("ismatbabirli/wain#1349");
     expect(parseIdentifier(id!)).toBe(id);
   });
 });

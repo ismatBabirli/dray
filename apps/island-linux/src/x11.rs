@@ -330,10 +330,10 @@ pub fn configure(window: u32, x: i32, y: i32, width: i32, height: i32) {
     let _ = conn.flush();
 }
 
-/// Whether Dray's own window is the one in front, which sounds its own
+/// Whether Wain's own window is the one in front, which sounds its own
 /// notice, so the island's chime would double it. Read off the window
 /// manager's `_NET_ACTIVE_WINDOW` and that window's `WM_CLASS`.
-pub fn dray_in_front() -> bool {
+pub fn wain_in_front() -> bool {
     let Some((conn, screen)) = conn() else { return false };
     let root = conn.setup().roots[*screen].root;
     let atom = |name: &[u8]| conn.intern_atom(true, name).ok()?.reply().ok().map(|r| r.atom).filter(|a| *a != 0);
@@ -353,14 +353,14 @@ pub fn dray_in_front() -> bool {
         .and_then(|c| c.reply().ok())
         .map(|r| String::from_utf8_lossy(&r.value).to_lowercase())
         .unwrap_or_default();
-    is_dray_class(&class)
+    is_wain_class(&class)
 }
 
 /// `WM_CLASS` is instance and class, NUL-separated; Tauri names both after
-/// the binary: `dray-app` in a release (tauri.linux-release.conf.json), `dray`
+/// the binary: `wain-app` in a release (tauri.linux-release.conf.json), `wain`
 /// in a dev build and an AppImage from before the rename.
-fn is_dray_class(class: &str) -> bool {
-    class.split('\0').any(|part| matches!(part, "dray-app" | "dray" | "dray dev"))
+fn is_wain_class(class: &str) -> bool {
+    class.split('\0').any(|part| matches!(part, "wain-app" | "wain" | "wain dev"))
 }
 
 /// The window holding the keyboard.
@@ -406,7 +406,7 @@ pub fn give_back(ours: u32, window: u32) {
 pub enum DoneKey {
     /// Esc: the pill put away.
     Dismiss,
-    /// Super+⏎, the Mac's ⌘⏎: the newest opened in Dray.
+    /// Super+⏎, the Mac's ⌘⏎: the newest opened in Wain.
     OpenInApp,
 }
 
@@ -463,14 +463,14 @@ pub fn grab_done_keys(on_key: impl Fn(DoneKey) + Send + 'static) -> Option<DoneK
 mod tests {
     use super::*;
 
-    /// The classes as `dray_in_front` reads them, lowercased: the release's
+    /// The classes as `wain_in_front` reads them, lowercased: the release's
     /// was measured with xprop on the installed .deb.
     #[test]
-    fn knows_every_dray_window_class() {
-        assert!(is_dray_class("dray-app\0dray-app\0"));
-        assert!(is_dray_class("dray\0dray\0"));
-        assert!(is_dray_class("dray dev\0dray dev\0"));
-        assert!(!is_dray_class("firefox\0firefox\0"));
+    fn knows_every_wain_window_class() {
+        assert!(is_wain_class("wain-app\0wain-app\0"));
+        assert!(is_wain_class("wain\0wain\0"));
+        assert!(is_wain_class("wain dev\0wain dev\0"));
+        assert!(!is_wain_class("firefox\0firefox\0"));
     }
 
     #[test]

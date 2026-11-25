@@ -1,11 +1,11 @@
 [package]
-name = "dray"
+name = "wain"
 version = "0.34.2"
 description = "A Tauri App"
 edition = "2021"
 license = "Apache-2.0"
 # Two binaries once the helper exists; `tauri dev` runs `cargo run` bare.
-default-run = "dray"
+default-run = "wain"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,7 +15,7 @@ default-run = "dray"
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "ade_lib"
 # `rlib` alone. Tauri's template adds `staticlib` and `cdylib` for mobile, which
-# Dray never builds — and either one makes cargo drop the hash from this
+# Wain never builds — and either one makes cargo drop the hash from this
 # crate's file names, so two lockfiles building the core into one build dir
 # (apps/gpui depends on it) overwrite each other's `libade_lib.rlib` unseen.
 crate-type = ["rlib"]
@@ -44,9 +44,9 @@ uuid = { version = "1.29", features = ["v4", "v7"] }
 # Generates the TS mirror of the event model; `cargo test` writes ../src/types/.
 ts-rs = { version = "12", features = ["serde-json-impl"] }
 # `kill(pid, 0)`: whether the process named in a worktree lock is still alive,
-# which is what separates a lock Dray may clear from one it must not.
+# which is what separates a lock Wain may clear from one it must not.
 libc = "0.2"
-dray-proto = { path = "../../../crates/dray-proto" }
+wain-proto = { path = "../../../crates/wain-proto" }
 tauri-plugin-dialog = { version = "2", optional = true }
 tauri-plugin-updater = { version = "2", optional = true }
 fff-search = "0.11.0"
@@ -110,7 +110,7 @@ hyper-util = { version = "0.1", features = ["tokio"] }
 # the tree under `reqwest`.
 http-body-util = "0.1"
 tauri-plugin-window-state = { version = "2", optional = true }
-# `dray-serve`'s WebSocket. The server half alone, and no TLS: it binds localhost.
+# `wain-serve`'s WebSocket. The server half alone, and no TLS: it binds localhost.
 tokio-tungstenite = { version = "0.30", optional = true, default-features = false, features = ["handshake"] }
 # The file route's query string. Already in the tree under `reqwest`'s `url`.
 form_urlencoded = { version = "1", optional = true }
@@ -133,7 +133,7 @@ transcribe-cpp = { version = "0.4", default-features = false, features = [
 # Linux loads its backends at runtime, from modules shipped beside a shared
 # libtranscribe (build.rs copies them out). Compiled in, Vulkan would make
 # `libvulkan.so.1` a link-time need of the whole app, so a machine without the
-# loader could not start Dray at all; as a module, a missing loader or driver
+# loader could not start Wain at all; as a module, a missing loader or driver
 # leaves the CPU. And a static build tunes ggml to the *build* machine's CPU,
 # where the modules ship one CPU variant per x86 tier and pick at runtime.
 [target.'cfg(target_os = "linux")'.dependencies]
@@ -160,7 +160,7 @@ transcribe-cpp = { version = "0.4", default-features = false, features = [
 transcribe-cpp = { version = "0.4", default-features = false, optional = true }
 
 # Open in's app icons, read out of each `.exe` and handed over as PNG. The
-# version tauri's menus already build. Not behind `desktop`: `dray-serve`
+# version tauri's menus already build. Not behind `desktop`: `wain-serve`
 # answers the apps list too. See apps/windows.rs.
 [target.'cfg(windows)'.dependencies.png]
 version = "0.18"
@@ -186,7 +186,7 @@ features = [
 # which is not something `cargo check` should need. See cef/cef.rs.
 #
 # `desktop` is the shipped app: Tauri, its plugins and every Mac-only
-# dependency. Off, what is left is the core `dray-serve` runs — which is what
+# dependency. Off, what is left is the core `wain-serve` runs — which is what
 # lets that build on a Linux box with no WebKit, ALSA or cmake. See
 # SERVE-PLAN.md.
 [features]
@@ -211,7 +211,7 @@ desktop = [
   "tokio-tungstenite/connect",
   "tokio-tungstenite/rustls-tls-native-roots",
   "dep:form_urlencoded",
-  # The app's binary is also the Mac's background server (`dray --serve`),
+  # The app's binary is also the Mac's background server (`wain --serve`),
   # which falls back to headless Chromium while the app is closed. See
   # MAC-SERVER-PLAN.md.
   "dep:zip",
@@ -312,30 +312,30 @@ version = "0.3"
 version = "0.6"
 
 [[bin]]
-name = "dray"
+name = "wain"
 path = "src/main.rs"
 required-features = ["desktop"]
 
 # The core over a WebSocket, no Tauri. `required-features` keeps it out of
 # `tauri build`, which builds default features only. See SERVE-PLAN.md.
 [[bin]]
-name = "dray-serve"
-path = "src/bin/dray_serve.rs"
+name = "wain-serve"
+path = "src/bin/wain_serve.rs"
 required-features = ["serve"]
 
 # CEF's renderer, GPU and utility processes run this instead of the app.
-# Copied five times into `Contents/Frameworks/Dray Helper*.app` by the bundle
+# Copied five times into `Contents/Frameworks/Wain Helper*.app` by the bundle
 # step; a single binary, since only the bundle name tells them apart.
 [[bin]]
-name = "dray-helper"
-path = "src/bin/dray_helper.rs"
+name = "wain-helper"
+path = "src/bin/wain_helper.rs"
 required-features = ["cef"]
 
 [dev-dependencies]
 # Paused-clock tests for the engine's idle unload; a real ten-minute sleep is untestable.
 tokio = { version = "1", features = ["test-util"] }
 
-# dray-serve as release-cli.yml ships it (`--profile serve`), apart from
+# wain-serve as release-cli.yml ships it (`--profile serve`), apart from
 # `release` so the app's `tauri build` stays as it was (#1130). Fat LTO at "s"
 # takes it from 44 to 18 MB (29 MB at opt-level 3); serde and memchr at 3 keep
 # list and transcript reads within 0.3 ms of opt-level 3. No `panic = "abort"`:

@@ -1,4 +1,4 @@
-//! `dray server`: what makes a machine a Dray server. `setup`, `service` and
+//! `wain server`: what makes a machine a Wain server. `setup`, `service` and
 //! `serve` are its spellings before, still answered. See apps/desktop/SETUP-PLAN.md.
 
 use std::fs::{File, OpenOptions};
@@ -24,13 +24,13 @@ pub struct Install {
 /// Caddy's split: `run` in this terminal, `start` in the background.
 #[derive(Subcommand)]
 pub enum ServerCommand {
-    /// Install what this machine is missing to run Dray, then start the
+    /// Install what this machine is missing to run Wain, then start the
     /// server in the background.
     Install(Install),
     /// Run the server in the background, surviving logout and reboot. On a
-    /// Mac, only where the Dray app is not installed.
+    /// Mac, only where the Wain app is not installed.
     Start,
-    /// Run the server in this terminal. On a Mac, only where the Dray app is
+    /// Run the server in this terminal. On a Mac, only where the Wain app is
     /// not installed.
     Run(Run),
     /// Stop the server and remove it from the background.
@@ -43,11 +43,11 @@ pub enum ServerCommand {
         #[arg(value_enum)]
         state: OnOff,
     },
-    /// Show a QR code the Dray iPhone app scans to add this server.
+    /// Show a QR code the Wain iPhone app scans to add this server.
     Pair,
     /// Connect Grok, Claude or ChatGPT to this server over MCP, list the
     /// ones connected, or sign one out.
-    #[command(subcommand, hide = !dray_proto::REMOTE_MCP)]
+    #[command(subcommand, hide = !wain_proto::REMOTE_MCP)]
     Assistant(AssistantCommand),
 }
 
@@ -82,8 +82,8 @@ pub fn server(command: ServerCommand) -> Result<(), String> {
 /// Asks the server whose home this is, like [`set_remote_access`]: pairing
 /// lives in that server's memory.
 fn assistant(command: AssistantCommand) -> Result<(), String> {
-    use dray_proto::{AssistantRef, PairAssistant, Request, Response};
-    let endpoint = dray_proto::endpoint().ok_or("could not resolve your home directory")?;
+    use wain_proto::{AssistantRef, PairAssistant, Request, Response};
+    let endpoint = wain_proto::endpoint().ok_or("could not resolve your home directory")?;
     let revoking = matches!(command, AssistantCommand::Revoke { .. });
     let request = match command {
         AssistantCommand::Add { read_only } => {
@@ -113,7 +113,7 @@ fn assistant(command: AssistantCommand) -> Result<(), String> {
                 eprintln!("Signed out.");
             }
             if assistants.is_empty() {
-                println!("No assistants connected. Connect one: dray server assistant add");
+                println!("No assistants connected. Connect one: wain server assistant add");
             }
             for a in assistants {
                 let used = a.last_used.split('T').next().unwrap_or_default().to_string();
@@ -127,11 +127,11 @@ fn assistant(command: AssistantCommand) -> Result<(), String> {
 }
 
 /// Links this machine's server to an org: prints where to approve the code,
-/// then waits while the server polls drayhq.com. The server runs the flow,
+/// then waits while the server polls wainhq.com. The server runs the flow,
 /// so leaving early stops only the waiting.
 pub fn login() -> Result<(), String> {
-    use dray_proto::{Request, Response};
-    let endpoint = dray_proto::endpoint().ok_or("could not resolve your home directory")?;
+    use wain_proto::{Request, Response};
+    let endpoint = wain_proto::endpoint().ok_or("could not resolve your home directory")?;
     let status = || match super::send_to(&endpoint, Request::LinkStatus)? {
         Response::LinkStatus { linked, pending, error } => Ok((linked, pending, error)),
         Response::Error { message } => Err(message),
@@ -169,10 +169,10 @@ pub fn login() -> Result<(), String> {
     Err("The code expired before anyone approved it.".into())
 }
 
-/// Unlinks this machine's server from its org, on drayhq.com too.
+/// Unlinks this machine's server from its org, on wainhq.com too.
 pub fn logout() -> Result<(), String> {
-    use dray_proto::{Request, Response};
-    let endpoint = dray_proto::endpoint().ok_or("could not resolve your home directory")?;
+    use wain_proto::{Request, Response};
+    let endpoint = wain_proto::endpoint().ok_or("could not resolve your home directory")?;
     match super::send_to(&endpoint, Request::Logout)? {
         Response::Unlinked { org, warning } => {
             println!("Unlinked from {}.", org.name);
@@ -190,12 +190,12 @@ pub fn logout() -> Result<(), String> {
 /// modules are the blocks, since a terminal is usually light text on dark.
 fn pair() -> Result<(), String> {
     use qrcode::render::unicode::Dense1x2;
-    let url = tunnel_address()?.ok_or("the server has no public address yet. Turn it on: dray server tunnel on")?;
-    let link = dray_proto::pair_link(&url, &serve_token()?, &dray_proto::machine_name());
+    let url = tunnel_address()?.ok_or("the server has no public address yet. Turn it on: wain server tunnel on")?;
+    let link = wain_proto::pair_link(&url, &serve_token()?, &wain_proto::machine_name());
     let code = qrcode::QrCode::new(link).map_err(|e| e.to_string())?;
     let art = code.render::<Dense1x2>().dark_color(Dense1x2::Light).light_color(Dense1x2::Dark).build();
     println!(
-        "{art}\n\nPoint the iPhone's Camera at this, or scan it from Dray's Add server.\n\n\
+        "{art}\n\nPoint the iPhone's Camera at this, or scan it from Wain's Add server.\n\n\
          {DIM}Anyone holding it can use this server.{RESET}"
     );
     Ok(())
@@ -225,14 +225,14 @@ pub enum OnOff {
 
 #[derive(Args)]
 pub struct Tunnel {
-    /// The port dray-serve listens on.
-    #[arg(long, default_value_t = dray_proto::SERVE_PORT)]
+    /// The port wain-serve listens on.
+    #[arg(long, default_value_t = wain_proto::SERVE_PORT)]
     port: u16,
 }
 
 #[derive(Args)]
 pub struct Run {
-    /// Passed to dray-serve, such as --port.
+    /// Passed to wain-serve, such as --port.
     #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
     args: Vec<String>,
 }
@@ -241,32 +241,32 @@ const LINUX: bool = cfg!(target_os = "linux");
 const MAC: bool = cfg!(target_os = "macos");
 
 /// Whether this machine may run a server of its own: Linux always, a Mac only
-/// where no Dray app runs one on the same home. A `DRAY_HOME` of its own is
+/// where no Wain app runs one on the same home. A `WAIN_HOME` of its own is
 /// the way round that `serve.lock`'s refusal already names.
 fn may_serve() -> Result<(), String> {
     if app_runs_this_home() {
-        return Err("the Dray app runs this Mac's server".into());
+        return Err("the Wain app runs this Mac's server".into());
     }
     Ok(())
 }
 
-/// Whether the Dray app owns this Mac's server and CLI for the home this runs
-/// on. A server on a `DRAY_HOME` of its own is set up and updated apart from it.
+/// Whether the Wain app owns this Mac's server and CLI for the home this runs
+/// on. A server on a `WAIN_HOME` of its own is set up and updated apart from it.
 pub(crate) fn app_runs_this_home() -> bool {
     !own_home() && app_on_this_mac()
 }
 
-/// Whether the Dray app keeps this machine's `dray` for the home this runs on,
+/// Whether the Wain app keeps this machine's `wain` for the home this runs on,
 /// rewriting it on every launch.
 pub(crate) fn app_updates_this_cli() -> bool {
     !own_home() && app_ships_this_cli()
 }
 
 fn own_home() -> bool {
-    std::env::var_os("DRAY_HOME").is_some_and(|v| !v.is_empty())
+    std::env::var_os("WAIN_HOME").is_some_and(|v| !v.is_empty())
 }
 
-/// Whether a Dray app here copies its own `dray` to ~/.local/bin: any Mac app,
+/// Whether a Wain app here copies its own `wain` to ~/.local/bin: any Mac app,
 /// and on Linux the AppImage or `.deb` binary the app records on launch
 /// (cli.rs), on Windows its `.exe`, while that file is still there. Its server is the app's child on Linux, so this says
 /// nothing about who serves. install.sh asks the same.
@@ -291,7 +291,7 @@ pub(crate) fn app_ships_this_cli() -> bool {
 
 /// Written by the Linux and Windows app on launch, naming the AppImage, `.deb`
 /// binary or `.exe` it runs from.
-const APPIMAGE_RECORD: &str = ".local/share/dray/appimage";
+const APPIMAGE_RECORD: &str = ".local/share/wain/appimage";
 
 /// The app's login agent, which every launch installs, or its bundle, for one
 /// installed and never opened. install.sh asks the same three paths.
@@ -301,9 +301,9 @@ pub(crate) fn app_on_this_mac() -> bool {
     }
     let home = std::env::home_dir().unwrap_or_default();
     [
-        home.join("Library/LaunchAgents/com.yogesh.dray.server.plist"),
-        PathBuf::from("/Applications/Dray.app"),
-        home.join("Applications/Dray.app"),
+        home.join("Library/LaunchAgents/com.wainhq.wain.server.plist"),
+        PathBuf::from("/Applications/Wain.app"),
+        home.join("Applications/Wain.app"),
     ]
     .iter()
     .any(|p| p.exists())
@@ -324,8 +324,8 @@ fn tools() -> Vec<Tool> {
         Tool { id: "git", name: "git", bin: "git" },
         Tool { id: "gh", name: "GitHub CLI", bin: "gh" },
     ];
-    tools.extend(dray_proto::AGENTS.iter().map(|a| Tool { id: a.id, name: a.name, bin: a.bin }));
-    // A server's `dray browser` downloads its own Chromium; what it cannot
+    tools.extend(wain_proto::AGENTS.iter().map(|a| Tool { id: a.id, name: a.name, bin: a.bin }));
+    // A server's `wain browser` downloads its own Chromium; what it cannot
     // fetch is the system libraries that Chromium links against, nor ffmpeg
     // for `record`.
     if LINUX {
@@ -434,7 +434,7 @@ pub fn setup(args: Install) -> Result<(), String> {
         return Err(format!("unknown tool {bad}; pick from {}", names.join(", ")));
     }
 
-    println!("\x1b[90m┌\x1b[0m  Dray setup");
+    println!("\x1b[90m┌\x1b[0m  Wain setup");
     let (found, missing): (Vec<&Tool>, Vec<&Tool>) = all.iter().partition(|t| present(t));
     if !found.is_empty() {
         let names: Vec<_> = found.iter().map(|t| t.name).collect();
@@ -448,9 +448,9 @@ pub fn setup(args: Install) -> Result<(), String> {
         let items: Vec<(String, bool)> = missing
             .iter()
             .map(|t| match t.id {
-                "git" => (format!("git {DIM}(Dray needs it){RESET}"), true),
-                "browser" => (format!("Browser for agents {DIM}(system libraries for dray browser){RESET}"), false),
-                "ffmpeg" => (format!("ffmpeg {DIM}(dray browser record){RESET}"), false),
+                "git" => (format!("git {DIM}(Wain needs it){RESET}"), true),
+                "browser" => (format!("Browser for agents {DIM}(system libraries for wain browser){RESET}"), false),
+                "ffmpeg" => (format!("ffmpeg {DIM}(wain browser record){RESET}"), false),
                 _ => (t.name.to_string(), false),
             })
             .collect();
@@ -459,7 +459,7 @@ pub fn setup(args: Install) -> Result<(), String> {
     } else {
         let names: Vec<_> = missing.iter().map(|t| t.id).collect();
         warn(&format!(
-            "Not installed: {}\n{BAR}  {DIM}No terminal to ask in. Run dray server install, or name them with --tools{RESET}",
+            "Not installed: {}\n{BAR}  {DIM}No terminal to ask in. Run wain server install, or name them with --tools{RESET}",
             names.join(", ")
         ));
         Vec::new()
@@ -470,7 +470,7 @@ pub fn setup(args: Install) -> Result<(), String> {
         println!("{BAR}\n\x1b[36m●\x1b[0m  Installing {}", tool.name);
         match install(tool, tty.as_ref()) {
             Ok(()) if present(tool) => done(&format!("{} installed", tool.name), ""),
-            Ok(()) => warn(&format!("{} installed, but not where dray can see it yet", tool.name)),
+            Ok(()) => warn(&format!("{} installed, but not where wain can see it yet", tool.name)),
             Err(Manual(command)) => todo.push(command),
             Err(Failed(why)) => warn(&format!("{} did not install: {why}", tool.name)),
         }
@@ -485,7 +485,7 @@ pub fn setup(args: Install) -> Result<(), String> {
     }
 
     if may_serve().is_err() {
-        println!("\x1b[90m└\x1b[0m  Done. The Dray app runs this Mac's server.");
+        println!("\x1b[90m└\x1b[0m  Done. The Wain app runs this Mac's server.");
         return Ok(());
     }
     match service_start() {
@@ -497,7 +497,7 @@ pub fn setup(args: Install) -> Result<(), String> {
             return Err("the server is not running".into());
         }
     }
-    println!("\x1b[90m└\x1b[0m  In the Dray app, Add server and paste:\n\n   {}\n{}", ssh_line(), private_note());
+    println!("\x1b[90m└\x1b[0m  In the Wain app, Add server and paste:\n\n   {}\n{}", ssh_line(), private_note());
     // The app reaches a server over SSH, which a Mac ships switched off.
     if MAC && std::env::var_os("SSH_CONNECTION").is_none() {
         println!("   {DIM}Turn on Remote Login in System Settings, General, Sharing, for the app to reach this Mac.{RESET}\n");
@@ -538,7 +538,7 @@ fn install(tool: &Tool, tty: Option<&File>) -> Result<(), InstallError> {
         "gh" if LINUX => GH_LINUX.to_string(),
         "gh" if find("brew").is_some() => "brew install gh".to_string(),
         "gh" => return Err(Failed("get it from https://cli.github.com".into())),
-        id => dray_proto::AGENTS.iter().find(|a| a.id == id).map(|a| a.install.to_string()).unwrap_or_default(),
+        id => wain_proto::AGENTS.iter().find(|a| a.id == id).map(|a| a.install.to_string()).unwrap_or_default(),
     };
     sh(&script, stdin())
 }
@@ -558,7 +558,7 @@ fn install_git(stdin: Stdio) -> Result<(), InstallError> {
     if !LINUX {
         return Err(Manual("xcode-select --install".into()));
     }
-    let Some((_, cmd)) = dray_proto::GIT_INSTALLS.iter().find(|(pm, _)| find(pm).is_some()) else {
+    let Some((_, cmd)) = wain_proto::GIT_INSTALLS.iter().find(|(pm, _)| find(pm).is_some()) else {
         return Err(Failed("no package manager this knows".into()));
     };
     as_admin(cmd, stdin)
@@ -602,7 +602,7 @@ fn logins_to_do() -> Vec<String> {
             .status().is_ok_and(|s| s.success())
     };
     let mut todo = Vec::new();
-    for agent in &dray_proto::AGENTS {
+    for agent in &wain_proto::AGENTS {
         let Some(bin) = find(agent.bin) else { continue };
         let probe: &[&str] = match agent.id {
             "claude_code" => &["auth", "status"],
@@ -676,7 +676,7 @@ fn output(cmd: &str, args: &[&str]) -> Option<String> {
 
 pub fn serve(args: Run) -> Result<(), String> {
     may_serve()?;
-    let bin = beside("dray-serve")?;
+    let bin = beside("wain-serve")?;
     #[cfg(unix)]
     {
         let err = Command::new(&bin).args(args.args).exec();
@@ -694,7 +694,7 @@ pub fn serve(args: Run) -> Result<(), String> {
 }
 
 fn beside(name: &str) -> Result<PathBuf, String> {
-    let exe = std::env::current_exe().map_err(|e| format!("could not find the running dray binary: {e}"))?;
+    let exe = std::env::current_exe().map_err(|e| format!("could not find the running wain binary: {e}"))?;
     let bin = exe.with_file_name(format!("{name}{}", std::env::consts::EXE_SUFFIX));
     if bin.is_file() {
         Ok(bin)
@@ -758,8 +758,8 @@ pub fn service(command: ServiceCommand) -> Result<(), String> {
     Ok(())
 }
 
-const UNIT: &str = "dray.service";
-const TUNNEL_UNIT: &str = "dray-tunnel.service";
+const UNIT: &str = "wain.service";
+const TUNNEL_UNIT: &str = "wain-tunnel.service";
 
 fn unit_path() -> Result<PathBuf, String> {
     unit_file(UNIT)
@@ -813,7 +813,7 @@ fn tunnel_on() -> Result<(), String> {
         }
         std::thread::sleep(std::time::Duration::from_millis(500));
     }
-    Err("the server has no public address after 2 minutes. See why: dray server status".into())
+    Err("the server has no public address after 2 minutes. See why: wain server status".into())
 }
 
 fn tunnel_off() -> Result<(), String> {
@@ -821,20 +821,20 @@ fn tunnel_off() -> Result<(), String> {
     set_remote_access(false)
 }
 
-/// Asks the server whose home this is — `DRAY_HOME`'s socket, the same home
-/// `tunnel-url` and `serve-token` are read from — unless `DRAY_ENDPOINT` names
+/// Asks the server whose home this is — `WAIN_HOME`'s socket, the same home
+/// `tunnel-url` and `serve-token` are read from — unless `WAIN_ENDPOINT` names
 /// one outright.
 fn set_remote_access(on: bool) -> Result<(), String> {
-    let endpoint = dray_proto::endpoint().ok_or("could not resolve your home directory")?;
-    let request = dray_proto::Request::SetRemoteAccess(dray_proto::SetRemoteAccess { on });
+    let endpoint = wain_proto::endpoint().ok_or("could not resolve your home directory")?;
+    let request = wain_proto::Request::SetRemoteAccess(wain_proto::SetRemoteAccess { on });
     match super::send_to(&endpoint, request)? {
-        dray_proto::Response::RemoteAccess { .. } => Ok(()),
-        dray_proto::Response::Error { message } => Err(message),
+        wain_proto::Response::RemoteAccess { .. } => Ok(()),
+        wain_proto::Response::Error { message } => Err(message),
         other => Err(format!("unexpected answer from the server: {other:?}")),
     }
 }
 
-/// Takes away the `dray-tunnel.service` an older CLI wrote to run
+/// Takes away the `wain-tunnel.service` an older CLI wrote to run
 /// cloudflared, if there is one. The server runs the tunnel itself now.
 fn remove_tunnel_unit() -> Result<(), String> {
     if MAC {
@@ -856,27 +856,27 @@ fn remove_tunnel_unit() -> Result<(), String> {
     Ok(())
 }
 
-/// The Dray directory, `DRAY_HOME` where set, as the server reads it.
-fn dray_home() -> Result<PathBuf, String> {
-    std::env::var_os("DRAY_HOME")
+/// The Wain directory, `WAIN_HOME` where set, as the server reads it.
+fn wain_home() -> Result<PathBuf, String> {
+    std::env::var_os("WAIN_HOME")
         .filter(|v| !v.is_empty())
         .map(PathBuf::from)
-        .or_else(|| std::env::home_dir().map(|h| h.join(".dray")))
+        .or_else(|| std::env::home_dir().map(|h| h.join(".wain")))
         .ok_or_else(|| "could not resolve your home directory".into())
 }
 
 /// The server's public address, while Remote access is on.
 fn tunnel_address() -> Result<Option<String>, String> {
-    let file = dray_home()?.join(dray_proto::TUNNEL_URL_FILE);
+    let file = wain_home()?.join(wain_proto::TUNNEL_URL_FILE);
     Ok(std::fs::read_to_string(file).ok().map(|u| u.trim().to_string()).filter(|u| !u.is_empty()))
 }
 
 fn serve_token() -> Result<String, String> {
-    std::fs::read_to_string(dray_home()?.join("serve-token"))
+    std::fs::read_to_string(wain_home()?.join("serve-token"))
         .ok()
         .map(|t| t.trim().to_string())
         .filter(|t| !t.is_empty())
-        .ok_or_else(|| "the server has no token yet; start it first: dray server start".into())
+        .ok_or_else(|| "the server has no token yet; start it first: wain server start".into())
 }
 
 /// What the reader reads off a terminal: the address, and the line Add server
@@ -889,14 +889,14 @@ fn connect_text(url: &str) -> Result<String, String> {
         return Ok(format!("Tunnel up: {wss}"));
     }
     Ok(format!(
-        "Tunnel up: {wss}\n\nIn the Dray app, Settings, Servers, Add server, Use an address and token, \
+        "Tunnel up: {wss}\n\nIn the Wain app, Settings, Servers, Add server, Use an address and token, \
          and paste this into Address:\n\n   {wss} {}\n\n{DIM}Anyone holding that line can use this server. \
          The address stays the same across restarts.{RESET}",
         serve_token()?
     ))
 }
 
-/// `dray tunnel`, which a `dray-tunnel.service` an older CLI wrote still
+/// `wain tunnel`, which a `wain-tunnel.service` an older CLI wrote still
 /// runs: asks the server to serve itself at its public address and exits.
 /// Hidden from `--help`.
 pub fn tunnel(_: Tunnel) -> Result<(), String> {
@@ -918,15 +918,15 @@ fn service_start() -> Result<String, String> {
     }
     if !systemctl(true, &["show-environment"]) {
         return Err("No systemd user session here, so nothing can keep the server running. \
-                    Start it yourself under tmux or nohup: dray server run"
+                    Start it yourself under tmux or nohup: wain server run"
             .into());
     }
-    let serve = beside("dray-serve")?;
+    let serve = beside("wain-serve")?;
     // Agents run in the server's cgroup, being its children, so under the
     // default `OOMPolicy=stop` the kernel killing one agent's compiler stopped
     // the server and every session (#708). `continue` costs that one process.
     let unit = format!(
-        "[Unit]\nDescription=Dray server\n\n[Service]\nExecStart=\"{}\"\nEnvironment=\"PATH={}\"\n\
+        "[Unit]\nDescription=Wain server\n\n[Service]\nExecStart=\"{}\"\nEnvironment=\"PATH={}\"\n\
          Restart=on-failure\nRestartSec=2\nOOMPolicy=continue\n\n[Install]\nWantedBy=default.target\n",
         unit_escape(&serve.display().to_string()),
         unit_escape(&unit_env_path(&serve)?),
@@ -941,10 +941,10 @@ fn service_start() -> Result<String, String> {
     // answered success by then.
     std::thread::sleep(std::time::Duration::from_millis(1500));
     if !systemctl(true, &["is-active", UNIT]) {
-        return Err("The server did not stay up. See why: journalctl --user -u dray -n 20".into());
+        return Err("The server did not stay up. See why: journalctl --user -u wain -n 20".into());
     }
 
-    let mut note = String::from("dray server status");
+    let mut note = String::from("wain server status");
     if !linger() {
         let user = output("id", &["-un"]).unwrap_or_default();
         note += &format!(
@@ -959,13 +959,13 @@ fn service_start() -> Result<String, String> {
 
 fn already_running() -> String {
     format!(
-        "\n{BAR}  It was already running. A newer dray-serve takes over on restart, \
+        "\n{BAR}  It was already running. A newer wain-serve takes over on restart, \
          which stops running agents: {}",
         restart_command()
     )
 }
 
-/// How the reader restarts the background server onto the `dray-serve` now on
+/// How the reader restarts the background server onto the `wain-serve` now on
 /// disk, if one is installed.
 pub fn installed_restart() -> Option<String> {
     let installed = if MAC { agent_plist_path() } else { unit_path() }.is_ok_and(|p| p.exists());
@@ -973,13 +973,13 @@ pub fn installed_restart() -> Option<String> {
 }
 
 /// On a Mac, a reload rather than `kickstart -k`, which restarts the job as
-/// loaded and so would miss a plist `dray server start` rewrote since.
+/// loaded and so would miss a plist `wain server start` rewrote since.
 fn restart_command() -> String {
     if MAC {
         let plist = agent_plist_path().map(|p| sh_quote(&p.display().to_string())).unwrap_or_default();
         format!("launchctl bootout {} && launchctl bootstrap {} {plist}", agent_target(), agent_domain())
     } else {
-        "systemctl --user restart dray".into()
+        "systemctl --user restart wain".into()
     }
 }
 
@@ -990,9 +990,9 @@ fn sh_quote(text: &str) -> String {
 }
 
 /// A Mac's background server: a LaunchAgent under a label of its own, so it
-/// never touches the app's `com.yogesh.dray.server`. Modelled on the app's
+/// never touches the app's `com.wainhq.wain.server`. Modelled on the app's
 /// launchd.rs.
-const AGENT_LABEL: &str = "com.yogesh.dray-serve";
+const AGENT_LABEL: &str = "com.wainhq.wain-serve";
 
 fn agent_plist_path() -> Result<PathBuf, String> {
     let home = std::env::home_dir().ok_or("could not resolve your home directory")?;
@@ -1032,7 +1032,7 @@ fn xml_escape(text: &str) -> String {
 
 /// `KeepAlive` on a failed exit alone, systemd's `Restart=on-failure`.
 /// `Interactive` for the app's reason: agents run builds under it. launchd
-/// starts it with an environment of its own, so `PATH` and `DRAY_HOME` ride
+/// starts it with an environment of its own, so `PATH` and `WAIN_HOME` ride
 /// along.
 fn agent_plist(serve: &Path, log: &Path, env: &[(&str, String)]) -> String {
     let pairs: String = env.iter().map(|(k, v)| format!("<key>{k}</key><string>{}</string>", xml_escape(v))).collect();
@@ -1063,9 +1063,9 @@ fn agent_plist(serve: &Path, log: &Path, env: &[(&str, String)]) -> String {
 /// automatic login.
 fn agent_start() -> Result<String, String> {
     may_serve()?;
-    let serve = beside("dray-serve")?;
+    let serve = beside("wain-serve")?;
     // Absolute, since launchd resolves the job's paths from `/`, not from here.
-    let home = std::path::absolute(dray_home()?).map_err(|e| format!("could not resolve DRAY_HOME: {e}"))?;
+    let home = std::path::absolute(wain_home()?).map_err(|e| format!("could not resolve WAIN_HOME: {e}"))?;
     // 0700, which the server's orchestration socket insists on. launchd opens
     // the log in it before the server could make it.
     let mut dir = std::fs::DirBuilder::new();
@@ -1076,8 +1076,8 @@ fn agent_start() -> Result<String, String> {
         .map_err(|e| format!("could not create {}: {e}", home.display()))?;
     let log = home.join("server.log");
     let mut env = vec![("PATH", unit_env_path(&serve)?)];
-    if std::env::var_os("DRAY_HOME").is_some_and(|v| !v.is_empty()) {
-        env.push(("DRAY_HOME", home.display().to_string()));
+    if std::env::var_os("WAIN_HOME").is_some_and(|v| !v.is_empty()) {
+        env.push(("WAIN_HOME", home.display().to_string()));
     }
     let path = agent_plist_path()?;
     write_unit(&path, &agent_plist(&serve, &log, &env))?;
@@ -1088,7 +1088,7 @@ fn agent_start() -> Result<String, String> {
         if !ok {
             return Err(format!(
                 "launchd would not start the server: {said}\n{BAR}  It runs only while you are logged in at \
-                 this Mac. Log in there or turn on automatic login, or run it yourself under tmux: dray server run"
+                 this Mac. Log in there or turn on automatic login, or run it yourself under tmux: wain server run"
             ));
         }
     }
@@ -1097,14 +1097,14 @@ fn agent_start() -> Result<String, String> {
     if agent_pid().is_none() {
         return Err(format!("The server did not stay up. See why: tail -n 20 {}", log.display()));
     }
-    let mut note = String::from("dray server status");
+    let mut note = String::from("wain server status");
     if was_running {
         note += &already_running();
     }
     Ok(note)
 }
 
-/// `dray server` on a Mac. Uninstall is let through with the app present:
+/// `wain server` on a Mac. Uninstall is let through with the app present:
 /// it is how a server set up before the app arrived hands over to it.
 fn agent_service(command: ServiceCommand) -> Result<(), String> {
     match command {
@@ -1115,7 +1115,7 @@ fn agent_service(command: ServiceCommand) -> Result<(), String> {
         ServiceCommand::Status => {
             may_serve()?;
             let pid = agent_pid().ok_or("the server is not running")?;
-            println!("The server is running, pid {pid}. Log: {}", dray_home()?.join("server.log").display());
+            println!("The server is running, pid {pid}. Log: {}", wain_home()?.join("server.log").display());
             if let Some(url) = tunnel_address()? {
                 println!("\n{}", connect_text(&url)?);
             }
@@ -1243,7 +1243,7 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
         let script = super::browser_script();
         assert!(!script.contains('\''), "as_admin wraps it in single quotes");
-        let dir = std::env::temp_dir().join(format!("dray-apt-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("wain-apt-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let log = dir.join("log");
         let stub = |name: &str, body: &str| {

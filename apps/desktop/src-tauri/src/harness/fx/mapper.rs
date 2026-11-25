@@ -1,4 +1,4 @@
-//! fx's ACP vocabulary onto Dray's.
+//! fx's ACP vocabulary onto Wain's.
 //!
 //! Three things are synthesized rather than read, and each is noted where it
 //! is minted. fx sends no turn-started line — the turn opens when the prompt
@@ -42,7 +42,7 @@ fn is_fx_diagnostic(text: &str) -> bool {
 
 /// Per-session state the mapping needs across lines.
 pub struct Mapper {
-    /// Dray's own id, never fx's. Every event the frontend routes is keyed on
+    /// Wain's own id, never fx's. Every event the frontend routes is keyed on
     /// this, and the two are only joined on the index entry.
     session_id: String,
     seq: Arc<AtomicU64>,
@@ -72,7 +72,7 @@ pub struct Mapper {
     /// Calls that opened a subagent run, so the closing update can close it —
     /// a `tool_call_update` names an id and nothing else.
     ///
-    /// The run is Dray's, not fx's: nothing about a child streams over ACP, so
+    /// The run is Wain's, not fx's: nothing about a child streams over ACP, so
     /// the spawning call *is* the whole account and the panel row holds only
     /// what that call already said. Filed anyway, since a session that
     /// delegated six times otherwise reports none of them; the chat draws the
@@ -350,7 +350,7 @@ impl Mapper {
                 }))]
             }
 
-            // fx's own title is dropped: Dray titles fx sessions itself.
+            // fx's own title is dropped: Wain titles fx sessions itself.
             SessionUpdate::SessionInfoUpdate { meta } => match meta.fx.model_response_recovery {
                 Some(Some(recovery)) => self.recovery(recovery),
                 // The retry is over and the request is going out. Deltas never
@@ -619,7 +619,7 @@ impl Mapper {
     }
 }
 
-/// ACP's kind onto Dray's, which is what lets a tool fx renames tomorrow still
+/// ACP's kind onto Wain's, which is what lets a tool fx renames tomorrow still
 /// draw as what it is.
 ///
 /// The name is consulted for the two calls ACP's kinds get wrong, and each is
@@ -767,7 +767,7 @@ fn unescape(body: &str) -> Option<String> {
 }
 
 // ponytail: prefix sniff on fx ≤0.0.14's private blob shape, still reached by
-// a shell that printed nothing there; drop it once Dray requires fx 0.0.15.
+// a shell that printed nothing there; drop it once Wain requires fx 0.0.15.
 fn is_replay_blob(text: &str) -> bool {
     text.starts_with("{\"session_id\":") && text.contains("\"backend\":")
 }
@@ -1397,7 +1397,7 @@ mod tests {
     }
 
     /// A subagent's report, which is all fx says about the run. Both strings are
-    /// real, out of `~/.dray/sessions`: the second is what fx's 200-character
+    /// real, out of `~/.wain/sessions`: the second is what fx's 200-character
     /// cap does to the first kind, and it is the one that has to work — an
     /// envelope short enough to parse is an envelope with nothing much in it.
     #[test]

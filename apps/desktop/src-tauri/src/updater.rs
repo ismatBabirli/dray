@@ -16,8 +16,8 @@ use ts_rs::TS;
 
 use crate::analytics;
 
-const STABLE_MANIFEST: &str = "https://monorepo-labs.github.io/dray/stable.json";
-const BETA_MANIFEST: &str = "https://monorepo-labs.github.io/dray/beta.json";
+const STABLE_MANIFEST: &str = "https://ismatbabirli.github.io/wain/stable.json";
+const BETA_MANIFEST: &str = "https://ismatbabirli.github.io/wain/beta.json";
 
 /// The app menu's "Check for Updates…" item.
 pub const CHECK_UPDATE_ID: &str = "check_update";
@@ -274,7 +274,7 @@ async fn install(app: AppHandle) -> Result<(), InstallError> {
     };
 
     // Windows: the plugin runs the installer and exits inside `install`. NSIS
-    // stops a running `dray-app.exe` by name and msiexec does not, so the
+    // stops a running `wain-app.exe` by name and msiexec does not, so the
     // server child would hold the exe open: a reboot prompt, or the old binary
     // back at relaunch. Stopped first, and started again if nothing ran.
     #[cfg(windows)]
@@ -374,7 +374,7 @@ fn live_path(exe: std::path::PathBuf) -> std::path::PathBuf {
 
 /// The `.app` an executable sits in, or `None` for a bare binary.
 ///
-/// `…/Dray.app/Contents/MacOS/dray` — the fourth ancestor. Counting it wrong
+/// `…/Wain.app/Contents/MacOS/wain` — the fourth ancestor. Counting it wrong
 /// costs no error, it just falls through to spawning the executable, so this is
 /// pinned rather than left to be read off the call site.
 #[cfg(target_os = "macos")]
@@ -407,8 +407,8 @@ mod live_path_tests {
     #[test]
     fn names_the_path_a_package_update_replaced() {
         let p = |s: &str| PathBuf::from(s);
-        assert_eq!(live_path(p("/usr/bin/dray-app (deleted)")), p("/usr/bin/dray-app"));
-        assert_eq!(live_path(p("/usr/bin/dray-app")), p("/usr/bin/dray-app"));
+        assert_eq!(live_path(p("/usr/bin/wain-app (deleted)")), p("/usr/bin/wain-app"));
+        assert_eq!(live_path(p("/usr/bin/wain-app")), p("/usr/bin/wain-app"));
     }
 }
 
@@ -438,8 +438,8 @@ mod tests {
     #[test]
     fn finds_the_bundle_an_executable_sits_in() {
         assert_eq!(
-            bundle_of(Path::new("/Applications/Dray.app/Contents/MacOS/dray")),
-            Some(Path::new("/Applications/Dray.app"))
+            bundle_of(Path::new("/Applications/Wain.app/Contents/MacOS/wain")),
+            Some(Path::new("/Applications/Wain.app"))
         );
     }
 
@@ -462,8 +462,8 @@ mod tests {
     #[test]
     fn a_bare_binary_has_no_bundle() {
         // What `pnpm tauri dev` runs, and what the `open` branch must not take.
-        assert_eq!(bundle_of(Path::new("/x/target/debug/dray")), None);
+        assert_eq!(bundle_of(Path::new("/x/target/debug/wain")), None);
         // Deep enough to have a fourth ancestor, but it is not a bundle.
-        assert_eq!(bundle_of(Path::new("/a/b/c/d/dray")), None);
+        assert_eq!(bundle_of(Path::new("/a/b/c/d/wain")), None);
     }
 }

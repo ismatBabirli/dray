@@ -16,14 +16,14 @@
 <plist version="1.0">
   <dict>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Dray transcribes what you say into the composer. Audio is processed on this Mac and never leaves it.</string>
+    <string>Wain transcribes what you say into the composer. Audio is processed on this Mac and never leaves it.</string>
     <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>Websites in Dray's browser use Bluetooth to sign in with a passkey on your phone or tablet.</string>
+    <string>Websites in Wain's browser use Bluetooth to sign in with a passkey on your phone or tablet.</string>
     <key>NSCameraUsageDescription</key>
-    <string>Websites in Dray's browser may ask to use your camera.</string>
+    <string>Websites in Wain's browser may ask to use your camera.</string>
     <key>NSLocationUsageDescription</key>
-    <string>Websites in Dray's browser may ask for your location.</string>
+    <string>Websites in Wain's browser may ask for your location.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Websites in Dray's browser may ask for your location.</string>
+    <string>Websites in Wain's browser may ask for your location.</string>
   </dict>
 </plist>

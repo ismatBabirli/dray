@@ -451,7 +451,7 @@ pub async fn answer_host(cmd: &str, args: &serde_json::Value) -> Option<Result<s
         // An Island recording found here is one the Island lost — it starts only
         // when idle, so a restarted Island would otherwise be locked out for good.
         if !owns && state.recording.lock().await.is_some() {
-            return Some(Err("Dray is already dictating.".into()));
+            return Some(Err("Wain is already dictating.".into()));
         }
         let started = open_recorder(&state, true).await;
         // A refused start replaced nothing, so a lost recording it found is
@@ -467,13 +467,13 @@ pub async fn answer_host(cmd: &str, args: &serde_json::Value) -> Option<Result<s
         // sleep, and the Island's interrupted words are still the Island's.
         "stop_transcription" => match take_interrupted(&state, true).await {
             Some(outcome) => json(outcome),
-            None if !owns => Err("Dictation moved to Dray's window.".into()),
+            None if !owns => Err("Dictation moved to Wain's window.".into()),
             None => {
                 HOST_OWNS.store(false, SeqCst);
                 finish_recording(&state, true, via).await.and_then(json)
             }
         },
-        "cut_transcription" if !owns => Err("Dictation moved to Dray's window.".into()),
+        "cut_transcription" if !owns => Err("Dictation moved to Wain's window.".into()),
         "cut_transcription" => cut_transcription(&state, via).await.and_then(json),
         "transcription_level" if !owns => json(0.0),
         "transcription_level" => transcription_level(state).await.and_then(json),
@@ -872,7 +872,7 @@ async fn watch_logind(app: &AppHandle) -> zbus::Result<()> {
     let mut signals = logind.receive_signal("PrepareForSleep").await?;
     // The lock is a file descriptor: held while open, released by dropping it.
     let inhibit = || async {
-        let args = ("sleep", "Dray", "Closing the microphone before sleep", "delay");
+        let args = ("sleep", "Wain", "Closing the microphone before sleep", "delay");
         match logind.call::<_, _, zbus::zvariant::OwnedFd>("Inhibit", &args).await {
             Ok(fd) => Some(fd),
             Err(e) => {
@@ -920,7 +920,7 @@ mod bench {
     async fn stop_to_text() {
         let clip = std::env::var("DICT_CLIP").expect("DICT_CLIP names a 16kHz mono WAV");
         let model = std::env::var("DICT_MODEL").unwrap_or_else(|_| {
-            format!("{}/.dray/models/parakeet-unified-en-0.6b.gguf", std::env::var("HOME").unwrap())
+            format!("{}/.wain/models/parakeet-unified-en-0.6b.gguf", std::env::var("HOME").unwrap())
         });
         let clean = recordings::decode(&std::fs::read(&clip).unwrap()).unwrap();
 
@@ -972,7 +972,7 @@ mod bench {
     /// The live decode end to end: the clip played into a capture at real-time
     /// pace, as 48kHz stereo with noise, then a stop. Prints stop-to-text.
     /// Takes the clip's length to run. Catalog model `DICT_MODEL_ID`, default
-    /// Parakeet, read from `~/.dray/models`.
+    /// Parakeet, read from `~/.wain/models`.
     #[tokio::test(flavor = "multi_thread")]
     #[ignore]
     async fn live_stop_to_text() {

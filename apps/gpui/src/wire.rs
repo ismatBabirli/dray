@@ -12,8 +12,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use dray_core::machines::admit_with;
-use dray_core::serve::{PORT_FILE, PROTOCOL};
+use wain_core::machines::admit_with;
+use wain_core::serve::{PORT_FILE, PROTOCOL};
 use futures::channel::mpsc as fmpsc;
 use futures::{SinkExt, StreamExt};
 use serde_json::{Value, json};
@@ -52,13 +52,13 @@ impl Wire {
     pub fn start() -> (Wire, fmpsc::UnboundedReceiver<Signal>) {
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(2)
-            .thread_name("dray-wire")
+            .thread_name("wain-wire")
             .enable_all()
             .build()
             .expect("tokio runtime");
         let handle = runtime.handle().clone();
         std::thread::Builder::new()
-            .name("dray-wire".into())
+            .name("wain-wire".into())
             .spawn(move || runtime.block_on(std::future::pending::<()>()))
             .expect("wire thread");
 
@@ -110,7 +110,7 @@ impl Inner {
 /// Where this Mac's server listens and its token, read again on every connect
 /// since a restart may pick a new port.
 async fn local_address() -> Result<(String, String), String> {
-    let home = dray_core::store::get_home_app_dir().await.map_err(|e| e.to_string())?;
+    let home = wain_core::store::get_home_app_dir().await.map_err(|e| e.to_string())?;
     let starting = || "The server on this Mac is starting.".to_string();
     let port_file = tokio::fs::read_to_string(home.join(PORT_FILE)).await.map_err(|_| starting())?;
     let port: u16 = port_file.lines().next().and_then(|p| p.trim().parse().ok()).ok_or_else(starting)?;

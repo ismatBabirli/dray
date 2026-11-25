@@ -1145,29 +1145,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dray-island"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "futures",
- "gpui",
- "gpui_platform",
- "image",
- "log",
- "raw-window-handle",
- "rquickjs",
- "serde",
- "serde_json",
- "tungstenite",
- "unicode-segmentation",
- "usvg",
- "uuid",
- "windows 0.62.2",
- "x11rb",
-]
-
-[[package]]
 name = "dunce"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5305,6 +5282,29 @@ checksum = "fb067e4cbd1ff067d1df46c9194b5de0e98efd2810bbc95c5d5e5f25a3231150"
 dependencies = [
  "cc",
  "libc",
+]
+
+[[package]]
+name = "wain-island"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "futures",
+ "gpui",
+ "gpui_platform",
+ "image",
+ "log",
+ "raw-window-handle",
+ "rquickjs",
+ "serde",
+ "serde_json",
+ "tungstenite",
+ "unicode-segmentation",
+ "usvg",
+ "uuid",
+ "windows 0.62.2",
+ "x11rb",
 ]
 
 [[package]]

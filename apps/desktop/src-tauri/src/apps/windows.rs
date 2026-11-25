@@ -29,7 +29,7 @@ use std::time::Duration;
 use super::{ExternalApp, ExternalAppKind, ICONS, KNOWN};
 
 /// `DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP`: no console, and Ctrl-C in
-/// Dray's never reaches it.
+/// Wain's never reaches it.
 const DETACHED: u32 = 0x0000_0008 | 0x0000_0200;
 
 /// What the last scan listed, by `.exe` path.
@@ -309,7 +309,7 @@ pub(super) async fn run_in_terminal(command: &str, cwd: &str) -> Result<(), Stri
     let script = format!(
         "{enter}{command}\nstatus=$?\nrm -f -- \"$0\"\nprintf '\\n%s' \"Finished (exit $status). Press Enter to close.\"\nread _\n"
     );
-    let path = std::env::temp_dir().join(format!("dray-login-{}.sh", uuid::Uuid::now_v7()));
+    let path = std::env::temp_dir().join(format!("wain-login-{}.sh", uuid::Uuid::now_v7()));
     super::write_script(&path, &script).map_err(|err| format!("could not write the login script: {err}"))?;
     let args = vec!["-l".to_string(), path.to_string_lossy().into_owned()];
     let opened = spawn(&bash, &args, &dir, true, "Git Bash").await;
@@ -414,7 +414,7 @@ mod tests {
 
     #[test]
     fn a_star_takes_the_newest_folder() {
-        let root = std::env::temp_dir().join(format!("dray-apps-{}", uuid::Uuid::now_v7()));
+        let root = std::env::temp_dir().join(format!("wain-apps-{}", uuid::Uuid::now_v7()));
         for version in ["IntelliJ IDEA 2024.3", "IntelliJ IDEA 2025.2", "IntelliJ IDEA Community Edition 2025.2"] {
             let bin = root.join(version).join("bin");
             std::fs::create_dir_all(&bin).unwrap();
@@ -446,7 +446,7 @@ mod tests {
 
     #[test]
     fn explorer_selects_a_file_and_opens_a_folder() {
-        let dir = std::env::temp_dir().join(format!("dray apps {}", uuid::Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain apps {}", uuid::Uuid::now_v7()));
         std::fs::create_dir_all(&dir).unwrap();
         let file = dir.join("run me.bat");
         std::fs::write(&file, b"").unwrap();

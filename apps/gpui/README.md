@@ -1,11 +1,11 @@
-# Dray on GPUI
+# Wain on GPUI
 
 The desktop app rewritten on Zed's GPUI (#856). It ships beside the Tauri app
 until it reaches parity, Mac first.
 
 **Milestone 1 is a client only.** It attaches to the server this Mac already
 runs and owns none: it reads `serve-port` and `serve-token` from the home dir
-(`DRAY_HOME`, else `~/.dray`) and speaks the wire in
+(`WAIN_HOME`, else `~/.wain`) and speaks the wire in
 [SERVE-PLAN.md](../desktop/SERVE-PLAN.md).
 
 ## Running it
@@ -22,14 +22,14 @@ That attaches to the release app's server. Against a server of your own:
 
 ```bash
 cd apps/desktop/src-tauri
-cargo build --no-default-features --features serve --bin dray-serve
-DRAY_HOME=/tmp/dray-test DRAY_ENDPOINT=/tmp/dray-test/dray.sock ./target/debug/dray-serve --port 7341
+cargo build --no-default-features --features serve --bin wain-serve
+WAIN_HOME=/tmp/wain-test WAIN_ENDPOINT=/tmp/wain-test/wain.sock ./target/debug/wain-serve --port 7341
 
 cd apps/gpui
-DRAY_HOME=/tmp/dray-test cargo run
+WAIN_HOME=/tmp/wain-test cargo run
 ```
 
-`DRAY_ENDPOINT` keeps the test server's agents and `dray` CLI off the real app's
+`WAIN_ENDPOINT` keeps the test server's agents and `wain` CLI off the real app's
 socket. `cargo test` runs the ported sidebar ordering and the colour maths.
 
 ## What it is built on

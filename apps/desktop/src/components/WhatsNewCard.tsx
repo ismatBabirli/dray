@@ -61,7 +61,7 @@ export default function WhatsNewCard({
       <div className="flex flex-col gap-1.5 px-3 pt-2.5">
         <span className="mb-1 flex items-center gap-1.5 text-ui font-medium text-foreground">
           <SparklesIcon className="size-3.5 text-accent-add" aria-hidden />
-          What's new in Dray {release.version}
+          What's new in Wain {release.version}
         </span>
         <ul className="flex flex-col gap-1 text-ui">
           {items.slice(0, SHOWN).map((item, i) => (
@@ -91,7 +91,7 @@ export default function WhatsNewCard({
   );
 
   if (!slot) return card;
-  const label = `What's new in Dray ${release.version}`;
+  const label = `What's new in Wain ${release.version}`;
   return (
     <RailPop
       slot={slot}

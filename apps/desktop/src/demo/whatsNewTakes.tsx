@@ -40,7 +40,7 @@ function Media({ media, className }: { media: ChangelogMedia; className?: string
 const Version = ({ v, className }: { v: string; className?: string }) => (
   <span className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", className)}>
     <SparklesIcon className="size-3.5 text-accent-add" aria-hidden />
-    New in Dray {v}
+    New in Wain {v}
   </span>
 );
 
@@ -108,7 +108,7 @@ function TakeA({ hl, onAction, onClose }: TakeProps) {
 }
 
 /// B — the first cut shipped, as `WhatsNewDialog` draws it: media edge to edge and rounded
-/// below, "New in Dray" on it, a larger title, the action as a link in the
+/// below, "New in Wain" on it, a larger title, the action as a link in the
 /// text, Skip on the picture, dots left and Back · Next as arrows right.
 function TakeB({ hl, onAction, onClose }: TakeProps) {
   const p = usePager(hl.length);
@@ -127,7 +127,7 @@ function TakeB({ hl, onAction, onClose }: TakeProps) {
           )}
           <span className="absolute top-3 left-3 flex items-center gap-1.5 rounded-md bg-black/55 px-2 py-1 text-xs font-medium text-white backdrop-blur-md">
             <SparklesIcon className="size-3.5 text-[#3DD68C]" aria-hidden />
-            New in Dray
+            New in Wain
           </span>
         </div>
         <div className="flex min-h-42 flex-col gap-2 px-7 pt-6">
@@ -306,7 +306,7 @@ function TakeE({ hl, onAction, onClose }: TakeProps) {
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <span className="flex items-center gap-1.5 text-xs text-white/70">
             <SparklesIcon className="size-3.5 text-[#3DD68C]" aria-hidden />
-            New in Dray {version}
+            New in Wain {version}
           </span>
           <p className="text-2xl font-semibold tracking-tight">{changelogPlain(item.title ?? item.body)}</p>
           <p className="text-chat leading-relaxed text-white/75">{changelogPlain(item.body)}</p>
@@ -377,7 +377,7 @@ function TakeF({ hl, onAction, onClose }: TakeProps) {
             <span className="min-w-0 truncate">{changelogPlain(h.item.title ?? h.item.body)}</span>
           </button>
         ))}
-        <span className="mt-auto px-2 pt-4 text-xs text-muted-foreground">Dray {hl[0].version}</span>
+        <span className="mt-auto px-2 pt-4 text-xs text-muted-foreground">Wain {hl[0].version}</span>
       </aside>
       <div className="flex flex-col">
         <div key={p.page} className="animate-in fade-in-0 [animation-duration:200ms]">

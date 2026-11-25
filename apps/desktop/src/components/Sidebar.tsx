@@ -1015,7 +1015,7 @@ function SpaceList({
 /// On `main` it stays bare: that is the common case, and naming the default
 /// branch is a word the reader skips every time to reach the one that matters.
 /// A worktree's branch is already `worktree-<name>`, so the prefix goes and the
-/// badge names the tree the way the sidebar and `dray ls` do — stripped after
+/// badge names the tree the way the sidebar and `wain ls` do — stripped after
 /// the `main` test, or a tree named `main` would read as no branch at all.
 function devBadgeLabel(branch: string | null): string {
   if (branch === null || branch === "" || branch === "main") return "Dev";
@@ -2108,7 +2108,7 @@ function BotRow({
   const [hovered, setHovered] = useState(false);
   const badge = asking ? "asking" : unread ? "unread" : null;
   const mask = badge === "asking" ? DOT_CUTOUT : badge === "unread" ? COUNT_CUTOUT : undefined;
-  // Before its first chat, Dray Bot's greeting is what its chat opens on.
+  // Before its first chat, Wain Bot's greeting is what its chat opens on.
   // A server that words the line sends it plain: cleaning it again would eat
   // the reader's own `*`. An older one sends the raw reply.
   const last = preview?.text || (!sessionId && greetingOf(bot).at(-1));
@@ -2171,7 +2171,7 @@ function BotRow({
                 role="img"
                 aria-label={`${preview?.replies || 1} unread`}
                 // One colour for every bot: in the face's own hue it read as part of the face.
-                // Dray theme: green in light; red in dark, deeper than its own red, which is too pale under white text.
+                // Wain theme: green in light; red in dark, deeper than its own red, which is too pale under white text.
                 className="absolute -right-0.5 -bottom-0.5 flex size-4 items-center justify-center rounded-full bg-foreground text-[10px] leading-none font-semibold text-background tabular-nums [[data-theme=default][data-mode=light]_&]:bg-accent-add [[data-theme=default][data-mode=dark]_&]:bg-[oklch(0.55_0.2_25)] [[data-theme=default]_&]:text-white"
               >
                 {preview?.replies || ""}

@@ -1,5 +1,5 @@
 use clap::{Args, Subcommand};
-use dray_proto::{BotRef, BotSummary, CreateBot, RenameBot, Request, Response, SendToBot};
+use wain_proto::{BotRef, BotSummary, CreateBot, RenameBot, Request, Response, SendToBot};
 use std::path::Path;
 
 use super::{parent_session_id, send, unexpected, MACHINE};
@@ -55,11 +55,11 @@ pub struct BotLs {
 
 #[derive(Args)]
 pub struct BotSend {
-    /// The bot's name or id, as `dray bot ls` prints them.
+    /// The bot's name or id, as `wain bot ls` prints them.
     bot: String,
     /// The message. Write it for someone who cannot see your conversation.
     prompt: String,
-    /// Wants an answer: Dray passes the bot's reply back to your chat when its
+    /// Wants an answer: Wain passes the bot's reply back to your chat when its
     /// turn ends. Without it nothing comes back on its own.
     #[arg(long)]
     ask: bool,
@@ -95,7 +95,7 @@ pub fn run(command: BotCommand) -> Result<(), String> {
             println!("{}", bot.id);
             let machine = MACHINE.get().map(|m| format!("--machine {m} ")).unwrap_or_default();
             eprintln!(
-                "Made \"{}\". Its chat starts with the first message: `dray {machine}bot send \"{}\" \"<message>\"`.",
+                "Made \"{}\". Its chat starts with the first message: `wain {machine}bot send \"{}\" \"<message>\"`.",
                 bot.name, bot.name
             );
             Ok(())

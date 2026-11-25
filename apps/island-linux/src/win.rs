@@ -534,10 +534,10 @@ fn frame(h: HWND) -> (i32, i32, i32, i32) {
     )
 }
 
-/// Whether Dray's own window is the one in front, which sounds its own
+/// Whether Wain's own window is the one in front, which sounds its own
 /// notice, so the island's chime would double it: read off the foreground
 /// window's process.
-pub fn dray_in_front() -> bool {
+pub fn wain_in_front() -> bool {
     let window = unsafe { GetForegroundWindow() };
     if window.is_invalid() {
         return false;
@@ -549,14 +549,14 @@ pub fn dray_in_front() -> bool {
     let mut len = name.len() as u32;
     let read = unsafe { QueryFullProcessImageNameW(process, PROCESS_NAME_WIN32, windows::core::PWSTR(name.as_mut_ptr()), &mut len) };
     let _ = unsafe { windows::Win32::Foundation::CloseHandle(process) };
-    read.is_ok() && is_dray_exe(&String::from_utf16_lossy(&name[..len as usize]))
+    read.is_ok() && is_wain_exe(&String::from_utf16_lossy(&name[..len as usize]))
 }
 
-/// The app's binary: `Dray.exe` installed, `dray.exe` in a dev build. The
+/// The app's binary: `Wain.exe` installed, `wain.exe` in a dev build. The
 /// server is the same binary but owns no window, so it is never in front.
-fn is_dray_exe(path: &str) -> bool {
+fn is_wain_exe(path: &str) -> bool {
     let stem = std::path::Path::new(path).file_stem().and_then(|s| s.to_str()).unwrap_or_default().to_lowercase();
-    matches!(stem.as_str(), "dray" | "dray-dev" | "dray-app")
+    matches!(stem.as_str(), "wain" | "wain-dev" | "wain-app")
 }
 
 /// The window holding the keyboard.
@@ -602,7 +602,7 @@ pub fn give_back(ours: Wid, window: Wid) {
 pub enum DoneKey {
     /// Esc: the pill put away.
     Dismiss,
-    /// Win+⏎, the Mac's ⌘⏎: the newest opened in Dray.
+    /// Win+⏎, the Mac's ⌘⏎: the newest opened in Wain.
     OpenInApp,
 }
 
@@ -628,11 +628,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn knows_dray_by_its_binary() {
-        assert!(is_dray_exe(r"C:\Program Files\Dray\Dray.exe"));
-        assert!(is_dray_exe(r"C:\dray\apps\desktop\src-tauri\target\debug\dray.exe"));
-        assert!(!is_dray_exe(r"C:\Windows\explorer.exe"));
-        assert!(!is_dray_exe(r"C:\x\dray-island.exe"));
+    fn knows_wain_by_its_binary() {
+        assert!(is_wain_exe(r"C:\Program Files\Wain\Wain.exe"));
+        assert!(is_wain_exe(r"C:\wain\apps\desktop\src-tauri\target\debug\wain.exe"));
+        assert!(!is_wain_exe(r"C:\Windows\explorer.exe"));
+        assert!(!is_wain_exe(r"C:\x\wain-island.exe"));
     }
 
     #[test]

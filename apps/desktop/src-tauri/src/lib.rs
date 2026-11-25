@@ -38,7 +38,7 @@ mod trackpad;
 mod island;
 #[cfg(feature = "desktop")]
 mod cli;
-// `dray browser` on a server: a headless Chromium under the same verbs the
+// `wain browser` on a server: a headless Chromium under the same verbs the
 // Mac's CEF answers. In the desktop build too, since that binary is also the
 // Mac's background server. See HEADLESS-PLAN.md.
 #[cfg(any(feature = "serve", feature = "desktop"))]
@@ -92,7 +92,7 @@ pub mod mcp;
 #[cfg(any(feature = "serve", feature = "desktop"))]
 pub mod org_link;
 #[cfg(any(feature = "serve", feature = "desktop"))]
-pub mod dray_account;
+pub mod wain_account;
 // Every server reaches other machines on its own (#760).
 #[cfg(any(feature = "serve", feature = "desktop"))]
 pub mod machines;
@@ -125,7 +125,7 @@ pub mod updater;
 
 /// Whether this is a `tauri dev` build. Always false off the desktop: the dev
 /// split exists so a dev app can run beside the release one, and a server
-/// gets the same through `DRAY_HOME`.
+/// gets the same through `WAIN_HOME`.
 pub fn is_dev() -> bool {
     #[cfg(feature = "desktop")]
     let dev = tauri::is_dev();
@@ -136,7 +136,7 @@ pub fn is_dev() -> bool {
 
 pub(crate) static SERVER: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
-/// Whether this process is a server — `dray-serve`, or the app's binary run
+/// Whether this process is a server — `wain-serve`, or the app's binary run
 /// as the Mac's background server — rather than the app with a window. One
 /// binary is both on a Mac, so this is a reading at runtime, not a feature.
 pub fn is_server() -> bool {
@@ -207,7 +207,7 @@ pub fn http() -> &'static reqwest::Client {
         // use ring. Err means one of them installed it first.
         let _ = rustls::crypto::ring::default_provider().install_default();
         reqwest::Client::builder()
-            .user_agent(concat!("Dray/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("Wain/", env!("CARGO_PKG_VERSION")))
             .build()
             .expect("reqwest client")
     })
@@ -231,7 +231,7 @@ async fn send_msg(
     branch: Option<&str>,
     use_worktree: bool,
     worktree_name: Option<&str>,
-    // A draft `dray draft new --base` saved, opened and sent from the
+    // A draft `wain draft new --base` saved, opened and sent from the
     // composer. `None` for everything else the composer sends.
     base_ref: Option<&str>,
     is_new_session: bool,
@@ -255,8 +255,8 @@ async fn send_msg(
 
     // Reported here rather than inside `SessionManager::send_msg`, which is the
     // chokepoint for *prompts* and not for people: the orchestration socket
-    // reaches that function directly, both to relay a `dray session send` and
-    // to start a session `dray session new` asked for, and an agent finishing
+    // reaches that function directly, both to relay a `wain session send` and
+    // to start a session `wain session new` asked for, and an agent finishing
     // at 3am would mark the day active with nobody in the room. Only a client
     // somebody is typing into reaches this command — the app, the island, a
     // phone — so getting here means somebody pressed send. Not for another
@@ -267,7 +267,7 @@ async fn send_msg(
     }
 
     // A draft keeps its base as written, a session id among the spellings, so
-    // it is resolved here the way `dray draft start` resolves it. The worktree
+    // it is resolved here the way `wain draft start` resolves it. The worktree
     // branch picker sends its branch here too, so the two follow one set of
     // rules.
     let base = match base_ref {
@@ -325,7 +325,7 @@ async fn send_msg(
         analytics::message_sent(session_id.to_string());
     }
     // The new entry rides back to the caller alone, so every other client — the
-    // app beside an Island or a phone that started it — hears of it as `dray new`'s
+    // app beside an Island or a phone that started it — hears of it as `wain new`'s
     // sessions are heard of. The caller's own copy replaces itself.
     if let Some(snap) = &outcome.snapshot {
         sink.emit(orchestration::SESSION_CREATED, &snap.index_item).ok();
@@ -334,7 +334,7 @@ async fn send_msg(
 }
 
 /// Starts a session on a pull request's own branch, from the pull requests
-/// page, in a tree Dray checks out on the head so the agent's push updates that
+/// page, in a tree Wain checks out on the head so the agent's push updates that
 /// PR. With `bot`, it is that bot's task instead: hidden under its chat, on
 /// the chat's own agent and picks, reporting back like a task the bot started,
 /// and the bot is told the reader started it.
@@ -372,7 +372,7 @@ async fn start_pr_session(
                 fail!("{} has no chat yet. Write to it once, then send it the pull request.", bot.name);
             };
             // A task inherits its bot's agent and picks, as one the bot starts
-            // with `dray session new` does.
+            // with `wain session new` does.
             (Some(chat.session_id), chat.harness, chat.model, chat.effort, chat.permission_mode, chat.fast)
         }
         None => (None, harness, model, effort, permission_mode, fast),
@@ -504,7 +504,7 @@ async fn unavailable_reason(harness: harness::Harness) -> (String, bool) {
         );
     }
 
-    (format!("Dray can't run {label} sessions yet."), false)
+    (format!("Wain can't run {label} sessions yet."), false)
 }
 
 #[derive(serde::Serialize, ts_rs::TS)]
@@ -607,7 +607,7 @@ fn track_feature(feature: String, target: Option<BrowserTarget>) {
     analytics::track("feature_used", props);
 }
 
-/// What a page the reader opened in Dray's browser was, as `browser_open`
+/// What a page the reader opened in Wain's browser was, as `browser_open`
 /// reports it: a dev server on this machine or its network, or anything else.
 #[derive(serde::Deserialize, serde::Serialize, Clone, Copy)]
 #[serde(rename_all = "lowercase")]
@@ -646,7 +646,7 @@ fn track_render_error(code: Option<u32>, frames: Vec<String>) {
 /// not know.
 ///
 /// Codex and fx answer with their **skills**, since the rest of what each draws
-/// behind a slash is TUI actions Dray already owns in its chrome. Codex is asked
+/// behind a slash is TUI actions Wain already owns in its chrome. Codex is asked
 /// (`skills/list`); fx publishes nothing on the wire at all, so its roots are
 /// walked on disk. Only `Other` answers none, which is the honest picker for a
 /// CLI this build has never heard of.
@@ -1067,7 +1067,7 @@ pub fn run() {
             }
         })
         .setup(|app| {
-            // The configured scope names every home but one `DRAY_HOME` moved.
+            // The configured scope names every home but one `WAIN_HOME` moved.
             // Both things the webview loads from disk: recordings alone left
             // every sent and tool-returned image broken under a moved home.
             if let Some(home) = store::home_override() {
@@ -1148,15 +1148,15 @@ pub fn run() {
             analytics::track("app_started", serde_json::json!({}));
             // The guaranteed half of `track_active_day`: `focus.ts` reports focus
             // *changes*, so a window that comes up already frontmost never
-            // reports gaining it, and somebody who opens Dray, works and quits
+            // reports gaining it, and somebody who opens Wain, works and quits
             // without switching apps would go uncounted. Free to state beside
             // the other two sites — all three claim one daily key.
             analytics::track_active_day();
 
             Ok(())
         })
-        .register_asynchronous_uri_scheme_protocol("drayserver", |_ctx, request, responder| {
-            // `drayserver://localhost/?server=<id>&path=<path>`: a remote
+        .register_asynchronous_uri_scheme_protocol("wainserver", |_ctx, request, responder| {
+            // `wainserver://localhost/?server=<id>&path=<path>`: a remote
             // server's file, fetched with its token in a header.
             let query = request.uri().query().unwrap_or_default().to_string();
             let range = request
@@ -1194,7 +1194,7 @@ pub fn run() {
                         response.body(file.body)
                     }
                     Err(e) => {
-                        eprintln!("[drayserver {server}] {path}: {e}");
+                        eprintln!("[wainserver {server}] {path}: {e}");
                         tauri::http::Response::builder().status(404).body(Vec::new())
                     }
                 };
@@ -1235,7 +1235,7 @@ pub fn run() {
             servers::run_server_login,
             servers::run_gh_login,
             star::note_merge_for_star,
-            star::star_dray,
+            star::star_wain,
             servers::upload_attachment,
             servers::resume_boat,
             servers::extend_boat,

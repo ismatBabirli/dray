@@ -7,7 +7,7 @@
 
 use std::collections::HashSet;
 
-use dray_core::events::{
+use wain_core::events::{
     AgentEvent, AgentEventPayload, BlockRef, BlockType, DeltaEvent, FileEdit, ToolResult, ToolType, TurnStatus, has_text,
 };
 use serde_json::Value;

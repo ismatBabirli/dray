@@ -26,7 +26,7 @@ type Provider = "github" | "google";
 export type Method = Provider | "email";
 type Mode = "methods" | "sign-in" | "sign-up" | "verify" | "forgot" | "reset";
 
-/// Every way into Dray: GitHub, Google, or an email whose address a code
+/// Every way into Wain: GitHub, Google, or an email whose address a code
 /// proves. Lands on `next` once signed in. `via` is the method the desktop
 /// app picked, started at once so the reader isn't asked twice. `emailOpen` is
 /// false while email sign-in is off, which leaves its card in place, disabled.
@@ -159,7 +159,7 @@ export function SignInMethods({
   if (mode === "methods")
     return (
       <>
-        {label("Welcome to Dray")}
+        {label("Welcome to Wain")}
         <Heading>{error ? "Pick an account to try again." : "Pick an account to sign in with."}</Heading>
         <Cards>
           <Card
@@ -247,7 +247,7 @@ export function SignInMethods({
   if (mode === "sign-in")
     return step(
       signIn,
-      "Welcome to Dray",
+      "Welcome to Wain",
       "Sign in with email.",
       <>
         {emailField()}
@@ -262,7 +262,7 @@ export function SignInMethods({
   if (mode === "sign-up")
     return step(
       signUp,
-      "Welcome to Dray",
+      "Welcome to Wain",
       "Create your account.",
       <>
         <FieldCard label="Name">

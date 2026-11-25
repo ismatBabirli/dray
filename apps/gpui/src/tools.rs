@@ -3,7 +3,7 @@
 //! drawing is [tool_row](crate::tool_row). Kept line for line with the web app,
 //! so a label or summary fix there ports as a copy.
 
-use dray_core::events::ToolType;
+use wain_core::events::ToolType;
 use serde_json::{Map, Value};
 
 fn object(input: &Value) -> Option<&Map<String, Value>> {

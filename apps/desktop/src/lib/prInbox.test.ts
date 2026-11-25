@@ -190,8 +190,8 @@ describe("sessionsForPr", () => {
   });
 
   it("matches a session on another machine through the repo its key reads as", () => {
-    const remote = item({ projectPath: "dray://boat/home/u/r" });
-    const repoOf = (key: string) => (key === "dray://boat/home/u/r" ? "github.com/o/r" : undefined);
+    const remote = item({ projectPath: "wain://boat/home/u/r" });
+    const repoOf = (key: string) => (key === "wain://boat/home/u/r" ? "github.com/o/r" : undefined);
     expect(sessionsForPr(row(), [remote], repoOf)).toHaveLength(1);
   });
 
@@ -319,36 +319,36 @@ describe("plainComment", () => {
 });
 
 describe("pullsReads", () => {
-  const down = (key: string) => key.startsWith("dray://box/");
+  const down = (key: string) => key.startsWith("wain://box/");
   const slugs: Record<string, string> = {
-    "/here/dray": "github.com/monorepo-labs/dray",
-    "dray://box/srv/dray": "github.com/monorepo-labs/dray",
-    "dray://box/srv/cli": "github.com/cli/cli",
+    "/here/wain": "github.com/ismatbabirli/wain",
+    "wain://box/srv/wain": "github.com/ismatbabirli/wain",
+    "wain://box/srv/cli": "github.com/cli/cli",
   };
   const slugFor = (key: string) => slugs[key];
 
   it("leaves a repo another key reads to that key", () => {
-    expect(pullsReads(["/here/dray", "dray://box/srv/dray"], down, slugFor)).toEqual({ keys: ["/here/dray"], unnamed: [] });
+    expect(pullsReads(["/here/wain", "wain://box/srv/wain"], down, slugFor)).toEqual({ keys: ["/here/wain"], unnamed: [] });
   });
 
   it("reads a repo only a stopped machine has through This Mac", () => {
-    expect(pullsReads(["/here/dray", "dray://box/srv/cli"], down, slugFor)).toEqual({
-      keys: ["/here/dray", "github:cli/cli"],
+    expect(pullsReads(["/here/wain", "wain://box/srv/cli"], down, slugFor)).toEqual({
+      keys: ["/here/wain", "github:cli/cli"],
       unnamed: [],
     });
   });
 
   it("reads such a repo once however many stopped keys name it", () => {
-    const keys = ["dray://box/srv/cli", "dray://box/other/cli", "github:cli/cli"];
+    const keys = ["wain://box/srv/cli", "wain://box/other/cli", "github:cli/cli"];
     const slugFor2 = (key: string) => (key.endsWith("/cli") ? "github.com/cli/cli" : undefined);
     expect(pullsReads(keys, down, slugFor2)).toEqual({ keys: ["github:cli/cli"], unnamed: [] });
   });
 
   it("keeps another host whole and hands back a key it cannot name", () => {
-    const slugFor3 = (key: string) => (key === "dray://box/a" ? "ghe.example.com/o/r" : undefined);
-    expect(pullsReads(["dray://box/a", "dray://box/b"], down, slugFor3)).toEqual({
+    const slugFor3 = (key: string) => (key === "wain://box/a" ? "ghe.example.com/o/r" : undefined);
+    expect(pullsReads(["wain://box/a", "wain://box/b"], down, slugFor3)).toEqual({
       keys: ["github:ghe.example.com/o/r"],
-      unnamed: ["dray://box/b"],
+      unnamed: ["wain://box/b"],
     });
   });
 });

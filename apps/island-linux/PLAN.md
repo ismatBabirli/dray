@@ -1,4 +1,4 @@
-# Dray Island on Linux and Windows
+# Wain Island on Linux and Windows
 
 The Mac island's behaviour, rewritten in Rust with GPUI for the panel (#833).
 [apps/island/PLAN.md](../island/PLAN.md) is the spec for what it does; this
@@ -13,7 +13,7 @@ binary with `win.rs` where Linux has `x11.rs` (see [Windows](#windows)).
   today's `libc`) and still draws through blade. Zed's own tree builds on our
   stable Rust and draws through wgpu. Bump the `rev` in `Cargo.toml` on
   purpose; GPUI is pre-1.0 and moves. Apache-2.0.
-- **Its own crate and binary, `dray-island`.** GPUI runs its own event loop and
+- **Its own crate and binary, `wain-island`.** GPUI runs its own event loop and
   windows, so it cannot be a window of the Tauri app, and its tree (wgpu,
   zbus, cosmic-text) stays out of the app's build. First build clones Zed's
   repo (~400 MB); a release build from cold is about 2 min on 8 cores, and the
@@ -60,8 +60,8 @@ binary with `win.rs` where Linux has `x11.rs` (see [Windows](#windows)).
   sentence under it.
 - **The pill opens the cards on a 150ms hover**, as on the Mac, and takes the
   keyboard then, so digits and Enter answer at once. It is never focused
-  itself. News lights its edge for 2s and chimes, unless Dray's window is in
-  front (`_NET_ACTIVE_WINDOW`'s `WM_CLASS` is `dray`), which sounds its own.
+  itself. News lights its edge for 2s and chimes, unless Wain's window is in
+  front (`_NET_ACTIVE_WINDOW`'s `WM_CLASS` is `wain`), which sounds its own.
 - **The chime is the app's `notification.wav`**, the one the Mac island plays,
   handed to `pw-play`, `paplay` or `aplay`, whichever is installed, so the
   island links no audio library.
@@ -75,7 +75,7 @@ binary with `win.rs` where Linux has `x11.rs` (see [Windows](#windows)).
   the reason. A call unanswered for 30s fails rather than holding the send.
   A reply reads the session fresh (`get_session_by_id`) and sends with its own
   settings, as the phone does; a new task sends the bar's picks.
-- **Where the draft goes**: the session Dray's window has open, asked of the
+- **Where the draft goes**: the session Wain's window has open, asked of the
   app (`selected_session`) before the panel shows, at most half a second; else
   the session last used (`lastSession` in prefs); else the newest; else a new
   task. Ctrl+N is a new task.
@@ -87,16 +87,16 @@ binary with `win.rs` where Linux has `x11.rs` (see [Windows](#windows)).
   flying out, project, worktree, stance — the desktop composer's rules
   restated in `newtask.rs` (default model per agent, usable model and effort,
   stances each agent honours). The picks persist in prefs as the Mac's do; a
-  project pick is stamped on the server as Dray's own.
+  project pick is stamped on the server as Wain's own.
 - **The text box wraps**, growing to 6 lines and scrolling to the caret past
   that, as the Mac's field does. GPUI's wrapped layout does the shaping.
-- **Dictation is Dray's own**, through the server to the app (`host_call`),
+- **Dictation is Wain's own**, through the server to the app (`host_call`),
   as on the Mac: one place sets up model, microphone and mute. A tap on the
   open panel starts or stops it, a double tap opens the panel listening, ⏎
   while recording stops and sends once the words land, Esc mid-sentence does
   nothing and Ctrl+Esc throws the recording away and closes, the Mac's ⌘Esc.
   Words become a said row; a failed run keeps its recording for Retry. The
-  start and stop tones are Dray's.
+  start and stop tones are Wain's.
 - **The orb is the Mac's `prism` shader, ported line for line** (`orb.rs`) and
   run on the CPU a frame at a time into an image GPUI draws: the orb is at most
   80pt and this machine class may have no GPU. `OrbDriver`'s easing and
@@ -131,19 +131,19 @@ binary with `win.rs` where Linux has `x11.rs` (see [Windows](#windows)).
   includes them. The window that held the keyboard takes it back after, or ⏎
   lands in the app underneath.
 - **Files are PNG, else JPEG at falling quality under 5MB**, in
-  `$TMPDIR/dray-island-<uid>`, swept after seven days. They ride `send_msg`'s
+  `$TMPDIR/wain-island-<uid>`, swept after seven days. They ride `send_msg`'s
   `attachmentPaths`, named `[Image N]` or `[file name]` in the prompt where
   they sat in the draft. Files dropped on the panel are rows too.
 - **The app hands asks and finished sessions to the island** while its child
   lives (`island::running`), for this computer's sessions alone: another
   machine's keeps its banner (`islandOn` checks `serverOfSession`).
-- **The done pill is the Mac's**: a finished session in place of Dray's
+- **The done pill is the Mac's**: a finished session in place of Wain's
   banner, the pill's other face when no card waits. One names itself with
   Open in app; several are a count that lists them on hover, five rows then
   scrolling. Six seconds, held while hovered and while the panel or a card
   covers it; what the panel covered is spent. Esc and Super+⏎ (the Mac's
   ⌘⏎) are grabbed only while it is up.
-- **Dray talks down the pipe the island holds as stdin**: `done <session id>`,
+- **Wain talks down the pipe the island holds as stdin**: `done <session id>`,
   `waiting <json>` and `prefs`, a line each, besides the EOF that ends it.
 - **Bots look as they do on the Mac** (#1283, catching up #917, #1067, #1069
   and #1279). A bot's chat — a session whose `cwd` is a bot's folder, from
@@ -154,7 +154,7 @@ binary with `win.rs` where Linux has `x11.rs` (see [Windows](#windows)).
   bot's "N tasks waiting on you" is a `waiting` line carrying the note and the
   card's rows: the done pill says it in yellow in place of "Done", keeps it
   when the bot's own turn ends beside it, and grows into the task cards under
-  the pointer — face, title, PR, need, age, a click opening the task in Dray,
+  the pointer — face, title, PR, need, age, a click opening the task in Wain,
   a ready PR's Merge with the method as the confirm (`merge_pr` settling the
   task). Several bots share one pill grouped under each face. One bot's
   alert puts its face in a black disc joined to the pill: out of its left end
@@ -176,11 +176,11 @@ binary with `win.rs` where Linux has `x11.rs` (see [Windows](#windows)).
   the other fields. Settings speaks the Mac's names (`island.placement` =
   `notch`), mapped in `island.rs`, and a write tells a running island to read
   them again and show them.
-- **The AppImage carries it** at `usr/bin/dray-island`, beside the app's
+- **The AppImage carries it** at `usr/bin/wain-island`, beside the app's
   binary, where `island.rs` looks: `island-sidecar.sh` builds it and the
   `tauri.linux-release.conf.json` overlay hands it to the bundler with the CLI.
-- **A client of This computer's `dray --serve`**, address and token from
-  `serve-port` / `serve-token` in the `DRAY_HOME` the app hands over, read
+- **A client of This computer's `wain --serve`**, address and token from
+  `serve-port` / `serve-token` in the `WAIN_HOME` the app hands over, read
   at every connect. Hello carries `client: "island"`. Lenient decoding: a
   renamed field costs that field.
 
@@ -215,7 +215,7 @@ The ones the Mac doesn't share are tracked in #868.
   draws as the Mac does without the Screen Recording grant.
 - **The microphone opens 1–2s after the press**, in the app's recorder, so
   words said at once are lost; the clock stays at 0:00 until it is open.
-- **Not yet from the Mac's draft**: Ctrl+S saving it as a Dray draft,
+- **Not yet from the Mac's draft**: Ctrl+S saving it as a Wain draft,
   dragging rows to reorder, the last turns of the transcript above it, and
   the bar's step-through chords (⌘⇧A and the rest).
 - **A shot sees one screen.** The overlay covers GPUI's primary display, and
@@ -223,8 +223,8 @@ The ones the Mac doesn't share are tracked in #868.
 - **Settings → Island shows the switch, key, position and layout.** The tap
   pick, the screenshot key and the transcript switch are the Mac's alone.
 - **Another machine's waiting task has no Merge.** Its repo is
-  `dray://<machine>/<path>`, which this computer's server cannot merge in, and
-  the island reaches no other server; the card opens the task in Dray.
+  `wain://<machine>/<path>`, which this computer's server cannot merge in, and
+  the island reaches no other server; the card opens the task in Wain.
 - **One display.** The panel opens on GPUI's primary display; the Mac's
   "the screen with the notch" has no counterpart.
 
@@ -271,8 +271,8 @@ as on a Mac with no notch. Everything above holds unless said here.
 - **GPUI's own `log` output reaches `island.log`**, warnings and errors, on
   both platforms: it is where a renderer or window failure says so.
 - **Reduce Motion is Windows' "Animation effects"** switch.
-- **Prefs are `~/.config/dray/island.json`** on Windows too, the path both
-  sides already agree on; screenshots go in `%TEMP%\dray-island`, which is
+- **Prefs are `~/.config/wain/island.json`** on Windows too, the path both
+  sides already agree on; screenshots go in `%TEMP%\wain-island`, which is
   the account's own.
 - **The key picker says Win** where Linux says Super; the Mac's stored
   names are unchanged.
@@ -281,16 +281,16 @@ as on a Mac with no notch. Everything above holds unless said here.
 
 Not on Windows yet: a bundle carrying it (`release.yml` has no Windows job,
 #1425), and dictation, which the island asks of the app and the app hides on
-Windows (#1425): a tap on the open panel says "Dictation isn't in Dray on
+Windows (#1425): a tap on the open panel says "Dictation isn't in Wain on
 Windows yet." rather than sending the reader to a tab that is not there.
 
 ## Build
 
 ```bash
 cd apps/island-linux && cargo build          # what a dev app finds
-DRAY_HOME=~/.dray-dev ./target/debug/dray-island   # by hand, against a dev server
+WAIN_HOME=~/.wain-dev ./target/debug/wain-island   # by hand, against a dev server
 ```
 
 Needs `libxkbcommon-x11-dev` besides what the app needs. On Windows, the
 MSVC toolchain the app already needs; `cargo build` there is what
-`tauri dev` finds, `target\debug\dray-island.exe`.
+`tauri dev` finds, `target\debug\wain-island.exe`.

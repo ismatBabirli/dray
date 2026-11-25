@@ -35,7 +35,7 @@ export const HAS_DICTATION = IS_MAC || IS_LINUX || IS_WINDOWS;
 /// in the one X11 frame the pane keeps, so a page stays in the main view.
 export const SPLITS_PAGES = IS_MAC || IS_WINDOWS;
 
-/// Dray Island: the Swift app on a Mac, `apps/island-linux`'s on Linux and
+/// Wain Island: the Swift app on a Mac, `apps/island-linux`'s on Linux and
 /// Windows.
 export const HAS_ISLAND = IS_MAC || IS_LINUX || IS_WINDOWS;
 

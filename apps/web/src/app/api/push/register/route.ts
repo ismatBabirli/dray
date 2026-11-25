@@ -4,7 +4,7 @@ import { type Phone, pushReady, seal } from "@/lib/push";
 /// The phone trades its push token for a sealed handle, the only thing it
 /// gives a server: an iPhone's APNs token with its environment, or an Android
 /// phone's FCM token with `platform: "android"`. Open to anyone, which costs
-/// nothing: a handle reaches only the token sealed in it, and only Dray's app.
+/// nothing: a handle reaches only the token sealed in it, and only Wain's app.
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { token?: unknown; env?: unknown; platform?: unknown } | null;
   const phone = readPhone(body);

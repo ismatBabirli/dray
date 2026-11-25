@@ -52,7 +52,7 @@ function start() {
         servers = list;
         changed.emit();
       })
-      // A build with no remote support — a plain browser on a dray-serve —
+      // A build with no remote support — a plain browser on a wain-serve —
       // answers `unknown command`, which is a list of none.
       .catch(() => {}),
   );
@@ -76,7 +76,7 @@ export function useLocalServer(): ServerInfo | null {
 }
 
 /// What the reader calls a server: its name, "This Mac" ("This machine" off a
-/// Mac) — the machine the app runs on — or "Cloud" for every Dray Cloud
+/// Mac) — the machine the app runs on — or "Cloud" for every Wain Cloud
 /// machine, which the reader never picks one by one.
 export function serverName(id: ServerId): string {
   if (id === LOCAL) return `This ${MACHINE}`;
@@ -96,7 +96,7 @@ export function serverConnected(id: ServerId): boolean {
   return id === LOCAL || servers.some((s) => s.id === id && s.status === "connected");
 }
 
-/// A Dray Cloud machine. Dray's own service rather than a server the reader
+/// A Wain Cloud machine. Wain's own service rather than a server the reader
 /// added, so it never reads as stopped or offline: a send wakes it.
 export const cloudServer = (id: ServerId): boolean => servers.some((s) => s.id === id && s.cloud);
 

@@ -19,7 +19,7 @@ import "../App.css";
 /// left out — working, checks running, and idle only a minute. The card
 /// starts with the ready PRs alone; every stall goes to the bot, listed under
 /// the chat as the nudges the app sends. **Bot writes needs** lands the lines a
-/// bot would write with `dray session need`, which puts the waiting tasks on
+/// bot would write with `wain session need`, which puts the waiting tasks on
 /// the card and a line under the ready PR that asked to be tried. A row click
 /// opens the bot's reply to that task through a stubbed `bot_task_reply`: the
 /// rename, SQLite, pricing and docs search tasks have one, the ⌥ hints task's

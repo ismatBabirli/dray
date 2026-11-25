@@ -1,6 +1,6 @@
-//! This computer's Dray server, as the Mac island and the iOS app reach it:
-//! one WebSocket to `dray --serve`, address and token read from `serve-port`
-//! and `serve-token` in the home Dray hands over as `DRAY_HOME`. The wire is
+//! This computer's Wain server, as the Mac island and the iOS app reach it:
+//! one WebSocket to `wain --serve`, address and token read from `serve-port`
+//! and `serve-token` in the home Wain hands over as `WAIN_HOME`. The wire is
 //! `serve.rs`'s; see its module comment.
 
 use crate::asks::Ask;
@@ -60,7 +60,7 @@ impl Session {
 
 #[derive(Debug)]
 pub enum Update {
-    /// No server to reach: Dray has not started one, or it is restarting.
+    /// No server to reach: Wain has not started one, or it is restarting.
     Unreachable,
     /// The server turned the hello away, with its own sentence.
     Refused(String),
@@ -90,12 +90,12 @@ enum Outbound {
     Call(String, Value, oneshot::Sender<Reply>),
 }
 
-/// The home Dray's server lives in: `DRAY_HOME` as the app hands it over, or
-/// a release's `~/.dray`.
+/// The home Wain's server lives in: `WAIN_HOME` as the app hands it over, or
+/// a release's `~/.wain`.
 fn home() -> Option<PathBuf> {
-    std::env::var_os("DRAY_HOME")
+    std::env::var_os("WAIN_HOME")
         .map(PathBuf::from)
-        .or_else(|| std::env::home_dir().map(|h| h.join(".dray")))
+        .or_else(|| std::env::home_dir().map(|h| h.join(".wain")))
 }
 
 /// Read at every connect, since a restarted server listens on a fresh port.
@@ -146,14 +146,14 @@ pub fn run(on_update: impl Fn(Update) + Send + 'static) -> Server {
                 // a held answer could land on a card the reader already left.
                 while let Ok(ask) = asks.try_recv() {
                     if let Outbound::Call(_, _, reply) = ask {
-                        let _ = reply.send(Err("Dray's server isn't reachable.".into()));
+                        let _ = reply.send(Err("Wain's server isn't reachable.".into()));
                     }
                 }
                 let wait = match connect(&on_update, &asks) {
                     Ok(()) => Duration::from_secs(1),
                     Err(Gone::Refused(why)) => {
                         on_update(Update::Refused(why));
-                        // A refused token is fixed by Dray writing a new one,
+                        // A refused token is fixed by Wain writing a new one,
                         // which the next read picks up; no need to hammer.
                         Duration::from_secs(5)
                     }
@@ -224,7 +224,7 @@ fn connect(on_update: &impl Fn(Update), asks: &Receiver<Outbound>) -> Result<(),
     };
     // Whatever was waiting on this socket learns it went.
     for (_, reply) in calls.waiting.drain() {
-        let _ = reply.send(Err("The connection to Dray's server dropped.".into()));
+        let _ = reply.send(Err("The connection to Wain's server dropped.".into()));
     }
     result
 }

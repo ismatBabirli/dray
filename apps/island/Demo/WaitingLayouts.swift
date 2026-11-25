@@ -262,7 +262,7 @@ private struct LayoutCard: View {
     @ViewBuilder private var dismissAll: some View {
         DismissButton { composer.dismissAsks(key) }
         if keys.count > 1 {
-            DismissButton(label: "Dismiss all", help: "Hide all until a new task needs you. They still wait in Dray.") { composer.dismissAsks() }
+            DismissButton(label: "Dismiss all", help: "Hide all until a new task needs you. They still wait in Wain.") { composer.dismissAsks() }
         }
     }
 

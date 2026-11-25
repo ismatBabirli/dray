@@ -1,13 +1,13 @@
 ---
 title: Sessions
-description: Start, list and message Dray sessions from the command line, with every flag for model, effort, agent, base branch, worktree, issues and fast mode, and hand tasks to bots, post merge and issue cards, and react as a bot.
+description: Start, list and message Wain sessions from the command line, with every flag for model, effort, agent, base branch, worktree, issues and fast mode, and hand tasks to bots, post merge and issue cards, and react as a bot.
 sidebar:
   order: 2
 ---
 
-`dray session` starts and manages the same sessions you see in the sidebar. A session made here is an ordinary session: you can open it, read it, stop it or delete it like any other.
+`wain session` starts and manages the same sessions you see in the sidebar. A session made here is an ordinary session: you can open it, read it, stop it or delete it like any other.
 
-Run from inside a Dray session, every command knows which session is calling. A new session is nested under the caller and inherits its settings. Run from your own terminal, there is no caller, so the app's defaults apply.
+Run from inside a Wain session, every command knows which session is calling. A new session is nested under the caller and inherits its settings. Run from your own terminal, there is no caller, so the app's defaults apply.
 
 | Command | What it does |
 |---|---|
@@ -25,7 +25,7 @@ Run from inside a Dray session, every command knows which session is calling. A 
 ## Start a session
 
 ```bash
-dray session new "Fix the login redirect loop. Steps to reproduce: …"
+wain session new "Fix the login redirect loop. Steps to reproduce: …"
 ```
 
 Prints the new session's id, then a line like `Started "Fix login redirect loop" in worktree calm-owl`. It returns at once: the session starts working on its own and nothing waits for it.
@@ -48,12 +48,12 @@ Write the prompt for someone who has not read your conversation. The new session
 `--from` is an older name for `--base` and still works.
 
 ```bash
-dray session new --harness codex --effort high "Port the retry logic to the Go client"
-dray session new --model opus --fast "Rename the config keys listed below …"
-dray session new --issue DRA-53 --title "Add the issue panel" "Build the issue panel described in DRA-53"
+wain session new --harness codex --effort high "Port the retry logic to the Go client"
+wain session new --model opus --fast "Rename the config keys listed below …"
+wain session new --issue DRA-53 --title "Add the issue panel" "Build the issue panel described in DRA-53"
 ```
 
-Started from a bot, or from anything a bot started, the new session always runs hidden, whatever `--hidden` says, and reports back after every turn. If other bots have open tasks in the same project, `dray` prints a warning naming them, so the bot can check with them first.
+Started from a bot, or from anything a bot started, the new session always runs hidden, whatever `--hidden` says, and reports back after every turn. If other bots have open tasks in the same project, `wain` prints a warning naming them, so the bot can check with them first.
 
 ### Worktree or not
 
@@ -64,8 +64,8 @@ The worktree starts at `origin/<default branch>`, not at the branch you are on. 
 `--no-worktree` runs the session in the `--project` folder as it is: a repo's own checkout, or a folder that is no repo at all. It is for work that changes no repo's files, like setting up a machine or research. Never use it to edit a repo: the session shares that checkout with you and every other session in it.
 
 ```bash
-dray session new --no-worktree --project '~' "Set up Docker on this machine and report the version"
-dray session new --no-worktree --project ~/code/app "Find out why the dev server here fails to start"
+wain session new --no-worktree --project '~' "Set up Docker on this machine and report the version"
+wain session new --no-worktree --project ~/code/app "Find out why the dev server here fails to start"
 ```
 
 `~` quoted is the home folder of the machine that runs the session, which matters with [`--machine`](#on-another-machine). `--no-worktree` cannot go with `--base`. The line printed says `in <folder>, no worktree`.
@@ -75,8 +75,8 @@ A folder that is no git repository needs `--no-worktree`. A bot's own folder is 
 ### Start from existing work
 
 ```bash
-dray session new --base <session-id> "Review the work on this branch and report what you find"
-dray session new --base feature/login "Write tests for the login flow on this branch"
+wain session new --base <session-id> "Review the work on this branch and report what you find"
+wain session new --base feature/login "Write tests for the login flow on this branch"
 ```
 
 `--base` takes a session id, a branch, a tag or a commit.
@@ -102,12 +102,12 @@ The new session inherits no conversation. Put everything it needs in the prompt.
 
 ### How deep it can go
 
-A session you start from the composer may create sessions. Those may create sessions too. Their sessions may not. Past that, `dray session new` and `dray draft start` are refused with a message saying so. Start the next batch from a top-level session.
+A session you start from the composer may create sessions. Those may create sessions too. Their sessions may not. Past that, `wain session new` and `wain draft start` are refused with a message saying so. Start the next batch from a top-level session.
 
 ## List sessions
 
 ```bash
-dray session ls
+wain session ls
 ```
 
 One line per session: id, status, title, branch. A session created by another one also says `spawned by <id>`, a hidden one says `hidden`, and one on another machine says `on <machine>`.
@@ -120,27 +120,27 @@ One line per session: id, status, title, branch. A session created by another on
 
 Status is `idle`, `in_progress` or `completed`. `completed` means the turn finished and nobody has opened the session since. Settled sessions are not listed.
 
-`dray --machine <name> session ls` lists another machine's sessions, and `dray session ls --machine all` lists this machine's and every connected machine's together.
+`wain --machine <name> session ls` lists another machine's sessions, and `wain session ls --machine all` lists this machine's and every connected machine's together.
 
-A session nobody watches reports back to nobody, unless a bot started it. To find out when one finishes, check `dray session ls`, or have the session [message you](#send-a-message).
+A session nobody watches reports back to nobody, unless a bot started it. To find out when one finishes, check `wain session ls`, or have the session [message you](#send-a-message).
 
 ## Send a message
 
 ```bash
-dray session send 0198f0a2-1c5e-7000-8000-000000000000 "The API moved to /v2. Update the client to match."
+wain session send 0198f0a2-1c5e-7000-8000-000000000000 "The API moved to /v2. Update the client to match."
 ```
 
-The message arrives as an ordinary prompt and starts a turn, so it wakes an idle session. If the session is mid-turn, the message is queued and picked up next; `dray` says `Queued — the session is mid-turn and will pick it up.` That is not a failure.
+The message arrives as an ordinary prompt and starts a turn, so it wakes an idle session. If the session is mid-turn, the message is queued and picked up next; `wain` says `Queued — the session is mid-turn and will pick it up.` That is not a failure.
 
-Sent from inside a session, the receiving agent is told which session sent it, with its id, so it can reply with `dray session send`. A message never changes the receiving session's model, effort or permission mode.
+Sent from inside a session, the receiving agent is told which session sent it, with its id, so it can reply with `wain session send`. A message never changes the receiving session's model, effort or permission mode.
 
 ## Switch a session's model
 
 ```bash
-dray session model <id> fable
-dray session model <id> opus --effort high
-dray session model <id> --effort low
-dray session model <id>
+wain session model <id> fable
+wain session model <id> opus --effort high
+wain session model <id> --effort low
+wain session model <id>
 ```
 
 Does what the model picker in the session's composer does. The new model and effort apply from the session's next turn, including a message already waiting behind a running turn. The running turn is not stopped.
@@ -152,18 +152,18 @@ Does what the model picker in the session's composer does. The new model and eff
 | `model <id> --effort <level>` | Changes the effort alone. |
 | `model <id>` | Prints the model and effort the session runs on. |
 
-An alias the session's own agent does not know, but another installed agent does, moves the session to that agent, like `gpt-6-luna` on a Claude Code session. It keeps its worktree, branch and transcript, and the new agent is handed the conversation so far. A move is refused while a turn runs. See [Switch to another agent](/using-dray/composer#switch-to-another-agent).
+An alias the session's own agent does not know, but another installed agent does, moves the session to that agent, like `gpt-6-luna` on a Claude Code session. It keeps its worktree, branch and transcript, and the new agent is handed the conversation so far. A move is refused while a turn runs. See [Switch to another agent](/using-wain/composer#switch-to-another-agent).
 
 ## Rename, stop, settle
 
 ```bash
-dray session rename <id> "Add retry to the upload client"
-dray session stop <id>
-dray session settle <id>
-dray session settle <id> --delete-worktree
-dray session unsettle <id>
-dray session set-aside <id>
-dray session unset-aside <id>
+wain session rename <id> "Add retry to the upload client"
+wain session stop <id>
+wain session settle <id>
+wain session settle <id> --delete-worktree
+wain session unsettle <id>
+wain session set-aside <id>
+wain session unset-aside <id>
 ```
 
 | Command | What it does |
@@ -183,35 +183,35 @@ These are the same as the sidebar's buttons. Settling a session also settles the
 ## Attach and detach
 
 ```bash
-dray session attach <task-id> --bot "Ops"
-dray session detach <task-id>
+wain session attach <task-id> --bot "Ops"
+wain session detach <task-id>
 ```
 
 `attach` is the sidebar's **Attach to bot**. The task leaves the sidebar for the bot's Tasks tab, the bot gets a note saying where the task stands, and from then on the task reports to the bot after every turn. `--bot` takes the bot's name or id. The bot must be on the same machine as the task and have a chat already. A settled task, a bot's own chat, and a task already under a bot are refused.
 
 `detach` is **Detach from parent**, or **Detach from bot** for a bot's task. The task stops nesting under the session that started it, shows in the sidebar even if it ran hidden, and reports to nobody.
 
-See [Attach a task to a bot](/using-dray/bots#attach-a-task-to-a-bot).
+See [Attach a task to a bot](/using-wain/bots#attach-a-task-to-a-bot).
 
 ## Merge card
 
 ```bash
-dray session merge-card <task-id>
+wain session merge-card <task-id>
 ```
 
 Run from inside a session, this posts a card in that session's chat for the open pull request on another session's branch, usually a task it started. The card shows the task, the pull request's number and live status, and a **Merge** button, so you can merge without opening the task or the side panel. It is refused when the branch has no open pull request, and while the task is still mid-turn.
 
-Dray also posts the card on its own, once per pull request, in the chat of the session that started the task. It waits until GitHub says the pull request can merge: its branch protection, required checks and required reviews pass, and no check is still running. It also waits for the task's turn to end. A card already in the chat for that pull request, posted by hand or not, stops a second. So agents post one by hand only when you ask.
+Wain also posts the card on its own, once per pull request, in the chat of the session that started the task. It waits until GitHub says the pull request can merge: its branch protection, required checks and required reviews pass, and no check is still running. It also waits for the task's turn to end. A card already in the chat for that pull request, posted by hand or not, stops a second. So agents post one by hand only when you ask.
 
 The task can run on another machine, such as a sandbox of its own. The card then reads and merges the pull request through the GitHub CLI on the chat's machine, so it keeps working after that machine is gone.
 
-In a bot's chat, Merge also settles the task and deletes its worktree. In any other chat it only merges. See [Merge cards](/using-dray/bots#merge-cards).
+In a bot's chat, Merge also settles the task and deletes its worktree. In any other chat it only merges. See [Merge cards](/using-wain/bots#merge-cards).
 
 ## Issue card
 
 ```bash
-dray session issue-card monorepo-labs/dray 12
-dray session issue-card monorepo-labs/dray 12 15 '#18'
+wain session issue-card ismatbabirli/wain 12
+wain session issue-card ismatbabirli/wain 12 15 '#18'
 ```
 
 Run from inside a session, this posts a card of GitHub issues in that session's chat: each issue's number, title and labels, in the order given, 20 at most. A closed issue's number shows in purple. Click an issue to open it on the Issues page. **Work on it** on an open issue sends the agent a message naming it, so it starts on it.
@@ -221,18 +221,18 @@ Bots post a card whenever they show you GitHub issues.
 ## Need line
 
 ```bash
-dray session need <task-id> "Pick: keep the button or drop it"
-dray session need <task-id>
+wain session need <task-id> "Pick: keep the button or drop it"
+wain session need <task-id>
 ```
 
 Sets what a bot's task needs from you, in one line. It shows on the task's row in the **Waiting on you** card at the foot of the bot's chat, and clears once the task moves. With no text it clears now. Bots write it themselves when a task has sat waiting on you for 2 minutes.
 
-A task whose pull request is ready to merge gets a line only when it asked you to try or check something before merging. Otherwise its row shows **Merge** alone. See [Waiting on you](/using-dray/bots#waiting-on-you).
+A task whose pull request is ready to merge gets a line only when it asked you to try or check something before merging. Otherwise its row shows **Merge** alone. See [Waiting on you](/using-wain/bots#waiting-on-you).
 
 ## Reaction
 
 ```bash
-dray session react 👀
+wain session react 👀
 ```
 
 Run by a bot when your message needs no words back. It puts one emoji on your newest message in the bot's chat, as a badge on the bubble, and the bot ends its turn without replying:
@@ -248,17 +248,17 @@ Run by a bot when your message needs no words back. It puts one emoji on your ne
 | 😢 | `sad` | sorry to hear |
 | 👎 | `dislike` | dislike |
 
-The word works in place of the emoji. A new reaction on the same message replaces the old one. It works only in a bot's chat. Claude Code bots use a built-in tool for the same thing. See [Reactions](/using-dray/bots#reactions).
+The word works in place of the emoji. A new reaction on the same message replaces the old one. It works only in a bot's chat. Claude Code bots use a built-in tool for the same thing. See [Reactions](/using-wain/bots#reactions).
 
 ## On another machine
 
 ```bash
-dray --machine vps session new "Run the load test" --title "Load test"
-dray --machine vps session ls
-dray session send <session-id> "Use the staging DB"
+wain --machine vps session new "Run the load test" --title "Load test"
+wain --machine vps session ls
+wain session send <session-id> "Use the staging DB"
 ```
 
-`--machine <name>` runs a session command on a machine from `dray machine ls`, through this machine's Dray server. A command that names a session id needs no `--machine`: an id this machine does not hold is looked for on every machine it reaches.
+`--machine <name>` runs a session command on a machine from `wain machine ls`, through this machine's Wain server. A command that names a session id needs no `--machine`: an id this machine does not hold is looked for on every machine it reaches.
 
 A new session there runs in that machine's checkout of the same repository, found by its `origin` remote. Pass `--project <path on that machine>` where it has none. `--base <session-id>` names that session's branch, which the other machine can see only once it is pushed. Model, effort, agent and fast mode inherit as they do here.
 

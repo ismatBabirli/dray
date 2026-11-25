@@ -1,4 +1,4 @@
-//! The `dray` CLI the bundle carries as `dray-cli` beside the app's binary
+//! The `wain` CLI the bundle carries as `wain-cli` beside the app's binary
 //! (tauri.cli.conf.json) — `Contents/MacOS` on a Mac, the AppImage's `usr/bin`
 //! on Linux, the install folder on Windows — put where agents and shells find
 //! it.
@@ -8,7 +8,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-/// Copies the bundled CLI to `~/.local/bin/dray` (`dray.exe` on Windows) where
+/// Copies the bundled CLI to `~/.local/bin/wain` (`wain.exe` on Windows) where
 /// the bytes there differ, then has it write its skill. Every launch of a release build, off the main
 /// thread; dev and debug builds skip it, since the CLI on disk belongs to the
 /// release app.
@@ -21,7 +21,7 @@ pub fn install() {
         return;
     }
     tauri::async_runtime::spawn(async {
-        let shell = crate::binpath::shell_dray().await;
+        let shell = crate::binpath::shell_wain().await;
         let done = tauri::async_runtime::spawn_blocking(move || install_bundled(shell)).await;
         if let Ok(Err(e)) = done {
             eprintln!("[cli install] {e}");
@@ -34,13 +34,13 @@ fn install_bundled(shell: Option<PathBuf>) -> Result<(), String> {
     // Absent from a bundle built without the CLI overlay, which is every
     // local `tauri build`.
     let suffix = std::env::consts::EXE_SUFFIX;
-    let Ok(bundled) = std::fs::read(exe.with_file_name(format!("dray-cli{suffix}"))) else {
+    let Ok(bundled) = std::fs::read(exe.with_file_name(format!("wain-cli{suffix}"))) else {
         return Ok(());
     };
     let home = std::env::home_dir().ok_or("no home directory")?;
     let bin = home.join(".local").join("bin");
-    let dest = bin.join(format!("dray{suffix}"));
-    // Every launch, not only on a copy: a `dray` an agent was running when the
+    let dest = bin.join(format!("wain{suffix}"));
+    // Every launch, not only on a copy: a `wain` an agent was running when the
     // last one replaced it is free by now.
     #[cfg(windows)]
     crate::platform::sweep_aside(&bin);
@@ -57,13 +57,13 @@ fn install_bundled(shell: Option<PathBuf>) -> Result<(), String> {
         eprintln!("[cli install] user PATH: {e}");
     }
 
-    // A CLI installed elsewhere with `DRAY_INSTALL_DIR` sits ahead of this copy
+    // A CLI installed elsewhere with `WAIN_INSTALL_DIR` sits ahead of this copy
     // on the reader's PATH, and would keep answering stale. A symlink is left
     // alone: somebody pointed it at a build of their own on purpose.
-    // On Windows only an `.exe`: PATH can resolve npm's `dray.cmd`, a script
+    // On Windows only an `.exe`: PATH can resolve npm's `wain.cmd`, a script
     // the binary's bytes would overwrite.
     let runnable = |p: &Path| cfg!(not(windows)) || p.extension().is_some_and(|e| e.eq_ignore_ascii_case("exe"));
-    if let Some(shell) = shell.filter(|p| *p != dest && runnable(p) && is_plain_dray(p)) {
+    if let Some(shell) = shell.filter(|p| *p != dest && runnable(p) && is_plain_wain(p)) {
         if let Err(e) = copy_if_changed(&bundled, &shell) {
             eprintln!("[cli install] {}: {e}", shell.display());
         }
@@ -81,19 +81,19 @@ fn install_bundled(shell: Option<PathBuf>) -> Result<(), String> {
     status
         .success()
         .then_some(())
-        .ok_or_else(|| format!("dray skill install failed ({status})"))
+        .ok_or_else(|| format!("wain skill install failed ({status})"))
 }
 
-/// A regular file answering `--version` the way Dray's CLI does — the name is
+/// A regular file answering `--version` the way Wain's CLI does — the name is
 /// generic enough for something else on PATH to carry it.
-fn is_plain_dray(path: &Path) -> bool {
+fn is_plain_wain(path: &Path) -> bool {
     std::fs::symlink_metadata(path).is_ok_and(|m| m.is_file())
         && command(path)
             .arg("--version")
             .stdin(Stdio::null())
             .stderr(Stdio::null())
             .output()
-            .is_ok_and(|out| out.status.success() && out.stdout.starts_with(b"dray "))
+            .is_ok_and(|out| out.status.success() && out.stdout.starts_with(b"wain "))
 }
 
 /// A command for a CLI binary, without what an AppImage's AppRun added to
@@ -115,10 +115,10 @@ fn command(path: &Path) -> Command {
 /// where a `.deb` installed it, under home; the Windows app, its own `.exe`.
 /// `app_ships_this_cli` in apps/cli/src/setup.rs and install.sh read it.
 #[cfg(any(target_os = "linux", windows))]
-const APPIMAGE_RECORD: &str = ".local/share/dray/appimage";
+const APPIMAGE_RECORD: &str = ".local/share/wain/appimage";
 
-/// Records which AppImage or package installed the CLI, so `dray update` and
-/// install.sh leave alone a `dray` the app would put back on its next launch —
+/// Records which AppImage or package installed the CLI, so `wain update` and
+/// install.sh leave alone a `wain` the app would put back on its next launch —
 /// a Mac's app is found at fixed paths, an AppImage can live anywhere. The
 /// path, not a flag: one deleted or uninstalled since frees the CLI to update
 /// itself, and one moved is written again by its next launch.
@@ -164,7 +164,7 @@ fn copy_if_changed(bytes: &[u8], dest: &Path) -> std::io::Result<bool> {
     let dir = dest.parent().expect("dest names a file in a directory");
     std::fs::create_dir_all(dir)?;
     // Per process, since an `open -n` relaunch can run two of these at once.
-    let tmp = dir.join(format!(".dray.{}", std::process::id()));
+    let tmp = dir.join(format!(".wain.{}", std::process::id()));
     let written = std::fs::write(&tmp, bytes)
         .and_then(|()| make_executable(&tmp))
         .and_then(|()| replace(&tmp, dest));
@@ -200,8 +200,8 @@ mod tests {
 
     #[test]
     fn copies_only_what_differs() {
-        let dir = std::env::temp_dir().join(format!("dray-cli-test-{}", std::process::id()));
-        let dest = dir.join("bin").join("dray");
+        let dir = std::env::temp_dir().join(format!("wain-cli-test-{}", std::process::id()));
+        let dest = dir.join("bin").join("wain");
 
         assert!(copy_if_changed(b"one", &dest).unwrap(), "absent: written");
         assert!(!copy_if_changed(b"one", &dest).unwrap(), "same bytes: left alone");

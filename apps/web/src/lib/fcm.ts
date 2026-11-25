@@ -46,14 +46,14 @@ async function accessToken(): Promise<string> {
 /// The FCM message: data alone, never a `notification` block, so the app
 /// draws every alert itself — its actions, and nothing for the chat on screen.
 /// FCM takes only strings in `data`, so the alert rides as one JSON string,
-/// the same object an iPhone reads under `dray`. `tag` is what a newer alert
+/// the same object an iPhone reads under `wain`. `tag` is what a newer alert
 /// replaces on the phone.
 export function fcmMessage(token: string, a: Alert, tag: string): object {
-  const { title, body, ...dray } = a;
+  const { title, body, ...wain } = a;
   return {
     message: {
       token,
-      data: { title, body, tag, dray: JSON.stringify(dray) },
+      data: { title, body, tag, wain: JSON.stringify(wain) },
       android: { priority: "HIGH", collapse_key: tag, ttl: "86400s" },
     },
   };

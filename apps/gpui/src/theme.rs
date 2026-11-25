@@ -1,4 +1,4 @@
-//! The Default palette ("Dray" in Settings), both modes, as App.css resolves it
+//! The Default palette ("Wain" in Settings), both modes, as App.css resolves it
 //! on a windowed Mac — `[data-transparency]` and `[data-vibrancy]` both on.
 //!
 //! Only the tokens something here draws with. Each is written the way App.css

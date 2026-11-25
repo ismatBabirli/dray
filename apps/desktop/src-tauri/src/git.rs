@@ -180,7 +180,7 @@ pub async fn worktree_branch_names(cwd: &str) -> Vec<String> {
 /// its first segment, so any remote counts, not only `origin`. A remote whose
 /// own name holds a slash (`git remote add a/b …` is legal) is read as a nested
 /// branch and claims nothing; being exact there costs a `git remote` read on
-/// every session creation, for a shape Dray never pushes to.
+/// every session creation, for a shape Wain never pushes to.
 fn parse_worktree_branch_names(raw: &str) -> Vec<String> {
     raw.lines()
         .filter_map(|line| {
@@ -345,7 +345,7 @@ pub async fn checkout_branch(cwd: &str, branch: &str, stash: bool) -> Result<Bra
     if stash {
         // Named so the entry is recognizable in `git stash list` weeks later,
         // next to whatever the user stashed by hand.
-        let msg = format!("dray: switching to {branch}");
+        let msg = format!("wain: switching to {branch}");
         run(cwd, &["stash", "push", "--include-untracked", "-m", &msg]).await?;
     }
 
@@ -428,7 +428,7 @@ fn parse_branches(raw: &str) -> Vec<String> {
 /// The blobs `add` writes are unreachable and a routine `git gc` collects them;
 /// a session's worth is a few dozen small loose objects.
 pub async fn snapshot_tree(cwd: &str) -> Option<String> {
-    let index = std::env::temp_dir().join(format!("dray-index-{}", Uuid::now_v7()));
+    let index = std::env::temp_dir().join(format!("wain-index-{}", Uuid::now_v7()));
     let tree = write_snapshot(cwd, &index).await;
     let _ = fs::remove_file(&index).await;
     tree
@@ -1123,7 +1123,7 @@ pub async fn log_commits(cwd: &str, limit: u32, skip: u32) -> Result<Vec<Commit>
 
 /// The commit this branch forked from, read out of the branch's own reflog.
 ///
-/// `claude -w` and `dray new --from` both create the branch with
+/// `claude -w` and `wain new --from` both create the branch with
 /// `git worktree add --no-track -B`, which writes `branch: Created from <base>`
 /// on first creation and `branch: Reset to <base>` when the branch already
 /// existed. The entry's own `%H` **is** the base commit, because the branch
@@ -1385,7 +1385,7 @@ pub struct WorktreeDisposition {
 /// The lock a `-p` session leaves behind.
 ///
 /// Claude Code locks a worktree at creation and — verified against v2.1.239 —
-/// a `-p` run does not release it on exit, so nearly every worktree Dray
+/// a `-p` run does not release it on exit, so nearly every worktree Wain
 /// creates is still locked by a dead process. `git worktree remove --force`
 /// refuses a locked tree outright (exit 128, "use 'remove -f -f' to override
 /// or unlock first"), which makes unlocking a required step here rather than a
@@ -1438,7 +1438,7 @@ pub(crate) fn resolved(path: &Path) -> PathBuf {
     dunce::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
 }
 
-/// Whether this path is a worktree **Dray created**, which is the only kind it
+/// Whether this path is a worktree **Wain created**, which is the only kind it
 /// is allowed to delete.
 ///
 /// The guard is the path shape, not the index: an index entry is a record of
@@ -1565,7 +1565,7 @@ pub async fn pushed_branch(cwd: &str, name: &str) -> Result<String> {
     if resolve_commit(cwd, name).await.is_some() {
         return Ok(name.to_string());
     }
-    let temp = format!("refs/dray/fetch/{}", Uuid::now_v7());
+    let temp = format!("refs/wain/fetch/{}", Uuid::now_v7());
     let refspec = format!("+{name}:{temp}");
     let fetched = exec(cwd, &[("GIT_TERMINAL_PROMPT", "0")], &["fetch", "-q", "--no-tags", "origin", &refspec]).await;
     let commit = match fetched {
@@ -1612,7 +1612,7 @@ pub fn worktree_branch(name: &str) -> String {
 /// cannot do this: `claude -w` resolves the repo's default branch, fetches
 /// `origin/<it>` and passes *that* to `git worktree add`, and its flag surface
 /// exposes no base ref at all. So a session that has to start from existing
-/// work is one Dray makes the tree for and then spawns the child *into*, with
+/// work is one Wain makes the tree for and then spawns the child *into*, with
 /// no `-w` at all.
 ///
 /// **A branch, never a detached HEAD.** Detaching would suit a session that
@@ -1624,7 +1624,7 @@ pub fn worktree_branch(name: &str) -> String {
 /// else about it.
 ///
 /// `-B` rather than `-b`, matching the CLI: a branch left behind by a tree
-/// deleted outside Dray would otherwise make that name fail forever, since the
+/// deleted outside Wain would otherwise make that name fail forever, since the
 /// name is what the branch is derived from. It cannot clobber live work — git
 /// refuses to reset a branch another worktree holds, which is exactly the case
 /// where somebody is using it.
@@ -1674,7 +1674,7 @@ pub async fn create_worktree(project_path: &str, name: &str, base: &str) -> Resu
 pub struct PrHead {
     pub branch: String,
     pub repo: String,
-    /// A task Dray started on this PR has used the branch before, so commits
+    /// A task Wain started on this PR has used the branch before, so commits
     /// on the local branch the remote lacks are that task's unpushed work, to
     /// carry on from rather than a stale copy to refuse. Set by the server.
     #[serde(skip)]
@@ -1856,7 +1856,7 @@ pub async fn is_branch(cwd: &str, name: &str) -> bool {
 
 /// A worktree on a branch the reader picked, by the branch's own name, so the
 /// agent's commits land on it — the new-task composer's branch picker and
-/// `dray session new --base <branch>` alike:
+/// `wain session new --base <branch>` alike:
 ///
 /// - only on the remote: fetched, a local branch made tracking it;
 /// - only here: used as it is;
@@ -2014,7 +2014,7 @@ pub async fn remove_worktree(project_path: &str, worktree_path: &str, branch: Op
     let tree = PathBuf::from(worktree_path);
 
     if !is_managed_worktree(&project, &tree) {
-        bail!("{worktree_path} is not a worktree Dray created, so it will not be removed");
+        bail!("{worktree_path} is not a worktree Wain created, so it will not be removed");
     }
 
     // The lock alone, not the whole disposition: that also counts dirty files
@@ -2077,12 +2077,12 @@ mod tests {
     #[test]
     fn one_repository_has_one_key_however_it_was_cloned() {
         for url in [
-            "git@github.com:monorepo-labs/dray.git",
-            "https://github.com/monorepo-labs/dray",
-            "https://user@github.com/Monorepo-Labs/dray.git/",
-            "ssh://git@github.com/monorepo-labs/dray.git",
+            "git@github.com:ismatbabirli/wain.git",
+            "https://github.com/ismatbabirli/wain",
+            "https://user@github.com/IsmatBabirli/wain.git/",
+            "ssh://git@github.com/ismatbabirli/wain.git",
         ] {
-            assert_eq!(repo_key(url), "github.com/monorepo-labs/dray", "{url}");
+            assert_eq!(repo_key(url), "github.com/ismatbabirli/wain", "{url}");
         }
     }
 
@@ -2290,7 +2290,7 @@ mod tests {
     /// `--git-path` resolved against the wrong directory — and none of them
     /// show up in a string fixture.
     async fn scratch_repo() -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("dray-gittest-{}", Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-gittest-{}", Uuid::now_v7()));
         fs::create_dir_all(&dir).await.unwrap();
         let at = dir.to_str().unwrap();
 
@@ -2386,16 +2386,16 @@ mod tests {
     #[test]
     fn a_remote_url_answers_with_its_owner_and_repo() {
         for url in [
-            "https://github.com/monorepo-labs/dray.git",
-            "https://github.com/monorepo-labs/dray",
-            "git@github.com:monorepo-labs/dray.git",
-            "ssh://git@github.com/monorepo-labs/dray.git",
-            "https://token@github.com/monorepo-labs/dray.git",
-            "https://x-access-token:ghs_abc@github.com/monorepo-labs/dray.git",
-            "ssh://git@github.com:22/monorepo-labs/dray.git",
-            "https://github.com/monorepo-labs/dray/",
+            "https://github.com/ismatbabirli/wain.git",
+            "https://github.com/ismatbabirli/wain",
+            "git@github.com:ismatbabirli/wain.git",
+            "ssh://git@github.com/ismatbabirli/wain.git",
+            "https://token@github.com/ismatbabirli/wain.git",
+            "https://x-access-token:ghs_abc@github.com/ismatbabirli/wain.git",
+            "ssh://git@github.com:22/ismatbabirli/wain.git",
+            "https://github.com/ismatbabirli/wain/",
         ] {
-            assert_eq!(remote_path(url), Some("monorepo-labs/dray"), "{url}");
+            assert_eq!(remote_path(url), Some("ismatbabirli/wain"), "{url}");
         }
 
         for url in [
@@ -2539,7 +2539,7 @@ mod tests {
     }
 
     /// The name is what the branch is derived from, so a branch left behind by
-    /// a tree deleted outside Dray would make that name fail forever. `-B`
+    /// a tree deleted outside Wain would make that name fail forever. `-B`
     /// resets it — and cannot reach a branch some worktree still holds, which
     /// is every case where the branch is somebody's live work.
     #[tokio::test]
@@ -2933,7 +2933,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_directory_that_is_not_a_repo_has_no_baseline() {
-        let dir = std::env::temp_dir().join(format!("dray-plain-{}", Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-plain-{}", Uuid::now_v7()));
         fs::create_dir_all(&dir).await.unwrap();
 
         // What keeps the panel hidden rather than erroring at the user.
@@ -3187,7 +3187,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_repo_with_no_commit_yet_diffs_against_the_empty_tree() {
-        let dir = std::env::temp_dir().join(format!("dray-unborn-{}", Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-unborn-{}", Uuid::now_v7()));
         fs::create_dir_all(&dir).await.unwrap();
         let at = dir.to_str().unwrap();
         run(at, &["init", "-q", "."]).await.unwrap();
@@ -3220,7 +3220,7 @@ mod tests {
         // what makes an empty uncommitted list empty.
         assert_eq!(snapshot_tree(at).await.as_deref(), Some(head.as_str()));
 
-        let empty = std::env::temp_dir().join(format!("dray-nonrepo-{}", Uuid::now_v7()));
+        let empty = std::env::temp_dir().join(format!("wain-nonrepo-{}", Uuid::now_v7()));
         fs::create_dir_all(&empty).await.unwrap();
         assert_eq!(head_tree(empty.to_str().unwrap()).await, None);
 
@@ -3257,7 +3257,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_directory_that_is_not_a_repo_has_no_history() {
-        let dir = std::env::temp_dir().join(format!("dray-nonrepo-{}", Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-nonrepo-{}", Uuid::now_v7()));
         fs::create_dir_all(&dir).await.unwrap();
 
         assert!(log_commits(dir.to_str().unwrap(), 50, 0).await.unwrap().is_empty());
@@ -3345,7 +3345,7 @@ mod tests {
         let dir = scratch_repo().await;
         let at = dir.to_str().unwrap();
 
-        let bare = std::env::temp_dir().join(format!("dray-origin-{}", Uuid::now_v7()));
+        let bare = std::env::temp_dir().join(format!("wain-origin-{}", Uuid::now_v7()));
         fs::create_dir_all(&bare).await.unwrap();
         run(bare.to_str().unwrap(), &["init", "-q", "--bare", "."])
             .await
@@ -3404,7 +3404,7 @@ mod tests {
     async fn a_ref_pushed_elsewhere_resolves_to_its_commit_on_origin() {
         let dir = scratch_repo().await;
         let at = dir.to_str().unwrap();
-        let bare = std::env::temp_dir().join(format!("dray-origin-{}", Uuid::now_v7()));
+        let bare = std::env::temp_dir().join(format!("wain-origin-{}", Uuid::now_v7()));
         fs::create_dir_all(&bare).await.unwrap();
         run(bare.to_str().unwrap(), &["init", "-q", "--bare", "."]).await.unwrap();
         run(at, &["remote", "add", "origin", bare.to_str().unwrap()]).await.unwrap();
@@ -3422,7 +3422,7 @@ mod tests {
         let fetched = pushed_branch(at, "v-elsewhere").await.unwrap();
         assert_eq!(Some(fetched.clone()), head);
         assert!(!is_branch(at, &fetched).await, "a commit forks");
-        assert_eq!(git(at, &["for-each-ref", "refs/dray/"]).await.as_deref(), Some(""), "temp refs are deleted");
+        assert_eq!(git(at, &["for-each-ref", "refs/wain/"]).await.as_deref(), Some(""), "temp refs are deleted");
         let here = current_branch(at).await.unwrap();
         assert_eq!(pushed_branch(at, &here).await.unwrap(), here);
 
@@ -3438,7 +3438,7 @@ mod tests {
     async fn a_tree_on_a_pr_branch_tracks_it_by_name() {
         let dir = scratch_repo().await;
         let at = dir.to_str().unwrap();
-        let bare = std::env::temp_dir().join(format!("dray-upstream-{}", Uuid::now_v7()));
+        let bare = std::env::temp_dir().join(format!("wain-upstream-{}", Uuid::now_v7()));
         fs::create_dir_all(&bare).await.unwrap();
         run(bare.to_str().unwrap(), &["init", "-q", "--bare", "."]).await.unwrap();
         // The fork layout: `origin` names some other repo, the PR's is `upstream`.
@@ -3503,7 +3503,7 @@ mod tests {
 
         // The PR rebased under it: local and remote diverged, so even a branch
         // of ours is refused rather than carried on from stale commits.
-        let other = std::env::temp_dir().join(format!("dray-rebase-{}", Uuid::now_v7()));
+        let other = std::env::temp_dir().join(format!("wain-rebase-{}", Uuid::now_v7()));
         run(at, &["worktree", "add", "-q", "--detach", other.to_str().unwrap(), "upstream/feature/pr"]).await.unwrap();
         let o = other.to_str().unwrap();
         fs::write(other.join("rebased.txt"), "y\n").await.unwrap();
@@ -3525,7 +3525,7 @@ mod tests {
     async fn the_default_base_is_fetched_before_a_tree_starts_from_it() {
         let dir = scratch_repo().await;
         let at = dir.to_str().unwrap();
-        let bare = std::env::temp_dir().join(format!("dray-origin-{}", Uuid::now_v7()));
+        let bare = std::env::temp_dir().join(format!("wain-origin-{}", Uuid::now_v7()));
         fs::create_dir_all(&bare).await.unwrap();
         run(bare.to_str().unwrap(), &["init", "-q", "--bare", "."]).await.unwrap();
         run(at, &["remote", "add", "origin", bare.to_str().unwrap()]).await.unwrap();
@@ -3546,7 +3546,7 @@ mod tests {
         let path = create_worktree(at, "fresh", "origin/main").await.unwrap();
         assert_eq!(resolve_commit(&path, "HEAD").await, Some(newer.clone()), "started at the remote's newest");
 
-        run(at, &["remote", "set-url", "origin", "/nonexistent/dray-origin"]).await.unwrap();
+        run(at, &["remote", "set-url", "origin", "/nonexistent/wain-origin"]).await.unwrap();
         assert_eq!(fetched_default_base(at).await.as_deref(), Some("origin/main"), "a failed fetch is no refusal");
         assert_eq!(resolve_commit(at, "origin/main").await, Some(newer));
 
@@ -3561,7 +3561,7 @@ mod tests {
     async fn a_tree_from_a_picked_branch_follows_where_the_branch_lives() {
         let dir = scratch_repo().await;
         let at = dir.to_str().unwrap();
-        let bare = std::env::temp_dir().join(format!("dray-origin-{}", Uuid::now_v7()));
+        let bare = std::env::temp_dir().join(format!("wain-origin-{}", Uuid::now_v7()));
         fs::create_dir_all(&bare).await.unwrap();
         run(bare.to_str().unwrap(), &["init", "-q", "--bare", "."]).await.unwrap();
         run(at, &["remote", "add", "origin", bare.to_str().unwrap()]).await.unwrap();
@@ -3668,7 +3668,7 @@ mod tests {
     async fn a_local_branch_needs_no_remote() {
         let dir = scratch_repo().await;
         let at = dir.to_str().unwrap();
-        run(at, &["remote", "add", "origin", "/nonexistent/dray-remote.git"]).await.unwrap();
+        run(at, &["remote", "add", "origin", "/nonexistent/wain-remote.git"]).await.unwrap();
         run(at, &["branch", "offline"]).await.unwrap();
         let made = create_worktree_from_branch(at, "t-offline", "offline").await.unwrap();
         assert_eq!(made, PrTree::OnBranch);
@@ -3687,7 +3687,7 @@ mod tests {
         let dir = scratch_repo().await;
         let at = dir.to_str().unwrap();
 
-        let bare = std::env::temp_dir().join(format!("dray-origin-{}", Uuid::now_v7()));
+        let bare = std::env::temp_dir().join(format!("wain-origin-{}", Uuid::now_v7()));
         fs::create_dir_all(&bare).await.unwrap();
         run(bare.to_str().unwrap(), &["init", "-q", "--bare", "."])
             .await
@@ -3743,7 +3743,7 @@ mod tests {
     /// every other read here, never an error.
     #[tokio::test]
     async fn a_directory_that_is_not_a_repo_has_no_branch_history() {
-        let dir = std::env::temp_dir().join(format!("dray-nonrepo-{}", Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-nonrepo-{}", Uuid::now_v7()));
         fs::create_dir_all(&dir).await.unwrap();
 
         assert!(log_branch_commits(dir.to_str().unwrap(), 50, 0)
@@ -3810,7 +3810,7 @@ mod tests {
     async fn work_status_names_the_default_branch_without_its_remote() {
         let dir = scratch_repo().await;
         let at = dir.to_str().unwrap();
-        let remote = std::env::temp_dir().join(format!("dray-remote-{}", Uuid::now_v7()));
+        let remote = std::env::temp_dir().join(format!("wain-remote-{}", Uuid::now_v7()));
 
         fs::create_dir_all(&remote).await.unwrap();
         run(remote.to_str().unwrap(), &["init", "-q", "--bare", "."])
@@ -3838,7 +3838,7 @@ mod tests {
     async fn work_status_counts_commits_against_the_base_not_the_upstream() {
         let dir = scratch_repo().await;
         let at = dir.to_str().unwrap();
-        let remote = std::env::temp_dir().join(format!("dray-remote-{}", Uuid::now_v7()));
+        let remote = std::env::temp_dir().join(format!("wain-remote-{}", Uuid::now_v7()));
 
         fs::create_dir_all(&remote).await.unwrap();
         run(remote.to_str().unwrap(), &["init", "-q", "--bare", "."])
@@ -3882,7 +3882,7 @@ mod tests {
     async fn work_status_keeps_slashes_inside_the_default_branch_name() {
         let dir = scratch_repo().await;
         let at = dir.to_str().unwrap();
-        let remote = std::env::temp_dir().join(format!("dray-remote-{}", Uuid::now_v7()));
+        let remote = std::env::temp_dir().join(format!("wain-remote-{}", Uuid::now_v7()));
 
         fs::create_dir_all(&remote).await.unwrap();
         run(remote.to_str().unwrap(), &["init", "-q", "--bare", "."])
@@ -3917,7 +3917,7 @@ mod tests {
     /// error — the row hides on `branch` being `None`.
     #[tokio::test]
     async fn work_status_outside_a_repo_offers_nothing() {
-        let dir = std::env::temp_dir().join(format!("dray-plain-{}", Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-plain-{}", Uuid::now_v7()));
         fs::create_dir_all(&dir).await.unwrap();
 
         let status = work_status(dir.to_str().unwrap()).await;

@@ -1,13 +1,13 @@
-//! Linking this server to an org at drayhq.com (#874), by RFC 8628's device
+//! Linking this server to an org at wainhq.com (#874), by RFC 8628's device
 //! flow: the server asks the site for a code, someone approves it at
 //! `/link`, and the server's poll is handed a credential of its own, tied to
 //! its row on the site and never a copy of anyone's session. Unlinking on the
 //! site deletes that row, which is what revokes it.
 //!
-//! The server runs the flow, not its client, so `dray login` and the app's
+//! The server runs the flow, not its client, so `wain login` and the app's
 //! Link buttons start the same one and watch it through [`state`] or
 //! [`CHANGED`]. The app's sign-in links this machine its own way, through
-//! the browser ([`crate::dray_account`]), and hands the result to [`adopt`].
+//! the browser ([`crate::wain_account`]), and hands the result to [`adopt`].
 
 use std::{
     sync::Mutex,
@@ -21,9 +21,9 @@ use ts_rs::TS;
 use crate::{sink::Sink, store};
 
 pub const CHANGED: &str = "org_link_changed";
-const SITE: &str = "https://www.drayhq.com";
+const SITE: &str = "https://www.wainhq.com";
 /// A code still this fresh is handed to a second caller rather than replaced,
-/// so `dray login` beside the app's Link doesn't kill the code being typed.
+/// so `wain login` beside the app's Link doesn't kill the code being typed.
 const REUSE_MIN: Duration = Duration::from_secs(60);
 /// How long a credential is trusted between checks with the site.
 const RECHECK: Duration = Duration::from_secs(60);
@@ -55,7 +55,7 @@ pub struct PendingLink {
     pub expires_in_secs: u64,
 }
 
-/// Where this server stands, as the app and `dray login` read it.
+/// Where this server stands, as the app and `wain login` read it.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export, export_to = "events.ts")]
 #[serde(rename_all = "camelCase")]
@@ -73,7 +73,7 @@ pub struct Linked {
     /// What the org calls this server.
     pub server_name: String,
     pub org: LinkedOrg,
-    /// The site that holds the link, `https://www.drayhq.com` outside testing.
+    /// The site that holds the link, `https://www.wainhq.com` outside testing.
     pub site: String,
 }
 
@@ -86,7 +86,7 @@ struct Held {
     server_name: String,
     org: LinkedOrg,
     /// Where the credential was minted, so a check or an unlink goes there
-    /// even if `DRAY_ACCOUNT_URL` has moved since.
+    /// even if `WAIN_ACCOUNT_URL` has moved since.
     site: String,
 }
 
@@ -116,9 +116,9 @@ fn memory() -> std::sync::MutexGuard<'static, Memory> {
     MEMORY.lock().unwrap_or_else(|e| e.into_inner())
 }
 
-/// The site to link with: drayhq.com, or `DRAY_ACCOUNT_URL` for a local one.
+/// The site to link with: wainhq.com, or `WAIN_ACCOUNT_URL` for a local one.
 pub(crate) fn site() -> String {
-    std::env::var("DRAY_ACCOUNT_URL").ok().filter(|s| !s.is_empty()).unwrap_or_else(|| SITE.into()).trim_end_matches('/').into()
+    std::env::var("WAIN_ACCOUNT_URL").ok().filter(|s| !s.is_empty()).unwrap_or_else(|| SITE.into()).trim_end_matches('/').into()
 }
 
 async fn path() -> Result<std::path::PathBuf, String> {
@@ -224,7 +224,7 @@ pub async fn start(sink: Sink) -> Result<PendingLink, String> {
     }
     let held = read().await;
     let site = site();
-    let mut body = json!({ "name": dray_proto::machine_name() });
+    let mut body = json!({ "name": wain_proto::machine_name() });
     if let Some(held) = held.as_ref().filter(|h| h.site == site) {
         body["token"] = json!(held.token);
     }
@@ -297,7 +297,7 @@ async fn poll_once(site: &str, device_code: &str) -> Poll {
     match body["error"].as_str() {
         Some("authorization_pending") => Poll::Wait,
         Some("slow_down") => Poll::SlowDown,
-        Some("access_denied") => Poll::Ended("Cancelled on drayhq.com.".into()),
+        Some("access_denied") => Poll::Ended("Cancelled on wainhq.com.".into()),
         Some("expired_token") => Poll::Ended("The code expired before anyone approved it.".into()),
         _ => Poll::Wait,
     }
@@ -378,7 +378,7 @@ pub(crate) async fn held_token(site: &str) -> Option<String> {
     read().await.filter(|h| h.site == site).map(|h| h.token)
 }
 
-/// Keeps the link a browser sign-in brought back ([`crate::dray_account`]),
+/// Keeps the link a browser sign-in brought back ([`crate::wain_account`]),
 /// replacing whatever was held and ending any code still waiting.
 pub(crate) async fn adopt(sink: &Sink, body: &Value, site: &str) -> Result<(), String> {
     let held = held_from(body, site).ok_or_else(|| format!("{site} sent a link this server can't read."))?;
@@ -418,7 +418,7 @@ pub async fn cancel(sink: Sink) {
     let _ = sink.emit(CHANGED, ());
 }
 
-/// What `dray logout` reports.
+/// What `wain logout` reports.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export, export_to = "events.ts")]
 #[serde(rename_all = "camelCase")]

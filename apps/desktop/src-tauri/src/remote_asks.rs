@@ -1,4 +1,4 @@
-//! `dray --machine <name> bot send --ask` (#1463): a bot on another machine
+//! `wain --machine <name> bot send --ask` (#1463): a bot on another machine
 //! answering a session here.
 //!
 //! The question goes out over this server's link to the bot's machine, and
@@ -163,7 +163,7 @@ pub async fn take(
     for question in unlanded {
         let on = question.machine.as_deref().map(|m| format!(" on {m}")).unwrap_or_default();
         let text = format!(
-            "Dray couldn't pass this answer back to \"{}\"{on}: that session is gone or settled.",
+            "Wain couldn't pass this answer back to \"{}\"{on}: that session is gone or settled.",
             question.asker
         );
         bot_notice(&question.bot_id, text, sink).await;
@@ -331,7 +331,7 @@ mod collect {
             dropped.push((
                 asked,
                 format!(
-                    "No answer came back from {} on {} in a week, so Dray stopped waiting: that machine never answered.",
+                    "No answer came back from {} on {} in a week, so Wain stopped waiting: that machine never answered.",
                     asked.bot, asked.machine_name
                 ),
             ));

@@ -23,9 +23,9 @@ export async function sendMail({ to, subject, text }: { to: string; subject: str
     console.log(`[mail] to ${to}: ${subject}\n${text}`);
     return;
   }
-  // The SDK reports usage to its makers by default; Dray's sign-ups aren't theirs to count.
+  // The SDK reports usage to its makers by default; Wain's sign-ups aren't theirs to count.
   client ??= createEmailClient({ adapters: [adapter(process.env.EMAIL_PROVIDER)], telemetry: false });
-  await client.send({ from: process.env.MAIL_FROM ?? "Dray <hello@mail.drayhq.com>", to, subject, text });
+  await client.send({ from: process.env.MAIL_FROM ?? "Wain <hello@mail.wainhq.com>", to, subject, text });
 }
 
 /// The adapter for one provider, from that provider's env vars.

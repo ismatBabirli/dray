@@ -4,7 +4,7 @@
 //! `apps/desktop/PI-PLAN.md` for the design, the rejected alternatives and the
 //! captured protocol the parser was written against.
 //!
-//! **`DRAY_PI_TRACE=1` echoes every line read off pi**, tagged by session. A
+//! **`WAIN_PI_TRACE=1` echoes every line read off pi**, tagged by session. A
 //! line that reaches the mapper and draws nothing is otherwise invisible: it is
 //! not a parse failure, so it is not in `parse_failures.jsonl`, and it is not a
 //! mapped event, so it is not in the session log. That gap cost an afternoon
@@ -95,7 +95,7 @@ fn tools_for(mode: ApprovalPolicy) -> Option<Vec<&'static str>> {
 /// Spawns a session's `pi --mode rpc` and handshakes it.
 ///
 /// Takes a resolved [`Model`] like the other two, except that for pi it may be
-/// absent: pi is multi-provider, so Dray names no default it could be wrong
+/// absent: pi is multi-provider, so Wain names no default it could be wrong
 /// about. With none the flag is omitted and pi's own settings decide, which is
 /// both the honest answer and the one its user already configured.
 pub async fn init(
@@ -110,7 +110,7 @@ pub async fn init(
     // The session *file*, not the session id, is pi's resume handle. pi mints
     // its own id and reports it back — `session_id_not_adopted.jsonl` pins that
     // it does not adopt one from the filename — so the path is the one thing
-    // Dray gets to choose and the one thing a resume needs.
+    // Wain gets to choose and the one thing a resume needs.
     let session_file = store::pi_session_file(session_id).await?;
 
     let mut args = vec![
@@ -155,16 +155,16 @@ pub async fn init(
     let bin = crate::binpath::pi().await;
     let mut command = crate::binpath::command(&bin);
 
-    // Which app the agent's own `dray` calls reach. Dev and release builds
+    // Which app the agent's own `wain` calls reach. Dev and release builds
     // listen on different sockets and the CLI's default names the release one.
     if let Some(endpoint) = crate::orchestration::child_endpoint() {
-        command.env("DRAY_ENDPOINT", endpoint);
+        command.env("WAIN_ENDPOINT", endpoint);
     }
 
     let mut child = command
         .args(args)
         .current_dir(cwd)
-        .env("DRAY_SESSION_ID", session_id)
+        .env("WAIN_SESSION_ID", session_id)
         .env("PATH", crate::harness::agent_path(&bin))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -322,12 +322,12 @@ pub async fn init(
 /// before the model call after it, and the answer came back mid-turn. The
 /// default waits for the whole run to end.
 ///
-/// Both are pi's, not Dray's, which is why steering needs no queue on this side
+/// Both are pi's, not Wain's, which is why steering needs no queue on this side
 /// at all — see [`Session::steer`](crate::session::Session::steer).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Delivery {
     /// pi's own default: this prompt starts a run, or waits for the one running
-    /// to finish. What `dray send` and an idle composer both want.
+    /// to finish. What `wain send` and an idle composer both want.
     WhenIdle,
     /// Into the turn already running, at its next tool-call boundary.
     Steer,
@@ -372,7 +372,7 @@ fn register_dialog(
 ///
 /// pi reports its own abort as `stopReason: "error"` carrying "This operation
 /// was aborted", which drew the reader's Stop as a red failed turn. Told by the
-/// stop window rather than by that sentence: Dray knows it asked, and a
+/// stop window rather than by that sentence: Wain knows it asked, and a
 /// sentence is pi's to reword. `aborted` is the stop reason every harness's
 /// Stop closes on, and what the transcript draws no failure for.
 fn as_stopped(payload: &mut AgentEventPayload) {
@@ -414,7 +414,7 @@ pub async fn send_prompt(
     // a new run's own preflight can ask before `agent_start` is ever published —
     // an extension command, an `input` handler, `before_agent_start` — so a
     // window keyed on that line was still open for a question the reader very
-    // much wanted, and Dray refused it. And pi awaits its `agent_start` handlers
+    // much wanted, and Wain refused it. And pi awaits its `agent_start` handlers
     // before publishing the line at all, so it was never proof the stopped run
     // had finished asking either.
     //
@@ -447,7 +447,7 @@ fn prompt_request(
     // and an empty array is this build stating something pi already assumes.
     //
     // Not gated on the model taking images: pi resolves the model itself when
-    // Dray names none, so the app's copy of that answer can be absent or wrong,
+    // Wain names none, so the app's copy of that answer can be absent or wrong,
     // and a provider refusing an image is a sentence the reader can act on
     // where silently dropping one is not. Before this the images were dropped —
     // the transcript drew the screenshot the reader attached and the model was
@@ -515,7 +515,7 @@ pub(super) async fn spawn_probe(cwd: Option<&str>, what: &str) -> Result<(Child,
             "rpc",
             // Mandatory, not tidiness: without it every probe writes a session
             // file into the reader's own `~/.pi/agent/sessions/`, and their
-            // session list fills with empty runs Dray started.
+            // session list fills with empty runs Wain started.
             "--no-session",
         ])
         .env("PATH", crate::harness::agent_path(&bin))
@@ -635,7 +635,7 @@ async fn read_stdout(
             continue;
         }
 
-        if std::env::var_os("DRAY_PI_TRACE").is_some() {
+        if std::env::var_os("WAIN_PI_TRACE").is_some() {
             // By chars, not bytes: slicing a `String` at a byte offset that
             // lands inside a multi-byte character panics, and this reads lines
             // an agent wrote.
@@ -674,7 +674,7 @@ async fn read_stdout(
         }
 
         // The model moved under a running child through a pi extension calling
-        // `setModel`, which pi reports here. Dray's own `set_model` announces no
+        // `setModel`, which pi reports here. Wain's own `set_model` announces no
         // such line and re-reads the window itself. The ring's denominator belongs to the
         // model, so it is re-read rather than left describing the old one.
         //
@@ -953,7 +953,7 @@ mod tests {
     fn the_prompt_names_nothing_pi_lacks() {
         assert!(!APPEND_SYSTEM_PROMPT.contains("AskUserQuestion"));
         assert!(!APPEND_SYSTEM_PROMPT.contains("Agent tool"));
-        assert!(APPEND_SYSTEM_PROMPT.contains("~/.agents/skills/dray"));
+        assert!(APPEND_SYSTEM_PROMPT.contains("~/.agents/skills/wain"));
     }
 
     /// The read loop names no dialog method of its own.

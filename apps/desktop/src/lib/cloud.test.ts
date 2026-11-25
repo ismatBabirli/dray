@@ -19,7 +19,7 @@ function io(over: Partial<Io> = {}): Io & { started: number; clones: string[]; d
     start: async (): Promise<string> => `c${++out.started}`,
     clone: async (server: string, slug: string) => {
       out.clones.push(`${server}:${slug}`);
-      return [project(`dray://${server}/root/dray/app`)];
+      return [project(`wain://${server}/root/wain/app`)];
     },
     drop: async (server: string) => {
       out.dropped.push(server);
@@ -35,17 +35,17 @@ describe("placeTask", () => {
     const steps: string[] = [];
     const first = await placeTask(REMOTE, machines, (s) => steps.push(s));
     const second = await placeTask(REMOTE, machines);
-    expect(first).toMatchObject({ server: "c1", path: "dray://c1/root/dray/app" });
+    expect(first).toMatchObject({ server: "c1", path: "wain://c1/root/wain/app" });
     expect(second.server).toBe("c2");
     expect(machines.clones).toEqual(["c1:octocat/app", "c2:octocat/app"]);
     expect(steps).toEqual(["starting", "cloning"]);
   });
 
   it("says plainly when no machine starts", async () => {
-    const machines = io({ start: async () => Promise.reject("Couldn't reach Dray Cloud: connection refused") });
+    const machines = io({ start: async () => Promise.reject("Couldn't reach Wain Cloud: connection refused") });
     const err = await placeTask(REMOTE, machines).catch((e) => e);
     expect(err).toBeInstanceOf(CloudError);
-    expect(err.message).toBe("Couldn't start a cloud machine: Couldn't reach Dray Cloud: connection refused");
+    expect(err.message).toBe("Couldn't start a cloud machine: Couldn't reach Wain Cloud: connection refused");
     expect(machines.clones).toEqual([]);
   });
 

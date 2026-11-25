@@ -12,7 +12,7 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 
 # Vercel's checkout is shallow and may carry no remote, so fetch by URL. The
 # repository is public. VERCEL_IGNORE_REPO is the test's local remote.
-repo=${VERCEL_IGNORE_REPO:-"https://github.com/${VERCEL_GIT_REPO_OWNER:-monorepo-labs}/${VERCEL_GIT_REPO_SLUG:-dray}.git"}
+repo=${VERCEL_IGNORE_REPO:-"https://github.com/${VERCEL_GIT_REPO_OWNER:-ismatbabirli}/${VERCEL_GIT_REPO_SLUG:-wain}.git"}
 ref=${VERCEL_GIT_COMMIT_REF:-}
 base=${VERCEL_GIT_PREVIOUS_SHA:-}
 

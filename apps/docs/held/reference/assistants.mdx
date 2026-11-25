@@ -1,11 +1,11 @@
 ---
 title: Connect an assistant
-description: Start and follow Dray sessions from Grok, Claude or ChatGPT by chat or voice, through each server's MCP connector.
+description: Start and follow Wain sessions from Grok, Claude or ChatGPT by chat or voice, through each server's MCP connector.
 sidebar:
   order: 2
 ---
 
-Every Dray server speaks MCP, the protocol AI assistants use to reach other apps. Add one as a custom connector in Grok, Claude or ChatGPT, and you can ask it to start a task, check how it is going, answer the agent's questions and stop it, from your phone or by voice.
+Every Wain server speaks MCP, the protocol AI assistants use to reach other apps. Add one as a custom connector in Grok, Claude or ChatGPT, and you can ask it to start a task, check how it is going, answer the agent's questions and stop it, from your phone or by voice.
 
 Each machine is its own connector: your Mac, and each Linux server you run.
 
@@ -21,14 +21,14 @@ Each machine is its own connector: your Mac, and each Linux server you run.
     In the assistant, add a custom connector and paste the URL. In Grok, open grok.com/connectors → **New Connector** → **Custom**; in Grok Bot, ask it to "add a custom MCP server" with the URL. In Claude, use Settings → Connectors → **Add custom connector**. In ChatGPT, turn on developer mode and create an app with the URL.
   </Step>
   <Step title="Sign in with the code">
-    The assistant opens a Dray page asking for the code. Type it and press **Connect**. The code works once, for 10 minutes.
+    The assistant opens a Wain page asking for the code. Type it and press **Connect**. The code works once, for 10 minutes.
   </Step>
 </Steps>
 
 On a server with no app, run this on the server instead:
 
 ```bash
-dray server assistant add
+wain server assistant add
 ```
 
 It prints the URL and the code. `--read-only` makes a read-only one.
@@ -41,7 +41,7 @@ It prints the URL and the code. `--read-only` makes a read-only one.
 | `list_sessions` | Lists recent sessions, with their status and whether one is waiting on you. |
 | `read_session` | Shows a session's latest prompt, what the agent said since, and any open question or permission. |
 | `wait_for_session` | Waits up to 50 seconds for a session to finish or to need you. |
-| `start_session` | Starts an agent on a task, in its own worktree and branch, like `dray session new`. |
+| `start_session` | Starts an agent on a task, in its own worktree and branch, like `wain session new`. |
 | `send_message` | Sends a session a follow-up. |
 | `stop_session` | Stops a session's running turn. |
 | `answer_card` | Answers a permission or question the agent is blocked on. |
@@ -59,8 +59,8 @@ Each server's row in Settings → Servers lists the assistants signed in to it, 
 From a terminal on the server:
 
 ```bash
-dray server assistant ls
-dray server assistant revoke <id>
+wain server assistant ls
+wain server assistant revoke <id>
 ```
 
 What to know:

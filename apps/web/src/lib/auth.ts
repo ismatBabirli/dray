@@ -7,7 +7,7 @@ import { organization } from "better-auth/plugins/organization";
 
 import { pool } from "./db";
 import { sendMail } from "./mail";
-import { drayTables } from "./schema";
+import { wainTables } from "./schema";
 import { slugify, slugProblem, usernameFrom, usernameProblem } from "./slug";
 
 function checkSlug(slug: string | undefined) {
@@ -16,10 +16,10 @@ function checkSlug(slug: string | undefined) {
 }
 
 const OTP_SUBJECT = {
-  "email-verification": "Your Dray sign-up code",
-  "forget-password": "Your Dray password reset code",
-  "sign-in": "Your Dray sign-in code",
-  "change-email": "Your Dray email change code",
+  "email-verification": "Your Wain sign-up code",
+  "forget-password": "Your Wain password reset code",
+  "sign-in": "Your Wain sign-in code",
+  "change-email": "Your Wain email change code",
 } as const;
 
 /// Email sign-in and sign-up, off until Bento approves our sending (#1298):
@@ -41,7 +41,7 @@ const emailCodes = emailOTP({
 /// The cookie naming how this browser last signed in, read by `/login` to
 /// tag that card. Set only alongside a new session, so a cancelled or failed
 /// try never moves it; never stored on the account.
-export const LAST_METHOD_COOKIE = "dray.last_sign_in";
+export const LAST_METHOD_COOKIE = "wain.last_sign_in";
 
 const lastMethod = lastLoginMethod({
   cookieName: LAST_METHOD_COOKIE,
@@ -53,7 +53,7 @@ const lastMethod = lastLoginMethod({
     ctx.path === "/email-otp/verify-email" || ctx.path === "/sign-in/email-otp" ? "email" : null,
 });
 
-/// Better Auth for drayhq.com: GitHub, Google, and email with a password
+/// Better Auth for wainhq.com: GitHub, Google, and email with a password
 /// whose address is proved by an emailed code; orgs and their members.
 /// `nextCookies` lets a server action that signs in or out set its cookie.
 export const auth = betterAuth({
@@ -131,7 +131,7 @@ export const auth = betterAuth({
     }),
     // Left out while email is off, or its sign-in route would make accounts.
     ...(emailSignIn ? [emailCodes] : []),
-    drayTables,
+    wainTables,
     lastMethod,
     nextCookies(),
   ],

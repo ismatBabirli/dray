@@ -1,11 +1,11 @@
 use clap::{Args, Subcommand};
-use dray_proto::{AddRoutine, Request, Response, RoutineRef, RoutineScope, RoutineSummary, SetRoutinePaused};
+use wain_proto::{AddRoutine, Request, Response, RoutineRef, RoutineScope, RoutineSummary, SetRoutinePaused};
 
 use super::{parent_session_id, send, unexpected};
 
 #[derive(Subcommand)]
 pub enum RoutineCommand {
-    /// Make a routine: a prompt Dray sends this bot on a schedule. The user
+    /// Make a routine: a prompt Wain sends this bot on a schedule. The user
     /// sees it under Routines in the bot's More tab and can turn it off or delete it.
     Add(AddArgs),
     /// List this bot's routines, with next run and last result.

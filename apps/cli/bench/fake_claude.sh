@@ -18,6 +18,6 @@ IFS= read -r _prompt || exit 0
 # A new session's send reads its own log back before answering, and an event
 # appended meanwhile can fail it as "malformed session file". The bench opens
 # this gate once the send has answered.
-gate="$DRAY_BENCH_DIR/gate-$sid"
+gate="$WAIN_BENCH_DIR/gate-$sid"
 if [ -p "$gate" ]; then IFS= read -r _ < "$gate"; fi
-exec cat "$DRAY_BENCH_DIR/replay-$sid.jsonl"
+exec cat "$WAIN_BENCH_DIR/replay-$sid.jsonl"

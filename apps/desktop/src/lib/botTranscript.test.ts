@@ -43,7 +43,7 @@ describe("botItems", () => {
       user("ship the pricing page"),
       call("c1", "ls -la"),
       result("c1", "a b c"),
-      call("c2", `dray session new --project /repo "Build the pricing page"`),
+      call("c2", `wain session new --project /repo "Build the pricing page"`),
       result("c2", `${ID}\nStarted "Pricing page" in worktree calm-owl`),
       said("Started it", "agent-1"),
       said("On it."),
@@ -54,16 +54,16 @@ describe("botItems", () => {
 
   it("draws a task from the server's task_started, whatever the bot's call printed", () => {
     const started = ev({ type: "task_started", taskId: ID, title: "Pricing" } as AgentEventPayload);
-    const piped = botItems([call("c1", `dray session new "Pricing" | tail -1`), started, result("c1", "Started")]);
+    const piped = botItems([call("c1", `wain session new "Pricing" | tail -1`), started, result("c1", "Started")]);
     expect(piped).toEqual([{ kind: "task", key: started.id, sessionId: ID, ts: undefined, title: "Pricing" }]);
     // The call printed the id too: still one row.
-    const plain = botItems([call("c2", `dray session new "Pricing"`), started, result("c2", `${ID}\nStarted`)]);
+    const plain = botItems([call("c2", `wain session new "Pricing"`), started, result("c2", `${ID}\nStarted`)]);
     expect(plain.map((i) => i.kind)).toEqual(["task"]);
   });
 
   it("names a task from its merge card, which outlives the settled task", () => {
     const items = botItems([
-      call("c1", `dray session new --project /repo "Write the changelog"`),
+      call("c1", `wain session new --project /repo "Write the changelog"`),
       result("c1", `${ID}\n`),
       ev({ type: "merge_card", taskId: ID, title: "Write the changelog" } as AgentEventPayload),
     ]);
@@ -111,48 +111,48 @@ describe("botItems", () => {
 
   it("draws a message the bot sent a task, and none for a send that failed", () => {
     const items = botItems([
-      call("s1", `dray session send ${ID} "Use the \\"plain\\" tone"`),
+      call("s1", `wain session send ${ID} "Use the \\"plain\\" tone"`),
       result("s1", "sent"),
-      call("s2", `dray session send ${ID} 'nope'`),
+      call("s2", `wain session send ${ID} 'nope'`),
       result("s2", "no such session", true),
     ]);
     expect(items).toEqual([{ kind: "sent", key: "s1:0", target: ID, text: 'Use the "plain" tone' }]);
   });
 
   it("reads a sent message out of each shell quoting", () => {
-    expect(sentMessages(`dray send abc12345 'it'\\''s done'`)).toEqual([{ target: "abc12345", text: "it's done" }]);
-    expect(sentMessages(`dray session send abc12345 "$(cat <<'EOF'\nline one\nline two\nEOF\n)"`)).toEqual([
+    expect(sentMessages(`wain send abc12345 'it'\\''s done'`)).toEqual([{ target: "abc12345", text: "it's done" }]);
+    expect(sentMessages(`wain session send abc12345 "$(cat <<'EOF'\nline one\nline two\nEOF\n)"`)).toEqual([
       { target: "abc12345", text: "line one\nline two" },
     ]);
-    expect(sentMessages("dray session ls")).toEqual([]);
-    expect(sentMessages(`dray bot send --ask Ops "is CI green?"`)).toEqual([{ target: "Ops", text: "is CI green?", bot: true }]);
-    expect(sentMessages(`dray bot send Ops --ask "is CI green?"`)).toEqual([{ target: "Ops", text: "is CI green?", bot: true }]);
+    expect(sentMessages("wain session ls")).toEqual([]);
+    expect(sentMessages(`wain bot send --ask Ops "is CI green?"`)).toEqual([{ target: "Ops", text: "is CI green?", bot: true }]);
+    expect(sentMessages(`wain bot send Ops --ask "is CI green?"`)).toEqual([{ target: "Ops", text: "is CI green?", bot: true }]);
   });
 
   it("reads every send out of one command", () => {
-    expect(sentMessages(`dray session send aaaa1111 "hello" && dray session send bbbb2222 'hello'`)).toEqual([
+    expect(sentMessages(`wain session send aaaa1111 "hello" && wain session send bbbb2222 'hello'`)).toEqual([
       { target: "aaaa1111", text: "hello" },
       { target: "bbbb2222", text: "hello" },
     ]);
   });
 
   it("reads a send to a bot, its name quoted or bare", () => {
-    expect(sentMessages(`dray bot send "Release Ops" "ship it" && dray bot send Research 'look'`)).toEqual([
+    expect(sentMessages(`wain bot send "Release Ops" "ship it" && wain bot send Research 'look'`)).toEqual([
       { target: "Release Ops", text: "ship it", bot: true },
       { target: "Research", text: "look", bot: true },
     ]);
-    expect(sentMessages("dray bot send Ops")).toEqual([]);
+    expect(sentMessages("wain bot send Ops")).toEqual([]);
     // A send spelled out in a message is text, not a second send.
-    expect(sentMessages(`dray bot send Ops 'Reply with dray bot send Research "done"' && dray bot send Keeper hi`)).toEqual([
-      { target: "Ops", text: 'Reply with dray bot send Research "done"', bot: true },
+    expect(sentMessages(`wain bot send Ops 'Reply with wain bot send Research "done"' && wain bot send Keeper hi`)).toEqual([
+      { target: "Ops", text: 'Reply with wain bot send Research "done"', bot: true },
       { target: "Keeper", text: "hi", bot: true },
     ]);
-    expect(sentMessages("dray bot ls")).toEqual([]);
+    expect(sentMessages("wain bot ls")).toEqual([]);
   });
 
   it("draws messages to and from other bots, and never folds them", () => {
     const incoming = ev({
-      type: "user_message", text: "[message from the Dray bot \"Ops\" (s1)]\n\nhi", images: [], issues: [],
+      type: "user_message", text: "[message from the Wain bot \"Ops\" (s1)]\n\nhi", images: [], issues: [],
       baseline: null, queued: false, from: { sessionId: "s1", title: "Ops", machine: null, botId: "b1" },
       cwd: null, kickoff: false,
     } as unknown as AgentEventPayload);
@@ -160,9 +160,9 @@ describe("botItems", () => {
       incoming,
       // A bot made in the same command prints an id too, and is not the one
       // the message went to.
-      call("a", `dray bot new Scout && dray bot send Ops "thanks, on it"`),
+      call("a", `wain bot new Scout && wain bot send Ops "thanks, on it"`),
       result("a", `01a1cf3a-0000-7000-8000-000000000000\nMade "Scout".\nSent to bot "Ops" (${ID}).`),
-      call("b", `dray session send ${ID} "one"`),
+      call("b", `wain session send ${ID} "one"`),
       result("b", "sent"),
     ]);
     expect(items.map((i) => i.kind)).toEqual(["botMessage", "botSent", "sent"]);
@@ -173,12 +173,12 @@ describe("botItems", () => {
 
   it("folds a run of messages with tasks into one row, broken by anything else", () => {
     const items = botItems([
-      call("a", `dray session send ${ID} "one"`),
+      call("a", `wain session send ${ID} "one"`),
       result("a", "sent"),
-      call("b", `dray session send 01a1d052 "two"`),
+      call("b", `wain session send 01a1d052 "two"`),
       result("b", "sent"),
       said("Sent both."),
-      call("c", `dray session send ${ID} "three"`),
+      call("c", `wain session send ${ID} "three"`),
       result("c", "sent"),
     ]);
     const rows = botRows(items);
@@ -213,7 +213,7 @@ describe("botItems", () => {
   it("keeps a task and a send made in one command", () => {
     const bot = "01a1cf3a-0000-7000-8000-000000000000";
     const items = botItems([
-      call("c", `dray bot send Ops "starting" && dray session new --project /repo "Investigate"`),
+      call("c", `wain bot send Ops "starting" && wain session new --project /repo "Investigate"`),
       result("c", `Sent to bot "Ops" (${bot}).\n${ID}\nStarted "Investigate"`),
     ]);
     expect(items.map((i) => i.kind)).toEqual(["task", "botSent"]);
@@ -224,8 +224,8 @@ describe("botItems", () => {
   it("reads no send out of a new task's brief that names one", () => {
     const sent = "01a1d052-e620-74d4-8ef2-aa9965929e13";
     const started = "01a1d06c-7868-719b-b026-8ad0a260666b";
-    const cmd = `D=/private/tmp/images; dray session send ${sent} "User feedback on the sidebar bot rows, screenshot at $D/8.png: make bot rows line up."
-dray session new --project /Users/yogesh/Documents/ade --hidden --title "Bot prompt: relay feedback without adding steps" "Edit the Dray bot system prompt. Problem: when a bot passes the user's feedback to one of its tasks with 'dray session send', it adds instructions the user never gave, like 'push to the PR'."`;
+    const cmd = `D=/private/tmp/images; wain session send ${sent} "User feedback on the sidebar bot rows, screenshot at $D/8.png: make bot rows line up."
+wain session new --project /Users/yogesh/Documents/ade --hidden --title "Bot prompt: relay feedback without adding steps" "Edit the Wain bot system prompt. Problem: when a bot passes the user's feedback to one of its tasks with 'wain session send', it adds instructions the user never gave, like 'push to the PR'."`;
     const items = botItems([
       call("c", cmd),
       result("c", `Delivered.\n${started}\nStarted "Bot prompt: relay feedback without adding steps" in worktree gentle-ochre-meadow`),
@@ -236,31 +236,31 @@ dray session new --project /Users/yogesh/Documents/ade --hidden --title "Bot pro
   });
 
   it("skips a session send whose target is no session id", () => {
-    expect(sentMessages(`dray session send ', it adds' 'push'`)).toEqual([]);
-    expect(sentMessages(`for id in aaa bbb; do dray session send "$id" "hello"; done`)).toEqual([]);
-    expect(sentMessages(`dray session send $ID hi && dray session send abc12345 'yo'`)).toEqual([
+    expect(sentMessages(`wain session send ', it adds' 'push'`)).toEqual([]);
+    expect(sentMessages(`for id in aaa bbb; do wain session send "$id" "hello"; done`)).toEqual([]);
+    expect(sentMessages(`wain session send $ID hi && wain session send abc12345 'yo'`)).toEqual([
       { target: "abc12345", text: "yo" },
     ]);
   });
 
   it("reads past a heredoc that spells a send", () => {
-    expect(sentMessages(`dray session send aaaa1111 "$(cat <<'EOF'\nthen run dray session send bbbb2222 "x"\nEOF\n)" && dray session send cccc3333 ok`)).toEqual([
-      { target: "aaaa1111", text: `then run dray session send bbbb2222 "x"` },
+    expect(sentMessages(`wain session send aaaa1111 "$(cat <<'EOF'\nthen run wain session send bbbb2222 "x"\nEOF\n)" && wain session send cccc3333 ok`)).toEqual([
+      { target: "aaaa1111", text: `then run wain session send bbbb2222 "x"` },
       { target: "cccc3333", text: "ok" },
     ]);
     // The rest of a heredoc's opening line is still commands.
-    expect(sentMessages(`cat <<'EOF' >/tmp/brief; dray session send aaaa1111 hi\nsay dray session send bbbb2222 no\nEOF\ndray session send cccc3333 ok`)).toEqual([
+    expect(sentMessages(`cat <<'EOF' >/tmp/brief; wain session send aaaa1111 hi\nsay wain session send bbbb2222 no\nEOF\nwain session send cccc3333 ok`)).toEqual([
       { target: "aaaa1111", text: "hi" },
       { target: "cccc3333", text: "ok" },
     ]);
     // A herestring opens no body; a delimiter may carry a dash.
-    expect(sentMessages(`cat <<< "hello"\ndray session send aaaa1111 hi`)).toEqual([{ target: "aaaa1111", text: "hi" }]);
-    expect(sentMessages(`cat <<END-TEXT\ndray session send bbbb2222 no\nEND-TEXT\ndray session send cccc3333 ok`)).toEqual([
+    expect(sentMessages(`cat <<< "hello"\nwain session send aaaa1111 hi`)).toEqual([{ target: "aaaa1111", text: "hi" }]);
+    expect(sentMessages(`cat <<END-TEXT\nwain session send bbbb2222 no\nEND-TEXT\nwain session send cccc3333 ok`)).toEqual([
       { target: "cccc3333", text: "ok" },
     ]);
-    expect(sentMessages(`printf '' <<EOF\ndray session send aaaa1111 "example only"`)).toEqual([]);
+    expect(sentMessages(`printf '' <<EOF\nwain session send aaaa1111 "example only"`)).toEqual([]);
     // A `<<` inside quotes is text, and opens no heredoc to swallow what follows.
-    expect(sentMessages(`dray send aaaa1111 "Explain <<EOF\nsyntax"; dray send bbbb2222 hi\ncat <<EOF\nbody\nEOF`)).toEqual([
+    expect(sentMessages(`wain send aaaa1111 "Explain <<EOF\nsyntax"; wain send bbbb2222 hi\ncat <<EOF\nbody\nEOF`)).toEqual([
       { target: "aaaa1111", text: "Explain <<EOF\nsyntax" },
       { target: "bbbb2222", text: "hi" },
     ]);
@@ -296,7 +296,7 @@ dray session new --project /Users/yogesh/Documents/ade --hidden --title "Bot pro
   });
 
   it("draws no task for a create that failed", () => {
-    const items = botItems([call("c", "dray session new x"), result("c", `no project ${ID}`, true)]);
+    const items = botItems([call("c", "wain session new x"), result("c", `no project ${ID}`, true)]);
     expect(items).toEqual([]);
   });
 });
@@ -346,7 +346,7 @@ describe("taskContext", () => {
   });
 
   it("finds nothing for a task with no reply to point at", () => {
-    const start = [call("c1", `dray session new "Pricing"`), result("c1", `${ID}\nStarted`)];
+    const start = [call("c1", `wain session new "Pricing"`), result("c1", `${ID}\nStarted`)];
     expect([...taskContext(botItems(start), ID)]).toEqual([]);
     expect([...taskContext(botItems([...start, from("done")]), ID)]).toEqual([]);
   });
@@ -377,7 +377,7 @@ describe("lastTurns", () => {
     said("a"),
     user("two"),
     ev({ type: "user_message", text: "sub", images: [], issues: [], from: null } as unknown as AgentEventPayload, "s1"),
-    call("c1", "dray session new x"),
+    call("c1", "wain session new x"),
     result("c1", ID),
     user("three"),
     said("c"),
@@ -396,7 +396,7 @@ describe("lastTurns", () => {
 
   it("never cuts at a queued message, which lands between a call and its result", () => {
     const queued = ev({ type: "user_message", text: "report", images: [], issues: [], queued: true, from: null } as unknown as AgentEventPayload);
-    const run = [user("go"), call("c2", "dray session new y"), queued, result("c2", ID), said("started")];
+    const run = [user("go"), call("c2", "wain session new y"), queued, result("c2", ID), said("started")];
     expect(lastTurns(run, 1)).toBe(0);
   });
 

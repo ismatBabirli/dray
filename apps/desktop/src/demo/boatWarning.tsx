@@ -34,10 +34,10 @@ const server = (name: string): ServerInfo => ({
 });
 
 const CASES: { title: string; name: string; seconds: number; refused?: string }[] = [
-  { title: "Nine minutes left", name: "boat-dray", seconds: 9 * 60 + 12 },
-  { title: "Last two minutes, red", name: "boat-dray", seconds: 95 },
+  { title: "Nine minutes left", name: "boat-wain", seconds: 9 * 60 + 12 },
+  { title: "Last two minutes, red", name: "boat-wain", seconds: 95 },
   { title: "Long server name", name: "a-sandbox-with-a-very-long-name", seconds: 7 * 60 },
-  { title: "Extend refused", name: "boat-dray", seconds: 6 * 60, refused: "Free trial sandboxes stop within 2 hours." },
+  { title: "Extend refused", name: "boat-wain", seconds: 6 * 60, refused: "Free trial sandboxes stop within 2 hours." },
 ];
 
 function Demo() {

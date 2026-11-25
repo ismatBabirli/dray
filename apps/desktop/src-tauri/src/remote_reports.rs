@@ -521,7 +521,7 @@ mod collect {
 
     /// Into the bot's chat `parent`, the way a local task's report goes, named
     /// as the task on `machine` so the bot can message it back with
-    /// `dray session send`. False where the send failed, so the report is not
+    /// `wain session send`. False where the send failed, so the report is not
     /// acked and comes again next poll.
     async fn deliver(report: &Report, text: String, parent: &str, machine: &str, app: &Sink) -> bool {
         let from = MessageSender {
@@ -751,15 +751,15 @@ mod tests {
 
     #[test]
     fn a_report_names_the_proof_the_chat_draws() {
-        let text = "Done. Video: `/home/u/.dray/browser/recordings/s1/demo.mp4`.\n\
-            Again (/home/u/.dray/browser/recordings/s1/demo.mp4) and \
-            [dev](/x/.dray-dev/browser-dev/recordings/s2/b.mp4). \
+        let text = "Done. Video: `/home/u/.wain/browser/recordings/s1/demo.mp4`.\n\
+            Again (/home/u/.wain/browser/recordings/s1/demo.mp4) and \
+            [dev](/x/.wain-dev/browser-dev/recordings/s2/b.mp4). \
             Before /h/browser/recordings/s1/before.png, after /h/browser/recordings/s1/after.jpg.";
         assert_eq!(
             proof_paths(text),
             vec![
-                ("/home/u/.dray/browser/recordings/s1/demo.mp4", "s1", "demo.mp4"),
-                ("/x/.dray-dev/browser-dev/recordings/s2/b.mp4", "s2", "b.mp4"),
+                ("/home/u/.wain/browser/recordings/s1/demo.mp4", "s1", "demo.mp4"),
+                ("/x/.wain-dev/browser-dev/recordings/s2/b.mp4", "s2", "b.mp4"),
                 ("/h/browser/recordings/s1/before.png", "s1", "before.png"),
                 ("/h/browser/recordings/s1/after.jpg", "s1", "after.jpg"),
             ]

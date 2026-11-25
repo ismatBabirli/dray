@@ -38,28 +38,28 @@ export function Faq() {
 
 const FAQ: [string, string][] = [
   [
-    "What is Dray?",
-    "Dray is one Mac app for every coding agent. Run them on your Mac or on your other machines.",
+    "What is Wain?",
+    "Wain is one Mac app for every coding agent. Run them on your Mac or on your other machines.",
   ],
   [
-    "Is Dray free?",
-    "Yes. Dray is free and open source under Apache 2.0.",
+    "Is Wain free?",
+    "Yes. Wain is free and open source under Apache 2.0.",
   ],
   [
-    "Which agents does Dray support?",
-    "Dray supports Claude Code, Codex, pi, fx, Grok Build and OpenCode.",
+    "Which agents does Wain support?",
+    "Wain supports Claude Code, Codex, pi, fx, Grok Build and OpenCode.",
   ],
   [
-    "Is Dray safe to use with my Claude subscription?",
-    "Yes. Dray runs Anthropic's own Claude Code CLI so it works within their terms.",
+    "Is Wain safe to use with my Claude subscription?",
+    "Yes. Wain runs Anthropic's own Claude Code CLI so it works within their terms.",
   ],
   [
-    "Does Dray send my code off my machine?",
-    "No. Dray keeps your data on your machine. Your agents talk to their own providers, as usual.",
+    "Does Wain send my code off my machine?",
+    "No. Wain keeps your data on your machine. Your agents talk to their own providers, as usual.",
   ],
   [
-    "Does Dray run on Linux?",
-    "Yes. The Linux app is in beta: a .deb for Debian and Ubuntu, or an AppImage for other distros with glibc 2.35 or newer, on x64 and arm64. Dray also runs as a server on a Linux box, driven from the app on another machine.",
+    "Does Wain run on Linux?",
+    "Yes. The Linux app is in beta: a .deb for Debian and Ubuntu, or an AppImage for other distros with glibc 2.35 or newer, on x64 and arm64. Wain also runs as a server on a Linux box, driven from the app on another machine.",
   ],
 ];
 

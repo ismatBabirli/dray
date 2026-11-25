@@ -144,8 +144,8 @@ fn set(app: &AppHandle, status: ChromiumStatus) {
     let _ = app.emit("chromium_status", status);
 }
 
-/// `~/.dray/cef/` (`cef-dev/` under `tauri dev`, `~/.dray-dev/cef` on
-/// Linux and Windows), one version directory at a time. `DRAY_HOME` does not move it, on
+/// `~/.wain/cef/` (`cef-dev/` under `tauri dev`, `~/.wain-dev/cef` on
+/// Linux and Windows), one version directory at a time. `WAIN_HOME` does not move it, on
 /// purpose: one release's framework is the same bytes in every home, and
 /// sharing it is ~330MB downloaded once a machine. The profiles it writes do
 /// move (`headless::browser_dir`).
@@ -154,12 +154,12 @@ fn cef_dir() -> PathBuf {
     // own, so a dev build on a newer CEF would take the release app's
     // framework out from under its running helpers.
     #[cfg(target_os = "macos")]
-    let dir = if tauri::is_dev() { ".dray/cef-dev" } else { ".dray/cef" };
-    // Linux dev builds keep out of `~/.dray` altogether: that home is the
+    let dir = if tauri::is_dev() { ".wain/cef-dev" } else { ".wain/cef" };
+    // Linux dev builds keep out of `~/.wain` altogether: that home is the
     // release server's, the only one a Linux box may be running — sharing
-    // `~/.dray-dev` the way every dev build shares projects and settings.
+    // `~/.wain-dev` the way every dev build shares projects and settings.
     #[cfg(not(target_os = "macos"))]
-    let dir = if tauri::is_dev() { ".dray-dev/cef" } else { ".dray/cef" };
+    let dir = if tauri::is_dev() { ".wain-dev/cef" } else { ".wain/cef" };
     std::env::home_dir().unwrap_or_default().join(dir)
 }
 
@@ -174,7 +174,7 @@ pub fn installed_framework() -> Option<PathBuf> {
     framework.join(LIBRARY).is_file().then_some(framework)
 }
 
-/// Why a tab cannot open right now, worded for the pane and `dray browser`.
+/// Why a tab cannot open right now, worded for the pane and `wain browser`.
 pub fn not_ready_reason() -> String {
     match status() {
         ChromiumStatus::Downloading { received, total } => {
@@ -249,7 +249,7 @@ async fn run(app: AppHandle) {
 async fn download(app: &AppHandle) -> Result<()> {
     let tarball = tarball().context("no Chromium build for this architecture")?;
     let dir = cef_dir();
-    fs::create_dir_all(&dir).await.context("could not create ~/.dray/cef")?;
+    fs::create_dir_all(&dir).await.context("could not create ~/.wain/cef")?;
     let part = dir.join(format!("{}.part", tarball.name()));
 
     let total = tarball.size;
@@ -368,7 +368,7 @@ fn skipped(rel: &Path) -> bool {
     rel == Path::new("chrome-sandbox") || name.ends_with(".lib") || name.starts_with("bootstrap")
 }
 
-/// Everything in `~/.dray/cef` but the current version: older frameworks,
+/// Everything in `~/.wain/cef` but the current version: older frameworks,
 /// stale `.part`s from a killed run.
 async fn sweep(dir: &Path) {
     let Ok(mut entries) = fs::read_dir(dir).await else { return };
@@ -432,7 +432,7 @@ pub async fn remove(app: &AppHandle) -> Result<()> {
     tokio::task::spawn_blocking(|| {
         let loaded = load_guard();
         if *loaded {
-            bail!("Chromium is in use. Quit and reopen Dray, then remove it.");
+            bail!("Chromium is in use. Quit and reopen Wain, then remove it.");
         }
         match std::fs::remove_dir_all(version_dir()) {
             Ok(()) => Ok(()),
@@ -517,11 +517,11 @@ mod tests {
     fn version_is_the_crate_build_prefix() {
         assert!(BUILD.starts_with(VERSION));
         // Tests run as a dev build, so this also pins the split from the
-        // release app's `.dray/cef`.
+        // release app's `.wain/cef`.
         #[cfg(target_os = "macos")]
-        assert!(version_dir().ends_with(Path::new(".dray/cef-dev").join(VERSION)));
+        assert!(version_dir().ends_with(Path::new(".wain/cef-dev").join(VERSION)));
         #[cfg(not(target_os = "macos"))]
-        assert!(version_dir().ends_with(Path::new(".dray-dev/cef").join(VERSION)));
+        assert!(version_dir().ends_with(Path::new(".wain-dev/cef").join(VERSION)));
     }
 
     #[test]

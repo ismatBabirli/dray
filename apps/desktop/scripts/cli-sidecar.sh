@@ -1,8 +1,8 @@
 #!/bin/sh
-# Builds the `dray` CLI for Tauri's `externalBin` (tauri.cli.conf.json), which
-# ships it in the bundle as `dray-cli` beside the app's binary: Contents/MacOS
+# Builds the `wain` CLI for Tauri's `externalBin` (tauri.cli.conf.json), which
+# ships it in the bundle as `wain-cli` beside the app's binary: Contents/MacOS
 # on a Mac, usr/bin in the AppImage, the install folder on Windows. The app
-# copies it to ~/.local/bin/dray on launch (cli.rs).
+# copies it to ~/.local/bin/wain on launch (cli.rs).
 #
 #   cli-sidecar.sh <out-dir>
 #
@@ -14,7 +14,7 @@
 # On Linux and Windows, one, for the host's triple, since both build natively;
 # Windows's carries `.exe`, which the bundler looks for there. Run it under Git
 # Bash.
-# Named dray-cli, not dray: the app's own executable holds that name. Signed on
+# Named wain-cli, not wain: the app's own executable holds that name. Signed on
 # a Mac by the bundler, which signs what it copies itself.
 set -e
 [ -n "$1" ] || { echo "usage: $0 <out-dir>" >&2; exit 1; }
@@ -27,13 +27,13 @@ if [ "$(uname -s)" != Darwin ]; then
   x=
   case "$t" in *-windows-*) x=.exe ;; esac
   cargo build --release --locked --target "$t"
-  cp "target/$t/release/dray$x" "$OUT/dray-cli-$t$x"
+  cp "target/$t/release/wain$x" "$OUT/wain-cli-$t$x"
   exit
 fi
 
 for t in aarch64-apple-darwin x86_64-apple-darwin; do
   cargo build --release --locked --target "$t"
-  cp "target/$t/release/dray" "$OUT/dray-cli-$t"
+  cp "target/$t/release/wain" "$OUT/wain-cli-$t"
 done
-lipo -create -output "$OUT/dray-cli-universal-apple-darwin" \
-  "$OUT/dray-cli-aarch64-apple-darwin" "$OUT/dray-cli-x86_64-apple-darwin"
+lipo -create -output "$OUT/wain-cli-universal-apple-darwin" \
+  "$OUT/wain-cli-aarch64-apple-darwin" "$OUT/wain-cli-x86_64-apple-darwin"

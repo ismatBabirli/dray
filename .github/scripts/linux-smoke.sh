@@ -22,18 +22,18 @@ apt-get install -y -qq xvfb x11-utils imagemagick >/dev/null
 Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 &
 export DISPLAY=:99
 
-# Waits for a top-level window titled "Dray", then screenshots it.
+# Waits for a top-level window titled "Wain", then screenshots it.
 opens() {
   local name=$1
   shift
   "$@" >"$out/$name.log" 2>&1 &
   local pid=$!
   for _ in $(seq 60); do
-    if xwininfo -root -tree | grep -q '"Dray"'; then
+    if xwininfo -root -tree | grep -q '"Wain"'; then
       sleep 5
       import -window root "$out/$name.png"
       kill "$pid" 2>/dev/null || true
-      pkill -f 'dray-(app|island)' 2>/dev/null || true
+      pkill -f 'wain-(app|island)' 2>/dev/null || true
       sleep 2
       # A window over a panicking runtime is not an app that works: a
       # missing CA bundle once drew one while every HTTP call panicked.
@@ -52,7 +52,7 @@ opens() {
   return 1
 }
 
-opens deb dray-app
+opens deb wain-app
 
 cd "$(mktemp -d)"
 "$(ls "$bundle"/appimage/*.AppImage)" --appimage-extract >/dev/null

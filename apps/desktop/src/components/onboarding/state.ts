@@ -8,7 +8,7 @@ const changed = channel<void>();
 
 /// Onboarding (#1421) is shown once, on first launch, ahead of the sign-in
 /// gate. Only where the gate stands, so it plays before sign-in; and never for
-/// a reader this app has seen signed in, who used Dray before onboarding
+/// a reader this app has seen signed in, who used Wain before onboarding
 /// existed.
 let on =
   gatesSignIn(import.meta.env) && localStorage.getItem(ONBOARDED) !== "1" && localStorage.getItem(SIGNED_IN) !== "1";
@@ -28,19 +28,19 @@ export function finishOnboarding() {
 
 let openBot = false;
 
-/// Asks the app to open Dray Bot's chat once it can. Onboarding ends before
+/// Asks the app to open Wain Bot's chat once it can. Onboarding ends before
 /// sign-in, when no app is mounted to open it, so the ask waits for one.
-export function askToOpenDrayBot() {
+export function askToOpenWainBot() {
   openBot = true;
   changed.emit();
 }
 
-/// Whether Dray Bot's chat is waiting to be opened; `takeDrayBotAsk` clears it.
-export function useDrayBotAsk(): boolean {
+/// Whether Wain Bot's chat is waiting to be opened; `takeWainBotAsk` clears it.
+export function useWainBotAsk(): boolean {
   return useSyncExternalStore(changed.subscribe, () => openBot);
 }
 
-export function takeDrayBotAsk() {
+export function takeWainBotAsk() {
   openBot = false;
   changed.emit();
 }

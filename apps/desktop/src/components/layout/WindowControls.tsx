@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 /// Whether this strip owns the window's buttons: a frameless Tauri window on
 /// Windows or Linux. A Mac has traffic lights, and a browser pointed at
-/// `dray-serve` has its own window and no native one for these to move.
+/// `wain-serve` has its own window and no native one for these to move.
 const DRAWN = !IS_MAC && isTauri();
 
 /// Minimize, maximize and close, at the titlebar strip's right end. Windows and

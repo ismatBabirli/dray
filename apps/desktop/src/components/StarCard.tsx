@@ -7,7 +7,7 @@ import { closeStarPrompt } from "@/hooks/useStarPrompt";
 import { trackFeature } from "@/lib/analytics";
 import { invoke } from "@/lib/transport";
 
-const REPO_URL = "https://github.com/monorepo-labs/dray";
+const REPO_URL = "https://github.com/ismatbabirli/wain";
 
 /// How long the thanks stays before the card goes.
 const THANKS_MS = 1800;
@@ -28,11 +28,11 @@ export default function StarCard() {
   const star = async () => {
     setPhase("starring");
     try {
-      await invoke("star_dray");
+      await invoke("star_wain");
       setPhase("thanks");
     } catch {
       // The opener plugin hands the URL to the system browser, where the
-      // reader's GitHub login is; Dray's own browser holds none.
+      // reader's GitHub login is; Wain's own browser holds none.
       void openUrl(REPO_URL)
         .then(() => trackFeature("github_star_fallback_opened"))
         .catch(() => {});
@@ -48,7 +48,7 @@ export default function StarCard() {
   return (
     <div
       role="region"
-      aria-label="Star Dray on GitHub"
+      aria-label="Star Wain on GitHub"
       className="fixed bottom-3 left-3 z-50 flex w-72 flex-col overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-(--shadow-ring) backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2"
     >
       {phase === "thanks" ? (
@@ -59,7 +59,7 @@ export default function StarCard() {
       ) : (
         <>
           <span className="px-3 pt-2.5 text-ui font-medium text-foreground">
-            Liking Dray so far? A star would help us.
+            Liking Wain so far? A star would help us.
           </span>
           <div className="grid grid-cols-2 gap-1.5 p-2.5">
             <Button variant="ghost" size="sm" onClick={dismiss}>

@@ -113,7 +113,7 @@ async fn read_commands(
         1,
         "initialize",
         json!({"protocolVersion": 1, "clientCapabilities": {},
-               "clientInfo": {"name": "dray", "title": "Dray", "version": env!("CARGO_PKG_VERSION")}}),
+               "clientInfo": {"name": "wain", "title": "Wain", "version": env!("CARGO_PKG_VERSION")}}),
     )?;
 
     let mut session: Option<String> = None;
@@ -183,7 +183,7 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn the_probe_lists_commands_and_leaves_no_session() {
-        let dir = std::env::temp_dir().join(format!("dray-oc-probe-{}", uuid::Uuid::now_v7()));
+        let dir = std::env::temp_dir().join(format!("wain-oc-probe-{}", uuid::Uuid::now_v7()));
         std::fs::create_dir_all(&dir).unwrap();
         let cwd = dir.to_str().unwrap();
 

@@ -14,5 +14,5 @@ dependencyResolutionManagement {
         maven("https://jitpack.io") { content { includeGroup("com.github.yogesharc") } }
     }
 }
-rootProject.name = "Dray"
+rootProject.name = "Wain"
 include(":app")

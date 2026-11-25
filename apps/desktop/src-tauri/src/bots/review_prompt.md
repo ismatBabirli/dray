@@ -1,6 +1,6 @@
 Review: {reason}
 
-This comes from Dray, not the user, and the user never sees it.
+This comes from Wain, not the user, and the user never sees it.
 
 Look back at what just happened and ask what would have stopped it. If the answer is a lasting lesson, put it where it fires next time, reading each file before you change it:
 

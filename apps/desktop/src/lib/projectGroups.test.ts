@@ -11,9 +11,9 @@ const checkout = (path: string, over: Partial<Project> = {}): Project => ({
   lastSelected: "2026-08-01T00:00:00.000Z",
   ...over,
 });
-const REMOTE = "github.com/a/dray";
-const here = checkout("/code/dray", { remote: REMOTE });
-const there = checkout(qualify("/srv/dray", "box"), { remote: REMOTE });
+const REMOTE = "github.com/a/wain";
+const here = checkout("/code/wain", { remote: REMOTE });
+const there = checkout(qualify("/srv/wain", "box"), { remote: REMOTE });
 
 describe("groupProjects", () => {
   it("merges one remote across machines, in the place of its first checkout", () => {
@@ -30,7 +30,7 @@ describe("groupProjects", () => {
   });
 
   it("merges two clones on one machine", () => {
-    const again = checkout("/exp/dray", { remote: REMOTE });
+    const again = checkout("/exp/wain", { remote: REMOTE });
     expect(groupProjects([here, again])).toHaveLength(1);
   });
 });
@@ -59,7 +59,7 @@ describe("lastUsedCheckout", () => {
 });
 
 describe("nextCheckout", () => {
-  const third = checkout(qualify("/srv/dray", "rack"), { remote: REMOTE });
+  const third = checkout(qualify("/srv/wain", "rack"), { remote: REMOTE });
 
   it("steps to the next machine and wraps", () => {
     expect(nextCheckout([here, there, third], here.path, () => true)).toBe(there);
@@ -86,7 +86,7 @@ describe("soleServer", () => {
 describe("inheritSpaces", () => {
   it("gives a later copy its sibling's space and leaves its own alone", () => {
     const filed = { ...here, space: "Work" };
-    const own = checkout("/exp/dray", { remote: REMOTE, space: "Play" });
+    const own = checkout("/exp/wain", { remote: REMOTE, space: "Play" });
     const [, second, third] = inheritSpaces([filed, there, own]);
     expect(second.space).toBe("Work");
     expect(third.space).toBe("Play");

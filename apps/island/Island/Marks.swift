@@ -57,7 +57,7 @@ struct LeadMark: View {
 }
 
 /// The selected session's title row: the title opens the task list behind its
-/// lead mark, ⌘-click opens the session in Dray, and the hints teach the keys.
+/// lead mark, ⌘-click opens the session in Wain, and the hints teach the keys.
 struct TitleRow: View {
     let title: String
     /// Beside the title rather than in it, since a long title is cut and this must not be.
@@ -98,7 +98,7 @@ struct TitleRow: View {
             .buttonStyle(.plain)
             .onHover { hovered = $0 }
             .animation(.easeOut(duration: 0.12), value: hovered)
-            .help("Tasks, ⌘-click to open in Dray")
+            .help("Tasks, ⌘-click to open in Wain")
             if let hint {
                 Text(hint).font(.system(size: 12)).foregroundStyle(.white.opacity(0.3)).fixedSize()
                     .transition(.opacity)
@@ -283,7 +283,7 @@ struct BoatExtendChoices: View {
     }
 }
 
-/// Sessions finished, in place of Dray's banner, newest first. One names
+/// Sessions finished, in place of Wain's banner, newest first. One names
 /// itself and offers Open in app; several are a count that, under the pointer,
 /// grows a row each, five tall and then scrolling. A title opens the island on it.
 /// A bot's "waiting on you" grows its card's rows under the pointer, as the bot chat draws them;
@@ -441,7 +441,7 @@ struct WaitingTask: Decodable, Hashable {
 }
 
 /// A waiting task as the bot chat's card draws it: face, title, PR and age, and
-/// under them its bot's line for the reader. A click brings Dray forward on the
+/// under them its bot's line for the reader. A click brings Wain forward on the
 /// task; a ready PR lands from here, Merge then the method.
 struct WaitingCard: View {
     @Environment(Store.self) private var store

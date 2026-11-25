@@ -11,23 +11,23 @@ import { Testimonials } from "@/components/home/Testimonials";
 import { COMPANY, DOWNLOAD, REPO } from "@/lib/links";
 
 // Hardcoded, not `siteUrl`: a preview deploy must still name the real site.
-const SITE = "https://www.drayhq.com";
+const SITE = "https://www.wainhq.com";
 
 const SCHEMA = JSON.stringify({
   "@context": "https://schema.org",
   "@graph": [
-    { "@type": "WebSite", "@id": `${SITE}/#website`, name: "Dray", url: SITE, publisher: { "@id": `${SITE}/#org` } },
+    { "@type": "WebSite", "@id": `${SITE}/#website`, name: "Wain", url: SITE, publisher: { "@id": `${SITE}/#org` } },
     {
       "@type": "Organization",
       "@id": `${SITE}/#org`,
       name: COMPANY,
       url: SITE,
       logo: `${SITE}/icon.png`,
-      sameAs: [REPO, "https://x.com/dray_hq"],
+      sameAs: [REPO, "https://x.com/wain_hq"],
     },
     {
       "@type": "SoftwareApplication",
-      name: "Dray",
+      name: "Wain",
       url: SITE,
       description: "One Mac app for every coding agent: Claude Code, Codex, Grok Build, pi, fx and OpenCode.",
       applicationCategory: "DeveloperApplication",

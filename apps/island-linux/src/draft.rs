@@ -283,7 +283,7 @@ impl Draft {
     }
 }
 
-/// The box's prompt, naming the reader's key, which Dray's Settings can move.
+/// The box's prompt, naming the reader's key, which Wain's Settings can move.
 pub fn placeholder() -> String {
     format!("{} to speak, Ctrl+⏎ Queue, ⏎ Send", crate::prefs::read().key.label())
 }
@@ -375,13 +375,13 @@ mod tests {
     use super::*;
 
     fn session(id: &str, title: &str, modified: &str) -> Session {
-        Session { session_id: id.into(), title: title.into(), modified: modified.into(), project_path: "/p/dray".into(), ..Default::default() }
+        Session { session_id: id.into(), title: title.into(), modified: modified.into(), project_path: "/p/wain".into(), ..Default::default() }
     }
 
     #[test]
     fn files_stand_in_the_text_where_they_sit() {
         // Real files, since what counts as an image reads the size.
-        let dir = std::env::temp_dir().join(format!("dray-island-test-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("wain-island-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let file = |name: &str, len: usize| {
             let path = dir.join(name);
@@ -417,15 +417,15 @@ mod tests {
         let ids = |l: Vec<&Session>| l.iter().map(|s| s.session_id.clone()).collect::<Vec<_>>();
         assert_eq!(ids(listed(&sessions, &[], "", "2026-11-07T00:00:00Z")), ["b", "a"]);
         assert_eq!(ids(listed(&sessions, &[], "old", "2026-11-07T00:00:00Z")), ["a"]);
-        assert_eq!(ids(listed(&sessions, &[], "DRAY", "2026-11-07T00:00:00Z")), ["b", "a"]);
+        assert_eq!(ids(listed(&sessions, &[], "WAIN", "2026-11-07T00:00:00Z")), ["b", "a"]);
     }
 
     #[test]
     fn a_bots_chat_is_searched_by_the_bots_name() {
         let mut chat = session("bot", "Bot chat", "2026-11-10T09:00:00Z");
-        chat.cwd = "/home/me/.dray/bots/b1".into();
+        chat.cwd = "/home/me/.wain/bots/b1".into();
         let sessions = vec![chat, session("a", "Fix the login", "2026-11-09T09:00:00Z")];
-        let bots = [crate::bots::Bot { id: "b1".into(), name: "Scout".into(), path: "/home/me/.dray/bots/b1".into(), avatar: None }];
+        let bots = [crate::bots::Bot { id: "b1".into(), name: "Scout".into(), path: "/home/me/.wain/bots/b1".into(), avatar: None }];
         let ids = |l: Vec<&Session>| l.iter().map(|s| s.session_id.clone()).collect::<Vec<_>>();
         assert_eq!(ids(listed(&sessions, &bots, "scout", "2026-11-07T00:00:00Z")), ["bot"]);
         // Neither its title nor its folder.

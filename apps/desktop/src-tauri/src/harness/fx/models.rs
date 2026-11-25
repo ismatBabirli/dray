@@ -29,7 +29,7 @@
 //!    session rather than any list before sending one.
 //!
 //! `auto` is fx's own default and is what an unset effort leaves it on; it and
-//! `none` are levels Dray's ladder cannot spell, so they are dropped rather
+//! `none` are levels Wain's ladder cannot spell, so they are dropped rather
 //! than given a rung (DRA-140's rule — a rung is a persisted enum).
 //!
 //! Fast mode is in this list too: a gateway row says `fast` outright since
@@ -46,7 +46,7 @@ use std::time::Duration;
 use crate::sink::Sink;
 
 /// How long a cached answer stands. Expires, because `fx provider` and
-/// `fx login` are things a reader does while Dray is open, and "restart the
+/// `fx login` are things a reader does while Wain is open, and "restart the
 /// app" is a poor answer to a list that is supposed to follow them.
 const FRESH_FOR: Duration = Duration::from_secs(120);
 
@@ -63,7 +63,7 @@ pub async fn list() -> Vec<Model> {
 
 /// Starts a background `fx models` where the next [`list`] would answer from
 /// [`known_models`], so a model a subscription ships after this build reaches
-/// the picker without a Dray release; `models_changed` makes the picker read
+/// the picker without a Wain release; `models_changed` makes the picker read
 /// again.
 ///
 /// The table is cached before the probe, which is what stops a burst of reads
@@ -249,7 +249,7 @@ pub async fn set_provider(provider: &str) -> Result<()> {
     Ok(())
 }
 
-/// Serializes Dray's own writers of `~/.fx/settings.json`, so two provider
+/// Serializes Wain's own writers of `~/.fx/settings.json`, so two provider
 /// switches can't interleave their read-modify-write and lose one's change.
 static SETTINGS_WRITE: LazyLock<tokio::sync::Mutex<()>> =
     LazyLock::new(|| tokio::sync::Mutex::new(()));
@@ -263,11 +263,11 @@ static SETTINGS_WRITE: LazyLock<tokio::sync::Mutex<()>> =
 /// fx's, holding its provider, its per-provider model picks, its effort and its
 /// onboarding flags, and a field this build has never heard of is one it must
 /// hand back untouched. Same bargain `SessionIndexItem.unknown` makes with
-/// Dray's own index, kept for free by editing a `Value`.
+/// Wain's own index, kept for free by editing a `Value`.
 ///
 /// The replace is atomic: the new bytes go to a temp file beside the target and
 /// then `rename` over it, so fx (or any reader) sees the old file or the whole
-/// new one, never a half-written truncation. The lock serializes Dray's writers
+/// new one, never a half-written truncation. The lock serializes Wain's writers
 /// against each other; it cannot order fx's own writes, so a rewrite fx makes
 /// between this read and rename is still lost — a temp+rename shrinks that
 /// window to a single syscall.
@@ -312,7 +312,7 @@ async fn write_setting_at(
     // through here — a provider switch, and a session creation that turns fx's
     // titling off — readable by any other account on the machine. Measured, not
     // feared: fx rewrites the mode to `0600` on each of its own writes, so the
-    // widening was Dray's alone and came back every time.
+    // widening was Wain's alone and came back every time.
     //
     // On the temp at **create**, never on the final file after the rename: the
     // same ordering [`crate::issues`]'s credential write documents, and for the
@@ -330,7 +330,7 @@ async fn write_setting_at(
     };
 
     let dir = path.parent().context("fx settings has no parent dir")?;
-    let tmp = dir.join(format!(".settings.json.dray.{}", std::process::id()));
+    let tmp = dir.join(format!(".settings.json.wain.{}", std::process::id()));
     // Cleared first, so the `create_new` below is answering "did this call make
     // the file" rather than failing over one a crashed write left behind.
     let _ = tokio::fs::remove_file(&tmp).await;
@@ -590,7 +590,7 @@ fn visible(model: &Model) -> bool {
 /// TUI offers the toggle, `anthropic/claude-fable-5.1` has none and the TUI
 /// says *"This model does not come with a fast mode"* and turns fast mode off.
 /// Unlike the effort ladder next door, no session is needed to learn this and
-/// there is nothing to announce — the list Dray already fetches *is* the answer.
+/// there is nothing to announce — the list Wain already fetches *is* the answer.
 ///
 /// **A `-fast` id itself takes no toggle, because it *is* the fast tier** — not
 /// because it lacks one. The twin lookup would answer `false` for it anyway,
@@ -1015,7 +1015,7 @@ mod tests {
         // fx dropping a rung from the list is a rung gone, where the level in
         // use going missing is only the subtraction. Without the upper bound
         // the union could never let one go and the picker would offer `max`
-        // until Dray restarted.
+        // until Wain restarted.
         let shorter = &whole[..whole.len() - 1];
         assert!(learn_ladder("test/union", reply_on(shorter, Some(Effort::High))));
         assert_eq!(ladder("test/union"), shorter, "max is not on offer any more");
@@ -1101,7 +1101,7 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
 
         let dir = std::env::temp_dir().join(format!(
-            "dray-fx-settings-{}-{}",
+            "wain-fx-settings-{}-{}",
             std::process::id(),
             uuid::Uuid::now_v7()
         ));
@@ -1142,7 +1142,7 @@ mod tests {
 
             // And no temp left beside it holding the same config at the umask's mode.
             assert!(
-                !dir.join(format!(".settings.json.dray.{}", std::process::id()))
+                !dir.join(format!(".settings.json.wain.{}", std::process::id()))
                     .exists()
             );
         }

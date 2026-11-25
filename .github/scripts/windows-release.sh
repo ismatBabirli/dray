@@ -13,7 +13,7 @@
 #     per machine. A beta carries no MSI, so an MSI install waits for stable.
 #   windows-release.sh latest <dir> <tag>
 #     Copies each installer on R2 from under <tag>/ to its versionless name,
-#     the one a download link names: Dray_x64-setup.exe, Dray_x64.msi.
+#     the one a download link names: Wain_x64-setup.exe, Wain_x64.msi.
 set -euo pipefail
 
 files() {
@@ -49,8 +49,8 @@ case "${1:-}" in
     while IFS= read -r f; do
       name=$(basename "$f")
       case "$name" in
-        *-setup.exe) to=Dray_x64-setup.exe type=application/vnd.microsoft.portable-executable ;;
-        *.msi) to=Dray_x64.msi type=application/x-msi ;;
+        *-setup.exe) to=Wain_x64-setup.exe type=application/vnd.microsoft.portable-executable ;;
+        *.msi) to=Wain_x64.msi type=application/x-msi ;;
       esac
       aws s3 cp "s3://${R2_BUCKET}/${tag}/${name}" "s3://${R2_BUCKET}/${to}" \
         --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \

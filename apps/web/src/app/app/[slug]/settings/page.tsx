@@ -4,7 +4,7 @@ import { OrgSettings } from "@/components/account/OrgSettings";
 import { TITLE } from "@/components/account/styles";
 import { listOrgs, loadOrg } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Org settings - Dray" };
+export const metadata: Metadata = { title: "Org settings - Wain" };
 
 /// Rename the org or move its URL, leave it, or delete it.
 export default async function SettingsPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -74,7 +74,7 @@ function CopyCommand() {
   );
 }
 
-/// Every way to get Dray, one card each, four across on a wide screen.
+/// Every way to get Wain, one card each, four across on a wide screen.
 export function DownloadCards() {
   return (
     <div className="grid gap-[2px] sm:grid-cols-2 lg:grid-cols-4">

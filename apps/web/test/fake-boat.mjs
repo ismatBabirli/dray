@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 
 /// A stand-in for boat's API (https://docs.boat.dev/api/v1), enough for the
-/// Dray Cloud control plane. It refuses what boat's OpenAPI file refuses —
+/// Wain Cloud control plane. It refuses what boat's OpenAPI file refuses —
 /// an unknown body key, a missing bearer, a bad file entry — so a call drifting
 /// from the spec fails here rather than in production.
 
@@ -110,7 +110,7 @@ export async function fakeBoat({ key, org, pageSize = 2 }) {
       if (req.headers["x-boat-org"] !== org) return fail(res, 400, "wrong_org");
       const bad = unknown(body, CREATE_KEYS);
       if (bad) return fail(res, 400, "invalid_request", bad);
-      if (body.from && body.from !== "dray-cloud") return fail(res, 404, "snapshot_not_found");
+      if (body.from && body.from !== "wain-cloud") return fail(res, 404, "snapshot_not_found");
       for (const f of body.files ?? []) {
         if (typeof f.path !== "string" || typeof f.content !== "string") return fail(res, 400, "invalid_files");
       }

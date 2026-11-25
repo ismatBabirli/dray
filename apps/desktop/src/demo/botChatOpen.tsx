@@ -1,7 +1,7 @@
-// Times opening a bot's chat: the whole app against a real `dray-serve`, as
+// Times opening a bot's chat: the whole app against a real `wain-serve`, as
 // servers.html runs it, with the bot's row clicked once the sidebar is up.
 //
-//   DRAY_HOME=/tmp/bot dray-serve --port 7320 &   # a home holding one bot with a long log
+//   WAIN_HOME=/tmp/bot wain-serve --port 7320 &   # a home holding one bot with a long log
 //   open "/demo/bot-chat-open.html?local=$(cat /tmp/bot/serve-token)&bot=Release%20Bot"
 //
 // The result rides the window title and a box in the corner: when the first

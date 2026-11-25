@@ -90,7 +90,7 @@ export function IssueQuickActions({ issue }: { issue: IssueRef }) {
   const startHint = !machines
     ? "Open the issue to pick a project"
     : cloning
-      ? `Clone ${issueRepo(issue)} into ~/dray and start a task`
+      ? `Clone ${issueRepo(issue)} into ~/wain and start a task`
       : "Start a task on your last settings";
 
   return (
@@ -210,7 +210,7 @@ const SEND_LOOKS = {
 } as const;
 type SendLook = keyof typeof SEND_LOOKS;
 
-const LAST_BOT_KEY = "dray.issueSendBot";
+const LAST_BOT_KEY = "wain.issueSendBot";
 let lastBotId = readLocalStorage<string | null>(LAST_BOT_KEY, null);
 const lastBotListeners = new Set<() => void>();
 

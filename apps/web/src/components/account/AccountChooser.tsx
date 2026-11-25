@@ -10,7 +10,7 @@ import { BlueCard, Card, Cards, Heading, Label, SignOutIcon, Spinner } from "./S
 type Account = { name: string; email: string; image: string | null };
 
 /// What the desktop app's sign-in shows a browser already signed in to
-/// drayhq.com (#1277): continue as that account, or sign out here and pick
+/// wainhq.com (#1277): continue as that account, or sign out here and pick
 /// another way in. Continue goes on to `next` with `confirmed=1`, which is
 /// what lets `/api/app/authorize` hand the app its code.
 export function AccountChooser({
@@ -49,7 +49,7 @@ export function AccountChooser({
       {error ? (
         <Label danger>{error}</Label>
       ) : (
-        <Label>{machine ? `Signing in to Dray on ${machine}` : "Signing in to Dray"}</Label>
+        <Label>{machine ? `Signing in to Wain on ${machine}` : "Signing in to Wain"}</Label>
       )}
       <Heading>Continue as {first}?</Heading>
       <Cards>
@@ -63,7 +63,7 @@ export function AccountChooser({
         <Card
           icon={switching ? <Spinner /> : <SignOutIcon />}
           label="Use a different account"
-          detail="Signs you out of drayhq.com first"
+          detail="Signs you out of wainhq.com first"
           disabled={switching}
           onClick={useAnother}
         />

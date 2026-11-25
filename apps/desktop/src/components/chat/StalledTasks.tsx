@@ -30,7 +30,7 @@ const ROWS_SHOWN = 5;
 /// The foot of a bot's chat while any of its tasks waits on the reader: an
 /// inbox row per task — its face, title, PR and how long it has sat. A PR
 /// ready to merge carries Merge; a task idle on the reader carries the line its
-/// bot wrote for it (`dray session need`), and so does a ready PR the task
+/// bot wrote for it (`wain session need`), and so does a ready PR the task
 /// asked the reader to try first. A click opens, under the row, what the bot
 /// said about the task: its reply to the task's last report, which the bot's
 /// server finds walking back from the end of its chat. A second click closes

@@ -1,7 +1,7 @@
-/// The few boat calls Dray Cloud makes, checked against
+/// The few boat calls Wain Cloud makes, checked against
 /// https://docs.boat.dev/api/v1 and its OpenAPI file.
 
-/// A sandbox as boat answers it. Only the fields Dray Cloud reads; boat sends
+/// A sandbox as boat answers it. Only the fields Wain Cloud reads; boat sends
 /// many more, and a partial one (a fork's or resume's answer) can lack any of
 /// these but `id`.
 export type Sandbox = {

@@ -125,7 +125,7 @@ pub async fn update_agent(harness: Harness) -> Result<Option<AgentUpdate>, Strin
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn update_agent_in_terminal(harness: Harness) -> Result<(), String> {
     let bin = binpath::agent_binary(harness).await;
-    // The enriched `PATH` rides the line: Terminal inherits launchd's when Dray
+    // The enriched `PATH` rides the line: Terminal inherits launchd's when Wain
     // was opened from the Dock, where pi's `env node` and npm are not found.
     let mut line = format!(
         "PATH={} {}",
@@ -146,11 +146,11 @@ pub async fn update_agent_in_terminal(harness: Harness) -> Result<(), String> {
 pub async fn install_agent(harness: Harness) -> Result<(), String> {
     let script = harness.install_command();
     if script.is_empty() {
-        return Err(format!("Dray can't install {}", harness.label()));
+        return Err(format!("Wain can't install {}", harness.label()));
     }
     if !binpath::agent_installed(harness).await {
         let (shell, flag) = installer_shell().ok_or_else(|| {
-            format!("Dray needs Git Bash to install {}. Install it yourself: {}", harness.label(), harness.docs_url())
+            format!("Wain needs Git Bash to install {}. Install it yourself: {}", harness.label(), harness.docs_url())
         })?;
         let output = tokio::time::timeout(
             UPDATE_TIMEOUT,
@@ -168,7 +168,7 @@ pub async fn install_agent(harness: Harness) -> Result<(), String> {
     if recheck_agent(harness).await {
         Ok(())
     } else {
-        Err(format!("{} installed, but Dray can't find it", harness.label()))
+        Err(format!("{} installed, but Wain can't find it", harness.label()))
     }
 }
 
@@ -210,7 +210,7 @@ fn command(bin: &std::path::Path) -> Command {
 }
 
 /// `Err` where the answer could not be read; `Ok(None)` where the agent is
-/// current, not installed, or not Dray's to update.
+/// current, not installed, or not Wain's to update.
 async fn check(harness: Harness) -> Result<Option<AgentUpdate>, ()> {
     if !binpath::agent_installed(harness).await {
         return Ok(None);
@@ -223,7 +223,7 @@ async fn check(harness: Harness) -> Result<Option<AgentUpdate>, ()> {
     }
     // `latest.txt` is the stable channel's; a reader on fx's dev channel is
     // ahead of it by design, and telling them to "update" would be wrong. Not
-    // Dray's to update, which is `None` — answered as unreadable it left a
+    // Wain's to update, which is `None` — answered as unreadable it left a
     // stale "behind" row standing from before they switched.
     if harness == Harness::Fx && fx_channel().as_deref() == Some("dev") {
         return Ok(None);

@@ -48,7 +48,7 @@ for (const { userId, githubId } of rows) {
   const res = await fetch(`https://api.github.com/user/${githubId}`, {
     headers: {
       Accept: "application/vnd.github+json",
-      "User-Agent": "dray-backfill",
+      "User-Agent": "wain-backfill",
       ...(token && { Authorization: `Bearer ${token}` }),
     },
   });

@@ -1,5 +1,5 @@
 //! Phone alerts (#1299): a turn done, a permission or a question asked, a
-//! pull request ready to merge, sent through the push relay on drayhq.com,
+//! pull request ready to merge, sent through the push relay on wainhq.com,
 //! which alone holds the APNs key.
 //!
 //! A phone registers over the serve wire with a handle the relay sealed its

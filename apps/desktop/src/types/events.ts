@@ -53,7 +53,7 @@ canSignOut: boolean,
  */
 canChangeMethod: boolean, 
 /**
- * Whether the credential is held by something Dray cannot drive — a pi
+ * Whether the credential is held by something Wain cannot drive — a pi
  * extension's provider, which signs in its own way. Such a row offers no
  * Sign in, Reauthorize or Sign out, since none of them would reach it.
  */
@@ -210,7 +210,7 @@ baseline: string | null,
  */
 queued: boolean, 
 /**
- * The Dray session that relayed this prompt, when one did.
+ * The Wain session that relayed this prompt, when one did.
  *
  * `None` — the ordinary case — means the user typed it. Carried as a
  * field rather than named in `text` because the transcript draws the
@@ -240,7 +240,7 @@ from: MessageSender | null,
  */
 cwd: string | null, 
 /**
- * Dray's own prompt opening a new bot's chat, so the bot speaks first.
+ * Wain's own prompt opening a new bot's chat, so the bot speaks first.
  * The transcript draws no bubble for it; the log keeps it, being what
  * the agent was actually given.
  */
@@ -431,8 +431,8 @@ export type AgentUpdate = { harness: Harness, label: string, current: string, la
 export type AppSettings = { 
 /**
  * The old in-app analytics switch, **read by nothing**: Settings offers no
- * opt-out any more, so a stored `false` is ignored and `DRAY_NO_ANALYTICS`
- * is the only way off. Kept so an older build sharing `~/.dray` still finds
+ * opt-out any more, so a stored `false` is ignored and `WAIN_NO_ANALYTICS`
+ * is the only way off. Kept so an older build sharing `~/.wain` still finds
  * the field it reads, and so a rewrite here carries its value through.
  */
 analyticsEnabled: boolean, 
@@ -474,10 +474,10 @@ remoteAccess: boolean,
  */
 shareMachines: boolean, 
 /**
- * Dray Cloud's switch (#857). Here because Rust lists the machines at
+ * Wain Cloud's switch (#857). Here because Rust lists the machines at
  * launch; the key itself sits in `credentials.json`.
  */
-drayCloud: boolean, };
+wainCloud: boolean, };
 
 /**
  * Permission stance a session *runs under*, in roughly increasing order of
@@ -487,7 +487,7 @@ drayCloud: boolean, };
 export type ApprovalPolicy = "plan" | "manual" | "auto" | "dontAsk" | "bypassPermissions";
 
 /**
- * One connected assistant, as Settings → Servers and `dray server assistant
+ * One connected assistant, as Settings → Servers and `wain server assistant
  * ls` list it.
  */
 export type AssistantSummary = { id: string, 
@@ -549,7 +549,7 @@ id: string, label: string,
 needsKey: boolean, 
 /**
  * The command to run, spelled the way the reader would type it, for every
- * option Dray cannot carry out.
+ * option Wain cannot carry out.
  *
  * **Shown, copyable, and run by [`run_agent_login`] on the reader's say
  * so.** Every one of these is built in [`auth_options`], which is what
@@ -611,7 +611,7 @@ stopsAt: string | null,
  */
 warning: boolean, 
 /**
- * Why the last resume didn't take, in boat's or Dray's words.
+ * Why the last resume didn't take, in boat's or Wain's words.
  */
 note: string | null, };
 
@@ -636,7 +636,7 @@ path: string, created: string,
 avatar?: BotAvatar | null, 
 /**
  * Marks a bot whose chat opens on a welcome, drawn by the app and written
- * to the log when a session starts. Dray Bot's alone; a bot made with New
+ * to the log when a session starts. Wain Bot's alone; a bot made with New
  * bot greets with a real turn. The words drawn are `greeting`'s.
  */
 welcome?: string | null, 
@@ -765,7 +765,7 @@ export type ChromiumStatus = { "state": "absent" } | { "state": "downloading", r
 export type CloneProgress = { slug: string, line: string, };
 
 /**
- * The Dray Cloud row in Settings. The machines themselves ride
+ * The Wain Cloud row in Settings. The machines themselves ride
  * `servers_changed`, each a server marked `cloud`.
  */
 export type CloudInfo = { on: boolean, 
@@ -857,53 +857,6 @@ error: string | null,
  * task that was already gone.
  */
 cancelled: boolean, };
-
-export type DrayAccountState = { user: DrayUser | null, 
-/**
- * A browser sign-in started and not yet back.
- */
-signingIn: SignInMethod | null, 
-/**
- * The browser is back and its code is being traded: too late to cancel,
- * since the trade re-keys this machine's link on the site.
- */
-finishing: boolean, 
-/**
- * Why the last sign-in ended without signing in: `cancelled`,
- * `timed_out`, `offline`, or a sentence for anything else.
- */
-error: string | null, 
-/**
- * The site has email sign-in turned off (#1298), so the gate fades its
- * card. False until the site says so, so a site that never answers
- * takes no way in away.
- */
-emailOff: boolean, };
-
-/**
- * The account, as the site describes it.
- */
-export type DrayUser = { id: string, name: string, 
-/**
- * Absent from a site older than the account card, and from an
- * `account.json` it wrote.
- */
-email: string | null, username: string | null, 
-/**
- * The GitHub login the account signed up with, which GitHub names it
- * after where the profile has no name. Absent from a site older than it.
- */
-githubLogin: string | null, 
-/**
- * The Google or GitHub picture, where the account has one.
- */
-image: string | null, 
-/**
- * `github` and `google` sign-ins linked to the account, oldest first.
- * Strings, not an enum, so a provider added on the site costs this
- * build a mark rather than the whole account.
- */
-providers: Array<string>, };
 
 export type Effort = "low" | "medium" | "high" | "xhigh" | "max" | "ultra";
 
@@ -1018,7 +971,7 @@ export type GithubRepo = {
 slug: string, description: string | null, 
 /**
  * Where it already lives on this machine: an attached project, or a
- * directory in `~/dray` whose GitHub remote names it. Picking one of these
+ * directory in `~/wain` whose GitHub remote names it. Picking one of these
  * attaches it rather than cloning again.
  */
 path: string | null, };
@@ -1133,7 +1086,7 @@ issueType: IssueLabel | null, };
  *
  * **The whole reason this command exists.** Linear's uploads live behind the
  * same auth the API does, so the `<img src>` in a description resolves to a
- * 401 and the webview draws its broken-image box — which reads as "Dray cannot
+ * 401 and the webview draws its broken-image box — which reads as "Wain cannot
  * show this" rather than "this needs a key". Fetching here and handing back a
  * `data:` URL is what makes an image in an issue an image on screen.
  *
@@ -1418,7 +1371,7 @@ change: string,
 summary: string, };
 
 /**
- * Where this server stands, as the app and `dray login` read it.
+ * Where this server stands, as the app and `wain login` read it.
  */
 export type LinkState = { linked: Linked | null, pending: PendingLink | null, 
 /**
@@ -1432,7 +1385,7 @@ export type Linked = {
  */
 serverName: string, org: LinkedOrg, 
 /**
- * The site that holds the link, `https://www.drayhq.com` outside testing.
+ * The site that holds the link, `https://www.wainhq.com` outside testing.
  */
 site: string, };
 
@@ -1494,7 +1447,7 @@ chain?: string, hop?: number,
  */
 ask?: boolean, 
 /**
- * The answer to an `--ask`, passed back by Dray. Needs no answer itself.
+ * The answer to an `--ask`, passed back by Wain. Needs no answer itself.
  */
 reply?: boolean, };
 
@@ -1909,7 +1862,7 @@ headRefExists: boolean,
 /**
  * Whether the head branch lives in a fork rather than in this repo.
  *
- * `head_ref_name` is bare either way — a PR from `alice/dray:feature`
+ * `head_ref_name` is bare either way — a PR from `alice/wain:feature`
  * reports `feature` — so the name cannot be told apart from a branch of
  * our own, and joining it to this repo's slug addresses a *different*
  * branch that merely shares its name. Unknown reads as `true`, because
@@ -2031,7 +1984,7 @@ from: MessageSender | null,
  */
 issues: Array<IssueRef>, 
 /**
- * Dray's own prompt, which nobody typed: a bot's kickoff or review, or a
+ * Wain's own prompt, which nobody typed: a bot's kickoff or review, or a
  * reaction told to the agent. No client draws it and a cancel never takes
  * it back, as its logged event draws nothing either.
  */
@@ -2163,7 +2116,7 @@ beta: boolean,
  */
 latest: string | null, 
 /**
- * Dray.app's own server on another Mac, updated by that app, not from here.
+ * Wain.app's own server on another Mac, updated by that app, not from here.
  */
 app: boolean, 
 /**
@@ -2171,11 +2124,11 @@ app: boolean,
  */
 restarting: boolean, 
 /**
- * Stopped and resuming, for a boat sandbox and a Dray Cloud machine alike.
+ * Stopped and resuming, for a boat sandbox and a Wain Cloud machine alike.
  */
 boat: BoatStatus | null, 
 /**
- * A Dray Cloud machine (#857): drawn as no row of its own, and read as
+ * A Wain Cloud machine (#857): drawn as no row of its own, and read as
  * "Cloud" wherever a machine is named.
  */
 cloud: boolean, };
@@ -2243,7 +2196,7 @@ permissionMode: ApprovalPolicy,
  * has exactly one of them — Claude Code's `fastMode` flag setting, Codex's
  * `priority` service tier, fx's `fast_mode` — and a two-valued switch is
  * the honest shape for all three. A variant is also what an older build
- * sharing `~/.dray` cannot spell, which fails the line and reads the whole
+ * sharing `~/.wain` cannot spell, which fails the line and reads the whole
  * index as no sessions at all; `false` is what a bool degrades to there,
  * which is a session running at ordinary speed and nothing worse.
  *
@@ -2275,7 +2228,7 @@ forkFrom: string | null,
  * two ids and this is the mapping between them.
  *
  * Ours stays primary — it keys the index, the log filename, the
- * attachments directory and every `dray` address, and all of those are
+ * attachments directory and every `wain` address, and all of those are
  * written *before* the child answers. This is read by resume alone.
  */
 threadId: string | null, 
@@ -2298,7 +2251,7 @@ issues: Array<IssueRef>,
 parentSessionId: string | null, created: string, modified: string, archived: boolean, pinned: boolean, 
 /**
  * Left out of the sidebar, surfacing only as cards beside its parent — a
- * review session nobody means to read on its own. `dray new --hidden` sets
+ * review session nobody means to read on its own. `wain new --hidden` sets
  * it, and detaching clears it, since a session with no parent would
  * surface nowhere.
  *
@@ -2324,7 +2277,7 @@ continueAt?: string,
 continueOff: boolean, 
 /**
  * What a bot's stalled task needs from the reader, one line the bot wrote
- * with `dray session need`. Drawn only while `at` is no older than
+ * with `wain session need`. Drawn only while `at` is no older than
  * `modified`, so the task moving clears it without a write.
  */
 need?: TaskNeed, 
@@ -2439,7 +2392,7 @@ permissionMode: ApprovalPolicy,
  * has exactly one of them — Claude Code's `fastMode` flag setting, Codex's
  * `priority` service tier, fx's `fast_mode` — and a two-valued switch is
  * the honest shape for all three. A variant is also what an older build
- * sharing `~/.dray` cannot spell, which fails the line and reads the whole
+ * sharing `~/.wain` cannot spell, which fails the line and reads the whole
  * index as no sessions at all; `false` is what a bool degrades to there,
  * which is a session running at ordinary speed and nothing worse.
  *
@@ -2471,7 +2424,7 @@ forkFrom: string | null,
  * two ids and this is the mapping between them.
  *
  * Ours stays primary — it keys the index, the log filename, the
- * attachments directory and every `dray` address, and all of those are
+ * attachments directory and every `wain` address, and all of those are
  * written *before* the child answers. This is read by resume alone.
  */
 threadId: string | null, 
@@ -2494,7 +2447,7 @@ issues: Array<IssueRef>,
 parentSessionId: string | null, created: string, modified: string, archived: boolean, pinned: boolean, 
 /**
  * Left out of the sidebar, surfacing only as cards beside its parent — a
- * review session nobody means to read on its own. `dray new --hidden` sets
+ * review session nobody means to read on its own. `wain new --hidden` sets
  * it, and detaching clears it, since a session with no parent would
  * surface nowhere.
  *
@@ -2520,7 +2473,7 @@ continueAt?: string,
 continueOff: boolean, 
 /**
  * What a bot's stalled task needs from the reader, one line the bot wrote
- * with `dray session need`. Drawn only while `at` is no older than
+ * with `wain session need`. Drawn only while `at` is no older than
  * `modified`, so the task moving clears it without a write.
  */
 need?: TaskNeed, 
@@ -2717,7 +2670,7 @@ id: string, sessionId: string, taskId: string | null, label: string | null, desc
 endedAt: string | null, };
 
 /**
- * What a server has before Dray is installed on it.
+ * What a server has before Wain is installed on it.
  */
 export type Survey = { 
 /**
@@ -2726,7 +2679,7 @@ export type Survey = {
 os: string, tools: Array<Tool>, 
 /**
  * Where git is missing and this login has no admin rights to install it:
- * the line to run as root, the one `dray setup` would print.
+ * the line to run as root, the one `wain setup` would print.
  */
 gitCommand: string | null, };
 
@@ -2763,7 +2716,7 @@ export type TaskNeed = { text: string,
 at: string, };
 
 /**
- * A tool `dray setup --install` takes, as a server has it.
+ * A tool `wain setup --install` takes, as a server has it.
  */
 export type Tool = { id: string, name: string, found: boolean, };
 
@@ -2784,7 +2737,7 @@ isError: boolean,
 structured: JsonValue | null, exitCode: number | null, durationMs: number | null, 
 /**
  * Pictures the tool handed back — a `Read` of a screenshot, an MCP tool
- * that answers in images. Archived under `~/.dray/attachments` before the
+ * that answers in images. Archived under `~/.wain/attachments` before the
  * event is written, so this carries a path and never the bytes: the CLI
  * sends the same image twice on one line and a session of screenshots was
  * 12MB of base64 in a 14MB log.
@@ -2921,7 +2874,7 @@ ready: boolean, };
 export type TurnStatus = "success" | "error";
 
 /**
- * What `dray logout` reports.
+ * What `wain logout` reports.
  */
 export type Unlinked = { org: LinkedOrg, site: string, 
 /**
@@ -2957,6 +2910,53 @@ reasoningTokens: number | null, totalTokens: number | null, costUsd: number | nu
  * and every event that doesn't report one. See [`ModelUsage`].
  */
 perModel: Array<ModelUsage>, };
+
+export type WainAccountState = { user: WainUser | null, 
+/**
+ * A browser sign-in started and not yet back.
+ */
+signingIn: SignInMethod | null, 
+/**
+ * The browser is back and its code is being traded: too late to cancel,
+ * since the trade re-keys this machine's link on the site.
+ */
+finishing: boolean, 
+/**
+ * Why the last sign-in ended without signing in: `cancelled`,
+ * `timed_out`, `offline`, or a sentence for anything else.
+ */
+error: string | null, 
+/**
+ * The site has email sign-in turned off (#1298), so the gate fades its
+ * card. False until the site says so, so a site that never answers
+ * takes no way in away.
+ */
+emailOff: boolean, };
+
+/**
+ * The account, as the site describes it.
+ */
+export type WainUser = { id: string, name: string, 
+/**
+ * Absent from a site older than the account card, and from an
+ * `account.json` it wrote.
+ */
+email: string | null, username: string | null, 
+/**
+ * The GitHub login the account signed up with, which GitHub names it
+ * after where the profile has no name. Absent from a site older than it.
+ */
+githubLogin: string | null, 
+/**
+ * The Google or GitHub picture, where the account has one.
+ */
+image: string | null, 
+/**
+ * `github` and `google` sign-ins linked to the account, oldest first.
+ * Strings, not an enum, so a provider added on the site costs this
+ * build a mark rather than the whole account.
+ */
+providers: Array<string>, };
 
 /**
  * What the composer's action row needs to decide which buttons it has, in one

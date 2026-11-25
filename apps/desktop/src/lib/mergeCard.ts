@@ -9,7 +9,7 @@ export const FULL_FOR = 3;
 
 /// For each merge card, how many messages the reader has sent since it. Only
 /// the reader's: a task's report-back and a bot's message carry `from`, and a
-/// bot's kickoff is Dray's own.
+/// bot's kickoff is Wain's own.
 export function readerMessagesAfter(events: readonly AgentEvent[]): Map<string, number> {
   const after = new Map<string, number>();
   let count = 0;

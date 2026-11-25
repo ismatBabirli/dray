@@ -1,4 +1,4 @@
-"""Seeds a dray-serve home for WaitingOnYouTests (#1181): a bot whose chat runs
+"""Seeds a wain-serve home for WaitingOnYouTests (#1181): a bot whose chat runs
 400 turns long, with seven hidden tasks idle on the reader, the oldest a week
 back. Three reported into the chat: the oldest far up it, answered with a
 reply naming a picture on the server's disk; the newest near its end,
@@ -6,7 +6,7 @@ answered; one with no reply. The rest never reported, so their rows open the
 task. "Bump deps" carries a need line; every other row has none.
 
     python3 scripts/waiting_seed.py
-    DRAY_HOME=/private/tmp/dray-waiting dray-serve --port 47111 &
+    WAIN_HOME=/private/tmp/wain-waiting wain-serve --port 47111 &
 
 Under /private/tmp, not /tmp: the server canonicalizes paths, and a bot's path
 that differs from its chat's cwd by that symlink matches no bot. No git in the
@@ -15,7 +15,7 @@ project, so no PR mark makes a task anything but waiting.
 import json, os, shutil, struct, sys, uuid, zlib
 from datetime import datetime, timedelta, timezone
 
-ROOT = sys.argv[1] if len(sys.argv) > 1 else "/private/tmp/dray-waiting"
+ROOT = sys.argv[1] if len(sys.argv) > 1 else "/private/tmp/wain-waiting"
 TOKEN = "1181" * 16
 now = datetime.now(timezone.utc)
 stamp = lambda d: d.isoformat(timespec="milliseconds").replace("+00:00", "Z")
@@ -36,7 +36,7 @@ def write_log(sid, turns, start):
             # A task's report carries the sender line `attribute` writes.
             frm = sender and {"sessionId": sender[0], "title": sender[1], "machine": None}
             if frm:
-                prompt = f'[message from the Dray session "{sender[1]}" ({sender[0]})]\n\n{prompt}'
+                prompt = f'[message from the Wain session "{sender[1]}" ({sender[0]})]\n\n{prompt}'
             said = [{"type": "assistant_text", "block": {"messageId": f"msg_{i}", "index": 0}, "text": reply}] if reply else []
             for p in (
                 {"type": "user_message", "text": prompt, "images": [], "issues": [], "baseline": None,

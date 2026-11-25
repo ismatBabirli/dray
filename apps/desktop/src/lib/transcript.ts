@@ -191,18 +191,18 @@ export function segmentWork(turn: Turn, resultByCallId?: Map<string, ToolResult>
 /// Every recording named in a text, absolute paths only — the asset protocol
 /// reads nothing else. Unanchored where Markdown's own test is anchored, since
 /// this searches prose and tool output rather than judging one path. Any home,
-/// since `DRAY_HOME` moves it. The group is the path, and what it must follow
-/// is what keeps `~/.dray/…` from reading as `/.dray/…`.
+/// since `WAIN_HOME` moves it. The group is the path, and what it must follow
+/// is what keeps `~/.wain/…` from reading as `/.wain/…`.
 const RECORDING_IN_TEXT =
   /(?:^|[\s"'`(<>\[=:])(\/[^\s"'`()<>]*\/browser(?:-dev)?\/recordings\/[^/\s"'`()<>]+\/[^/\s"'`()<>]+\.mp4)/gm;
 
 /// A command that prints a recording's path, run as a command: opening it,
 /// after a shell separator, or quoted after `-c` the way Codex wraps every
-/// command. `rg 'dray browser record stop'` only quotes it, and prints a
+/// command. `rg 'wain browser record stop'` only quotes it, and prints a
 /// fixture's fake path beside it.
-const RECORD_STOP = /(?:^|[;&|(\n]|\s-\w*c\s+['"])\s*dray\s+(?:browser\s+record\s+stop|video\s+add)\b/;
+const RECORD_STOP = /(?:^|[;&|(\n]|\s-\w*c\s+['"])\s*wain\s+(?:browser\s+record\s+stop|video\s+add)\b/;
 
-/// The call's id where it is a `dray browser record stop` or `dray video add`,
+/// The call's id where it is a `wain browser record stop` or `wain video add`,
 /// which print the MP4's path. No other tool's output is read for one, or a file that merely
 /// mentions a path — a test fixture read back — draws a player for a video
 /// that was never made. Every string in the input is tried, since each harness
@@ -281,7 +281,7 @@ export function sessionMedia(events: AgentEvent[]): SessionMedia[] {
   const stops = new Set(events.map(recordStopId));
   for (const { subagent, payload } of events) {
     if (subagent) continue;
-    // A relayed `dray send` arrives as a user message too, but another
+    // A relayed `wain send` arrives as a user message too, but another
     // session sent it, so it counts as the agent's.
     if (payload.type === "user_message") images(payload.images, payload.from === null);
     else if (payload.type === "tool_call_completed") {

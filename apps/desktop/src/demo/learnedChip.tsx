@@ -39,7 +39,7 @@ const SKILL: Lesson = {
   },
   before: "",
   after:
-    "---\nname: fork-sandbox\ndescription: Fork a Boat sandbox for a task, checking its logins first\n---\n\n1. Run `scripts/check-login.sh <box>`; stop and tell the user if it fails.\n2. `boat fork <box>` and wait for it to boot.\n3. Start the task with `dray session new --machine <fork>`.\n",
+    "---\nname: fork-sandbox\ndescription: Fork a Boat sandbox for a task, checking its logins first\n---\n\n1. Run `scripts/check-login.sh <box>`; stop and tell the user if it fails.\n2. `boat fork <box>` and wait for it to boot.\n3. Start the task with `wain session new --machine <fork>`.\n",
 };
 
 const MEMORY: Lesson = {

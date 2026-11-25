@@ -5,18 +5,18 @@ import SignInGate, { type GateView } from "@/components/SignInGate";
 import { useLocalServer } from "@/lib/servers";
 import { ONBOARDED } from "@/lib/signInGate";
 import { invoke, listen, LOCAL } from "@/lib/transport";
-import type { DrayAccountState, SignInMethod, SignInStarted } from "@/types/events";
+import type { WainAccountState, SignInMethod, SignInStarted } from "@/types/events";
 
 /// Set while this app has been signed in, so the next launch draws the app at
 /// once rather than the gate, and a sign-in that later vanishes reads as
 /// "You've been signed out" rather than a first visit.
-export const SIGNED_IN = "dray.signedIn";
+export const SIGNED_IN = "wain.signedIn";
 /// The way in this app last signed in with, for the gate's "Last used" tag.
 /// Here and not on the server: it describes this app's reader, not the account.
-const LAST_METHOD = "dray.lastSignInMethod";
-/// How often a skipped gate asks whether drayhq.com is back.
+const LAST_METHOD = "wain.lastSignInMethod";
+/// How often a skipped gate asks whether wainhq.com is back.
 const PROBE_MS = 10_000;
-/// The server's own recheck interval with drayhq.com.
+/// The server's own recheck interval with wainhq.com.
 const RECHECK_MS = 60_000;
 
 let readerSignedOut = false;
@@ -32,7 +32,7 @@ const ERRORS: Record<string, string> = {
   timed_out: "Sign-in timed out",
 };
 
-/// Everyone signs in before using Dray (#1277). Draws the app while this
+/// Everyone signs in before using Wain (#1277). Draws the app while this
 /// machine's server says someone is signed in, and the sign-in gate
 /// otherwise. The app is not mounted behind the gate, so nothing in it can be
 /// reached by a shortcut. Offline, the gate offers Skip for now; once the
@@ -40,7 +40,7 @@ const ERRORS: Record<string, string> = {
 export default function AccountGate({ children }: { children: ReactNode }) {
   const local = useLocalServer();
   const connected = local?.status === "connected";
-  const [account, setAccount] = useState<DrayAccountState | null>(null);
+  const [account, setAccount] = useState<WainAccountState | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [skipped, setSkipped] = useState(false);
   const [remembered] = useState(() => localStorage.getItem(SIGNED_IN) === "1");
@@ -53,7 +53,7 @@ export default function AccountGate({ children }: { children: ReactNode }) {
   const picked = useRef<SignInMethod | null>(null);
 
   const load = useCallback(() => {
-    invoke<DrayAccountState>("account_state", {}, LOCAL)
+    invoke<WainAccountState>("account_state", {}, LOCAL)
       .then((now) => {
         setAccount(now);
         setFailed(null);
@@ -83,7 +83,7 @@ export default function AccountGate({ children }: { children: ReactNode }) {
   }, [connected, load]);
 
   // The server checks with the site only when asked, so ask on its own
-  // cadence: a sign-in revoked on drayhq.com brings the gate back within a
+  // cadence: a sign-in revoked on wainhq.com brings the gate back within a
   // minute or two.
   useEffect(() => {
     const timer = setInterval(load, RECHECK_MS);

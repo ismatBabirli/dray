@@ -95,12 +95,12 @@ for (const f of changed) {
 
 const affected = (s) => all || s.whole || s.files.size > 0 || s.deps.some(affected);
 const plan = suites.filter(affected).sort((a, b) => (a.kind === "cargo") - (b.kind === "cargo"));
-// Dray Island compiles a dozen iOS files by path (apps/island/project.yml), so an
+// Wain Island compiles a dozen iOS files by path (apps/island/project.yml), so an
 // iOS change can break the release's island build with nothing else noticing.
-const islandSource = (f) => /^apps\/(island|ios\/Dray)\/.*\.swift$|^apps\/island\/project\.yml$/.test(f);
+const islandSource = (f) => /^apps\/(island|ios\/Wain)\/.*\.swift$|^apps\/island\/project\.yml$/.test(f);
 if (process.platform === "darwin" && (all || changed.some(islandSource)))
   plan.push({ dir: "apps/island", cmd: ["sh", "-c",
-    "xcodegen generate --quiet && xcodebuild -quiet -project DrayIsland.xcodeproj -scheme DrayIsland -derivedDataPath build CODE_SIGNING_ALLOWED=NO build"] });
+    "xcodegen generate --quiet && xcodebuild -quiet -project WainIsland.xcodeproj -scheme WainIsland -derivedDataPath build CODE_SIGNING_ALLOWED=NO build"] });
 
 console.log(`base ${base.slice(0, 10)}, ${changed.length} changed file(s)${all ? ", running everything" : ""}`);
 if (!plan.length) console.log("nothing to test");

@@ -1,6 +1,6 @@
-# Dray for Android
+# Wain for Android
 
-A native Kotlin + Jetpack Compose client of `dray-serve`, ported from the iOS
+A native Kotlin + Jetpack Compose client of `wain-serve`, ported from the iOS
 app's first App Store version (0.1.0, `apps/ios` before its 0.2.0 additions).
 It runs no core and no agent: every session lives on a server, and the phone
 reads and drives it over the same WebSocket the desktop and iOS use
@@ -8,7 +8,7 @@ reads and drives it over the same WebSocket the desktop and iOS use
 
 ## What this foundation does
 
-- **Pairing**: a `dray://connect?url=…&token=…&name=…` link (the pairing QR,
+- **Pairing**: a `wain://connect?url=…&token=…&name=…` link (the pairing QR,
   which the system camera opens too) fills Add server but never adds unasked;
   the in-app scanner reads the same QR (CameraX + ML Kit); or paste the
   address and token, where a whole connect line fills both. Tokens are sealed
@@ -35,7 +35,7 @@ reads and drives it over the same WebSocket the desktop and iOS use
   pictures inline and full screen (pager, pinch, double-tap, drag down);
   browser recordings play in place (Media3, token in `/file`'s query).
 - **Reply dock**: a message field (text first, as Android chat is, with
-  Dray's own dictation on the mic), the session's model and effort under it
+  Wain's own dictation on the mic), the session's model and effort under it
   opening **This task** (model, effort, fast mode, stance, each locked mid-turn
   per `Picks.lockedMidTurn`), and Stop while a turn runs.
 - **Permission and question cards**, answered in place, in the transcript and
@@ -94,8 +94,8 @@ background tasks running", Share in the image viewer.
 `app/google-services.json` the app builds, `FirebaseApp` never starts, and
 Settings → Notifications says push isn't set up. To light it up:
 
-1. The Firebase project is `dray-hq`, its Android app `com.dray.app` (the
-   Play Store id; the Kotlin namespace stays `com.yogesh.dray`). The
+1. The Firebase project is `wain-hq`, its Android app `com.wain.app` (the
+   Play Store id; the Kotlin namespace stays `com.wainhq.wain`). The
    google-services plugin fails the build when the file names no client for
    that id, so a file downloaded for an older id must be replaced.
    Its `google-services.json` goes at `apps/android/app/google-services.json`
@@ -127,8 +127,8 @@ relay sends lands there to replay into the app.
 key.** The key's four values come from `apps/android/keystore.properties`
 (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`; a relative
 `storeFile` resolves against `apps/android/`) or from the env vars
-`DRAY_ANDROID_STORE_FILE`, `DRAY_ANDROID_STORE_PASSWORD`,
-`DRAY_ANDROID_KEY_ALIAS` and `DRAY_ANDROID_KEY_PASSWORD`. With neither, the
+`WAIN_ANDROID_STORE_FILE`, `WAIN_ANDROID_STORE_PASSWORD`,
+`WAIN_ANDROID_KEY_ALIAS` and `WAIN_ANDROID_KEY_PASSWORD`. With neither, the
 release build still configures and comes out unsigned, so CI needs nothing.
 The properties file, `*.jks` and `*.keystore` are gitignored. Play App Signing
 holds the real app key; a lost upload key is reset from Play Console, not
@@ -137,7 +137,7 @@ fatal. Bump `versionCode` for every upload.
 ## Layout
 
 ```
-app/src/main/java/com/yogesh/dray/
+app/src/main/java/com/wainhq/wain/
   wire/    JSON helpers and the wire types (Wire.swift)
   net/     Connection: one OkHttp WebSocket per server, reconnecting (Connection.swift)
   push/    FCM token, the relay's handle, alerts and their buttons (Push.swift)
@@ -151,7 +151,7 @@ app/src/main/java/com/yogesh/dray/
 restates; a rule changed in one belongs in the other, and in the desktop file
 both restate (`tools.ts`, `permission.ts`, `liveControls.ts`, `model.ts`).
 
-**Every colour, size, radius and font is in [Theme.kt](app/src/main/java/com/yogesh/dray/ui/Theme.kt)**:
+**Every colour, size, radius and font is in [Theme.kt](app/src/main/java/com/wainhq/wain/ui/Theme.kt)**:
 the iOS app's dark tokens, dark only, yellow for *needs you* alone. Roboto
 stands in for SF Pro; Material is used where Android readers expect it
 (back arrow, bottom sheet, pull to refresh, switches).
@@ -180,15 +180,15 @@ JDK 17 and the Android SDK (platform `android-37.2`, which AndroidX needs to com
 `pnpm test:affected` does not reach this app (no `Cargo.toml` or
 `package.json`); run the unit tests above.
 
-**Against a real server on this box**: start a `dray-serve` on its own home
+**Against a real server on this box**: start a `wain-serve` on its own home
 and port, `adb reverse tcp:<port> tcp:<port>`, then open the pairing link:
 
 ```bash
-DRAY_HOME=~/.dray-android-test dray-serve --port 7419 &
+WAIN_HOME=~/.wain-android-test wain-serve --port 7419 &
 adb reverse tcp:7419 tcp:7419
 adb shell am start -a android.intent.action.VIEW \
-  -d "'dray://connect?url=ws://127.0.0.1:7419&token=<serve-token>&name=Test'"
+  -d "'wain://connect?url=ws://127.0.0.1:7419&token=<serve-token>&name=Test'"
 ```
 
-A `dray` command meant for that server needs `DRAY_HOME` set and
-`DRAY_ENDPOINT` unset, or it lands on the box's own server.
+A `wain` command meant for that server needs `WAIN_HOME` set and
+`WAIN_ENDPOINT` unset, or it lands on the box's own server.

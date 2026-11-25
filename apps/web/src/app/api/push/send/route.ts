@@ -2,7 +2,7 @@ import { deliverFcm, fcmTokenGone } from "@/lib/fcm";
 import { apnsPayload, deliver, pushReady, readAlert, tokenGone, unseal } from "@/lib/push";
 import { callerOf, overLimit } from "@/lib/rate";
 
-/// A Dray server sends one alert to one phone. The text passes straight
+/// A Wain server sends one alert to one phone. The text passes straight
 /// through to APNs or FCM and is never stored or logged.
 ///
 /// 410 tells the server to forget the handle: one this relay cannot read, or a

@@ -1,26 +1,26 @@
 import { CARD, LABEL, Section } from "@/components/home/Section";
 
 /// Yogesh's own numbers: the quote on one blue card, then the week before
-/// Dray Bot beside the two days with it, one square per merged PR.
+/// Wain Bot beside the two days with it, one square per merged PR.
 export function Proof() {
   return (
     <Section id="proof" className="py-20">
       <figure className="grid gap-[2px]">
         <div className="bg-[#1612F8] p-6 sm:p-8">
           <blockquote className="max-w-[760px] text-[26px] leading-8 font-light tracking-[-0.03em] text-balance text-white sm:text-4xl sm:leading-11">
-            “84 PRs merged in 2 days with Dray Bot and sandboxes. My old average was 50 a week.”
+            “84 PRs merged in 2 days with Wain Bot and sandboxes. My old average was 50 a week.”
           </blockquote>
           <figcaption className="mt-8 flex items-center gap-3">
             <img src="/avatars/yogesharc.webp" alt="" width={40} height={40} loading="lazy" className="size-10 shrink-0 rounded-full object-cover" />
             <span className="flex flex-col gap-0.5">
               <span className="text-[15px] leading-5 text-white">Yogesh</span>
-              <span className={`text-white/70 ${LABEL}`}>Founder of Dray</span>
+              <span className={`text-white/70 ${LABEL}`}>Founder of Wain</span>
             </span>
           </figcaption>
         </div>
         <div className="grid gap-[2px] sm:grid-cols-2">
-          <Stat count={50} caption="PRs a week, before Dray Bot." old />
-          <Stat count={84} caption="PRs in 2 days, with Dray Bot." />
+          <Stat count={50} caption="PRs a week, before Wain Bot." old />
+          <Stat count={84} caption="PRs in 2 days, with Wain Bot." />
         </div>
       </figure>
     </Section>

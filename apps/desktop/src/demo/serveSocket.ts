@@ -1,11 +1,11 @@
-// One socket to a real `dray-serve`, for the demos that run the whole app in a
+// One socket to a real `wain-serve`, for the demos that run the whole app in a
 // plain browser with Tauri's IPC mocked: servers.html and cloud.html.
 
 import type { ServerInfo } from "@/types/events";
 
 type Call = { resolve: (v: unknown) => void; reject: (e: unknown) => void };
 
-/// One socket to a `dray-serve`, reopened a second after any drop.
+/// One socket to a `wain-serve`, reopened a second after any drop.
 export function connect(url: string, token: string, onEvent: (event: string, payload: unknown) => void, onStatus: (s: ServerInfo["status"], error?: string) => void) {
   let ws: WebSocket | null = null;
   let admitted = false;

@@ -12,13 +12,13 @@ export type BotItem =
   /// An error, or a turn that failed: drawn as the transcript draws them, since
   /// a bot turn that fails before answering otherwise ends with no word why.
   | { kind: "notice"; event: AgentEvent }
-  /// A task's pull request, posted by `dray session merge-card`, or issues
-  /// posted by `dray session issue-card`.
+  /// A task's pull request, posted by `wain session merge-card`, or issues
+  /// posted by `wain session issue-card`.
   | { kind: "card"; event: AgentEvent }
   | { kind: "task"; key: string; sessionId: string; ts: string; title?: string }
   | { kind: "report"; event: AgentEvent; sessionId: string; title: string }
   | { kind: "sent"; key: string; target: string; text: string; ts: string }
-  /// A message from another bot, by `dray bot send` or a send to its chat.
+  /// A message from another bot, by `wain bot send` or a send to its chat.
   | { kind: "botMessage"; event: AgentEvent; botId: string; title: string }
   /// A message this bot sent another, `bot` being the name or id it used.
   /// `botId` is the one the CLI printed, absent from a send made before it did.
@@ -44,7 +44,7 @@ export function drawnSegments<T extends { olderBefore?: number | null }>(segment
 
 /// Where a bot chat draws from when it shows its last `turns` turns: the index of
 /// the main-thread message opening the oldest of them, or 0 with fewer held. A
-/// turn is cut only there, so a task's `dray session new` and the id it printed
+/// turn is cut only there, so a task's `wain session new` and the id it printed
 /// never land on opposite sides of the cut. A queued message is no cut: it
 /// lands inside a running turn, between a call and its result.
 export function lastTurns(events: readonly AgentEvent[], turns: number): number {
@@ -105,12 +105,12 @@ export function chatTime(iso: string, now = new Date()): string {
 }
 
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
-const STARTS_SESSION = /\bdray\s+(session\s+new|new)\b/;
+const STARTS_SESSION = /\bwain\s+(session\s+new|new)\b/;
 const TASK_ID = new RegExp(`^\\s*(${UUID.source})\\s*$`, "im");
 /// A session id, or a prefix of one long enough to name it, as `taskOf` takes.
 const SESSION_ID = /^[0-9a-f][0-9a-f-]{7,}$/i;
-const SENDS = /\bdray\s+(?:(session|bot)\s+)?send\b/g;
-/// What `dray bot send` prints, in `apps/cli/src/bot.rs`.
+const SENDS = /\bwain\s+(?:(session|bot)\s+)?send\b/g;
+/// What `wain bot send` prints, in `apps/cli/src/bot.rs`.
 const BOT_SENT = new RegExp(`^(?:Sent to|Queued for) bot ".*" \\((${UUID.source})\\)\\.$`, "gim");
 
 /// The first shell word of `text` and its length: quoted, which a bot's name
@@ -183,8 +183,8 @@ function stuck(re: RegExp, cmd: string, at: number): number {
 }
 
 /// `cmd` with every quoted string, escape and heredoc blanked to spaces, so a
-/// `dray … send` spelled inside a message is never read as a command — a brief
-/// that named `dray session send` drew a send to nobody. One pass left to right,
+/// `wain … send` spelled inside a message is never read as a command — a brief
+/// that named `wain session send` drew a send to nobody. One pass left to right,
 /// so a `<<` inside quotes opens nothing. Same length, so an index into it is
 /// an index into `cmd`.
 function unquoted(cmd: string): string {
@@ -228,7 +228,7 @@ function unquoted(cmd: string): string {
   return out;
 }
 
-/// Every `dray session send` and `dray bot send` in one command the bot ran —
+/// Every `wain session send` and `wain bot send` in one command the bot ran —
 /// one command often carries several, joined by `&&` — each with who to, what
 /// it said, and whether it went to a bot. A task is named by its id or an id
 /// prefix, so a session send to anything else — a loop's `"$id"`, a word
@@ -325,7 +325,7 @@ export function hasText(text: string): boolean {
 /// The rows of a bot's chat, in log order.
 ///
 /// A task is the `task_started` the server logs as it creates one. A log from
-/// before that event has only the bot's `dray session new` call and the id it
+/// before that event has only the bot's `wain session new` call and the id it
 /// prints alone on its first stdout line, read as a fallback for an id no
 /// event names, so no task draws twice.
 export function botItems(events: readonly AgentEvent[]): BotItem[] {
@@ -340,7 +340,7 @@ export function botItems(events: readonly AgentEvent[]): BotItem[] {
     events.flatMap(({ payload }) => (payload.type === "merge_card" ? [[payload.taskId, payload.title] as const] : [])),
   );
   const announced = new Set(events.flatMap(({ payload }) => (payload.type === "task_started" ? [payload.taskId] : [])));
-  // Inside a turn Dray's review opened, whose words are for nobody: told to
+  // Inside a turn Wain's review opened, whose words are for nobody: told to
   // write no reply, the bot sometimes explains itself anyway.
   let review = false;
   for (const event of events) {
@@ -396,11 +396,11 @@ export function botItems(events: readonly AgentEvent[]): BotItem[] {
     } else if (p.type === "tool_call_completed" && !p.result.isError) {
       // One command can both start a task and send, so each is read on its own.
       if (starts.has(p.callId)) {
-        // `dray session new` prints the id alone on its line, unlike a send's.
+        // `wain session new` prints the id alone on its line, unlike a send's.
         const id = p.result.text.match(TASK_ID)?.[1];
         if (id && !announced.has(id)) items.push({ kind: "task", key: p.callId, sessionId: id, ts: event.ts, title: cardTitles.get(id) });
       }
-      // `dray bot send` names the bot it reached on a line of its own, one per
+      // `wain bot send` names the bot it reached on a line of its own, one per
       // send in order; its id still names the bot after a rename. Matched on
       // that line alone, since anything else in the command may print ids.
       const ids = [...p.result.text.matchAll(BOT_SENT)].map((m) => m[1]);
@@ -453,7 +453,7 @@ function undoneLessons(events: readonly AgentEvent[]): Set<string> {
 /// What a stalled task's row in the "Waiting on you" card scrolls the chat to,
 /// by item key: the bot's reply to the task's last report, everything it did
 /// before the next message came in. The report itself stays folded, since the
-/// reply already says what it held. A stall nudge is Dray's, not the task's, so
+/// reply already says what it held. A stall nudge is Wain's, not the task's, so
 /// it is skipped. Empty where there is no reply to point at, and the card opens
 /// the task instead.
 export function taskContext(items: readonly BotItem[], sessionId: string): Set<string> {
@@ -480,10 +480,10 @@ export function taskContext(items: readonly BotItem[], sessionId: string): Set<s
 /// An item's React key, as the chat draws it.
 export const itemKey = (item: BotItem): string => ("key" in item ? item.key : item.event.id);
 
-/// How Dray opens every review it sends (`learn::REVIEW`).
+/// How Wain opens every review it sends (`learn::REVIEW`).
 const REVIEW = "Review:";
 
-/// Whether the turn now open was started by Dray's review, whose reply is
+/// Whether the turn now open was started by Wain's review, whose reply is
 /// hidden, so nothing it streams may draw a bubble either.
 export function inReviewTurn(events: readonly AgentEvent[]): boolean {
   for (let i = events.length - 1; i >= 0; i--) {

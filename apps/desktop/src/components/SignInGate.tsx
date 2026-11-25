@@ -72,7 +72,7 @@ function body(
   const { error, offline, revoked, emailOff, lastUsed } = view;
   const tag = (method: SignInMethod) => lastUsed === method && <LastUsed />;
   const failed = !offline && error;
-  const label = failed ? failed : revoked ? "You've been signed out" : "Welcome to Dray";
+  const label = failed ? failed : revoked ? "You've been signed out" : "Welcome to Wain";
   const heading = offline
     ? "Check your connection, or skip for now."
     : failed

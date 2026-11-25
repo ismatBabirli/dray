@@ -1,4 +1,4 @@
-// The whole app on Dray Cloud (#857), in a plain browser: one real `dray-serve`
+// The whole app on Wain Cloud (#857), in a plain browser: one real `wain-serve`
 // stands in for This Mac, and two or more others are spare cloud machines, one
 // handed to each task as it starts. Tauri's IPC is mocked and the mock does in
 // the page what `servers.rs` and `cloud.rs` do in Rust — the control plane is
@@ -6,15 +6,15 @@
 // make the next start fail.
 //
 //   T=$(openssl rand -hex 32)          # one serve token, as the control plane derives
-//   for h in mac c1 c2; do mkdir -p /tmp/dray-cloud/$h && echo $T > /tmp/dray-cloud/$h/serve-token; done
-//   DRAY_HOME=/tmp/dray-cloud/mac dray-serve --port 7320 &
-//   DRAY_HOME=/tmp/dray-cloud/c1  dray-serve --port 7321 &
-//   DRAY_HOME=/tmp/dray-cloud/c2  dray-serve --port 7322 &
+//   for h in mac c1 c2; do mkdir -p /tmp/wain-cloud/$h && echo $T > /tmp/wain-cloud/$h/serve-token; done
+//   WAIN_HOME=/tmp/wain-cloud/mac wain-serve --port 7320 &
+//   WAIN_HOME=/tmp/wain-cloud/c1  wain-serve --port 7321 &
+//   WAIN_HOME=/tmp/wain-cloud/c2  wain-serve --port 7322 &
 //   open "/demo/cloud.html?serveToken=$T&machines=7321,7322"
 //
 // Attach a project with a GitHub remote on This Mac, pick Cloud beside it and
 // send. A clone onto a cloud machine runs `gh repo clone` for real, into
-// `~/dray/<repo>`, which every machine here shares. `&key=` starts with a key
+// `~/wain/<repo>`, which every machine here shares. `&key=` starts with a key
 // saved; without it, Settings → Servers asks for one, and any key but `bad` is
 // taken.
 
@@ -103,16 +103,16 @@ const listed = () => machines.filter((m) => m.listed);
 let failNext = false;
 const kept = new Map<string, unknown>();
 
-/// `POST /machines`: a spare `dray-serve` becomes this task's machine.
+/// `POST /machines`: a spare `wain-serve` becomes this task's machine.
 async function start(): Promise<string> {
-  if (!cloud.keyed) throw "Dray Cloud has no key. Add it in Settings, Servers.";
+  if (!cloud.keyed) throw "Wain Cloud has no key. Add it in Settings, Servers.";
   if (failNext) {
     failNext = false;
     changed.emit();
-    throw "Couldn't reach Dray Cloud: connection refused";
+    throw "Couldn't reach Wain Cloud: connection refused";
   }
   const spare = machines.find((m) => !m.listed);
-  if (!spare) throw "No spare dray-serve left in this demo.";
+  if (!spare) throw "No spare wain-serve left in this demo.";
   spare.listed = true;
   setState(spare, "starting");
   await new Promise((r) => setTimeout(r, WAKE_MS));
@@ -134,7 +134,7 @@ mockIPC(
       case "cloud_info":
         return cloud;
       case "set_cloud_key":
-        if (a.key === "bad") throw "Dray Cloud didn't accept this key.";
+        if (a.key === "bad") throw "Wain Cloud didn't accept this key.";
         cloud = { on: !!a.key, keyed: !!a.key, error: null };
         announceCloud();
         for (const m of machines) setState(m, m.state);

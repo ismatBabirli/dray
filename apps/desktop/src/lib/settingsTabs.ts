@@ -19,7 +19,7 @@ export const ALL_SETTINGS_TABS = [
 
 export type SettingsTab = (typeof ALL_SETTINGS_TABS)[number];
 
-/// Dray Island runs on a Mac, Linux and Windows, so elsewhere its tab would be
+/// Wain Island runs on a Mac, Linux and Windows, so elsewhere its tab would be
 /// a page of controls for nothing.
 export const SETTINGS_TABS: readonly SettingsTab[] = ALL_SETTINGS_TABS.filter(
   (t) => (HAS_ISLAND || t !== "island") && (HAS_DICTATION || t !== "transcription"),

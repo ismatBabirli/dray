@@ -30,7 +30,7 @@ const SURFACE = "bg-card shadow-[var(--shadow-raised-card,var(--shadow-card))] d
 /// untouched, is not enough here. Open takes no colour of its own.
 const CLOSED_COLOR = { light: "#8250df", dark: "#a371f7" } as const;
 
-/// GitHub issues posted into the chat by `dray session issue-card`, one or
+/// GitHub issues posted into the chat by `wain session issue-card`, one or
 /// several, each on a tile of its own. An issue opens on the issues page; its
 /// play button hands it to the agent to work on.
 export default function IssueCard({ event }: { event: AgentEvent }) {

@@ -1,5 +1,5 @@
 //! The island's own preferences, the Linux stand-in for the Mac's `defaults`
-//! domain: `island.json` under the XDG config dir. Dray writes `key`; the
+//! domain: `island.json` under the XDG config dir. Wain writes `key`; the
 //! island writes `placement`, the session last used and a new task's picks.
 //! Each write rewrites one field, keeping the rest as read, so neither side
 //! undoes the other.
@@ -15,7 +15,7 @@ pub enum Placement {
     Bottom,
 }
 
-/// The modifier tapped alone to open the panel. The Mac's names, since Dray's
+/// The modifier tapped alone to open the panel. The Mac's names, since Wain's
 /// Settings hands the same value to both: Option is Alt here, Command is Super.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -39,7 +39,7 @@ impl Key {
 }
 
 /// Unknown or unreadable fields fall back one at a time, so a value written by
-/// a newer Dray costs that field and never the file.
+/// a newer Wain costs that field and never the file.
 #[derive(Default)]
 pub struct Prefs {
     pub key: Key,
@@ -63,7 +63,7 @@ fn path() -> Option<PathBuf> {
         .map(PathBuf::from)
         .filter(|p| p.is_absolute())
         .or_else(|| std::env::home_dir().map(|h| h.join(".config")))?;
-    Some(base.join("dray/island.json"))
+    Some(base.join("wain/island.json"))
 }
 
 fn raw() -> serde_json::Map<String, serde_json::Value> {
@@ -73,7 +73,7 @@ fn raw() -> serde_json::Map<String, serde_json::Value> {
         .unwrap_or_default()
 }
 
-/// Read fresh each time, so Dray's Settings lands without a restart.
+/// Read fresh each time, so Wain's Settings lands without a restart.
 pub fn read() -> Prefs {
     let raw = raw();
     fn field<T: serde::de::DeserializeOwned + Default>(raw: &serde_json::Map<String, serde_json::Value>, name: &str) -> T {
@@ -88,7 +88,7 @@ pub fn get<T: serde::de::DeserializeOwned>(name: &str) -> Option<T> {
     raw().get(name).cloned().and_then(|v| serde_json::from_value(v).ok())
 }
 
-/// Writes one field alone, through a temp file and a rename. Dray rewrites
+/// Writes one field alone, through a temp file and a rename. Wain rewrites
 /// the same file, so both take `island.json.lock` from the read to the
 /// rename (`island.rs` in the app), or one could save over the other's field.
 pub fn set(name: &str, value: impl serde::Serialize) {

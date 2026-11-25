@@ -54,7 +54,7 @@ jobs:
     secrets: inherit
 
   # Everything the Mac bundle needs that is not the app's own binary, off the
-  # compile's critical path: the guards, Dray Island and the CLI.
+  # compile's critical path: the guards, Wain Island and the CLI.
   extras:
     needs: pick
     if: github.event_name == 'push' || inputs.dry_run
@@ -117,7 +117,7 @@ jobs:
             found && /^## / { exit }
             found { print }
           ' apps/desktop/CHANGELOG.md)"
-          BODY="$(printf '%s\n' "$BODY" | sed 's#](changelog/#](https://www.drayhq.com/changelog/#g')"
+          BODY="$(printf '%s\n' "$BODY" | sed 's#](changelog/#](https://www.wainhq.com/changelog/#g')"
           # Trimmed both ends, as tauri-action's input reader did: the blank
           # line under the heading would otherwise lead every release body
           # and `latest.json`'s `notes`.
@@ -149,10 +149,10 @@ jobs:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
           p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
-      # Dray Island, the Swift panel shipped inside the bundle. Built and signed
+      # Wain Island, the Swift panel shipped inside the bundle. Built and signed
       # ahead of the bundler, which signs nothing `bundle.macOS.files` copied
       # (see build.sh).
-      - name: Build Dray Island
+      - name: Build Wain Island
         env:
           SIGN_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
@@ -163,11 +163,11 @@ jobs:
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
 
-      # The `dray` CLI, shipped inside the app so every Mac with Dray has one
+      # The `wain` CLI, shipped inside the app so every Mac with Wain has one
       # matching it (cli.rs copies it out on launch). Here rather than in the
       # `build` legs, where it was 42s on the critical path; see the script
       # for what those legs use instead.
-      - name: Build the dray CLI
+      - name: Build the wain CLI
         run: apps/desktop/scripts/cli-sidecar.sh apps/desktop/src-tauri/target/cli
 
       # Tarred because an artifact keeps neither symlinks nor the executable
@@ -198,7 +198,7 @@ jobs:
   # Same features, overlay configs and compile-time env as the universal build
   # had, since `tauri build` runs cargo identically for one arch of a universal
   # build and for that arch alone: the cache warm-cache.yml writes from the
-  # universal build fingerprints the same, and only `dray` itself compiles.
+  # universal build fingerprints the same, and only `wain` itself compiles.
   build:
     needs: pick
     if: github.event_name == 'push' || inputs.dry_run
@@ -217,11 +217,11 @@ jobs:
 
       # tauri-build copies the sidecar named for this triple next to the
       # binary while compiling, and fails if there is none; the bundler then
-      # ships `dray-cli-universal-apple-darwin`, which `extras` builds. So the
+      # ships `wain-cli-universal-apple-darwin`, which `extras` builds. So the
       # file only has to exist here. What it holds is never read.
       #
       # `--no-bundle` stops before `beforeBundleCommand`, so cef-helpers.sh
-      # runs once, in `bundle`, against both arches' `dray-helper`.
+      # runs once, in `bundle`, against both arches' `wain-helper`.
       - name: Compile
         working-directory: apps/desktop
         env:
@@ -233,7 +233,7 @@ jobs:
           POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
         run: |
           mkdir -p src-tauri/target/cli
-          : > "src-tauri/target/cli/dray-cli-$TARGET"
+          : > "src-tauri/target/cli/wain-cli-$TARGET"
           pnpm tauri build --no-bundle --target "$TARGET" --features cef --config src-tauri/tauri.cef.conf.json --config src-tauri/tauri.island.conf.json --config src-tauri/tauri.cli.conf.json
 
       # The aarch64 leg also carries the Tauri CLI `bundle` runs: the two
@@ -243,7 +243,7 @@ jobs:
       # `bundle`, so the darwin-arm64 binary is the one it needs.
       - run: |
           set -euo pipefail
-          FILES=("target/$TARGET/release/dray" "target/$TARGET/release/dray-helper")
+          FILES=("target/$TARGET/release/wain" "target/$TARGET/release/wain-helper")
           if [ "$TARGET" = aarch64-apple-darwin ]; then
             T=apps/desktop/src-tauri/target/tauri-cli/node_modules/@tauri-apps
             mkdir -p "$T"
@@ -285,15 +285,15 @@ jobs:
           path: ${{ runner.temp }}/parts
 
       # Universal the way `tauri build` made it: the app's binary lipo'd here,
-      # `dray-helper` by cef-helpers.sh from the two arches' copies.
+      # `wain-helper` by cef-helpers.sh from the two arches' copies.
       - name: Lay out target/
         working-directory: apps/desktop/src-tauri
         run: |
           set -euo pipefail
           for t in "$RUNNER_TEMP"/parts/*/*.tar; do tar -xf "$t"; done
           mkdir -p target/universal-apple-darwin/release
-          lipo -create -output target/universal-apple-darwin/release/dray \
-            target/aarch64-apple-darwin/release/dray target/x86_64-apple-darwin/release/dray
+          lipo -create -output target/universal-apple-darwin/release/wain \
+            target/aarch64-apple-darwin/release/wain target/x86_64-apple-darwin/release/wain
 
       # The helper apps are signed by cef-helpers.sh, which the cef overlay
       # runs as `beforeBundleCommand` — before the bundler — with the same
@@ -314,9 +314,9 @@ jobs:
 
 
       # One bundle for both architectures. `cef` turns the browser on and has
-      # to match the compile, or `dray-helper` drops out of the bundler's
+      # to match the compile, or `wain-helper` drops out of the bundler's
       # binary list; the overlay config puts the helper apps in
-      # Contents/Frameworks, the island one Dray Island in Contents/Helpers,
+      # Contents/Frameworks, the island one Wain Island in Contents/Helpers,
       # the cli one the CLI in Contents/MacOS.
       - name: Bundle
         working-directory: apps/desktop
@@ -363,26 +363,26 @@ jobs:
           APP="apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/macos/$(jq -r .productName apps/desktop/src-tauri/tauri.conf.json).app"
           test ! -e "$APP/Contents/Frameworks/Chromium Embedded Framework.framework"
           for h in "" " (GPU)" " (Renderer)" " (Plugin)" " (Alerts)"; do
-            HELPER="$APP/Contents/Frameworks/Dray Helper$h.app"
+            HELPER="$APP/Contents/Frameworks/Wain Helper$h.app"
             codesign --verify --strict "$HELPER"
             codesign -d --entitlements - "$HELPER" 2>&1 | grep -q disable-library-validation
           done
           codesign -d --entitlements - "$APP" 2>&1 | grep -q disable-library-validation
-          codesign --verify --strict "$APP/Contents/Helpers/Dray Island.app"
+          codesign --verify --strict "$APP/Contents/Helpers/Wain Island.app"
 
       # Copied out of the bundle to ~/.local/bin, where it runs on its own
       # signature. Both arches, or an Intel Mac gets a CLI it cannot run.
       - name: Verify the bundled CLI
         run: |
           APP="apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/macos/$(jq -r .productName apps/desktop/src-tauri/tauri.conf.json).app"
-          CLI="$APP/Contents/MacOS/dray-cli"
+          CLI="$APP/Contents/MacOS/wain-cli"
           codesign --verify --strict "$CLI"
           codesign -d --verbose=2 "$CLI" 2>&1 | grep -q 'flags=.*runtime'
           for a in arm64 x86_64; do lipo "$CLI" -verify_arch "$a"; done
           "$CLI" --version
 
       # What tauri-action published, under its names: the bundler's
-      # `Dray.app.tar.gz` gains the arch, and `latest.json` is its updater
+      # `Wain.app.tar.gz` gains the arch, and `latest.json` is its updater
       # manifest — the universal build under all four darwin keys, `notes`
       # the CHANGELOG body without GitHub's list, keys and formatting as
       # JSON.stringify wrote them. Every installed app and the manifest job
@@ -398,12 +398,12 @@ jobs:
           mkdir -p "$OUT"
           DMG="$(ls "$BUNDLE"/dmg/*.dmg)"
           cp "$DMG" "$OUT/"
-          cp "$BUNDLE/macos/Dray.app.tar.gz" "$OUT/Dray_universal.app.tar.gz"
-          cp "$BUNDLE/macos/Dray.app.tar.gz.sig" "$OUT/Dray_universal.app.tar.gz.sig"
+          cp "$BUNDLE/macos/Wain.app.tar.gz" "$OUT/Wain_universal.app.tar.gz"
+          cp "$BUNDLE/macos/Wain.app.tar.gz.sig" "$OUT/Wain_universal.app.tar.gz.sig"
           export VERSION="$(jq -r .version apps/desktop/src-tauri/tauri.conf.json)"
-          export SIG="$OUT/Dray_universal.app.tar.gz.sig"
+          export SIG="$OUT/Wain_universal.app.tar.gz.sig"
           # The tag is `v<version>`, held to that by `extras`.
-          export URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v$VERSION/Dray_universal.app.tar.gz"
+          export URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v$VERSION/Wain_universal.app.tar.gz"
           node -e '
             const fs = require("fs");
             const e = process.env;
@@ -435,7 +435,7 @@ jobs:
           hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/mnt-ref" "$R"/*.dmg >/dev/null
           hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/mnt-new" "$RUNNER_TEMP/release"/*.dmg >/dev/null
           echo "::group::bundle diff"
-          apps/desktop/scripts/compare-bundle.sh "$RUNNER_TEMP/mnt-ref/Dray.app" "$RUNNER_TEMP/mnt-new/Dray.app" "$C"
+          apps/desktop/scripts/compare-bundle.sh "$RUNNER_TEMP/mnt-ref/Wain.app" "$RUNNER_TEMP/mnt-new/Wain.app" "$C"
           echo "::endgroup::"
           echo "::group::asset names and sizes"
           (cd "$R" && stat -f '%z %N' * | sort -k2) > "$C/assets-reference.txt"
@@ -486,7 +486,7 @@ jobs:
               --cache-control "public, max-age=31536000, immutable"
           }
           put "$DMG"
-          put Dray_universal.app.tar.gz
+          put Wain_universal.app.tar.gz
 
       # tauri-action's release, made the way it made it: a published release
       # named for the tag, the CHANGELOG body with GitHub's generated notes
@@ -518,11 +518,11 @@ jobs:
               || { cat "$RUNNER_TEMP/upload.json" >&2; return 1; }
           }
           upload "$DMG"
-          upload Dray_universal.app.tar.gz
-          upload Dray_universal.app.tar.gz.sig
+          upload Wain_universal.app.tar.gz
+          upload Wain_universal.app.tar.gz.sig
           # `latest.json` names the tarball by the URL GitHub gives it, which
           # stage built from the tag; the manifest job rewrites that prefix.
-          GOT="$(gh api "$R/$ID/assets" --paginate --jq '.[] | select(.name == "Dray_universal.app.tar.gz") | .browser_download_url')"
+          GOT="$(gh api "$R/$ID/assets" --paginate --jq '.[] | select(.name == "Wain_universal.app.tar.gz") | .browser_download_url')"
           WANT="$(jq -r '.platforms["darwin-aarch64"].url' "$RUNNER_TEMP/release/latest.json")"
           [ "$GOT" = "$WANT" ] || { echo "latest.json names $WANT, GitHub serves $GOT" >&2; exit 1; }
           upload latest.json
@@ -595,7 +595,7 @@ jobs:
       # (`bundleMediaFramework`): without them the WebProcess dies on the
       # first <audio> the page makes, and the window stays black. The .deb
       # names them as dependencies instead.
-      # xkbcommon-x11, fontconfig and freetype for Dray Island's GPUI.
+      # xkbcommon-x11, fontconfig and freetype for Wain Island's GPUI.
       - run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
@@ -638,13 +638,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # The Mac's step: the CLI the overlay hands the bundler, which puts it
-      # at usr/bin/dray-cli.
-      - name: Build the dray CLI
+      # at usr/bin/wain-cli.
+      - name: Build the wain CLI
         run: apps/desktop/scripts/cli-sidecar.sh apps/desktop/src-tauri/target/cli
 
-      # Dray Island (#833), the app's child, which island.rs finds beside the
-      # app's own binary: the bundler puts it at usr/bin/dray-island.
-      - name: Build Dray Island
+      # Wain Island (#833), the app's child, which island.rs finds beside the
+      # app's own binary: the bundler puts it at usr/bin/wain-island.
+      - name: Build Wain Island
         run: apps/desktop/scripts/island-sidecar.sh apps/desktop/src-tauri/target/island-linux
 
       # `createUpdaterArtifacts` signs the AppImage and the .deb themselves
@@ -654,8 +654,8 @@ jobs:
       # `cef-dll-sys` downloads into CEF_PATH and builds with CMake and Ninja;
       # libcef itself is never bundled, the app downloads its own
       # (chromium.rs). tauri.linux-release.conf.json names both sidecars, the
-      # .deb's dependencies, and the binary `dray-app`: a .deb puts it on
-      # every PATH, where `dray` is the CLI's name.
+      # .deb's dependencies, and the binary `wain-app`: a .deb puts it on
+      # every PATH, where `wain` is the CLI's name.
       - run: pnpm tauri build --bundles appimage,deb --features cef --config src-tauri/tauri.linux-release.conf.json
         working-directory: apps/desktop
         env:
@@ -672,7 +672,7 @@ jobs:
       - name: Verify libcef stays out
         run: |
           set -euo pipefail
-          if readelf -d apps/desktop/src-tauri/target/release/dray-app | grep libcef; then exit 1; fi
+          if readelf -d apps/desktop/src-tauri/target/release/wain-app | grep libcef; then exit 1; fi
           IMAGE="$(realpath "$BUNDLE"/appimage/*.AppImage)"
           DEB="$(realpath "$BUNDLE"/deb/*.deb)"
           cd "$RUNNER_TEMP" && "$IMAGE" --appimage-extract >/dev/null
@@ -691,13 +691,13 @@ jobs:
           file "$RUNNER_TEMP/runtime" | tee /dev/stderr | grep -Eq 'static-pie linked|statically linked'
 
       # What the app reads out of its own install: the CLI it copies to
-      # ~/.local/bin (cli.rs), Dray Island beside the app's binary
+      # ~/.local/bin (cli.rs), Wain Island beside the app's binary
       # (island.rs), and dictation's backend modules, loaded from
-      # usr/lib/Dray/transcribe by name (engine.rs) since linuxdeploy puts a
+      # usr/lib/Wain/transcribe by name (engine.rs) since linuxdeploy puts a
       # second libtranscribe in usr/lib with no module beside it. The island's
       # `--version` answers before it opens a display, so it runs here. The
       # .deb lays out the same tree under /, so both are checked alike, and
-      # it must leave `/usr/bin/dray` to the CLI.
+      # it must leave `/usr/bin/wain` to the CLI.
       - name: Verify the AppImage and the .deb
         env:
           ARCH: ${{ matrix.arch }}
@@ -709,13 +709,13 @@ jobs:
           for root in "$RUNNER_TEMP/squashfs-root" "$RUNNER_TEMP/deb-root"; do
             echo "$root"
             ( cd "$root"
-              test -x usr/bin/dray-app
-              usr/bin/dray-cli --version
-              usr/bin/dray-island --version
-              ls usr/lib/Dray/transcribe/libggml-cpu*.so
-              if [ "$ARCH" = x86_64 ]; then ls usr/lib/Dray/transcribe/libggml-vulkan.so; fi )
+              test -x usr/bin/wain-app
+              usr/bin/wain-cli --version
+              usr/bin/wain-island --version
+              ls usr/lib/Wain/transcribe/libggml-cpu*.so
+              if [ "$ARCH" = x86_64 ]; then ls usr/lib/Wain/transcribe/libggml-vulkan.so; fi )
           done
-          test ! -e "$RUNNER_TEMP/deb-root/usr/bin/dray"
+          test ! -e "$RUNNER_TEMP/deb-root/usr/bin/wain"
 
       # A reader's install on a clean system (linux-smoke.sh): the .deb through
       # apt, then the app must draw its window, and the AppImage after it. On
@@ -828,22 +828,22 @@ jobs:
           $ninja | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
 
       # The Mac's step: the CLI the overlay hands the bundler, which puts it
-      # beside the app as dray-cli.exe.
-      - name: Build the dray CLI
+      # beside the app as wain-cli.exe.
+      - name: Build the wain CLI
         run: apps/desktop/scripts/cli-sidecar.sh apps/desktop/src-tauri/target/cli
 
       # The island, which island.rs starts from beside the app's own binary.
       # The Linux job has a sidecar script; it refuses to run here, so build
       # the host's triple directly. Tauri copies the `-<triple>.exe` file in
-      # as dray-island.exe.
-      - name: Build Dray Island
+      # as wain-island.exe.
+      - name: Build Wain Island
         working-directory: apps/island-linux
         run: |
           set -euo pipefail
           t="$(rustc -vV | sed -n 's/^host: //p' | tr -d '\r')"
           cargo build --release --locked --target "$t"
           mkdir -p ../desktop/src-tauri/target/island-linux
-          cp "target/$t/release/dray-island.exe" "../desktop/src-tauri/target/island-linux/dray-island-$t.exe"
+          cp "target/$t/release/wain-island.exe" "../desktop/src-tauri/target/island-linux/wain-island-$t.exe"
 
       # The bundles, and the overlay naming the signing command where the
       # switch is on.
@@ -867,8 +867,8 @@ jobs:
       # tauri.windows.conf.json keeps the window opaque and undecorated as it
       # is in dev; the base config's Overlay bar and sidebar effect are Mac's.
       # tauri.windows-release.conf.json names both sidecars and the binary
-      # `dray-app`: the installer finds a running app by its exe's name, and as
-      # `dray.exe` an agent's `dray` would count.
+      # `wain-app`: the installer finds a running app by its exe's name, and as
+      # `wain.exe` an agent's `wain` would count.
       - name: Build
         working-directory: apps/desktop
         env:
@@ -904,17 +904,17 @@ jobs:
           # Backslashes: msiexec reads a `/` in TARGETDIR as nothing to extract to.
           $root = Join-Path $env:RUNNER_TEMP unpacked
           & 7z x -y "-o$root/nsis" $nsis[0].FullName | Out-Null
-          $cli = Get-ChildItem -Recurse "$root/nsis" -Filter dray-cli.exe | Select-Object -First 1
-          $app = Get-ChildItem -Recurse "$root/nsis" -Filter dray-app.exe | Select-Object -First 1
-          $island = Get-ChildItem -Recurse "$root/nsis" -Filter dray-island.exe | Select-Object -First 1
-          if (-not $cli -or -not $app -or -not $island) { throw "the NSIS installer lacks dray-cli.exe, dray-app.exe or dray-island.exe" }
+          $cli = Get-ChildItem -Recurse "$root/nsis" -Filter wain-cli.exe | Select-Object -First 1
+          $app = Get-ChildItem -Recurse "$root/nsis" -Filter wain-app.exe | Select-Object -First 1
+          $island = Get-ChildItem -Recurse "$root/nsis" -Filter wain-island.exe | Select-Object -First 1
+          if (-not $cli -or -not $app -or -not $island) { throw "the NSIS installer lacks wain-cli.exe, wain-app.exe or wain-island.exe" }
           & $cli.FullName --version
-          if ($LASTEXITCODE) { throw "dray-cli.exe --version failed" }
+          if ($LASTEXITCODE) { throw "wain-cli.exe --version failed" }
           foreach ($m in $msi) {
             $p = Start-Process msiexec -Wait -PassThru -ArgumentList '/a', "`"$($m.FullName)`"", '/qn', "TARGETDIR=`"$root\msi`""
             if ($p.ExitCode) { throw "msiexec /a failed with $($p.ExitCode)" }
-            if (-not (Get-ChildItem -Recurse "$root/msi" -Filter dray-cli.exe)) { throw "the MSI carries no dray-cli.exe" }
-            if (-not (Get-ChildItem -Recurse "$root/msi" -Filter dray-island.exe)) { throw "the MSI carries no dray-island.exe" }
+            if (-not (Get-ChildItem -Recurse "$root/msi" -Filter wain-cli.exe)) { throw "the MSI carries no wain-cli.exe" }
+            if (-not (Get-ChildItem -Recurse "$root/msi" -Filter wain-island.exe)) { throw "the MSI carries no wain-island.exe" }
           }
           $signed = $installers + @($app, $cli, $island)
           foreach ($f in $signed) {
@@ -932,13 +932,13 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $setup = Get-ChildItem "$env:BUNDLE/nsis/*-setup.exe"
           Start-Process $setup.FullName -ArgumentList '/S' -Wait
-          $dir = "$env:LOCALAPPDATA\Dray"
-          & "$dir\dray-cli.exe" --version
-          if ($LASTEXITCODE) { throw "installed dray-cli.exe --version failed" }
-          $env:DRAY_HOME = "$env:RUNNER_TEMP\dray-home"
+          $dir = "$env:LOCALAPPDATA\Wain"
+          & "$dir\wain-cli.exe" --version
+          if ($LASTEXITCODE) { throw "installed wain-cli.exe --version failed" }
+          $env:WAIN_HOME = "$env:RUNNER_TEMP\wain-home"
           # The release carries PostHog's key; a runner is not an install.
-          $env:DRAY_NO_ANALYTICS = "1"
-          $app = Start-Process "$dir\dray-app.exe" -PassThru
+          $env:WAIN_NO_ANALYTICS = "1"
+          $app = Start-Process "$dir\wain-app.exe" -PassThru
           Start-Sleep 20
           if ($app.HasExited) { throw "the app exited with $($app.ExitCode)" }
           Stop-Process -Id $app.Id -Force
@@ -1210,7 +1210,7 @@ jobs:
           # release means this one did not win. A server-side copy of the key
           # the bundle job uploaded; nothing is re-sent.
           if [ "$(jq -r '.version // empty' stable.json 2>/dev/null)" = "$NEW" ]; then
-            aws s3 cp "s3://${R2_BUCKET}/${GITHUB_REF_NAME}/${DMG}" "s3://${R2_BUCKET}/Dray_universal.dmg" \
+            aws s3 cp "s3://${R2_BUCKET}/${GITHUB_REF_NAME}/${DMG}" "s3://${R2_BUCKET}/Wain_universal.dmg" \
               --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
               --metadata-directive REPLACE \
               --content-type application/x-apple-diskimage \
@@ -1220,6 +1220,6 @@ jobs:
             fi
             if [ "$WIN_OK" = true ]; then
               "$W" latest "$WINDOWS" "${GITHUB_REF_NAME}" \
-                || echo "::warning title=Windows downloads not moved::Dray_x64-setup.exe and Dray_x64.msi still name the previous release."
+                || echo "::warning title=Windows downloads not moved::Wain_x64-setup.exe and Wain_x64.msi still name the previous release."
             fi
           fi

@@ -1,11 +1,11 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "mainBinaryName": "dray-app",
+  "mainBinaryName": "wain-app",
   "bundle": {
-    "publisher": "Dray",
+    "publisher": "Wain",
     "category": "DeveloperTool",
     "shortDescription": "Desktop app for coding agents",
-    "externalBin": ["target/cli/dray-cli", "target/island-linux/dray-island"],
+    "externalBin": ["target/cli/wain-cli", "target/island-linux/wain-island"],
     "linux": {
       "deb": {
         "depends": [

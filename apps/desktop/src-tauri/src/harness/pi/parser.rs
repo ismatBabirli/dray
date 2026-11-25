@@ -40,13 +40,13 @@ pub enum PiEvent {
     /// awaiting this proves the prompt was taken and nothing else.
     Response(ResponseLine),
 
-    /// Dray's turn opens. One per prompt, however many model calls it takes.
+    /// Wain's turn opens. One per prompt, however many model calls it takes.
     AgentStart,
     /// **Not** a turn boundary. pi may still retry after this, so a reader that
     /// closes the turn here reopens it on the next attempt — which draws as the
     /// session finishing and then starting again on its own.
     AgentEnd,
-    /// Dray's turn closes. Landed in pi 0.80.6; on an older CLI it does not
+    /// Wain's turn closes. Landed in pi 0.80.6; on an older CLI it does not
     /// exist at all and a turn never ends. Nothing gates on that yet —
     /// `binpath::pi` says what will.
     AgentSettled,
@@ -56,7 +56,7 @@ pub enum PiEvent {
     TurnStart,
     TurnEnd,
 
-    /// A message opens. The `user` and `toolResult` ones are echoes of what Dray
+    /// A message opens. The `user` and `toolResult` ones are echoes of what Wain
     /// already knows and are dropped by the mapper.
     MessageStart { message: PiMessage },
     /// The committed message. This wins over the deltas that preceded it, the
@@ -120,8 +120,8 @@ pub enum PiEvent {
         options: Option<Vec<Value>>,
     },
 
-    /// pi reporting a setting moved: its thinking level on Dray's own commands,
-    /// its model where an extension called `setModel` — Dray's own `set_model`
+    /// pi reporting a setting moved: its thinking level on Wain's own commands,
+    /// its model where an extension called `setModel` — Wain's own `set_model`
     /// announces nothing.
     ///
     /// Not read back into `Session`'s copy, deliberately, and that is the same
@@ -135,7 +135,7 @@ pub enum PiEvent {
 
     /// pi's own view of what is queued behind the running turn.
     ///
-    /// The queue is pi's alone: Dray steers a mid-turn prompt straight onto it
+    /// The queue is pi's alone: Wain steers a mid-turn prompt straight onto it
     /// and draws no pending row, so nothing here has anywhere to go. Modelled
     /// to keep the failure log honest.
     QueueUpdate,
@@ -183,14 +183,14 @@ pub enum PiEvent {
     /// Nothing to draw either — it is pi's copy of what the mapper has already
     /// turned into events.
     EntryAppended,
-    /// pi's own name for the session changed. Dray writes and owns titles, so
+    /// pi's own name for the session changed. Wain writes and owns titles, so
     /// there is nothing here to adopt — the same call `model_changed` makes.
     SessionInfoChanged,
     /// Partial output from a bash tool call, one delta at a time. The tool row
     /// already shimmers for exactly as long as the call is pending, so there is
     /// no row for this to fill yet.
     BashExecutionUpdate,
-    /// A command the reader ran in pi's own TUI. Unreachable from Dray, which
+    /// A command the reader ran in pi's own TUI. Unreachable from Wain, which
     /// has no TUI to type one into, and modelled so that stays true visibly.
     UserBash,
 
@@ -245,7 +245,7 @@ pub struct CompactionResult {
 ///
 /// `id` is optional because pi allows a command to be sent without one, in
 /// which case the response carries none either and nothing can be matched to
-/// it. Dray always sends one; this stays `Option` so a reply we did not cause
+/// it. Wain always sends one; this stays `Option` so a reply we did not cause
 /// cannot fail the line.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

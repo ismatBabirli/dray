@@ -60,7 +60,7 @@ pub fn forget_account() {
 ///
 /// `gh api user` does not read the working directory, but [`github::gh`]
 /// refuses to spawn into one that is gone — the trap a removed worktree leaves
-/// — so this needs a directory that always exists. `~/.dray` is made at launch.
+/// — so this needs a directory that always exists. `~/.wain` is made at launch.
 async fn neutral_dir() -> Result<String, IssueUnavailable> {
     get_home_app_dir()
         .await
@@ -171,7 +171,7 @@ async fn read_account() -> Result<TrackerAccount, IssueUnavailable> {
 /// The issues page reads one repository at a time and this is the list it
 /// offers. Deliberately **not** `gh repo list`: that answers what the account
 /// can see, which for anybody in an organisation is hundreds of repositories
-/// they have never opened, where a project attached in Dray is one they are
+/// they have never opened, where a project attached in Wain is one they are
 /// working in.
 pub async fn repos_of_projects() -> Vec<String> {
     let Ok(projects) = projects::read_projects().await else {
@@ -718,7 +718,7 @@ mod tests {
         assert!(!names_own_sort("\"sort: by size\" in the picker"));
     }
 
-    /// A real `gh issue list -R monorepo-labs/dray --state all --json …`
+    /// A real `gh issue list -R ismatbabirli/wain --state all --json …`
     /// capture, **with one row added by hand**: that repository has no
     /// not-planned issue and none assigned or labelled, so the third row
     /// carries all three. Its fields are copied verbatim off real captures of
@@ -735,7 +735,7 @@ mod tests {
             .as_array()
             .unwrap()
             .iter()
-            .filter_map(|node| map_issue(node, "monorepo-labs/dray"))
+            .filter_map(|node| map_issue(node, "ismatbabirli/wain"))
             .collect()
     }
 
@@ -745,12 +745,12 @@ mod tests {
         assert_eq!(issues.len(), 3);
 
         let open = issues.iter().find(|i| i.identifier.ends_with("#108")).unwrap();
-        assert_eq!(open.identifier, "monorepo-labs/dray#108");
+        assert_eq!(open.identifier, "ismatbabirli/wain#108");
         assert_eq!(open.state.kind, IssueStateKind::Unstarted);
         assert_eq!(open.state.name, "Open");
         // The repository, which is what the page joins a row to its status menu
         // on — the same slot a Linear row puts its team key in.
-        assert_eq!(open.team.as_deref(), Some("monorepo-labs/dray"));
+        assert_eq!(open.team.as_deref(), Some("ismatbabirli/wain"));
         // GitHub has no priority, and this is the level rather than a failure.
         assert_eq!(open.priority, IssuePriority::None);
     }
@@ -826,17 +826,17 @@ mod tests {
     #[test]
     fn an_identifier_is_a_repository_and_a_number() {
         assert_eq!(
-            split_identifier("monorepo-labs/dray#121"),
-            Some(("monorepo-labs/dray".to_string(), 121))
+            split_identifier("ismatbabirli/wain#121"),
+            Some(("ismatbabirli/wain".to_string(), 121))
         );
         // Case is kept: GitHub is case-insensitive on a slug, and uppercasing
         // one would make the tag in the prompt disagree with the repository.
         assert_eq!(
-            split_identifier("Monorepo-Labs/Dray#1"),
-            Some(("Monorepo-Labs/Dray".to_string(), 1))
+            split_identifier("IsmatBabirli/Wain#1"),
+            Some(("IsmatBabirli/Wain".to_string(), 1))
         );
 
-        for text in ["#121", "dray#121", "owner/repo", "owner/repo#", "/repo#1", "owner/#1"] {
+        for text in ["#121", "wain#121", "owner/repo", "owner/repo#", "/repo#1", "owner/#1"] {
             assert_eq!(split_identifier(text), None, "{text}");
         }
     }
@@ -862,7 +862,7 @@ mod tests {
         assert_eq!(map_state(&open).id, OPEN_ID);
     }
 
-    /// Shapes measured against `monorepo-labs/dray` and a personal repository,
+    /// Shapes measured against `ismatbabirli/wain` and a personal repository,
     /// which answers `issueTypes: null` rather than an error.
     #[test]
     fn issue_types_are_the_enabled_ones_in_hex() {

@@ -21,7 +21,7 @@ use super::rpc::{PiClient, HANDSHAKE_TIMEOUT};
 /// How long a cached answer stands.
 ///
 /// Expiring, like the slash-command cache next door and unlike Codex's list.
-/// A provider logged into while Dray is open is exactly the case a reader
+/// A provider logged into while Wain is open is exactly the case a reader
 /// would then try to use, and "restart the app" is a poor answer to a list
 /// that is *supposed* to follow their logins.
 const FRESH_FOR: Duration = Duration::from_secs(120);
@@ -196,7 +196,7 @@ fn row_to_model(row: &Value, efforts: Vec<Effort>) -> Option<Model> {
     })
 }
 
-/// Dray's own ladder, out of the levels pi answered for one model.
+/// Wain's own ladder, out of the levels pi answered for one model.
 ///
 /// `off` and `minimal` are dropped rather than added to [`Effort`]: `off` is
 /// what an empty list already means here, and pi folds `minimal` onto `low`
@@ -372,9 +372,9 @@ mod tests {
     /// `["off"]` is what a non-reasoning model answers, and it reaches the
     /// picker as no levels — which is already what an empty list means here.
     /// `minimal` folds onto `low` inside pi, so carrying it would be a rung
-    /// Dray cannot send.
+    /// Wain cannot send.
     #[test]
-    fn the_ladder_keeps_drays_own_and_nothing_else() {
+    fn the_ladder_keeps_wains_own_and_nothing_else() {
         let none = serde_json::json!({"levels": ["off"]});
         assert!(efforts_from_levels(&none).is_empty());
 
@@ -394,7 +394,7 @@ mod tests {
         );
 
         // The shape `models_and_steering.jsonl` captured, which stops short of
-        // Dray's top two.
+        // Wain's top two.
         let captured = serde_json::json!({
             "levels": ["off", "minimal", "low", "medium", "high"]
         });

@@ -900,7 +900,7 @@ const handleSendMsg = async (
   // that draws it is handed these rather than describing its paths a second
   // time. The wire still takes paths alone.
   attachments: Attachment[] = [],
-  // Where a new session's worktree starts, from a draft `dray draft new
+  // Where a new session's worktree starts, from a draft `wain draft new
   // --base` saved. Without one, the worktree branch picker's.
   baseRef: string | null = null,
 ): Promise<boolean> => {
@@ -913,7 +913,7 @@ const handleSendMsg = async (
   // A task moves in place instead (#1414): the backend stops its agent and
   // hands the next one the conversation.
   // Judged against the index row, which `session_changed` keeps current,
-  // before the loaded transcript's copy: a move made by `dray session model`
+  // before the loaded transcript's copy: a move made by `wain session model`
   // must still read as one when the reader picks the agent back.
   const recorded = sessionIndexItems.find((i) => i.sessionId === selectedSessionId)?.harness ?? selected?.harness;
   const moving = !!selected && harness !== recorded;
@@ -1158,12 +1158,12 @@ const handleSendMsg = async (
       // What will actually happen, not what the picker last held. A stance can
       // reach here that this harness never offered — a spawned session takes
       // its parent's — and the index is read back, by a later build and by
-      // `dray new` inheriting it, so a stance nothing enforces is worse there
+      // `wain new` inheriting it, so a stance nothing enforces is worse there
       // than on screen, where the control is at least hidden.
       permissionMode: stance,
       // Already narrowed to this agent and model, for the same reason the
       // stance above is: the index is read back by a later build and by
-      // `dray new` inheriting it, so a `true` nothing can honour is worse on
+      // `wain new` inheriting it, so a `true` nothing can honour is worse on
       // disk than on screen.
       fast,
       cwd,
@@ -1523,7 +1523,7 @@ const restoreDraftControls = (draft: Draft) => {
   restoreSessionControls({ ...draft, sessionId: draft.id });
   setUseWorktreeState(draft.useWorktree);
   handleSelectProject(draft.projectPath);
-  // A `dray draft new --base` session id shows here too: it is what the
+  // A `wain draft new --base` session id shows here too: it is what the
   // draft starts from.
   setWorktreeBranch(draft.base ?? null, draft.projectPath);
 };
@@ -1676,7 +1676,7 @@ const attachSession = async (sessionId: string, botId: string) => {
 
 /// Puts a session's index entry, as the store now holds it, into both copies.
 /// Shared by the sidebar's own writes and by `session_changed`, which carries
-/// the ones `dray session settle` and friends make.
+/// the ones `wain session settle` and friends make.
 const applyIndexItem = (updated: SessionIndexItem) => {
   const { sessionId } = updated;
   // Settled from anywhere, the CLI included: its machine may be done with.
@@ -1710,7 +1710,7 @@ const applyIndexItem = (updated: SessionIndexItem) => {
   // The open transcript keeps its own copy of the index fields, and it's what
   // the composer reads `archived` from — left alone, settling the session on
   // screen would swap in the unsettle bar only after a reselect. The location
-  // rides along for `dray session settle --delete-worktree`, which moves `cwd`
+  // rides along for `wain session settle --delete-worktree`, which moves `cwd`
   // out of the deleted tree.
   setSessions((prev) =>
     prev.map((s) =>
@@ -1772,7 +1772,7 @@ const retireCloudMachine = async (machine: ServerId): Promise<boolean> => {
 };
 
 /// Deletes `machine` once nothing live is left on it. Run on every settled row
-/// the app hears of, so a settle from `dray session settle` counts too. Names
+/// the app hears of, so a settle from `wain session settle` counts too. Names
 /// no session to leave out: by the time this runs one may have been taken back.
 const retireIfDone = async (machine: ServerId) => {
   if (!isCloud(machine) || retiring.current.has(machine)) return;
@@ -2301,7 +2301,7 @@ useEffect(() => {
 
 /// Drops whatever the harnesses cached and reads again.
 ///
-/// pi is the case it exists for: a provider logged in while Dray is open is
+/// pi is the case it exists for: a provider logged in while Wain is open is
 /// exactly the one somebody would then try to use, and waiting out the cache
 /// reads as the list being wrong. Codex's list is read too, and is kept for the
 /// life of the process — so this is the only way to see a model that arrived
@@ -2360,7 +2360,7 @@ const readServer = (server: ServerId) => {
       if (archived !== showArchivedRef.current) return;
       // A pick moved while this server was out of reach sent no event here.
       // The local copy mirrors every send of ours, so a pair that differs was
-      // moved elsewhere — `dray session model` most likely — and wins.
+      // moved elsewhere — `wain session model` most likely — and wins.
       const known = new Map(sessionIndexItemsRef.current.map((i) => [i.sessionId, i]));
       for (const item of items) {
         const was = known.get(item.sessionId);
@@ -2506,7 +2506,7 @@ useEffect(() => {
           return;
         }
 
-        // A move made anywhere (`dray session model`, another window) lands
+        // A move made anywhere (`wain session model`, another window) lands
         // here even where its `session_changed` was missed: logged, so a
         // reconnect's catch-up carries it too.
         if (agentEvent.payload.type === "agent_switched") {
@@ -2601,7 +2601,7 @@ useEffect(() => {
             // leaves the turn open and the screen dead until the model speaks.
             // `handleSendMsg` writes the wait optimistically for a prompt the
             // reader sent from the composer; this covers one the backend hands
-            // over — a flushed queue, a relayed `dray send`.
+            // over — a flushed queue, a relayed `wain send`.
             //
             // The event is logged *before* the transport write, so it says the
             // prompt is on its way rather than that a child took it. That is
@@ -2867,7 +2867,7 @@ const asksBySessionRef = useRef(asksBySession);
 asksBySessionRef.current = asksBySession;
 
 /// Appends what a session's log gained since `held` — what the socket to a
-/// `dray-serve` missed while down, or what a kept transcript missed while
+/// `wain-serve` missed while down, or what a kept transcript missed while
 /// evicted. Deltas are not logged and need nothing, being previews of what
 /// this delivers. Answers false where the server no longer has the session.
 const catchUp = async (
@@ -2962,7 +2962,7 @@ const missedFromTail = async (sessionId: string, held: AgentEvent[]) => {
   return missed ?? fetched;
 };
 
-/// A `dray-serve` sends this on every connect, the first included, and it
+/// A `wain-serve` sends this on every connect, the first included, and it
 /// replaces rather than adds to what is held: a card answered while the socket
 /// was down must go, and one raised meanwhile must be drawn, or an agent waits
 /// on a question nobody can see. Applied quietly — none of it is news.
@@ -3547,7 +3547,7 @@ const canAnnounce = (sessionId: string, kind?: NoticeKind): boolean => {
 /// Shared by every announcement rather than repeated per event: a desktop banner
 /// in front of someone looking at the window is an interruption, and an in-app
 /// card is invisible from another app, so the split has to be made the same way
-/// everywhere or one event ends up on two channels. Away from the window, Dray
+/// everywhere or one event ends up on two channels. Away from the window, Wain
 /// Island takes an ask or a finished turn while it runs and the banner stays
 /// down.
 ///
@@ -3750,7 +3750,7 @@ useEffect(() => {
 }, []);
 
 // A session created by something other than the composer — an agent calling the
-// `dray` CLI, which reaches the backend over its own socket. The row has to
+// `wain` CLI, which reaches the backend over its own socket. The row has to
 // appear without a refetch, the way a composer-created one does.
 //
 // The index item alone, never a `SessionSnapshot`: `agent_event` writes into
@@ -3781,7 +3781,7 @@ useEffect(() => {
   };
 }, []);
 
-// Another client deleted a session: a phone's row menu, or `dray`.
+// Another client deleted a session: a phone's row menu, or `wain`.
 const forgetDeletedRef = useRef(forgetDeleted);
 forgetDeletedRef.current = forgetDeleted;
 useEffect(() => {
@@ -3804,7 +3804,7 @@ followReadMarkRef.current = ({ sessionId, status }: SessionIndexItem) => {
   }
 };
 
-// `dray session settle`, `unsettle`, `set-aside` and their undoing, which reach
+// `wain session settle`, `unsettle`, `set-aside` and their undoing, which reach
 // Rust over the orchestration socket, so the sidebar hears of them only here.
 const applyIndexItemRef = useRef(applyIndexItem);
 applyIndexItemRef.current = applyIndexItem;
@@ -3829,7 +3829,7 @@ useEffect(() => {
   };
 }, []);
 
-// `dray session model` moved a session's pick from outside the composer. An
+// `wain session model` moved a session's pick from outside the composer. An
 // unsent pick held for it here would carry the old model back out on the next
 // send, so it goes, and a composer showing the session takes the new one. Its
 // own event because only this write may override the reader's pick: a
@@ -3852,7 +3852,7 @@ useEffect(() => {
   };
 }, []);
 
-// `dray issue link` or `dray issue unlink`, which reach Rust over the
+// `wain issue link` or `wain issue unlink`, which reach Rust over the
 // orchestration socket without this hook asking for anything — so the Issue tab
 // used to wait on the next send's `SendOutcome.issues`, a reselect or a restart
 // (#256). The whole list rides the event, so `applyIssues` is the same merge

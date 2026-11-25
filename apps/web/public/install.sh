@@ -1,25 +1,25 @@
 #!/bin/sh
-# Installs the `dray` CLI and its Claude Code skill. The archive also carries
-# `dray-serve`, and a first install ends in `dray setup`, which makes the
-# machine a Dray server — except on a Mac with the Dray app, which is its server.
+# Installs the `wain` CLI and its Claude Code skill. The archive also carries
+# `wain-serve`, and a first install ends in `wain setup`, which makes the
+# machine a Wain server — except on a Mac with the Wain app, which is its server.
 #
 # Deliberately POSIX sh, not bash: this is piped into whatever /bin/sh is, and
 # on a minimal linux image that is dash rather than bash.
 #
-#   curl -fsSL https://www.drayhq.com/install.sh | sh
+#   curl -fsSL https://www.wainhq.com/install.sh | sh
 #
 # Honours:
-#   DRAY_INSTALL_DIR      where the binary lands (default ~/.local/bin)
-#   DRAY_VERSION          a specific release tag (default: the newest on the channel)
-#   DRAY_CHANNEL          stable (default) or beta, which also takes stable releases
-#   DRAY_CURRENT_VERSION  the tag already installed; stop unless the newest is newer
-#   DRAY_UPDATING         set by `dray update`: no setup questions afterwards
+#   WAIN_INSTALL_DIR      where the binary lands (default ~/.local/bin)
+#   WAIN_VERSION          a specific release tag (default: the newest on the channel)
+#   WAIN_CHANNEL          stable (default) or beta, which also takes stable releases
+#   WAIN_CURRENT_VERSION  the tag already installed; stop unless the newest is newer
+#   WAIN_UPDATING         set by `wain update`: no setup questions afterwards
 
 set -eu
 
-REPO="monorepo-labs/dray"
-INSTALL_DIR="${DRAY_INSTALL_DIR:-$HOME/.local/bin}"
-CHANNEL="${DRAY_CHANNEL:-stable}"
+REPO="ismatbabirli/wain"
+INSTALL_DIR="${WAIN_INSTALL_DIR:-$HOME/.local/bin}"
+CHANNEL="${WAIN_CHANNEL:-stable}"
 
 say() { printf '%s\n' "$*"; }
 die() { printf 'install: %s\n' "$*" >&2; exit 1; }
@@ -32,7 +32,7 @@ detect_target() {
   case "$os" in
     Darwin) os_part="apple-darwin" ;;
     Linux)  os_part="unknown-linux-gnu" ;;
-    *) die "unsupported OS: $os. dray builds for macOS and Linux." ;;
+    *) die "unsupported OS: $os. wain builds for macOS and Linux." ;;
   esac
 
   case "$arch" in
@@ -76,7 +76,7 @@ fi
 #
 # `/releases/latest/download/` cannot serve here: the app and the CLI publish
 # into the same repo, so that URL belongs to whichever went out most recently,
-# and an app release there carries no `dray-*.tar.gz` at all.
+# and an app release there carries no `wain-*.tar.gz` at all.
 #
 # In no useful order: the app and CLI releases share a commit and a
 # `created_at`, so the API listed cli-v0.14.9 above cli-v0.14.10 and taking the
@@ -129,14 +129,14 @@ resolve_version() {
 # From the binary itself rather than downloaded separately, so the skill can
 # never describe a version of the CLI other than the one installed.
 #
-# Called on the up-to-date path too: `dray update` re-running this script is the
+# Called on the up-to-date path too: `wain update` re-running this script is the
 # only thing that rewrites the skill on disk, so stopping early must not be the
 # one route that leaves a deleted or stale one in place.
 install_skill() {
-  if "$INSTALL_DIR/dray" skill install; then
+  if "$INSTALL_DIR/wain" skill install; then
     :
   else
-    say "Note: the skill could not be installed. Run 'dray skill install' by hand."
+    say "Note: the skill could not be installed. Run 'wain skill install' by hand."
   fi
 }
 
@@ -149,7 +149,7 @@ install_skill() {
 # default .profile on Ubuntu adds no ~/.local/bin, so the console opened later
 # answered `gh: command not found`. So the files are asked rather than PATH,
 # and one naming the directory in any spelling is left alone — which is also
-# what heals a server on `dray update`. The line is guarded, so a shell reading
+# what heals a server on `wain update`. The line is guarded, so a shell reading
 # two of these files adds the directory once.
 #
 # A directory outside home is the reader's own choice and keeps the note.
@@ -166,7 +166,7 @@ add_to_path() {
       elif [ -f "$HOME/.bash_login" ]; then files=".bashrc .bash_login"; fi ;;
     */zsh) files=".zshrc" ;;
     */fish)
-      say "Run 'fish_add_path \$HOME/$sub' to put dray on your PATH."
+      say "Run 'fish_add_path \$HOME/$sub' to put wain on your PATH."
       return 0 ;;
     *) files=".profile" ;;
   esac
@@ -175,55 +175,55 @@ add_to_path() {
   added=
   for f in $files; do
     grep -Fqs -e "\$HOME/$sub" -e "~/$sub" -e "$INSTALL_DIR" "$HOME/$f" && continue
-    printf '\n# Added by the Dray installer.\ncase ":$PATH:" in *":$HOME/%s:"*) ;; *) export PATH="$HOME/%s:$PATH" ;; esac\n' \
+    printf '\n# Added by the Wain installer.\ncase ":$PATH:" in *":$HOME/%s:"*) ;; *) export PATH="$HOME/%s:$PATH" ;; esac\n' \
       "$sub" "$sub" >> "$HOME/$f"
     added="$added ~/$f"
   done
   if [ -n "$added" ]; then
-    say "Added $INSTALL_DIR to PATH in$added. New shells will find dray and the tools beside it."
+    say "Added $INSTALL_DIR to PATH in$added. New shells will find wain and the tools beside it."
   fi
 }
 
 case "$CHANNEL" in
   stable|beta) ;;
-  *) die "DRAY_CHANNEL must be stable or beta, not '$CHANNEL'." ;;
+  *) die "WAIN_CHANNEL must be stable or beta, not '$CHANNEL'." ;;
 esac
 
 TARGET=$(detect_target)
 
 # `latest` is spelled as a request to resolve, not as a tag: it used to build a
 # `/releases/latest/download/` URL, which is the trap above.
-VERSION="${DRAY_VERSION:-}"
+VERSION="${WAIN_VERSION:-}"
 if [ -z "$VERSION" ] || [ "$VERSION" = "latest" ]; then
-  say "Finding the latest dray release ($CHANNEL)…"
+  say "Finding the latest wain release ($CHANNEL)…"
   VERSION=$(resolve_version) || VERSION=""
   # No falling back to an older pin: a rate-limited or unreachable API quietly
   # installing something ancient is the failure mode this replaced.
-  [ -n "$VERSION" ] || die "could not find a dray release.
-    Set DRAY_VERSION to a tag from https://github.com/$REPO/releases and re-run."
+  [ -n "$VERSION" ] || die "could not find a wain release.
+    Set WAIN_VERSION to a tag from https://github.com/$REPO/releases and re-run."
   say "Latest is $VERSION."
 
-  # Inside the resolve branch alone, so an explicit DRAY_VERSION stays what it
+  # Inside the resolve branch alone, so an explicit WAIN_VERSION stays what it
   # has always been: a forced install of exactly that tag, reinstall and
   # downgrade included.
   #
   # The caller supplies the tag rather than this script reading it off the
-  # binary, because the caller is the binary — `dray update` knows its own
-  # version and nothing here can ask for it without guessing which `dray` on
+  # binary, because the caller is the binary — `wain update` knows its own
+  # version and nothing here can ask for it without guessing which `wain` on
   # disk is the one that ran.
   #
   # "Not newer" rather than "the same", so leaving beta never downgrades: a
   # beta install on the stable channel stays until a stable release passes it,
   # the way the app's own updater behaves.
-  if [ -n "${DRAY_CURRENT_VERSION:-}" ] && ! newer "$VERSION" "$DRAY_CURRENT_VERSION"; then
-    if [ "$VERSION" = "$DRAY_CURRENT_VERSION" ]; then
-      say "dray $VERSION is already installed."
+  if [ -n "${WAIN_CURRENT_VERSION:-}" ] && ! newer "$VERSION" "$WAIN_CURRENT_VERSION"; then
+    if [ "$VERSION" = "$WAIN_CURRENT_VERSION" ]; then
+      say "wain $VERSION is already installed."
     else
-      say "dray $DRAY_CURRENT_VERSION is newer than $VERSION; keeping it."
+      say "wain $WAIN_CURRENT_VERSION is newer than $VERSION; keeping it."
     fi
     # Guarded here rather than inside the function: on the install path the
     # binary was just written, so a failure there is worth the note it prints.
-    if [ -x "$INSTALL_DIR/dray" ]; then
+    if [ -x "$INSTALL_DIR/wain" ]; then
       install_skill
     fi
     add_to_path || :
@@ -231,15 +231,15 @@ if [ -z "$VERSION" ] || [ "$VERSION" = "latest" ]; then
   fi
 fi
 
-URL="https://github.com/$REPO/releases/download/$VERSION/dray-$TARGET.tar.gz"
+URL="https://github.com/$REPO/releases/download/$VERSION/wain-$TARGET.tar.gz"
 
 TMP=$(mktemp -d)
 # Runs on failure too, so a half-finished install leaves nothing behind.
 trap 'rm -rf "$TMP"' EXIT INT TERM
 
-say "Downloading dray ($TARGET)…"
-fetch "$URL" "$TMP/dray.tar.gz" || die "could not download $URL"
-fetch "$URL.sha256" "$TMP/dray.tar.gz.sha256" || die "could not download the checksum for $URL"
+say "Downloading wain ($TARGET)…"
+fetch "$URL" "$TMP/wain.tar.gz" || die "could not download $URL"
+fetch "$URL.sha256" "$TMP/wain.tar.gz.sha256" || die "could not download the checksum for $URL"
 
 # Before unpacking, not after: everything past this point treats the archive as
 # trusted, and the last step runs a binary out of it.
@@ -249,8 +249,8 @@ fetch "$URL.sha256" "$TMP/dray.tar.gz.sha256" || die "could not download the che
 # signature and does not pretend to be — an attacker who can replace the release
 # asset can replace this file too. Signing is the next step up and wants a key
 # with somewhere safe to live.
-EXPECTED=$(cut -d' ' -f1 < "$TMP/dray.tar.gz.sha256")
-ACTUAL=$(sha256 "$TMP/dray.tar.gz")
+EXPECTED=$(cut -d' ' -f1 < "$TMP/wain.tar.gz.sha256")
+ACTUAL=$(sha256 "$TMP/wain.tar.gz")
 
 [ -n "$EXPECTED" ] || die "the published checksum was empty; refusing to install."
 
@@ -262,17 +262,17 @@ fi
 
 say "Checksum verified."
 
-tar -xzf "$TMP/dray.tar.gz" -C "$TMP" || die "could not unpack the download"
-[ -f "$TMP/dray" ] || die "the archive did not contain a dray binary"
+tar -xzf "$TMP/wain.tar.gz" -C "$TMP" || die "could not unpack the download"
+[ -f "$TMP/wain" ] || die "the archive did not contain a wain binary"
 
 mkdir -p "$INSTALL_DIR"
-# Whether *this* archive is a server release: one older than `dray setup`
-# carries no `dray-serve`, and a copy left on disk says nothing about the
-# `dray` just installed.
+# Whether *this* archive is a server release: one older than `wain setup`
+# carries no `wain-serve`, and a copy left on disk says nothing about the
+# `wain` just installed.
 SERVER=
-[ -f "$TMP/dray-serve" ] && SERVER=1
-# Whatever the archive holds: `dray`, and `dray-serve` beside it.
-for bin in dray dray-serve; do
+[ -f "$TMP/wain-serve" ] && SERVER=1
+# Whatever the archive holds: `wain`, and `wain-serve` beside it.
+for bin in wain wain-serve; do
   [ -f "$TMP/$bin" ] || continue
   chmod +x "$TMP/$bin"
   # `mv` within one filesystem is atomic, so an upgrade never leaves a truncated
@@ -298,28 +298,28 @@ add_to_path || case ":$PATH:" in
     ;;
 esac
 
-# The Dray app's login agent or bundle on a Mac, the AppImage the app recorded
-# on Linux: `app_ships_this_cli` in apps/cli/src/setup.rs. A `DRAY_HOME` of its
+# The Wain app's login agent or bundle on a Mac, the AppImage the app recorded
+# on Linux: `app_ships_this_cli` in apps/cli/src/setup.rs. A `WAIN_HOME` of its
 # own is a server apart from the app, as `app_updates_this_cli` reads it.
 app_on_this_machine() {
-  [ -z "${DRAY_HOME:-}" ] || return 1
+  [ -z "${WAIN_HOME:-}" ] || return 1
   if [ "$(uname -s)" = Darwin ]; then
-    [ -e "$HOME/Library/LaunchAgents/com.yogesh.dray.server.plist" ] \
-      || [ -e /Applications/Dray.app ] || [ -e "$HOME/Applications/Dray.app" ]
+    [ -e "$HOME/Library/LaunchAgents/com.wainhq.wain.server.plist" ] \
+      || [ -e /Applications/Wain.app ] || [ -e "$HOME/Applications/Wain.app" ]
   else
-    record="$HOME/.local/share/dray/appimage"
+    record="$HOME/.local/share/wain/appimage"
     [ -s "$record" ] && [ -f "$(cat "$record")" ]
   fi
 }
 
-# Away from the app `dray` is only useful as a server, so a first install goes
+# Away from the app `wain` is only useful as a server, so a first install goes
 # on to set one up. stdin is the rest of this script under `curl | sh`, so
 # setup gets none and asks its questions on /dev/tty.
-if [ -n "$SERVER" ] && [ -z "${DRAY_UPDATING:-}" ] && ! app_on_this_machine; then
+if [ -n "$SERVER" ] && [ -z "${WAIN_UPDATING:-}" ] && ! app_on_this_machine; then
   say ""
-  "$INSTALL_DIR/dray" setup </dev/null
+  "$INSTALL_DIR/wain" setup </dev/null
   exit
 fi
 
 say ""
-say "Done. Run 'dray --help' to get started, with the Dray app running."
+say "Done. Run 'wain --help' to get started, with the Wain app running."

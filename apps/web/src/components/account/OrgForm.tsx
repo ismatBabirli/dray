@@ -55,7 +55,7 @@ export function OrgForm({
         <span className={LABEL}>URL</span>
         <div className="flex items-stretch">
           <span className={`flex items-center border border-r-0 border-white/20 px-3 text-[14px] light:border-black/15 ${MUTED}`}>
-            drayhq.com/app/
+            wainhq.com/app/
           </span>
           <input
             value={slug}

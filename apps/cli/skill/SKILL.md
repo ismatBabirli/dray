@@ -1,11 +1,11 @@
 ---
-name: dray
-description: Create, list and message Dray sessions, and drive this session's browser, from the command line. Use when the user asks to work on several things at once — a batch of issues, tickets, or tasks — and each deserves its own agent, its own branch, and its own place in the sidebar; for checking on sessions you started and messaging between them; and whenever a page needs looking at or acting on — a dev server, a deployed site, docs — through `dray browser`, never a headless browser or a browser MCP.
+name: wain
+description: Create, list and message Wain sessions, and drive this session's browser, from the command line. Use when the user asks to work on several things at once — a batch of issues, tickets, or tasks — and each deserves its own agent, its own branch, and its own place in the sidebar; for checking on sessions you started and messaging between them; and whenever a page needs looking at or acting on — a dev server, a deployed site, docs — through `wain browser`, never a headless browser or a browser MCP.
 ---
 
-# Dray sessions
+# Wain sessions
 
-Dray runs coding agents in parallel, one chat per piece of work. The `dray` CLI
+Wain runs coding agents in parallel, one chat per piece of work. The `wain` CLI
 creates those sessions from outside the app, so an agent in one session can fan
 work out into several.
 
@@ -23,13 +23,13 @@ genuinely independent: separate branches, separate PRs. Steps of one job belong
 in one session, and subagents already handle parallelism inside a turn.
 
 The other reason is **a web page**: checking the dev server you just changed,
-reading a docs site, filling a form, taking a screenshot. `dray browser` is the
+reading a docs site, filling a form, taking a screenshot. `wain browser` is the
 browser this session already has open in the app — see *Driving the browser*.
 
 ## Creating a session
 
 ```bash
-dray session new "Fix the login redirect loop described in ENG-412"
+wain session new "Fix the login redirect loop described in ENG-412"
 ```
 
 Prints the new session's id. It returns immediately — the session starts working
@@ -102,10 +102,10 @@ reverse likewise: Claude Code is Opus 5.5 on High, Codex is Sol on Medium. Pass
 ### Switching a running session's model
 
 ```bash
-dray session model <id> fable                 # switch model; keeps its effort where fable has it
-dray session model <id> opus --effort high    # model and effort
-dray session model <id> --effort low          # effort alone
-dray session model <id>                       # print what it runs on
+wain session model <id> fable                 # switch model; keeps its effort where fable has it
+wain session model <id> opus --effort high    # model and effort
+wain session model <id> --effort low          # effort alone
+wain session model <id>                       # print what it runs on
 ```
 
 The composer's model picker, from here. The pick lands from the session's next
@@ -126,21 +126,21 @@ which is the choice they already made. Pass one only when the user named it,
 and pass it whole — `xai/grok-4.6`, not `grok-4.6`, since two providers can
 serve the same model name.
 
-**pi runs without a permission gate.** It has no approval system, and Dray's
+**pi runs without a permission gate.** It has no approval system, and Wain's
 own is not built for it yet, so a pi session does what the model asks. Say so
 when you start one for work that writes.
 
 ### Tagging a session with its issue
 
 ```bash
-dray session new --issue DRA-53 "Add the issue panel described in DRA-53"
-dray issue link DRA-53 --title "Add the issue panel" --url https://linear.app/acme/issue/DRA-53
-dray issue link DRA-53 DRA-54
-dray issue unlink DRA-54
+wain session new --issue DRA-53 "Add the issue panel described in DRA-53"
+wain issue link DRA-53 --title "Add the issue panel" --url https://linear.app/acme/issue/DRA-53
+wain issue link DRA-53 DRA-54
+wain issue unlink DRA-54
 
-dray issue link DRA-53 --session <session-id> --title "Add the issue panel"
+wain issue link DRA-53 --session <session-id> --title "Add the issue panel"
 
-dray issue link owner/repo#12 --title "Paste images into the composer" --url https://github.com/owner/repo/issues/12
+wain issue link owner/repo#12 --title "Paste images into the composer" --url https://github.com/owner/repo/issues/12
 ```
 
 A GitHub issue is named `owner/repo#12`, GitHub's own cross-repo spelling, and
@@ -149,15 +149,15 @@ it is refused rather than guessed at. That shape is also what tells the trackers
 apart, since nothing here asks one which issue this is.
 
 `link` and `unlink` tag **your own session** when you do not name one, so you
-never have to write `$DRAY_SESSION_ID` — and you must not, because Claude Code
+never have to write `$WAIN_SESSION_ID` — and you must not, because Claude Code
 refuses a command naming an environment variable inside a worktree, which is
-where every session `dray session new` creates runs. Pass `--session` to tag
+where every session `wain session new` creates runs. Pass `--session` to tag
 one you spawned.
 
 A tagged session shows an **Issue** tab in the user's panel, and its prompt gains
 one line per issue: the identifier and the title, nothing else.
 
-`dray issue link` **writes down what you give it and asks the tracker nothing.**
+`wain issue link` **writes down what you give it and asks the tracker nothing.**
 So pass `--title` and `--url` — you have just read the issue and they cost you
 nothing, where without them the tag is a bare `#DRA-53` that links nowhere. They
 describe one issue, so name one issue when you use them.
@@ -173,12 +173,12 @@ title and the identifier and nothing behind them. `claude mcp list` says which
 servers are reachable.
 
 `--issue`, and a `#DRA-53` written into a prompt, are the other half and they
-*do* need the user to have connected a tracker in Dray — that is where the title
+*do* need the user to have connected a tracker in Wain — that is where the title
 is looked up. If they have not, the tag stays plain text, the session still runs,
 and nothing fails. Report it rather than working around it.
 
-You can also write `#DRA-53` straight into a prompt — `dray session new`, `dray session send`, or
-the user's own composer. Dray resolves the tag and links it exactly as `--issue`
+You can also write `#DRA-53` straight into a prompt — `wain session new`, `wain session send`, or
+the user's own composer. Wain resolves the tag and links it exactly as `--issue`
 does.
 
 ### Each session gets its own worktree
@@ -194,8 +194,8 @@ another session's.
 ### Work outside a worktree
 
 ```bash
-dray session new --no-worktree --project '~' "Set up Docker on this machine and report the version"
-dray session new --no-worktree --project ~/code/app "Find out why the dev server here fails to start"
+wain session new --no-worktree --project '~' "Set up Docker on this machine and report the version"
+wain session new --no-worktree --project ~/code/app "Find out why the dev server here fails to start"
 ```
 
 `--no-worktree` runs the session in the `--project` folder as it is: a repo's
@@ -212,13 +212,13 @@ repo it has a checkout of.
 ### Basing a session on existing work
 
 ```bash
-dray session new --base <session-id> "Review the work on this branch and report what you find"
-dray session new --base feature/login "Write tests for the login flow on this branch"
+wain session new --base <session-id> "Review the work on this branch and report what you find"
+wain session new --base feature/login "Write tests for the login flow on this branch"
 ```
 
-`--base` takes a **session id** — the same id `dray session ls` prints and
-`dray session send` takes — or a branch, tag or commit. Naming a session is the usual case: you have
-its id already, and you do not have to know how Dray names its branches.
+`--base` takes a **session id** — the same id `wain session ls` prints and
+`wain session send` takes — or a branch, tag or commit. Naming a session is the usual case: you have
+its id already, and you do not have to know how Wain names its branches.
 
 **A branch name is worked on by that name**, the same way the app's new-task
 branch picker does it, so the new session's commits land on that branch:
@@ -255,14 +255,14 @@ Three things to know:
   directory. Two agents writing to one checkout overwrite
   each other, and the changes panel cannot tell them apart.
 
-The line `dray session new` prints says what it resolved: `Started "…" in worktree
+The line `wain session new` prints says what it resolved: `Started "…" in worktree
 calm-owl, based on worktree-brisk-jade`, or `on branch feature/login` for a branch. Worth reading back when you passed a
 session id, since the branch that id resolved to is something only the app knew.
 
 ### Hidden sessions
 
 ```bash
-dray session new --hidden --base <session-id> "Review the work on this branch and send your findings back to <session-id>"
+wain session new --hidden --base <session-id> "Review the work on this branch and send your findings back to <session-id>"
 ```
 
 `--hidden` keeps the session out of the sidebar; it shows only in the crew
@@ -280,21 +280,21 @@ unless the user asks.
 ## Listing sessions
 
 ```bash
-dray session ls              # this project, human-readable
-dray session ls --json       # machine-readable
-dray session ls --all        # every project
+wain session ls              # this project, human-readable
+wain session ls --json       # machine-readable
+wain session ls --all        # every project
 ```
 
 Each row carries the session id, title, status (`idle`, `in_progress`,
 `completed`), and branch. A session created by another one also says which —
 `spawned by <id>` in the table, `parentSessionId` in the JSON. This is how you
 check on sessions you started — nothing reports back on its own, so poll
-`dray session ls` if you need to know when one finishes.
+`wain session ls` if you need to know when one finishes.
 
 ## Messaging a session
 
 ```bash
-dray session send <session-id> "Code review is done. Two findings, both fixed."
+wain session send <session-id> "Code review is done. Two findings, both fixed."
 ```
 
 Works in both directions and between any two sessions:
@@ -308,7 +308,7 @@ queued and picked up at the next boundary — that is reported, and is not a
 failure.
 
 The receiving agent is told which session the message came from, and is given its
-id — so it can answer with `dray session send <that-id>` without looking anything up.
+id — so it can answer with `wain session send <that-id>` without looking anything up.
 Write it as a message to a colleague, not as a note to yourself.
 
 Send when there is something the other session genuinely needs. A message costs
@@ -321,16 +321,16 @@ looking the session up again.
 ## Managing a session
 
 ```bash
-dray session rename <id> "Add retry to the upload client"
-dray session model <id> sonnet              # its next turn runs on sonnet; see "Model and effort"
-dray session stop <id>                      # stop the running turn, like its Stop button
-dray session settle <id>                    # it stops and leaves the active list; worktree kept
-dray session settle <id> --delete-worktree  # and the worktree and branch go too
-dray session unsettle <id>
-dray session set-aside <id>                 # sink it in the sidebar: started, not wanted now
-dray session unset-aside <id>
-dray session detach <id>                    # out of its parent: a top-level row of its own
-dray session attach <id> --bot <name>       # hand it to a bot: the bot's task from now on
+wain session rename <id> "Add retry to the upload client"
+wain session model <id> sonnet              # its next turn runs on sonnet; see "Model and effort"
+wain session stop <id>                      # stop the running turn, like its Stop button
+wain session settle <id>                    # it stops and leaves the active list; worktree kept
+wain session settle <id> --delete-worktree  # and the worktree and branch go too
+wain session unsettle <id>
+wain session set-aside <id>                 # sink it in the sidebar: started, not wanted now
+wain session unset-aside <id>
+wain session detach <id>                    # out of its parent: a top-level row of its own
+wain session attach <id> --bot <name>       # hand it to a bot: the bot's task from now on
 ```
 
 These are the user's sidebar buttons, so act on sessions the user named, or
@@ -355,10 +355,10 @@ session started with `--no-worktree` has none, and refuses the flag.
 ## Handing a pull request to the user
 
 ```bash
-dray session merge-card <task-id>   # a card in your chat for that task's open PR
+wain session merge-card <task-id>   # a card in your chat for that task's open PR
 ```
 
-Dray posts this card in your chat on its own once GitHub says a task you started
+Wain posts this card in your chat on its own once GitHub says a task you started
 has a pull request ready to merge, on this machine or another. So don't post one
 yourself; run the command only when the user asks for a card. It lands in your own chat with the task's
 title, its live status, a Merge button (Fix conflicts when the branch
@@ -368,20 +368,20 @@ the task is still mid-turn.
 ## Showing the user GitHub issues
 
 ```bash
-dray session issue-card owner/repo 12              # one issue
-dray session issue-card owner/repo 12 15 18
+wain session issue-card owner/repo 12              # one issue
+wain session issue-card owner/repo 12 15 18
 ```
 
 Whenever you show the user GitHub issues, one or several, post them as a card
 instead of writing them out. It lands in your own chat: each issue's number,
 purple once closed, its title and its labels, in the order given, 20 at
-most. The user opens an issue in Dray from the card, or presses Work on it,
+most. The user opens an issue in Wain from the card, or presses Work on it,
 which reaches you as a message of its own naming the issue: start on it then.
 Don't restate the card in your reply; say only what it can't, such as why
 these issues.
 
 ```bash
-dray session need <task-id> "Pick: keep the button or drop it"   # no text clears it
+wain session need <task-id> "Pick: keep the button or drop it"   # no text clears it
 ```
 
 When a task you started is waiting on the user and you cannot answer it
@@ -390,7 +390,7 @@ row in the "Waiting on you" card at the foot of your chat, and it clears as soon
 as the task moves.
 
 ```bash
-dray session react 👀   # or ✅ 🎉 👍 👎 ❤️ 😂 😢; also seen, done, celebrate, like, dislike, love, laugh, sad
+wain session react 👀   # or ✅ 🎉 👍 👎 ❤️ 😂 😢; also seen, done, celebrate, like, dislike, love, laugh, sad
 ```
 
 A bot only. Puts the emoji on the user's newest message in your chat, in place
@@ -402,10 +402,10 @@ your turn without writing anything after it.
 ## Saving work for later
 
 ```bash
-dray draft new "Add retry to the upload client"   # prints the draft id
-dray draft ls                                     # this project; --all, --json
-dray draft rm <draft-id>
-dray draft start <draft-id>                       # prints the new session id
+wain draft new "Add retry to the upload client"   # prints the draft id
+wain draft ls                                     # this project; --all, --json
+wain draft rm <draft-id>
+wain draft start <draft-id>                       # prints the new session id
 ```
 
 A draft is a task the user starts when they choose. Nothing runs and no
@@ -414,11 +414,11 @@ can open it, edit it and send it themselves.
 
 Reach for it when the user asks you to note work down rather than begin it —
 "park this", "save that for later", "queue up a task". Write the prompt for
-someone who has not read your conversation, the same as for `dray session new`.
+someone who has not read your conversation, the same as for `wain session new`.
 
 `draft new` takes `--project`, `--model`, `--effort`, `--harness`, `--fast` and
-`--base`, inheriting from your session exactly as `dray session new` does. `draft start` starts
-it as a session spawned by yours, so the depth limit and `dray session ls`'s
+`--base`, inheriting from your session exactly as `wain session new` does. `draft start` starts
+it as a session spawned by yours, so the depth limit and `wain session ls`'s
 `spawned by` apply as usual. A draft the user saved with the worktree off
 starts in the project checkout, and the line `start` prints says so.
 
@@ -427,36 +427,36 @@ Start or remove only drafts the user named. The list is theirs.
 ## Bots
 
 ```bash
-dray bot new "Ops" --shape sun --colour teal   # prints the bot id; shape and colour optional
-dray bot ls                                    # id, chat, name, role, open tasks; --json
-dray bot send "Ops" "<message>"                # by name or id
-dray bot send --ask "Ops" "<question>"         # its answer comes back to you
-dray bot rename "Ops" "Release Ops"
-dray bot rm "Ops"                              # settles its chat, deletes its folder
+wain bot new "Ops" --shape sun --colour teal   # prints the bot id; shape and colour optional
+wain bot ls                                    # id, chat, name, role, open tasks; --json
+wain bot send "Ops" "<message>"                # by name or id
+wain bot send --ask "Ops" "<question>"         # its answer comes back to you
+wain bot rename "Ops" "Release Ops"
+wain bot rm "Ops"                              # settles its chat, deletes its folder
 ```
 
 A bot is one long-lived chat with instructions and memory of its own, listed
 at the top of the user's sidebar. A bot is named by its name, in any case, or
 by its id; two bots cannot share a name.
 
-`dray bot send` lands in the bot's chat, signed as you, and starts its turn
+`wain bot send` lands in the bot's chat, signed as you, and starts its turn
 (or queues behind the one running). A bot nobody has written to yet starts its
 chat with your message. **Without `--ask`, nothing comes back on its own**:
-the bot answers only if it chooses to, with `dray bot send` of its own. With
-`--ask`, Dray passes the bot's reply, its turn's last words, back to you when
+the bot answers only if it chooses to, with `wain bot send` of its own. With
+`--ask`, Wain passes the bot's reply, its turn's last words, back to you when
 that turn ends: to a bot's chat, or to the task or routine run that asked.
 
-A bot's role is the first line of its `AGENTS.md`. `dray bot ls` shows each
-bot's role, whether it is working, and its open tasks. `dray session new` from
+A bot's role is the first line of its `AGENTS.md`. `wain bot ls` shows each
+bot's role, whether it is working, and its open tasks. `wain session new` from
 a bot warns on stderr when other bots have open tasks in the same project.
 
-`dray --machine <name> bot …` acts on the bots of a machine from
-`dray machine ls`, every verb and routine alike. `--ask` works there too: the
+`wain --machine <name> bot …` acts on the bots of a machine from
+`wain machine ls`, every verb and routine alike. `--ask` works there too: the
 answer comes back to you once that machine's server is reachable from this one,
 usually within seconds of the bot's turn ending. `routine add` there needs
 `--bot`, since the calling bot is on this machine.
 
-Between bots, Dray stops an exchange after 4 messages back and forth, a
+Between bots, Wain stops an exchange after 4 messages back and forth, a
 message repeated within one exchange, or 20 messages between two bots in 5
 minutes. The refused send fails with the reason; tell the user what is still
 open rather than trying another way.
@@ -469,14 +469,14 @@ theirs, and `rm` deletes the bot's instructions and memory with it.
 ### Routines
 
 ```bash
-dray bot routine add "PR watch" "<what to do each run>" --every 2h
-dray bot routine add "Standup" "<what to do>" --at 9am --days weekdays
-dray bot routine add "CI" "<what to do>" --every 10m --check "gh pr checks 970 --json state -q '.[].state'"
-dray bot routine ls            # this bot's: schedule, next run, last result; --json
-dray bot routine pause <id|name>    # also resume, rm, and run (fires once, now)
+wain bot routine add "PR watch" "<what to do each run>" --every 2h
+wain bot routine add "Standup" "<what to do>" --at 9am --days weekdays
+wain bot routine add "CI" "<what to do>" --every 10m --check "gh pr checks 970 --json state -q '.[].state'"
+wain bot routine ls            # this bot's: schedule, next run, last result; --json
+wain bot routine pause <id|name>    # also resume, rm, and run (fires once, now)
 ```
 
-A routine is a bot's own scheduled check: Dray sends the bot its prompt on the
+A routine is a bot's own scheduled check: Wain sends the bot its prompt on the
 schedule, hidden from the chat, and the user sees and stops it under Routines in
 the bot's More tab. Run from a bot's chat, every verb acts on that bot; `--bot`
 names another. `--every` is at least 5m; `--at` is local time, daily unless
@@ -489,34 +489,34 @@ wakes the bot once, then waits quietly until it passes again.
 
 ## Driving the browser
 
-Every session has its own browser, drawn in the app beside the chat. `dray
+Every session has its own browser, drawn in the app beside the chat. `wain
 browser` drives it: the user watches the same tabs you act on, and no other
 session's pages are reachable from here. The verbs are agent-browser's.
 
 ```bash
-dray browser open http://localhost:3000       # a page, in the active tab
-dray browser snapshot -i                      # what is on it, with @refs
-dray browser click @e4                        # a @ref or a CSS selector
-dray browser fill @e2 "hello"                 # fill clears first; type appends
-dray browser press Enter
-dray browser find role button click --name "Sign in"
-dray browser find text "Forgot password" click
-dray browser find label "Email" fill "me@example.com"
-dray browser get text                         # the page's text; or html, value, attr, title, url, count, box
-dray browser is visible ".toast"
-dray browser wait ".results"                  # or 1500, or --url /done, --text "Saved", --load load
-dray browser screenshot --full                # prints the PNG's path; a path of your own must be inside the checkout
+wain browser open http://localhost:3000       # a page, in the active tab
+wain browser snapshot -i                      # what is on it, with @refs
+wain browser click @e4                        # a @ref or a CSS selector
+wain browser fill @e2 "hello"                 # fill clears first; type appends
+wain browser press Enter
+wain browser find role button click --name "Sign in"
+wain browser find text "Forgot password" click
+wain browser find label "Email" fill "me@example.com"
+wain browser get text                         # the page's text; or html, value, attr, title, url, count, box
+wain browser is visible ".toast"
+wain browser wait ".results"                  # or 1500, or --url /done, --text "Saved", --load load
+wain browser screenshot --full                # prints the PNG's path; a path of your own must be inside the checkout
                                               # laid out at 1440×900 whatever the pane's width, or the last set viewport/device
-dray browser eval "document.title"
-dray browser console                          # what the page logged since last asked; `errors` for errors alone
-dray browser set device "iPhone 15"           # or: set viewport 375 667 — what screenshots are
+wain browser eval "document.title"
+wain browser console                          # what the page logged since last asked; `errors` for errors alone
+wain browser set device "iPhone 15"           # or: set viewport 375 667 — what screenshots are
                                               # laid out at; the pane on screen is left alone
-dray browser zoom 150                         # page zoom, 25–500; `zoom reset` for 100. The user sees it too,
+wain browser zoom 150                         # page zoom, 25–500; `zoom reset` for 100. The user sees it too,
                                               # screenshots and recordings carry it, and it holds for that site
-dray browser record start                     # record the active tab, at the screenshot size
-dray browser record stop "checkout flow"      # prints the MP4's path: checkout-flow.mp4
-dray browser tab                              # list tabs; also: tab new [url], tab <id>, tab close [id]
-dray browser back                             # also: forward, reload, close
+wain browser record start                     # record the active tab, at the screenshot size
+wain browser record stop "checkout flow"      # prints the MP4's path: checkout-flow.mp4
+wain browser tab                              # list tabs; also: tab new [url], tab <id>, tab close [id]
+wain browser back                             # also: forward, reload, close
 ```
 
 `snapshot` is the way to see a page: one line per element with a `@e<n>` ref
@@ -535,34 +535,34 @@ so the user checks your work by watching instead of redoing it. Clicks are
 marked with a ring and pauses between your actions are cut to a second, so
 don't rush or pad. Screenshots work while recording.
 
-**Every other video goes through `dray video add`.** A screen recording, a clip
+**Every other video goes through `wain video add`.** A screen recording, a clip
 from a test run: the chat plays nothing else, and a path of your own draws a link.
 
 ```bash
-dray video add ~/Desktop/run.mov "login flow"  # prints the path to put in your reply
+wain video add ~/Desktop/run.mov "login flow"  # prints the path to put in your reply
 ```
 
 It works out the folder and the session itself, keeps an MP4 as it is and
 converts anything else: with `avconvert` on a Mac, `ffmpeg` where that cannot read
-it and on Linux. A machine with no way to convert it says so; `dray server
+it and on Linux. A machine with no way to convert it says so; `wain server
 install` offers ffmpeg on a server. **It runs on the machine serving this session**,
 so a video made on another machine, a VM or a remote box has to be copied here
 first. Name no environment variable to find any of this, and don't build the path
 by hand: the home moves. It is deleted with the session.
 
-**A screenshot shows the same way through `dray image add`.** A PNG or JPEG
-from a simulator, a sandbox desktop or `dray browser screenshot`: put the path
+**A screenshot shows the same way through `wain image add`.** A PNG or JPEG
+from a simulator, a sandbox desktop or `wain browser screenshot`: put the path
 it prints in your reply and the chat draws the picture. Crop it to what changed
-first. Same rules as `dray video add`: this machine, folder worked out for you.
+first. Same rules as `wain video add`: this machine, folder worked out for you.
 
 ```bash
-dray image add ~/shots/after.png "settings after"  # prints the path to put in your reply
+wain image add ~/shots/after.png "settings after"  # prints the path to put in your reply
 ```
 
 **Keep a video of the test that confirms UI work or work on another machine**,
 and show it the same way, so the user can watch it pass.
 
-**On a Mac, `screencapture -v` needs Screen Recording for Dray.** Until the user
+**On a Mac, `screencapture -v` needs Screen Recording for Wain.** Until the user
 turns it on in System Settings it exits 1 and prints nothing, and raises a prompt
 only they can answer. Say so rather than retrying.
 
@@ -573,15 +573,15 @@ first, then open it. `--json` on any verb answers as JSON for scripting.
 ## Sharing a dev server
 
 ```bash
-dray share start 5173    # prints a public https://….opentunnel.xyz link
-dray share ls            # this project's live links; --all, --json
-dray share stop 5173
+wain share start 5173    # prints a public https://….opentunnel.xyz link
+wain share ls            # this project's live links; --all, --json
+wain share stop 5173
 ```
 
 A public link to one of this session's own dev servers — the ones
 the user's Browser tab lists for it, nothing else on the machine. **Anyone with
 the link can open it**, so share when the user asked for a link they can open
-elsewhere or send on, and not to check your own work: `dray browser` does that
+elsewhere or send on, and not to check your own work: `wain browser` does that
 without publishing anything. The link shows on that server's row in the app,
 where the user can stop it, and it goes when the session is settled or deleted.
 Sharing the same port from the same session again gives the same link.
@@ -589,24 +589,24 @@ Sharing the same port from the same session again gives the same link.
 ## Other machines
 
 ```bash
-dray machine add vps root@203.0.113.7                   # or ssh -p 2222 …, or an ~/.ssh/config alias
-dray machine add --token-file t vps ws://127.0.0.1:7317  # a token from stdin works too
-dray machine add --token-file t mac wss://….opentunnel.xyz   # a Mac, by its Remote access address
-dray machine ls                                          # name, address, connected or not; --json
-dray machine rename vps box                              # '' puts back the host
-dray machine disconnect vps                              # stays listed; requests to it are refused
-dray machine connect vps                                 # tries now, says if it worked
-dray machine rm vps
+wain machine add vps root@203.0.113.7                   # or ssh -p 2222 …, or an ~/.ssh/config alias
+wain machine add --token-file t vps ws://127.0.0.1:7317  # a token from stdin works too
+wain machine add --token-file t mac wss://….opentunnel.xyz   # a Mac, by its Remote access address
+wain machine ls                                          # name, address, connected or not; --json
+wain machine rename vps box                              # '' puts back the host
+wain machine disconnect vps                              # stays listed; requests to it are refused
+wain machine connect vps                                 # tries now, says if it worked
+wain machine rm vps
 ```
 
-The machines this one can reach, on any Dray server — a Mac, a Linux box, a
+The machines this one can reach, on any Wain server — a Mac, a Linux box, a
 headless Mac. On a Mac it is the same list as Settings → Servers. A name
 belongs to one machine: `add` and `rename` refuse one another machine already
 has. Reach for it after you have set a machine up and the user wants it
 reachable. A Mac is reached by its Remote access address and token (Settings →
 This Mac), never over SSH. `add` connects before it saves, so a refusal is the
 machine telling you what is wrong — an unknown host key, a password login, no
-Dray on the server — and its fix is the user's to make, never yours: do not
+Wain on the server — and its fix is the user's to make, never yours: do not
 accept a host key on their behalf. An SSH add uses this machine's own `ssh`,
 so its key must already be authorized there. A token never goes on the command
 line. Remove only machines the user named.
@@ -614,15 +614,15 @@ line. Remove only machines the user named.
 ## Working on another machine
 
 ```bash
-dray --machine vps session new "Run the load test" --title "Load test"
-dray --machine vps session ls                # that machine's sessions
-dray session ls --machine all                # this one's and every connected machine's
-dray session send <session-id> "Use the staging DB"   # finds the machine on its own
-dray session model <session-id> sonnet                # so does every verb taking an id
+wain --machine vps session new "Run the load test" --title "Load test"
+wain --machine vps session ls                # that machine's sessions
+wain session ls --machine all                # this one's and every connected machine's
+wain session send <session-id> "Use the staging DB"   # finds the machine on its own
+wain session model <session-id> sonnet                # so does every verb taking an id
 ```
 
 `--machine <name>` runs a `session`, `draft`, `issue`, `browser`, `share` or `bot`
-command on a machine from `dray machine ls`, through this machine's Dray
+command on a machine from `wain machine ls`, through this machine's Wain
 server — app open or not. A session id needs no `--machine`: one this machine
 has never heard of is looked for on every machine it reaches.
 
@@ -634,23 +634,23 @@ inherit from you as they do here.
 
 **Reach follows tokens.** You reach a machine this one added; it reaches you
 only if it added this one too. A session you start there can message you back
-with `dray session send <your-id>` where it can — otherwise check on it with
-`dray session ls --machine <name>`, and ask it to open a PR or push a branch
+with `wain session send <your-id>` where it can — otherwise check on it with
+`wain session ls --machine <name>`, and ask it to open a PR or push a branch
 when its result should come back.
 
 ## This machine's server
 
 ```bash
-dray server install      # install what is missing, then start the server; --tools git,gh,… to skip asking
-dray server start        # in the background, surviving reboot
-dray server run          # in this terminal instead
-dray server status       # running or not, and its tunnel address
-dray server tunnel on    # a public address in front of it, the same across restarts; off takes it down
-dray server pair         # a QR code the Dray iPhone app scans to add this server
-dray server stop         # stop it and remove it from the background
+wain server install      # install what is missing, then start the server; --tools git,gh,… to skip asking
+wain server start        # in the background, surviving reboot
+wain server run          # in this terminal instead
+wain server status       # running or not, and its tunnel address
+wain server tunnel on    # a public address in front of it, the same across restarts; off takes it down
+wain server pair         # a QR code the Wain iPhone app scans to add this server
+wain server stop         # stop it and remove it from the background
 ```
 
-What makes a machine with no Dray app — Linux, or a headless Mac — a Dray
+What makes a machine with no Wain app — Linux, or a headless Mac — a Wain
 server. On a Mac with the app, the app runs the server and these are refused,
 apart from `tunnel`, which is the Remote access button in Settings → Servers.
 
@@ -666,32 +666,32 @@ They can watch the sidebar.
 ### Where the user typed
 
 A message the user typed ends with a line such as `[sent from iPhone]`: Mac app,
-Windows app, Linux app, iPhone, iPad, Android or Island. Dray adds it and the user
+Windows app, Linux app, iPhone, iPad, Android or Island. Wain adds it and the user
 never sees it, so never quote it. In a bot's chat it also holds the user's local
 time (`[sent from iPhone, 14:32]`). On a phone, reply shorter, skip wide tables,
 never ask them to open a file or look at their screen, put screenshot and video
 paths in the reply so they show inline, and read past dictation typos. On
-Island, keep it to a line or two. Messages from `dray session send`, other
+Island, keep it to a line or two. Messages from `wain session send`, other
 sessions and routines carry no tag, so never add one yourself.
 
 ## Staying current
 
 ```bash
-dray update
+wain update
 ```
 
 Resolves the newest release and stops there when it is the one already running,
 so this is cheap to run and safe to run often. Otherwise it downloads the new
 binary over the current one — and rewrites this skill, which ships inside that
-binary. So whatever you are reading always describes the `dray` you actually
+binary. So whatever you are reading always describes the `wain` you actually
 have.
 
-`dray update --force` installs the newest release even when it is the one you
+`wain update --force` installs the newest release even when it is the one you
 have, which repairs a damaged binary. A beta build updates to betas and a stable
 one to stable releases; `--channel beta` or `--channel stable` switches.
 
-On a Mac with the Dray app, the app ships this CLI and puts it in
-`~/.local/bin` each launch, so `dray update` there says so and does nothing.
+On a Mac with the Wain app, the app ships this CLI and puts it in
+`~/.local/bin` each launch, so `wain update` there says so and does nothing.
 Updating the app is how the CLI moves.
 
 The app and this CLI ship separately, so they can drift. When they disagree about
@@ -700,10 +700,10 @@ one is new — rather than doing something you cannot see is wrong. You do not n
 to know which flags need which version: run the command, and if the two disagree
 you get a refusal naming the cure. There are only two:
 
-- *"this dray CLI speaks protocol vN, the app speaks vM — run `dray update`"* —
+- *"this wain CLI speaks protocol vN, the app speaks vM — run `wain update`"* —
   you are behind. Run it, then retry the command. This is the common case and
   you can fix it yourself, in one step, without asking anyone.
-- *"… — update the Dray app"* — the **app** is behind. You cannot fix this from
+- *"… — update the Wain app"* — the **app** is behind. You cannot fix this from
   here. Say so to the user, name the command you were trying to run, and stop.
   Do not work around it.
 
@@ -712,17 +712,17 @@ nothing was sent, so retrying after the fix is safe.
 
 ## When a command cannot reach the app
 
-Every `dray` command reaches the app over a unix socket — `ls` as much as `new` —
+Every `wain` command reaches the app over a unix socket — `ls` as much as `new` —
 so a failure to connect is one of three things, and the line tells you which.
 
-- **`permission denied reaching Dray at …`** — something blocked the connection,
+- **`permission denied reaching Wain at …`** — something blocked the connection,
   usually a sandbox. If this command is sandboxed, retry this one command with
   escalated permissions; ask on that command alone, never for a sandbox-free
   shell. A retry refused the same way is the socket path's own permissions, which
   no escalation fixes — say so and name the path.
-- **`Dray isn't running. Start the app and try again.`** — the app is closed and
+- **`Wain isn't running. Start the app and try again.`** — the app is closed and
   you cannot fix it from here. Only this sentence means that.
-- **`could not connect to Dray at …`** — the line names its own reason. Report it
+- **`could not connect to Wain at …`** — the line names its own reason. Report it
   as written; it says nothing about whether the app is up.
 
 Nothing was created and nothing was sent in any of the three, so retrying after
@@ -730,12 +730,12 @@ the cure is safe.
 
 ## Limits
 
-- **`dray` does not write to the tracker.** Tagging records the link on the
+- **`wain` does not write to the tracker.** Tagging records the link on the
   session and nothing else: no status change, no comment, no attachment. If the
   user wants the issue moved or commented on, do it through the tracker's own
   MCP server. (The app's own issue panel has status and priority menus, but they
   are the user's to click — nothing here reaches them.)
-- **The browser is the session's own.** `dray browser` reaches the tabs of the
+- **The browser is the session's own.** `wain browser` reaches the tabs of the
   session running it and nothing else; downloads, file pickers and native
   dialogs are out of reach.
 - **No reading transcripts.** You can create, list and message. You cannot read
@@ -746,11 +746,11 @@ the cure is safe.
 - **Two levels deep.** A session you create may create sessions of its own; those
   may not. If you hit this, say so — the user can start the next batch from a
   top-level session.
-- **Dray must be running.** If it is not, `dray` says so in those words and
+- **Wain must be running.** If it is not, `wain` says so in those words and
   exits non-zero. Only that sentence means it — see above, and do not read any
   other connection failure as the app being down.
 - **Nothing updates itself.** A CLI too old for the app is refused with a line
-  saying so; `dray update` is how that gets fixed. If the refusal says the *app*
+  saying so; `wain update` is how that gets fixed. If the refusal says the *app*
   is behind, tell the user — you cannot update it from here. Updating the app
   first is the smoother order for exactly that reason: it leaves the CLI behind,
   which is the half that can fix itself.
