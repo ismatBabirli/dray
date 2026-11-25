@@ -123,7 +123,9 @@ struct IslandView: View {
         // faded the old card out at full height beside the new one and the panel overshot.
     }
 
-    private var composerCard: some View {
+    /// What the card holds. The card is built in four parts (this, `cardFill`, `cardFace`,
+    /// `composerCard`) because Xcode 26 gave up type-checking it as one expression (Wain).
+    private var cardContent: some View {
         VStack(alignment: .leading, spacing: 8) {
             if recording, composer.mode == .compact {
                 recordingBar
@@ -136,6 +138,17 @@ struct IslandView: View {
                 draft
             }
         }
+    }
+
+    private var cardFill: some View {
+        shape.fill((denied ? Color.red : .black).opacity(bare ? 0 : 1))
+            // Keeps the edge visible on an all-black screen.
+            .overlay { outline.stroke(.white.opacity(bare ? 0 : 0.12), lineWidth: 0.5) }
+            .padding(.horizontal, composer.placement == .notch ? -NotchShape.ear : 0)
+    }
+
+    private var cardFace: some View {
+        cardContent
         .padding(12)
         .padding(.top, composer.notchHeight)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -154,12 +167,7 @@ struct IslandView: View {
         }
         .animation(.easeOut(duration: 0.15), value: composer.viewing)
         // Faded rather than removed, so it animates.
-        .background {
-            shape.fill((denied ? Color.red : .black).opacity(bare ? 0 : 1))
-                // Keeps the edge visible on an all-black screen.
-                .overlay { outline.stroke(.white.opacity(bare ? 0 : 0.12), lineWidth: 0.5) }
-                .padding(.horizontal, composer.placement == .notch ? -NotchShape.ear : 0)
-        }
+        .background { cardFill }
         .shadow(color: .black.opacity(bare ? 0 : 0.35), radius: 12, y: 4)
         // What the orb leaves behind, fill and all, fades rather than blinking out.
         .animation(.easeOut(duration: 0.2), value: recording)
@@ -174,6 +182,10 @@ struct IslandView: View {
                     .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
         }
+    }
+
+    private var composerCard: some View {
+        cardFace
         .scaleEffect(dropping ? 1.04 : 1)
         .animation(.spring(duration: 0.3, bounce: 0.45), value: dropping)
         // The card growing — the transcript shown, the expanded layout — swells it past its

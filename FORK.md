@@ -22,6 +22,7 @@ Wain is a renamed fork of Dray (`monorepo-labs/dray`). `CLAUDE.md` below is upst
 - **No Greptile colour** (`pluginBrand.ts`), no upstream PostHog key (the docs read `DOCS_POSTHOG_KEY`), and the updater trusts only Wain's key; its private half is in `~/projects/infra/services/wain/.env`, encrypted.
 - **No onboarding song.** Upstream's sings "Welcome to Dray", so Wain deleted the mp3 and made `startOnboardingMusic` do nothing (`welcomeSounds.ts`). A sync that changes the song conflicts there; keep Wain's side.
 - **Apple team `FBH9JL8MB9`** (Ismat's) replaces upstream's by a `rebrand.mjs` rule.
+- **`IslandView.composerCard` is split in four** (`cardContent`, `cardFill`, `cardFace`, `composerCard`). GitHub's Xcode 26 gave up type-checking it whole, which stopped the release; upstream builds on a newer Xcode and never sees it. On a sync conflict there, keep the split and carry upstream's change into it.
 - **`wain upload` doesn't work yet**: it posts to upstream's upload worker. Attach screenshots to the PR through GitHub instead.
 - **The `Claude Code Review` Action runs only once its secret is set on `ismatbabirli/wain`.** Until then, review in the session (`/code-review`) before asking for a merge.
 - **The `caveman-commit` skill isn't installed.** Write commit messages by hand: a short plain subject, then why.
