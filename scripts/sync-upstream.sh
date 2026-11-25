@@ -22,7 +22,9 @@ BRANCH="${UPSTREAM_BRANCH:-main}"
 WAIN_BRANCH="${WAIN_BRANCH:-main}"
 TARGET="refs/heads/upstream-renamed"
 
-git fetch -q "$REMOTE" "$BRANCH"
+# Upstream's release tags name Wain's versions too (FORK.md); on Dray's commits they
+# would block, or worse precede, Wain's own. The remote's tagOpt alone let them in.
+git fetch -q --no-tags "$REMOTE" "$BRANCH"
 U=$(git rev-parse "$REMOTE/$BRANCH")
 PREV=$(git rev-parse -q --verify "$TARGET" || true)
 
