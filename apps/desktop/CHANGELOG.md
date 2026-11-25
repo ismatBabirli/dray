@@ -27,6 +27,16 @@ reads:
   to a line or two. A release with no highlights for an app gets the small
   card there instead, when it carries `notify`.
 
+## 0.34.3 · 2026-11-25
+
+### Improved
+
+- **Onboarding has its own song.** "Welcome to Wain" starts with the
+  logo, reaches full volume a few seconds in and plays to its end, even
+  past sign-in. A speaker button at the top right of the Wain Bot step
+  and the sign-in page mutes it, and plays it again once it ends. The
+  logo's shimmer is louder too.
+
 ## 0.34.2 · 2026-11-25
 
 ### Improved
