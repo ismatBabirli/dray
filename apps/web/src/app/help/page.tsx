@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Closing } from "@/components/home/Closing";
 import { CARD, CARD_BODY, CARD_TITLE, LABEL } from "@/components/home/Section";
 import { SiteNav } from "@/components/home/SiteNav";
-import { FEEDBACK, REPO, SUPPORT_EMAIL } from "@/lib/links";
+import { REPO, SUPPORT_EMAIL } from "@/lib/links";
 
 export const metadata: Metadata = {
   title: "Help - Wain",
@@ -64,13 +64,10 @@ export default function HelpPage() {
             <Card
               label="Email"
               title="Write to us."
-              body="For anything you'd rather not post in public, such as deleting your account. Yogesh, who builds Wain, reads every one."
+              body="For anything you'd rather not post in public, such as deleting your account. A person reads every one."
             >
               <a href={`mailto:${SUPPORT_EMAIL}`} className={BUTTON}>
                 {SUPPORT_EMAIL}
-              </a>
-              <a href={FEEDBACK} target="_blank" rel="noopener noreferrer" className={BUTTON}>
-                @yogesharc on X
               </a>
             </Card>
             <Card

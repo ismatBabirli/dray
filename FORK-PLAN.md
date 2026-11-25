@@ -78,7 +78,7 @@ Separate bundle IDs, launchd label, home dir and CLI name mean `Wain` and Dray c
 
 The script renames paths, not pixels. New artwork is needed for: the desktop icons (`apps/desktop/src-tauri/icons`), the iOS AppIcon, Android mipmaps, Dray Island, web favicons and OG images, and the docs logo. Also any SVG that draws the word "Dray".
 
-**Words about real people are not scriptable either, and the rename makes them false.** Found on the first renamed tree (25 Nov 2026). Until these change, nothing deploys or ships:
+**Words about real people are not scriptable either, and the rename makes them false.** Found on the first renamed tree (25 Nov 2026), all fixed on `wain` the same day except the legal pages, which need Ismat's own wording. Also removed: upstream's sponsor checkout (Dodo links that paid upstream), its App Store id and company name. The list, kept so a sync that brings one back is recognised:
 
 - **Founder and contact:** onboarding says "Yogesh, Founder of Wain" (`apps/desktop/src/components/onboarding/Onboarding.tsx`). Settings, the site's help and support pages, and `apps/web/src/lib/links.ts` point at `x.com/yogesharc` and ask for support "so Yogesh can keep building".
 - **Sponsors:** Guillermo Rauch / Vercel OSS Grants are credited as sponsors (`README.md`, `SettingsPage.tsx`, `home/Hero.tsx`, `home/Support.tsx`, `SponsorLink.tsx`). They sponsor Dray, not Wain.
@@ -99,12 +99,12 @@ The script renames paths, not pixels. New artwork is needed for: the desktop ico
 ## 7. Order of work
 
 1. **Claim the name (you).** ~~Register `wainhq.com`~~ (done 25 Nov 2026, on Cloudflare); `wain.dev` as a guard. Rename the GitHub repo to `ismatBabirli/wain` and run `gh repo set-default`.
-2. **Rebrand and sync scripts.** Rename current upstream, all tests pass, the dev app runs under the new name. Create `upstream-renamed` and `main` from it. Add `apps/web/Dockerfile` (root build context, `ARG NEXT_PUBLIC_SITE_URL`, `pnpm db:migrate` before `next start`, port 3000).
-3. **Service ties.** Updater key, URLs, analytics, Cloud off.
+2. **Rebrand and sync scripts.** Done 25 Nov 2026 (`6dc8eec`): renamed tree passes the full suite bar two git tests that fail only under a signed-tags git config, the dev app opens as Wain-dev, `apps/web/Dockerfile` builds and serves.
+3. **Service ties.** Done on `wain`: Wain's own updater key (private half in infra, encrypted), no upstream PostHog key in the docs, no Greptile colour, Cloud already off in the app. Left for releases: R2 downloads, GitHub Pages manifests, the repo secrets.
 4. **Account site live at `wainhq.com`.** Infra, DNS and both OAuth clients are done. Left: the words-about-real-people pass (section 5), then the first `deploy-wain.sh` run, turn auto-deploy on, publish Google's consent screen. Release builds stop at sign-in, so this comes before any release.
 5. **First release: desktop and CLI.** Secrets, Apple signing, a `v0.1.0-beta.1` on our repo. Install it, publish `beta.2`, and confirm it updates itself.
-6. **Brand assets, site and docs.**
-7. **Rewrite `CLAUDE.md`.**
+6. **Brand assets, site and docs.** Logo in place on desktop (all icon sets), site (icon, Apple icon, social image, wordmark) and docs (logo, icon), all from `brand/build.py`. Left: the site's hero screenshots and the brand video still show Dray's window; iOS, Android and Island marks with the mobile apps.
+7. **Rewrite `CLAUDE.md`.** Done as `FORK.md`, imported by `CLAUDE.md`'s first line, so upstream's edits to `CLAUDE.md` keep merging.
 8. Our own features, on `main`.
 
 iOS and Android are renamed with everything else so they keep building, and ship in a later release.

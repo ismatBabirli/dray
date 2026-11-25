@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 
 import { Closing } from "@/components/home/Closing";
 import { SiteNav } from "@/components/home/SiteNav";
-import { Support } from "@/components/home/Support";
-import { fetchStars } from "@/lib/github";
 import { DOWNLOAD } from "@/lib/links";
 
 import { StartDownload, SupportLink } from "@/app/download/client";
@@ -16,11 +14,9 @@ export const metadata: Metadata = {
 };
 
 /// Where the Download for macOS buttons land: the dmg starts on its own, and
-/// the wait is spent on the one ask the site makes and the free ways to help.
+/// upstream's sponsor ask is gone (FORK-PLAN.md §5), so it only says thanks.
 /// `/download` itself lists every platform and asks for nothing.
-export default async function DownloadThanks() {
-  const stars = await fetchStars();
-
+export default function DownloadThanks() {
   return (
     <div
       data-home
@@ -46,10 +42,6 @@ export default async function DownloadThanks() {
               </a>
               .
             </p>
-          </div>
-
-          <div className="mt-12">
-            <Support from="download" stars={stars} />
           </div>
         </div>
       </header>

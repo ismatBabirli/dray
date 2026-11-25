@@ -505,13 +505,3 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
----
-
-## Greptile
-
-<https://www.greptile.com>
-
-A trademark note, not a licence. Wain marks a prompt running a Greptile command
-with Greptile Green (`#28e99f`, from <https://www.greptile.com/design>). The
-colour identifies Greptile's own commands and nothing else. It is used with
-their permission. No Greptile artwork is used.

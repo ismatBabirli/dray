@@ -5,9 +5,7 @@ import { Faq } from "@/components/home/Faq";
 import { Features } from "@/components/home/Features";
 import { Hero } from "@/components/home/Hero";
 import { Island } from "@/components/home/Island";
-import { Proof } from "@/components/home/Proof";
 import { Subscriptions } from "@/components/home/Subscriptions";
-import { Testimonials } from "@/components/home/Testimonials";
 import { COMPANY, DOWNLOAD, REPO } from "@/lib/links";
 
 // Hardcoded, not `siteUrl`: a preview deploy must still name the real site.
@@ -23,7 +21,7 @@ const SCHEMA = JSON.stringify({
       name: COMPANY,
       url: SITE,
       logo: `${SITE}/icon.png`,
-      sameAs: [REPO, "https://x.com/wain_hq"],
+      sameAs: [REPO],
     },
     {
       "@type": "SoftwareApplication",
@@ -49,13 +47,13 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SCHEMA }} />
       <Hero />
       <main>
+        {/* Upstream's Proof (its author's own numbers) and Testimonials (people
+            praising Dray) are not Wain's to show. */}
         <Bots />
-        <Proof />
         <Everywhere />
         <Subscriptions />
         <Island />
         <Features />
-        <Testimonials />
         <Faq />
       </main>
       <Closing />

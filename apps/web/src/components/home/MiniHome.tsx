@@ -36,7 +36,6 @@ export function MiniHome() {
             </div>
             <div className="flex h-10 border-r border-b border-white/20 light:border-black/15">
               <span className={`${CELL} w-[72px]`}>Docs</span>
-              <span className={`${CELL} w-24`}>Sponsor</span>
               <span className={`${CELL} w-20`}>
                 <GitHubGlyph className="size-3" />
                 GitHub

@@ -4,15 +4,10 @@ A desktop home for your coding agents. Wain wraps coding-agent CLIs (Claude
 Code, Codex, pi, fx, Grok) in a native chat UI. Run many sessions at once. Each gets
 its own worktree, diff view, PR panel, issue panel and embedded browser.
 
-## Sponsors
-
-- [Guillermo Rauch](https://x.com/rauchg), Vercel CEO, through his
-  [OSS Grants](https://rauchg-oss-grants.vercel.app/) programme.
-- [Greptile](https://www.greptile.com/), AI code reviews, free for open source.
-
-[![Greptile: The War on Bugs](https://www.greptile.com/badge.svg)](https://www.greptile.com/?utm_source=oss_badge&utm_medium=readme&utm_campaign=greptile_for_open_source)
-
-Want to sponsor Wain? [wainhq.com/support](https://www.wainhq.com/support)
+Wain is based on [Dray](https://github.com/monorepo-labs/dray) by Yogesh
+Dhakal, under the Apache License 2.0; see [NOTICE](NOTICE). Upstream's code is
+renamed by [scripts/rebrand.mjs](scripts/rebrand.mjs) on every sync, as
+[FORK-PLAN.md](FORK-PLAN.md) explains.
 
 ## Layout
 

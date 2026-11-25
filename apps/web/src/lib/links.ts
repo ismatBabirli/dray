@@ -10,39 +10,21 @@ export const DOWNLOAD = "https://downloads.wainhq.com/Wain_universal.dmg";
 /// itself, so this line never needs a version in it.
 export const INSTALL_LINE = "curl -fsSL https://www.wainhq.com/install.sh | sh";
 
-/// The iPhone app on the App Store.
-export const APP_STORE = "https://apps.apple.com/app/id6824145317";
+/// The iPhone app on the App Store. Empty until Wain's own is published: the
+/// id that was here was upstream's app, and every iPhone link hides while this is "".
+export const APP_STORE = "";
 
-/// The person who builds it, on X — the nav's "Feedback" link and the
-/// footer's mark both. Most visitors arrive from a tweet, so this is the
-/// channel they are already on.
-///
-/// The product's own account (`x.com/wain_hq`) was here too and the footer
-/// pointed at it. It posts releases; somebody who reaches the bottom of this
-/// page is looking for a person, so both now go to the same place and there
-/// is no second constant to keep.
-export const FEEDBACK = "https://x.com/yogesharc";
+/// Where feedback goes: the repo's issues, until Wain has a social account of its own.
+export const FEEDBACK = `${REPO}/issues`;
 
-export const COMPANY = "Monorepo Labs";
+export const COMPANY = "Wain";
 
 /// Where people write for help, and where account deletion requests go.
 export const SUPPORT_EMAIL = "support@wainhq.com";
 
-/// Where the next sponsor signs up: the site's own page, which sends them on
-/// to Dodo's checkout.
-export const SPONSOR = "/support";
-
-/// Dodo checkout for a one-time gift. `paymentAmount` is whole dollars, not
-/// cents, measured against the live link; Dodo raises anything under $5.
-export const GIVE_ONCE = "https://checkout.dodopayments.com/buy/pdt_0Nr3TIt1S5EknDdqXtkz6?quantity=1&showDiscounts=false";
-
-/// Dodo's monthly plans, cheapest first.
-export const MONTHLY = [
-  { name: "Coffee", price: "$9.99", href: "https://checkout.dodopayments.com/buy/pdt_0Nr3TUpvqIitzXs9Fu8iH?quantity=1&showDiscounts=false" },
-  { name: "Supporter", price: "$19.99", href: "https://checkout.dodopayments.com/buy/pdt_0Nr3U3A56BDcjWAanib29?quantity=1&showDiscounts=false" },
-  { name: "Angel", price: "$100", href: "https://checkout.dodopayments.com/buy/pdt_0Nr3U7XSvvd1wQR7RifpC?quantity=1&showDiscounts=false" },
-] as const;
+// No sponsor checkout: upstream's Dodo products paid upstream, so the support
+// page, its links and the Support component were removed (FORK-PLAN.md §5).
 
 /// What the nav shows when GitHub cannot be asked. Bump it now and then so a
 /// rate-limited render does not undercount by much.
-export const STARS_FALLBACK = 58;
+export const STARS_FALLBACK = 0;

@@ -9,6 +9,7 @@ import { posthog } from "@/lib/posthog";
 /// The closing band spells it out ("Download for iPhone"); the hero, three
 /// buttons wide, says "iPhone".
 export function IPhoneButton({ className, from }: { className: string; from: "hero" | "cta" }) {
+  if (!APP_STORE) return null;
   return (
     <a
       href={APP_STORE}

@@ -21,14 +21,11 @@ import { parseSlashCommand } from "@/lib/slash";
 /// session, which is why the installed command list is no help either.
 ///
 /// [AgentIcon]: ../components/AgentIcon.tsx
-const GREPTILE = "#28e99f"; // Greptile Green, from greptile.com/design.
-
-const PLUGIN_BRAND: Record<string, string> = {
-  greptile: GREPTILE,
-  greploop: GREPTILE,
-  "cli-review": GREPTILE,
-  "check-pr": GREPTILE,
-};
+///
+/// Empty in Wain: Greptile's green was used with their permission, which was
+/// given to Dray, not to this fork (FORK-PLAN.md §3). The mechanism stays for
+/// a vendor Wain itself agrees a colour with.
+const PLUGIN_BRAND: Record<string, string> = {};
 
 /// The brand colour a sent prompt's bubble carries, or `null` for every
 /// ordinary message.

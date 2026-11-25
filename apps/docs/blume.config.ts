@@ -25,9 +25,11 @@ export default defineConfig({
   // rewrite, reachable because the docs are served through wainhq.com.
   // `source` is registered through the snippet's queue, which replays before
   // the first pageview fires, so every docs event can be told from the site's.
-  analytics: [
+  // The key is read at build: upstream's project key was written here, and a
+  // fork that kept it sent its readers to upstream's analytics. Unset, none.
+  analytics: process.env.DOCS_POSTHOG_KEY ? [
     posthog({
-      key: "phc_kLtmvfyx2NtnooMrHzqLhxmzRTHxbPEnfKmxbbTNkDdM",
+      key: process.env.DOCS_POSTHOG_KEY,
       host: "/ingest",
       ui_host: "https://us.posthog.com",
       persistence: "localStorage+cookie",
@@ -37,7 +39,7 @@ export default defineConfig({
       person_profiles: "identified_only",
     }),
     script({ content: 'posthog.register({ source: "docs" });' }),
-  ],
+  ] : [],
   agents: {
     llmsTxt: {
       details:

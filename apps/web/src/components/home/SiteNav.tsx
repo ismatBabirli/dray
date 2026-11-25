@@ -2,7 +2,7 @@ import Link from "next/link";
 import { GitHubGlyph } from "@/components/GitHubGlyph";
 import { Wordmark } from "@/components/Wordmark";
 import { fetchStars, formatStars } from "@/lib/github";
-import { REPO, SPONSOR } from "@/lib/links";
+import { REPO } from "@/lib/links";
 import { SchemeToggle } from "./SchemeToggle";
 
 const NAV_CELL =
@@ -30,9 +30,6 @@ export async function SiteNav({ bare = false, current }: { bare?: boolean; curre
             client-side routing has nothing to route to. */}
         <a href="/docs" className={`${NAV_CELL} hidden w-[72px] sm:flex`}>
           Docs
-        </a>
-        <a href={SPONSOR} className={`${NAV_CELL} hidden w-24 sm:flex`}>
-          Support
         </a>
         <a
           href={REPO}

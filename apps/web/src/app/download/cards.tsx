@@ -93,6 +93,7 @@ export function DownloadCards() {
         <CopyCommand />
       </Card>
 
+      {APP_STORE && (
       <Card art={<PhoneGlyph className={ART} />} name="iPhone" line="iOS 17 or later.">
         <a
           href={APP_STORE}
@@ -110,6 +111,7 @@ export function DownloadCards() {
           </svg>
         </a>
       </Card>
+      )}
     </div>
   );
 }

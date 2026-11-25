@@ -6,7 +6,7 @@ import { DownloadButton, IPhoneButton } from "@/components/DownloadButton";
 import { LinuxMenu } from "@/components/LinuxMenu";
 import { CARD_TITLE, LABEL as LABEL_TYPE, Title } from "@/components/home/Section";
 import { Stripes } from "@/components/home/Stripes";
-import { FEEDBACK, INSTALL_LINE, REPO, SPONSOR } from "@/lib/links";
+import { INSTALL_LINE, REPO } from "@/lib/links";
 
 const LABEL = `${LABEL_TYPE} text-white/70`;
 
@@ -15,11 +15,9 @@ const LINKS = [
   { label: "Changelog", href: "/changelog" },
   { label: "llms.txt", href: "/llms.txt" },
   { label: "GitHub", href: REPO, out: true },
-  { label: "X", href: FEEDBACK, out: true },
   { label: "Help", href: "/help" },
   { label: "Privacy", href: "/docs/reference/privacy" },
   { label: "Terms", href: "/docs/reference/terms" },
-  { label: "Sponsor", href: SPONSOR },
 ];
 
 /// The last blue band: the closing line, both ways in, and the footer.

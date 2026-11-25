@@ -13,13 +13,12 @@ import {
   NewspaperIcon,
   ServerStackIcon,
 } from "@heroicons/react/16/solid";
-import { ArrowLeft, Check, ChevronDown, Heart, RotateCcw, Star } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, RotateCcw, Star } from "lucide-react";
 
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 import AppIcon from "@/components/AppIcon";
 import LinearIcon from "@/components/LinearIcon";
-import rauchgAvatar from "@/assets/avatars/rauchg.jpg";
 import type { PanelSide } from "@/components/RightPanel";
 import ShortcutKeys from "@/components/ShortcutKeys";
 import TabButton from "@/components/TabButton";
@@ -84,21 +83,12 @@ import type {
   UpdateStatus,
 } from "@/types/events";
 
-/// Where feedback and support go. Issues lead, since a report filed there is one
-/// the next person with the same bug can find; a direct message is beside it for
-/// what an issue is too heavy for.
-const CONTACT_URL = "https://x.com/yogesharc";
+/// Where Wain comes from, credited in About (NOTICE says the same).
+const UPSTREAM_URL = "https://github.com/monorepo-labs/dray";
 const REPO_URL = "https://github.com/ismatbabirli/wain";
 const ISSUES_URL = `${REPO_URL}/issues/new`;
-// The landing page's own link, so both ask through one door.
-const SPONSOR_URL = "https://www.wainhq.com/support";
-
-/// People who sponsor Wain, drawn in About — the landing page's "Supported by"
-/// list, kept in step by hand. Avatars are bundled rather than fetched, so the
-/// row is whole offline; without one it carries an initial.
-const SUPPORTERS: { name: string; note: string; url: string; avatar?: string }[] = [
-  { name: "Guillermo Rauch", note: "Vercel CEO · OSS Grants", url: "https://x.com/rauchg", avatar: rauchgAvatar },
-];
+/// People who sponsor Wain, drawn in About. Empty: upstream's sponsors back Dray, not Wain.
+const SUPPORTERS: { name: string; note: string; url: string; avatar?: string }[] = [];
 
 /// The app's preferences, such as they are.
 ///
@@ -289,14 +279,15 @@ export default function SettingsPage({
               <ContactBlock />
             </Section>
             <p className="text-ui text-muted-foreground">
-              Made by{" "}
+              Based on{" "}
               <button
                 type="button"
-                onClick={() => void openUrl(CONTACT_URL)}
+                onClick={() => void openUrl(UPSTREAM_URL)}
                 className="cursor-pointer text-foreground underline-offset-4 hover:underline"
               >
-                Yogesh
-              </button>
+                Dray
+              </button>{" "}
+              by Yogesh Dhakal
             </p>
           </>
         ),
@@ -1036,9 +1027,6 @@ function ContactBlock() {
         <Button variant="secondary" size="sm" onClick={() => void openUrl(ISSUES_URL)}>
           Open an issue
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => void openUrl(CONTACT_URL)}>
-          Message me
-        </Button>
       </div>
     </div>
   );
@@ -1052,14 +1040,10 @@ function SupportBlock() {
   return (
     <div className="flex flex-col gap-2.5">
       <p className="text-ui text-muted-foreground">
-        Wain is free and open source. Sponsoring or starring the repo keeps it going.
+        Wain is free and open source. Starring the repo helps other people find it.
       </p>
       <div className="flex items-center gap-1.5">
-        <Button variant="secondary" size="sm" onClick={() => void openUrl(SPONSOR_URL)}>
-          <Heart />
-          Sponsor
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => void openUrl(REPO_URL)}>
+        <Button variant="secondary" size="sm" onClick={() => void openUrl(REPO_URL)}>
           <Star />
           Star on GitHub
         </Button>

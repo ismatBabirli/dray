@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+@FORK.md
+
 File give Claude Code (claude.ai/code) guidance for work with code in this repo.
 
 ## Working practices

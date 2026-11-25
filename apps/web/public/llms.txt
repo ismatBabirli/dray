@@ -19,15 +19,10 @@
 - Is Wain safe to use with a Claude subscription? Yes. Wain runs Anthropic's own Claude Code CLI, so it works within Anthropic's terms.
 - Does Wain run on Linux? Yes. The Linux app is in beta: a .deb for Debian and Ubuntu, or an AppImage for other distros with glibc 2.35 or newer, on x64 and arm64. Wain also runs as a server on Linux.
 
-## Sponsored by
-
-- Guillermo Rauch, CEO of Vercel, through his [OSS Grants](https://rauchg-oss-grants.vercel.app/).
-
 ## Links
 
 - [Download for Mac](https://downloads.wainhq.com/Wain_universal.dmg)
 - [All downloads](https://www.wainhq.com/download): Mac, Linux (beta: .deb and AppImage, x64 and arm64) and the server.
-- [iPhone app on the App Store](https://apps.apple.com/app/id6824145317)
 - [Install on a server](https://www.wainhq.com/install.sh): `curl -fsSL https://www.wainhq.com/install.sh | sh`
 - [GitHub](https://github.com/ismatbabirli/wain)
 - [Docs](https://www.wainhq.com/docs)
