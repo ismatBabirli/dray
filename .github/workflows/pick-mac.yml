@@ -3,7 +3,8 @@
 # pool runs short often enough to cancel whole releases, and the release Mac
 # never queues.
 #
-# The repo variable MAC_RUNNER overrides the check: `local` or `github`. Without
+# The repo variable MAC_RUNNER overrides the check: `local` or `github`, or (Wain)
+# any GitHub label, such as `macos-15-intel` while the arm64 pool runs short. Without
 # it, the runners API decides. That API needs a token with Administration: read
 # (RUNNER_STATUS_TOKEN), since GITHUB_TOKEN cannot list runners; a missing or
 # failing token reads as offline, so the fallback is always GitHub.
@@ -46,6 +47,7 @@ jobs:
             echo 'mac=["self-hosted","wain-mac"]' >> "$GITHUB_OUTPUT"
             echo "Mac jobs: release Mac"
           else
-            echo 'mac="macos-latest"' >> "$GITHUB_OUTPUT"
+            case "$FORCE" in ""|github|local) label=macos-latest ;; *) label="$FORCE" ;; esac
+            echo "mac=\"$label\"" >> "$GITHUB_OUTPUT"
             echo "Mac jobs: GitHub"
           fi

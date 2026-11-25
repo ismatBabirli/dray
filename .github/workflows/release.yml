@@ -249,7 +249,9 @@ jobs:
             mkdir -p "$T"
             CLI="$(realpath apps/desktop/node_modules/@tauri-apps/cli)"
             cp -R "$CLI" "$T/cli"
-            cp -R "$(realpath "$CLI/../cli-darwin-arm64")" "$T/cli-darwin-arm64"
+            # Wain: the host's own binary, since MAC_RUNNER can pick an Intel Mac (pick-mac.yml).
+            P="cli-darwin-$([ "$(uname -m)" = arm64 ] && echo arm64 || echo x64)"
+            cp -R "$(realpath "$CLI/../$P")" "$T/$P"
             FILES+=(target/tauri-cli)
           fi
           tar -cf "$RUNNER_TEMP/build.tar" -C apps/desktop/src-tauri "${FILES[@]}"
