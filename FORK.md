@@ -30,6 +30,8 @@ Wain is a renamed fork of Dray (`monorepo-labs/dray`). `CLAUDE.md` below is upst
 
 - **Versions follow upstream's**: Wain's `vX.Y.Z` and `cli-vX.Y.Z` are upstream's numbers on Wain's code, so a version bump never conflicts on a sync. Tag Wain's own commit, never upstream's tag of the same name: the `upstream` remote is set to `--no-tags` so its tags stay out of this clone.
 - **`CLI_PUBLISH_GATE=off`** (a repo variable) lets a CLI release publish without waiting for the app release that speaks its protocol. It was set for the first CLI release, before any app release existed. Delete it (`gh variable delete CLI_PUBLISH_GATE`) once the app has shipped, so the gate guards later releases again.
+- **Downloads** go to the R2 bucket `wain-downloads`, served at `downloads.wainhq.com`. Infra's `scripts/r2-wain.sh` made it and the upload key behind the `R2_*` secrets. **Update manifests** live on the `updates` branch, served by Pages at `ismatbabirli.github.io/wain`. Only the release writes them.
+- **Windows ships unsigned** (`RELEASE_WINDOWS=true`, no `WINDOWS_SIGN_COMMAND`) until there is a certificate, so SmartScreen warns on first run.
 
 ## The site
 
