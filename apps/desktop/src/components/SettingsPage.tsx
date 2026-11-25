@@ -1553,7 +1553,7 @@ function SettingsTabs({
               </TooltipContent>
             </Tooltip>
           </div>
-          <WindowControls />
+          <WindowControls padded />
         </header>
       }
       sidebar={

@@ -59,7 +59,7 @@ function providerToken(): string {
   if (held && now - held.at < 50 * 60) return held.jwt;
   const part = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
   const unsigned = `${part({ alg: "ES256", kid: process.env.APNS_KEY_ID })}.${part({
-    iss: process.env.APNS_TEAM_ID || "7WYP3LRDL8",
+    iss: process.env.APNS_TEAM_ID || "FBH9JL8MB9",
     iat: now,
   })}`;
   // An env var often carries the .p8's newlines escaped.
