@@ -64,6 +64,11 @@ echo "upstream-renamed → ${C:0:12} (upstream ${U:0:12})"
 CURRENT=$(git symbolic-ref --short -q HEAD || true)
 if [[ "$CURRENT" == "$WAIN_BRANCH" ]] && git diff --quiet && git diff --cached --quiet; then
   git merge --no-edit upstream-renamed
+  # GitHub refuses any action not pinned to a full commit SHA here (FORK.md "Repo safety").
+  if unpinned=$(grep -rnE "uses:[[:space:]]*[^.[:space:]][^@[:space:]]*@" .github | grep -vE "@[0-9a-f]{40}([[:space:]]|$)"); then
+    echo "WARN: upstream brought in actions not pinned to a commit SHA; pin them or their workflows fail:"
+    echo "$unpinned"
+  fi
 else
   echo "next: git switch $WAIN_BRANCH && git merge upstream-renamed"
 fi
