@@ -87,6 +87,8 @@ enum Picks {
     static let defaultEffort = "high"
     /// `AGENT_LABELS`.
     static let agentLabels = ["claude_code": "Claude Code", "codex": "Codex", "pi": "pi", "fx": "fx", "grok": "Grok"]
+    /// Where a chip has room for one word: Home's usage chips.
+    static let agentShort = ["claude_code": "Claude"]
     static let effortLabels = ["low": "Low", "medium": "Medium", "high": "High", "xhigh": "Extra High", "max": "Max", "ultra": "Ultra"]
     static let stances = [("bypassPermissions", "Bypass permissions"), ("manual", "Ask every time"), ("plan", "Plan"), ("auto", "Auto")]
 

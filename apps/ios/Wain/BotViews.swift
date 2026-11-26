@@ -9,6 +9,13 @@ extension BotFace {
     }
 }
 
+/// A bot's face as a bitmap: a menu or a sidebar draws only an image as an item's icon, never a Canvas.
+@MainActor func faceImage(_ bot: Bot, size: CGFloat, scale: CGFloat) -> Image {
+    let r = ImageRenderer(content: BotFace(bot: bot, size: size))
+    r.scale = scale
+    return r.uiImage.map { Image(uiImage: $0).renderingMode(.original) } ?? Image(systemName: "circle.fill")
+}
+
 struct OpenTaskKey: EnvironmentKey { static let defaultValue: ((SessionKey) -> Void)? = nil }
 /// Selects a session in the list: another bot's chat, from a chip in this one.
 struct OpenSessionKey: EnvironmentKey { static let defaultValue: ((SessionKey) -> Void)? = nil }
@@ -44,7 +51,7 @@ struct BotListRow: View {
         let unread = item?.status == "completed"
         let preview = chat.flatMap { store.previews[$0] }
         HStack(spacing: Theme.Space.m) {
-            BotFace(bot: bot, size: 48)
+            BotFace(bot: bot, size: 44)
                 .overlay(alignment: .bottomTrailing) { badge(asking: asking, unread: unread, replies: preview?.replies ?? 0) }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: Theme.Space.s) {
@@ -84,14 +91,14 @@ struct BotListRow: View {
     /// Ringed in the page's colour, the desktop's cut-out hole.
     @ViewBuilder private func badge(asking: Bool, unread: Bool, replies: Int) -> some View {
         if asking {
-            Circle().fill(Theme.accent).frame(width: 12, height: 12)
+            Circle().fill(Theme.accentFill).frame(width: 12, height: 12)
                 .overlay(Circle().stroke(Theme.page, lineWidth: 2.5))
                 .offset(x: 1, y: 0)
                 .accessibilityLabel("Waiting on you")
         } else if unread {
             Text(replies > 0 ? "\(replies)" : "")
                 .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                .foregroundStyle(Theme.text)
+                .foregroundStyle(Theme.onBadge)
                 .frame(minWidth: 18, minHeight: 18)
                 .background(Theme.unread, in: Capsule())
                 .overlay(Capsule().stroke(Theme.page, lineWidth: 2.5))
@@ -139,11 +146,11 @@ struct BotStart: Hashable {
     let bot: Bot
 }
 
-/// That bot's page before its first message: its greeting, and the dock aimed
-/// at its folder. The send starts the chat, which `started` opens in its place.
+/// That bot's page before its first message: its greeting, and the composer
+/// aimed at its folder. The send starts the chat, which `started` opens in its place.
 struct BotStartView: View {
     @Environment(Store.self) private var store
-    @Bindable var task: NewTask
+    @Environment(NewTask.self) private var task
     let server: UUID
     let bot: Bot
     let started: (SessionKey) -> Void
@@ -164,20 +171,34 @@ struct BotStartView: View {
             .padding(Theme.Space.l)
         }
         .defaultScrollAnchor(.bottom)
-        // The resting dock's height, as on the list: open, it covers the page.
-        .contentMargins(.bottom, 160, for: .scrollContent)
-        .overlay(alignment: .bottom) { VoiceDock(task: task, started: started) }
+        .scrollDismissesKeyboard(.interactively)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(alignment: .leading, spacing: Theme.Space.s) {
+                if let failure = task.failure {
+                    Text(sentence(failure)).font(Theme.Font.footnote).foregroundStyle(Theme.destructive)
+                        .padding(.leading, Theme.Space.xs)
+                }
+                Composer(draft: .newSession, placeholder: "Message \(bot.name)", sending: task.sending,
+                         canSend: task.ready && task.bot?.bot.id == bot.id,
+                         send: { Task { if let key = await task.start() { started(key) } } })
+            }
+            .padding(.horizontal, Theme.Space.m)
+            .padding(.vertical, Theme.Space.s)
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
+            .background(Theme.page.ignoresSafeArea())
+        }
         .page()
         .navigationBarTitleDisplayMode(.inline)
         .modifier(BareTopEdge(on: true))
         .toolbar { ToolbarItem(placement: .principal) { BotTitle(bot: bot) { editing = true } } }
         .sheet(isPresented: $editing) { BotSheet(editing: (server, bot)) }
-        // Re-aimed on every visit: a pick in the dock leaves the bot, and Back is not a send.
+        .task(id: "\(task.server?.uuidString ?? "")|\(task.harness)") { await task.load() }
+        // Re-aimed on every visit: a pick elsewhere leaves the bot, and Back is not a send.
         .onAppear { task.aim(at: bot, on: server) }
         .onDisappear {
             if task.bot?.bot.id == bot.id { task.bot = nil }
-            // The list draws no dock while sessions are hidden, so a recording left running
-            // would have no Stop: stopped and kept, as `ReplyDock` does, its words here next visit.
+            // Stopped and kept, as `ReplyDock` does, its words here next visit.
             if Dictations.shared.state(.newSession) == .recording {
                 Task { await Dictations.shared.stop(store, draft: .newSession) }
             }
@@ -701,7 +722,7 @@ struct MergeTaskButton: View {
         } label: {
             Text(merging ? "Merging…" : "Merge")
                 .font(Theme.Font.pill)
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onBadge)
                 .padding(.horizontal, 16)
                 .frame(height: 34)
                 .background(Theme.merge, in: Capsule())

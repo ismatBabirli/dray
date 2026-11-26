@@ -24,23 +24,28 @@ final class DesignTests: XCTestCase {
         fill(app, url: url, token: token, name: "Studio Mac")
         snap(app, "02-add-server")
         app.buttons["Add"].tap()
+        sleep(3)
+        snap(app, "03-home")
 
+        app.tab("Tasks")
         let row = app.staticTexts["Phone smoke"]
         XCTAssertTrue(row.waitForExistence(timeout: 15), "no session listed")
         // Marks need `gh` on the server's side.
         _ = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Pull request #'"))
             .firstMatch.waitForExistence(timeout: 30)
-        snap(app, "03-list")
-
-        app.buttons["Project filter"].tap()
-        snap(app, "04-project-menu")
-        app.buttons["wain-541-gh"].tap()
-        snap(app, "05-list-filtered")
-        app.buttons["Project filter"].tap()
-        app.buttons["All projects"].tap()
+        snap(app, "04-tasks")
+        let chip = app.buttons["wain-541-gh"]
+        if chip.exists {
+            chip.tap()
+            snap(app, "05-tasks-filtered")
+            app.buttons["All"].tap()
+        }
+        app.buttons["viewMenu"].tap()
+        snap(app, "05-view-menu")
+        app.buttons["Live"].tap()
 
         row.tap()
-        XCTAssertTrue(app.dock.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.composer.waitForExistence(timeout: 15))
         sleep(2)
         snap(app, "06-transcript")
         let fold = app.buttons.matching(NSPredicate(format: "label CONTAINS 'tool call'")).firstMatch
@@ -52,9 +57,8 @@ final class DesignTests: XCTestCase {
         app.swipeDown()
         app.swipeDown()
         snap(app, "08-transcript-top")
-        app.buttons["Keyboard"].tap()
-        app.textViews.firstMatch.typeText("Tighten the spacing on the session rows")
-        app.buttons["Done"].tap()
+        app.composer.tap()
+        app.composer.typeText("Tighten the spacing on the session rows")
         snap(app, "09-reply-typed")
         app.buttons["Local servers"].tap()
         sleep(3)
@@ -75,6 +79,9 @@ final class DesignTests: XCTestCase {
         }
         back(app)
 
+        app.buttons["machines"].tap()
+        XCTAssertTrue(app.staticTexts["Show tasks and bots from"].waitForExistence(timeout: 10))
+        snap(app, "14-machines")
         app.buttons["Settings"].tap()
         XCTAssertTrue(app.staticTexts["Connected"].waitForExistence(timeout: 10))
         snap(app, "14-settings")
@@ -83,17 +90,35 @@ final class DesignTests: XCTestCase {
         back(app)
         app.buttons["Done"].tap()
 
-        app.buttons["Keyboard"].tap()
-        let prompt = app.textViews["New task"]
+        app.tab("Bots")
+        sleep(1)
+        snap(app, "16-bots")
+        app.tab("Routines")
+        sleep(2)
+        snap(app, "17-routines")
+
+        app.tab("Home")
+        app.buttons["newTask"].tap()
+        let prompt = app.composer
         XCTAssertTrue(prompt.waitForExistence(timeout: 15))
+        prompt.tap()
         prompt.typeText("Add a dark mode toggle to the settings page")
-        snap(app, "16-new-task-typed")
+        snap(app, "18-new-task-typed")
+        app.buttons["row.Agent"].tap()
+        sleep(1)
+        snap(app, "19-run-with")
         app.buttons["Done"].tap()
+        app.buttons["Cancel"].tap()
+        app.buttons["Keep editing"].tap()
+        app.swipeDown(velocity: .fast)
+
+        // The same screens in the other appearance.
+        XCUIDevice.shared.appearance = .dark
         sleep(1)
-        snap(app, "17-new-task-ready")
-        app.buttons["Model"].firstMatch.tap()
-        sleep(1)
-        snap(app, "18-run-with")
+        snap(app, "20-home-dark")
+        app.tab("Tasks")
+        snap(app, "21-tasks-dark")
+        XCUIDevice.shared.appearance = .light
     }
 
     func testFailureStates() throws {
@@ -132,12 +157,12 @@ final class DesignTests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH \"Couldn't send\"")).firstMatch
             .waitForExistence(timeout: 15), "no failed-send note")
         snap(app, "31-failed-send")
-        app.buttons["Cancel"].tap()
-        app.buttons["Discard"].tap()
+        app.composer.tap()
+        app.composer.clearText()
 
-        app.descendants(matching: .any)["orb"].tap()
+        app.descendants(matching: .any)["mic"].tap()
         app.tap()  // lets the interruption monitor answer the microphone prompt
-        let stop = app.buttons["Done"]
+        let stop = app.buttons["dictationDone"]
         if stop.waitForExistence(timeout: 10) {
             sleep(2)
             snap(app, "32-recording")
@@ -149,16 +174,17 @@ final class DesignTests: XCTestCase {
         }
         back(app)
 
-        let orb = app.descendants(matching: .any)["orb"]
-        XCTAssertTrue(orb.waitForExistence(timeout: 15))
+        // The new task form's mic, over a list that failed to load.
         sleep(2)
-        snap(app, "35-dock-failed-load")
-        orb.tap()
-        if app.buttons["Done"].waitForExistence(timeout: 10) {
+        snap(app, "35-home-failed-load")
+        app.buttons["newTask"].tap()
+        let mic = app.descendants(matching: .any)["mic"]
+        XCTAssertTrue(mic.waitForExistence(timeout: 15))
+        mic.tap()
+        if app.buttons["dictationDone"].waitForExistence(timeout: 10) {
             sleep(2)
-            snap(app, "36-dock-recording")
-            app.buttons["Cancel"].tap()
-            app.buttons["Discard"].tap()
+            snap(app, "36-new-task-recording")
+            app.buttons["Cancel"].firstMatch.tap()
         }
     }
 

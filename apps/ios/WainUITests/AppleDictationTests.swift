@@ -22,7 +22,7 @@ final class AppleDictationTests: XCTestCase {
         XCTAssertTrue(add.waitForExistence(timeout: 10), "the link opened no add sheet")
         add.tap()
 
-        let orb = app.descendants(matching: .any)["orb"]
+        let orb = app.descendants(matching: .any)["mic"]
         XCTAssertTrue(orb.waitForExistence(timeout: 20), "keyboard mode where Apple can transcribe")
         sleep(2)
         snap(app, "1-list")

@@ -149,7 +149,7 @@ final class OpenAtBottomTests: XCTestCase {
             n.children.isEmpty ? (n.frame.width < 10 ? [] : [n]) : n.children.flatMap(drawn)
         }
         let lowest = drawn(tree).map(\.frame.maxY).max() ?? .nan
-        return app.buttons["orb"].frame.minY - lowest
+        return app.buttons["mic"].frame.minY - lowest
     }
 
     /// What the cache draws, replaced by a read that holds less: run `testHeldShrinks1`, append

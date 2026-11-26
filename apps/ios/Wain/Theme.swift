@@ -1,38 +1,40 @@
 import SwiftUI
 import UIKit
 
-/// Wain's one look on the phone: the desktop's Default dark palette, its one
-/// yellow and its radius scale, in sRGB. Dark only, forced at the root, so no
-/// colour here has a light twin. Every screen reads from this file and from
-/// nothing else, so a colour, size or radius is changed in one place.
+/// Wain's one look on the phone: the desktop's Default palette, its one yellow
+/// and its radius scale, in sRGB. Every colour has a dark value and a light one
+/// (Paper's `--color-phone-light-*`) and follows the system's appearance. Every
+/// screen reads from this file and from nothing else, so a colour, size or
+/// radius is changed in one place.
 enum Theme {
     // Surfaces, darkest first.
     /// `--background`: what everything sits on.
-    static let page = Color(hex: 0x0A0A0A)
+    static let page = Color(dark: 0x0A0A0A, light: 0xFFFFFF)
     /// `--surface-raised`: cut into a surface rather than raised from it — code and tool output.
-    static let well = Color(hex: 0x141414)
+    static let well = Color(dark: 0x141414, light: 0xF7F7F7)
     /// `--card`: a surface in the page — cards, grouped rows.
-    static let card = Color(hex: 0x1A1A1A)
+    static let card = Color(dark: 0x1A1A1A, light: 0xF2F2F2)
     /// `--muted`: one step above a card — chips, second buttons.
-    static let raised = Color(hex: 0x262626)
+    static let raised = Color(dark: 0x262626, light: 0xE6E6E6)
     /// `--surface-selected`: the current row.
-    static let selected = Color(hex: 0x2B2B2B)
+    static let selected = Color(dark: 0x2B2B2B, light: 0xEBEBEB)
     /// An icon's tile or a control on a raised card: a server, Add server,
     /// Scan QR code, Local servers' round and pill buttons, the PR sheet's
     /// Reopen and avatar placeholder.
-    static let tile = Color(hex: 0x333333)
-    /// A switch's track when off.
-    static let off = Color(hex: 0x3A3A3A)
+    static let tile = Color(dark: 0x333333, light: 0xDADADA)
+    /// A switch's track when off, and its knob there.
+    static let off = Color(dark: 0x3A3A3A, light: 0xDCDCDC)
+    static let knobOff = Color(dark: 0xA1A1A1, light: 0xFFFFFF)
     /// A server's dot while it is on its way: quieter than any word beside it.
-    static let dim = Color(hex: 0x525252)
+    static let dim = Color(dark: 0x525252, light: 0xA3A3A3)
 
     // Ink.
-    static let text = Color(hex: 0xFAFAFA)
-    static let secondary = Color(hex: 0xA1A1A1)
-    static let tertiary = Color(hex: 0x737373)
+    static let text = Color(dark: 0xFAFAFA, light: 0x171717)
+    static let secondary = Color(dark: 0xA1A1A1, light: 0x5C5C5C)
+    static let tertiary = Color(dark: 0x737373, light: 0x767676)
     /// `--primary`: a filled button's fill, near white as on the desktop's dark page.
-    static let primary = Color(hex: 0xEBEBEB)
-    static let onPrimary = Color(hex: 0x171717)
+    static let primary = Color(dark: 0xEBEBEB, light: 0x292929)
+    static let onPrimary = Color(dark: 0x171717, light: 0xFFFFFF)
 
     /// The reader's own bubble: the desktop's dark blue `oklch(0.562 0.17 252)`,
     /// the one its bot chats fill with, and its near-white ink. That blue lies
@@ -42,31 +44,42 @@ enum Theme {
     static let onSent = Color(hex: 0xFCFCFC)
 
     // Edges: seams, never drawn rules.
-    static let hairline = Color.white.opacity(0.06)
-    static let border = Color.white.opacity(0.1)
+    static let hairline = Color(dark: .white.withAlphaComponent(0.06), light: .black.withAlphaComponent(0.09))
+    static let border = Color(dark: .white.withAlphaComponent(0.1), light: .black.withAlphaComponent(0.1))
     /// Claude's rust, on its mark in the picks row alone.
     static let claude = Color(hex: 0xD97757)
     /// A child session's elbow back to its parent.
-    static let connector = Color(hex: 0x404040)
+    static let connector = Color(dark: 0x404040, light: 0xD4D4D4)
 
     // Meaning. Yellow is "this is for you", and spent on nothing else.
-    /// `--accent-command`: a session waiting on the reader, a card asking.
-    static let accent = Color(hex: 0xE5C057)
+    /// `--accent-command`: a session waiting on the reader, a card asking. Its light value is
+    /// for small marks and words; a yellow fill keeps `accentFill` in both.
+    static let accent = Color(dark: 0xE5C057, light: 0xBD8200)
+    /// The yellow as a fill (Paper's `--color-phone-accent`), the same in light and dark.
+    static let accentFill = Color(hex: 0xE5C057)
+    /// A fill laid over a card to lift what is pickable on it, and the same lifted once picked.
+    static let veil = Color(dark: .white.withAlphaComponent(0.08), light: .black.withAlphaComponent(0.05))
+    static let veilStrong = Color(dark: .white.withAlphaComponent(0.2), light: .black.withAlphaComponent(0.12))
+    /// A floating control's edge and lift: the top bar's glass, a banner, a toast.
+    static let glassEdge = Color(dark: .white.withAlphaComponent(0.14), light: .black.withAlphaComponent(0.12))
+    static let shadow = Color(dark: .black.withAlphaComponent(0.6), light: .black.withAlphaComponent(0.12))
     /// `--accent-add`: added lines, an open PR, an unread session.
-    static let add = Color(hex: 0x09BB83)
+    static let add = Color(dark: 0x09BB83, light: 0x009A5D)
     /// A bot row's unread count: the desktop's dark `oklch(0.55 0.2 25)`, deeper
     /// than `destructive`, which is too pale under white text.
     static let unread = Color(hex: 0xCC272E)
+    /// White on a badge's fill, which keeps its colour in light and dark.
+    static let onBadge = Color(hex: 0xFFFFFF)
     /// `--destructive`: removed lines, failures.
-    static let destructive = Color(hex: 0xFF6467)
+    static let destructive = Color(dark: 0xFF6467, light: 0xCC272E)
     /// `--accent-merged`: a merged PR.
     static let merged = Color(hex: 0xA855F7)
     /// GitHub's own closed purple on dark: a closed issue's number on a bot's issue card.
-    static let closedIssue = Color(hex: 0xA371F7)
+    static let closedIssue = Color(dark: 0xA371F7, light: 0x8250DF)
     /// `--accent-merge`: GitHub's own green, on the merge button alone.
     static let merge = Color(hex: 0x238636)
     /// `--accent-mention`: a link in prose, far from the yellow so it never reads as a mark.
-    static let link = Color(hex: 0x5AD3FF)
+    static let link = Color(dark: 0x5AD3FF, light: 0x0077C7)
     /// Linear's urgent priority, its own orange.
     static let urgent = Color(hex: 0xF2994A)
 
@@ -216,6 +229,19 @@ extension Color {
         self.init(red: Double((hex >> 16) & 0xFF) / 255, green: Double((hex >> 8) & 0xFF) / 255,
                   blue: Double(hex & 0xFF) / 255)
     }
+
+    /// One colour per appearance, resolved as the system's changes.
+    init(dark: UInt32, light: UInt32) {
+        let ui = { (hex: UInt32) in
+            UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+                    blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+        }
+        self.init(dark: ui(dark), light: ui(light))
+    }
+
+    init(dark: UIColor, light: UIColor) {
+        self.init(uiColor: UIColor { $0.userInterfaceStyle == .dark ? dark : light })
+    }
 }
 
 /// Haptics where something happened the reader should feel: a send, a card
@@ -281,7 +307,7 @@ struct SwitchStyle: ToggleStyle {
                     .fill(configuration.isOn ? Theme.primary : Theme.off)
                     .frame(width: 51, height: 31)
                     .overlay(alignment: configuration.isOn ? .trailing : .leading) {
-                        Circle().fill(configuration.isOn ? Theme.onPrimary : Theme.secondary)
+                        Circle().fill(configuration.isOn ? Theme.onPrimary : Theme.knobOff)
                             .frame(width: 27, height: 27).padding(2)
                     }
             }

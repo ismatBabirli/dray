@@ -53,7 +53,7 @@ final class RedesignTests: XCTestCase {
     /// something saying words near the Mac's microphone while it runs.
     func testVoiceTask() throws {
         let app = try pair()
-        let orb = app.descendants(matching: .any)["orb"]
+        let orb = app.descendants(matching: .any)["mic"]
         XCTAssertTrue(orb.waitForExistence(timeout: 20), "no voice dock")
         sleep(2)
         snap(app, "voice-rest")
@@ -115,7 +115,7 @@ final class RedesignTests: XCTestCase {
     /// Opens a session from the list, scrolled clear of the dock first.
     func openRow(_ app: XCUIApplication, _ title: String) {
         // Below the two cards, so off screen at first: the list is lazy and only draws what scrolls in.
-        let orb = app.descendants(matching: .any)["orb"]
+        let orb = app.descendants(matching: .any)["mic"]
         XCTAssertTrue(orb.waitForExistence(timeout: 20))
         let row = labelled(app, title)
         // The dock floats over the list, so a row behind it still reads as hittable and the tap lands on the orb.
@@ -199,7 +199,7 @@ final class RedesignTests: XCTestCase {
     func testReplyDock() throws {
         let app = try pair()
         openRow(app, "Tighten session row spacing")
-        let orb = app.descendants(matching: .any)["orb"]
+        let orb = app.descendants(matching: .any)["mic"]
         sleep(3)
         snap(app, "reply-rest")
 
@@ -349,7 +349,7 @@ final class RedesignTests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.staticTexts["Connect a server"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Scan QR code"].exists && app.buttons["Enter an address"].exists)
-        XCTAssertFalse(app.descendants(matching: .any)["orb"].exists, "a dock before any server")
+        XCTAssertFalse(app.descendants(matching: .any)["mic"].exists, "a dock before any server")
         // Nothing to show in either view, so neither button.
         XCTAssertFalse(app.buttons["Drafts"].exists || app.buttons["Settled"].exists, "view buttons with no server")
         sleep(1)

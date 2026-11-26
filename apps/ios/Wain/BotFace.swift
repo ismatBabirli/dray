@@ -138,7 +138,7 @@ struct TypingDots: View {
             HStack(spacing: 2) {
                 ForEach(0..<3) { i in
                     let k = still ? 0 : Self.lift(t - Double(i) * 0.16)
-                    Circle().fill(.white.opacity(0.5))
+                    Circle().fill(Color.primary.opacity(0.5))
                         .frame(width: 4, height: 4)
                         .opacity(0.35 + 0.65 * k)
                         .offset(y: -2 * k)

@@ -162,8 +162,8 @@ struct HealthBanner: View {
         let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         return shape.fill(.ultraThinMaterial)
             .overlay(shape.fill(Theme.raised.opacity(0.9)))
-            .overlay(shape.strokeBorder(Color.white.opacity(0.14), lineWidth: 0.5))
-            .shadow(color: .black.opacity(0.6), radius: 12, y: 8)
+            .overlay(shape.strokeBorder(Theme.glassEdge, lineWidth: 0.5))
+            .shadow(color: Theme.shadow, radius: 12, y: 8)
     }
 }
 
@@ -209,7 +209,7 @@ struct ErrorToast: View {
                 .padding(.vertical, Theme.Space.m)
                 .background(Theme.raised, in: .rect(cornerRadius: Theme.Radius.lg, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous).strokeBorder(Theme.border))
-                .shadow(color: .black.opacity(0.5), radius: 16, y: 6)
+                .shadow(color: Theme.shadow, radius: 16, y: 6)
                 .padding(.horizontal, Theme.Space.l)
                 .onTapGesture { store.lastError = nil }
                 .transition(.move(edge: .top).combined(with: .opacity))

@@ -6,6 +6,8 @@ import SwiftUI
 struct AskCard: View {
     let key: SessionKey
     let event: AgentEvent
+    /// Drawn inside a card of its own, Home's, which carries the fill.
+    var bare = false
 
     var body: some View {
         Group {
@@ -15,9 +17,9 @@ struct AskCard: View {
             default: EmptyView()
             }
         }
-        .padding(Theme.Space.m)
+        .padding(bare ? 0 : Theme.Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.well, in: .rect(cornerRadius: Theme.Radius.lg, style: .continuous))
+        .background(bare ? .clear : Theme.well, in: .rect(cornerRadius: Theme.Radius.lg, style: .continuous))
         // Answers must not carry over to the next card.
         .id(event.id)
         .transition(.opacity)
@@ -28,7 +30,7 @@ struct AskCard: View {
 private struct ItemFill: ViewModifier {
     var on = false
     func body(content: Content) -> some View {
-        content.background(Color.white.opacity(on ? 0.2 : 0.08), in: .rect(cornerRadius: Theme.Radius.md, style: .continuous))
+        content.background(on ? Theme.veilStrong : Theme.veil, in: .rect(cornerRadius: Theme.Radius.md, style: .continuous))
     }
 }
 
@@ -104,7 +106,7 @@ private struct QuestionsAsk: View {
             HStack {
                 Text("The agent asked nothing.").font(Theme.Font.subhead).foregroundStyle(Theme.secondary)
                 Spacer(minLength: 0)
-                Button("Skip") { send() }.font(Theme.Font.subhead).foregroundStyle(Color.white.opacity(0.5)).buttonStyle(.plain)
+                Button("Skip") { send() }.font(Theme.Font.subhead).foregroundStyle(Theme.secondary).buttonStyle(.plain)
             }
             .padding(2)
             .disabled(busy)
@@ -120,7 +122,7 @@ private struct QuestionsAsk: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if request.questions.count > 1 {
                     Text("\(index + 1) of \(request.questions.count)")
-                        .font(Theme.Font.footnote).foregroundStyle(Color.white.opacity(0.3))
+                        .font(Theme.Font.footnote).foregroundStyle(Theme.tertiary)
                 }
             }
             .padding(2)
@@ -129,7 +131,7 @@ private struct QuestionsAsk: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(option.label).font(Theme.Font.body).foregroundStyle(Theme.text)
                         if let d = option.description {
-                            Text(d).font(Theme.Font.footnote).foregroundStyle(Color.white.opacity(0.4))
+                            Text(d).font(Theme.Font.footnote).foregroundStyle(Theme.tertiary)
                         }
                     }
                     .padding(.horizontal, Theme.Space.m)
@@ -144,7 +146,7 @@ private struct QuestionsAsk: View {
                 TextField("", text: Binding(get: { typed[q.question] ?? "" }, set: {
                     typed[q.question] = $0
                     if !$0.isEmpty, !q.multiSelect { picks[q.question] = nil }
-                }), prompt: Text("Something else…").foregroundStyle(Color.white.opacity(0.3)), axis: .vertical)
+                }), prompt: Text("Something else…").foregroundStyle(Theme.tertiary), axis: .vertical)
                     .font(Theme.Font.body)
                     .foregroundStyle(Theme.text)
                     .padding(.horizontal, Theme.Space.m)
@@ -154,17 +156,17 @@ private struct QuestionsAsk: View {
             }
             HStack(spacing: 18) {
                 if index > 0 {
-                    Button("Back") { index -= 1 }.foregroundStyle(Color.white.opacity(0.5))
+                    Button("Back") { index -= 1 }.foregroundStyle(Theme.secondary)
                 }
                 Spacer(minLength: 0)
-                Button("Skip") { skip() }.foregroundStyle(Color.white.opacity(0.5))
+                Button("Skip") { skip() }.foregroundStyle(Theme.secondary)
                 Button { advance() } label: {
                     Text(last ? "Send" : "Next")
                         .font(Theme.Font.pill)
-                        .foregroundStyle(.black)
+                        .foregroundStyle(Theme.onPrimary)
                         .padding(.horizontal, Theme.Space.l)
                         .frame(height: 34)
-                        .background(.white, in: Capsule())
+                        .background(Theme.primary, in: Capsule())
                 }
             }
             .font(Theme.Font.subhead)

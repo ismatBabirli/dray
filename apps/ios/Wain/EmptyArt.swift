@@ -177,8 +177,8 @@ struct SettledStack: View {
             .padding(.vertical, 12)
             .padding(.horizontal, 14)
             .background(Theme.card, in: .rect(cornerRadius: Theme.Radius.lg))
-            sliver(Color(hex: 0x141414), height: 7, width: 0.92, radius: 10)
-            sliver(Color(hex: 0x101010), height: 6, width: 0.84, radius: 9)
+            sliver(Theme.raised.opacity(0.6), height: 7, width: 0.92, radius: 10)
+            sliver(Theme.raised.opacity(0.35), height: 6, width: 0.84, radius: 9)
         }
         .frame(maxWidth: 300)
     }
