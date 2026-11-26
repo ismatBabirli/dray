@@ -27,6 +27,26 @@ reads:
   to a line or two. A release with no highlights for an app gets the small
   card there instead, when it carries `notify`.
 
+## 0.36.0 · 2026-11-26 · notify
+
+### New
+
+- **Signing in is optional.** **Skip for now**, under the sign-in cards,
+  opens Wain without an account, and later launches open straight on
+  the app. Sign in any time from the top of Settings. After a few days
+  of use and your first merged pull request, Wain asks you to sign in
+  to keep using it.
+
+### Improved
+
+- Settings → Servers no longer shows Link and Unlink on each server.
+  Signing in still links this Mac, and `wain login` links a server.
+
+### Fixed
+
+- `wain draft ls` lists every draft. In a bot's chat it answered
+  "No drafts." however many there were.
+
 ## 0.35.0 · 2026-11-26 · notify
 
 ### New
