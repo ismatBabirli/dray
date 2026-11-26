@@ -403,7 +403,7 @@ your turn without writing anything after it.
 
 ```bash
 wain draft new "Add retry to the upload client"   # prints the draft id
-wain draft ls                                     # this project; --all, --json
+wain draft ls                                     # every draft; --project, --json
 wain draft rm <draft-id>
 wain draft start <draft-id>                       # prints the new session id
 ```

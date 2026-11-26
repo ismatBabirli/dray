@@ -270,10 +270,10 @@ fun BotUserBubble(text: String, images: List<ImageRef> = emptyList(), reaction: 
         }
         if (text.isNotEmpty()) {
             Box {
-                Text(
+                ClampedText(
                     text,
+                    Wain.Font.body.copy(color = Wain.onSent),
                     Modifier.clip(RoundedCornerShape(Wain.Radius.xl)).background(Wain.sent).padding(horizontal = 14.dp, vertical = 10.dp),
-                    style = Wain.Font.body.copy(color = Wain.onSent),
                 )
                 reaction?.let { Box(Modifier.align(Alignment.TopStart).hung(x = (-32).dp)) { ReactionBadge(it) } }
             }
