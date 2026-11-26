@@ -30,7 +30,7 @@ Wain is a renamed fork of Dray (`monorepo-labs/dray`). `CLAUDE.md` below is upst
 - **Apple team `FBH9JL8MB9`** (Ismat's) replaces upstream's by a `rebrand.mjs` rule.
 - **The iPhone app is `com.plorigo.wain.ios`**, Plorigo's namespace on that same team, by a `rebrand.mjs` rule ahead of the general one. The site's push relay pins pushes to it. The Mac app and its server stay `com.wainhq.wain`.
 - **`IslandView.composerCard` is split in four** (`cardContent`, `cardFill`, `cardFace`, `composerCard`). GitHub's Xcode 26 gave up type-checking it whole, which stopped the release; upstream builds on a newer Xcode and never sees it. On a sync conflict there, keep the split and carry upstream's change into it.
-- **`wain upload` doesn't work yet**: it posts to upstream's upload worker. Attach screenshots to the PR through GitHub instead.
+- **`wain upload` posts to Wain's own Worker** at `upload.wainhq.com`, its files served from `img.wainhq.com` (set up 26 Nov 2026). Nothing deploys it on push: after a change to `apps/upload-worker`, or a sync that brings one, run infra's `scripts/upload-wain.sh --apply`. Its GitHub lookup token expires 26 Nov 2027, and uploads answer 503 until a new one goes in through `--token`.
 - **The `Claude Code Review` Action and `claude.yml` are disabled** (`gh workflow disable`), and their secret, `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`), is not set. Until both change, review in the session (`/code-review`) before asking for a merge. Both are pinned, and `claude.yml` runs only for the owner's own `@claude`, so setting the secret and enabling them is all that is left.
 
 ## Repo safety
