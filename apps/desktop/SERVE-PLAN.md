@@ -111,6 +111,44 @@ Commands run concurrently, as Tauri's async commands do, so a send that spawns
 a child holds no permission reply behind it. A client that falls 4096 events
 behind is dropped rather than silently skipped; reconnecting re-reads.
 
+### Usage readings
+
+**Each server keeps one usage reading per agent, the newest any of its sessions
+reported** (#26, [usage.rs](src-tauri/src/usage.rs)). Claude Code's
+`rate_limit_event` and Codex's `account/rateLimits/updated` feed it, every one,
+healthy or not; Grok, fx, pi and OpenCode report nothing. A reading:
+
+```json
+{ "harness": "claude_code", "limited": false,
+  "overage": "rejected", "usingOverage": false, "at": "2026-11-26T19:33:16.835Z",
+  "windows": [{ "kind": "weekly", "usedPercent": 74.0,
+                "resetsAt": "2026-11-26T22:00:00.000Z", "minutes": 10080 }] }
+```
+
+- `usedPercent` is 0–100 on both agents. Claude Code sends 0–1, rounded here to
+  two places. Times are RFC3339; both wires send unix seconds.
+- `kind` is named by length: `five_hour` for 300 minutes, `weekly` for 10080,
+  else `other`, such as Codex's 43200-minute free plan.
+- **A window can be missing.** Claude Code 2.1.332 sent `unifiedWindows` with
+  `seven_day` alone, so a reading may have no `five_hour`. Its older shape has no
+  `unifiedWindows` and one top-level `utilization` for the window
+  `rateLimitType` names; a `rejected` line there carries no figure at all, only
+  `limited` and the window's `resetsAt`.
+- `limited` is Claude's `rejected` or Codex's `rateLimitReachedType` set. `plan`
+  is Codex's `planType`; `overage` and `usingOverage` are Claude's. Only
+  `harness`, `at` and `windows` are always there.
+- `at` is when this server first received these figures. An identical reading
+  changes nothing, `at` included.
+- Codex readings come from its `codex` bucket alone; any other `limitId` is
+  dropped.
+
+It reaches clients two ways: `live_state` carries `"usage": [Reading, …]`, and
+`{"event":"usage_changed","payload":{"usage":[…]}}` carries the whole list
+whenever a reading changes. Kept in `<home>/usage.json` (write temp, rename) so
+a restart keeps the last readings with their `at`, and never in a session's
+log, since a reading is no session's. A shared machine's relay passes both
+frames through untouched.
+
 ## Reconnecting
 
 **A client reconnects on its own and resyncs; no event a reader needs is lost,
@@ -125,8 +163,8 @@ three routes back:
   same log, so no seq is a cursor. A replayed queued prompt retires its queue
   row, and a provisional prompt gives way as it does live.
 - **Unlogged state** comes from the server's memory. Every connect opens with
-  one `live_state` frame — open permission and question requests, and each
-  session's background tasks — kept by the server's sink under the same lock it
+  one `live_state` frame — open permission and question requests, each
+  session's background tasks, and every agent's usage reading — kept by the server's sink under the same lock it
   broadcasts with, so the snapshot and the stream meet exactly. Retire rules are
   the frontend's own: a decision answers its request; a turn over with no task
   left strands the rest. The client **replaces** what it holds with it, so a

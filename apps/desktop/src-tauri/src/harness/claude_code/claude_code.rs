@@ -338,6 +338,12 @@ async fn read_stdout(
             }
         };
 
+        // Every one, healthy or not; the mapper below still decides whether it
+        // draws a row.
+        if let ClaudeCodeEvent::RateLimitEvent { rate_limit_info, .. } = &claude_event {
+            crate::usage::record(rate_limit_info.usage_reading(), app).await;
+        }
+
         if let ClaudeCodeEvent::ControlRequest {
             request_id,
             request: parser::ControlRequest::McpMessage { message },

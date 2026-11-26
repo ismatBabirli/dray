@@ -122,6 +122,7 @@ pub mod title;
 pub mod transcription;
 #[cfg(feature = "desktop")]
 pub mod updater;
+pub mod usage;
 
 /// Whether this is a `tauri dev` build. Always false off the desktop: the dev
 /// split exists so a dev app can run beside the release one, and a server
