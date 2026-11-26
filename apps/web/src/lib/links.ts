@@ -1,5 +1,9 @@
 export const REPO = "https://github.com/ismatbabirli/wain";
 
+/// The site's one public address, which search engines are given. Not
+/// NEXT_PUBLIC_SITE_URL: that is localhost in dev, and a sitemap lists the real site.
+export const SITE = "https://www.wainhq.com";
+
 /// The newest stable dmg, off the R2 mirror rather than GitHub, whose release
 /// CDN has had 42MB take 45 minutes. release.yml overwrites this one key on
 /// every stable release, so the button needs no build-time lookup; betas leave
