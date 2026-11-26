@@ -62,7 +62,7 @@ export function Hero() {
             src="/hero-mobile.webp"
             alt="The Wain window: sessions in the sidebar, an agent's report in the chat, and its pull request's checks in the side panel."
             width={1200}
-            height={786}
+            height={720}
             loading="lazy"
             className="relative h-auto w-full rounded-[6px] sm:hidden light:hidden"
           />
@@ -70,7 +70,7 @@ export function Hero() {
             src="/hero-mobile-light.webp"
             alt="The Wain window: sessions in the sidebar, an agent's report in the chat, and its pull request's checks in the side panel."
             width={1440}
-            height={920}
+            height={864}
             loading="lazy"
             className="relative hidden h-auto w-full rounded-[6px] shadow-[0_0_0_1px_#00000014] light:block light:sm:hidden"
           />
