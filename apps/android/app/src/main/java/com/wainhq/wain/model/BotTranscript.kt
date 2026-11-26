@@ -29,8 +29,11 @@ sealed interface BotItem {
 
     /** `reaction`: the bot's emoji on it, the newest where it reacted twice. */
     data class User(override val id: String, val text: String, val images: List<ImageRef>, val reaction: String?, override val ts: String?) : BotItem
-    /** `reaction`: the reader's emoji on it. */
-    data class Assistant(override val id: String, val text: String, override val ts: String?, val reaction: String? = null, val sessionId: String? = null) : BotItem
+    /** `reaction`: the reader's emoji on it. `routine`: the routine run whose report it answers, labelled above it. */
+    data class Assistant(
+        override val id: String, val text: String, override val ts: String?, val reaction: String? = null, val sessionId: String? = null,
+        val routine: RoutineTag? = null,
+    ) : BotItem
     /** A failed turn's sentence, or an error the harness raised. */
     data class Notice(override val id: String, val text: String, override val ts: String?) : BotItem
     data class Card(override val id: String, val card: MergeCard, override val ts: String?) : BotItem
@@ -47,6 +50,9 @@ sealed interface BotItem {
     data class Learned(override val id: String, val lesson: Lesson, val commit: String, val undone: Boolean, override val ts: String?) : BotItem
 }
 
+/** A routine run's report: the routine's name (its run session's title) and when the report came. */
+data class RoutineTag(val name: String, val ts: String?)
+
 /** A drawn row: an item, or a run of sends folded into one "Messaged" line. */
 sealed interface BotRow {
     val id: String
@@ -59,8 +65,12 @@ sealed interface BotRow {
     data class Talk(override val id: String, val targets: List<String>, override val ts: String?) : BotRow
 }
 
-/** The chat's items from one session's events. Task reports carry no row: the bot's reply already says what they held. */
-fun botItems(events: List<AgentEvent>): List<BotItem> {
+/**
+ * The chat's items from one session's events. Task reports carry no row: the bot's reply already
+ * says what they held. A report from a session in `routineRuns` (index entries carrying
+ * `routineRun`) labels the bot's reply to it with the routine instead.
+ */
+fun botItems(events: List<AgentEvent>, routineRuns: Set<String> = emptySet()): List<BotItem> {
     val main = events.filter { it.isMain }
     val undone = mutableSetOf<String>()
     // Read whole first, since a reaction lands after its message; the newest wins.
@@ -81,10 +91,12 @@ fun botItems(events: List<AgentEvent>): List<BotItem> {
     val starts = mutableSetOf<String>()
     val sends = mutableMapOf<String, List<SentTo>>()
     var review = false
+    var routine: RoutineTag? = null
     for (e in main) {
         when (val p = e.payload) {
             is Payload.UserMessage -> {
                 review = p.kickoff && p.text.startsWith("Review:")
+                routine = p.fromId?.takeIf { it in routineRuns }?.let { RoutineTag(p.fromTitle?.ifEmpty { null } ?: "Routine", e.ts) }
                 when {
                     p.fromBot != null -> items += BotItem.BotMessage(
                         e.id, p.fromBot, p.fromTitle ?: "", stripSender(p.text, p.fromTitle, p.fromId, bot = true), e.ts,
@@ -93,7 +105,10 @@ fun botItems(events: List<AgentEvent>): List<BotItem> {
                     !p.kickoff -> items += BotItem.User(e.id, p.text, p.images, reactions[e.id], e.ts)
                 }
             }
-            is Payload.AssistantText -> if (p.text.isNotBlank() && !review) items += BotItem.Assistant(e.id, p.text, e.ts, mine[e.id], e.sessionId)
+            is Payload.AssistantText -> if (p.text.isNotBlank() && !review) {
+                items += BotItem.Assistant(e.id, p.text, e.ts, mine[e.id], e.sessionId, routine)
+                routine = null
+            }
             is Payload.Error -> items += BotItem.Notice(e.id, p.message, e.ts)
             is Payload.MergeCardPosted -> items += BotItem.Card(e.id, p.card, e.ts)
             is Payload.IssueCardPosted -> items += BotItem.Issues(e.id, e.sessionId, p.card, started[e.id].orEmpty(), e.ts)

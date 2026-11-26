@@ -74,6 +74,9 @@ private const val STALL_AFTER_MS = 5 * 60_000L
 /** Every live server's bots, in its own order, servers in the list's. */
 val Store.allBots: List<Pair<String, Bot>> get() = live.flatMap { s -> bots[s.id].orEmpty().map { s.id to it } }
 
+/** The bots on the machines the Machines pick shows: what the tabs list. */
+val Store.shownBots: List<Pair<String, Bot>> get() = shown.flatMap { s -> bots[s.id].orEmpty().map { s.id to it } }
+
 /** A bot's chat: every unsettled session in its folder, oldest first. The newest is the one a reply goes to. */
 fun Store.botChat(server: String, bot: Bot): List<SessionKey> =
     items.filter { (k, v) -> k.server == server && v.archived != true && v.routineRun == null && samePath(v.cwd, bot.path) }

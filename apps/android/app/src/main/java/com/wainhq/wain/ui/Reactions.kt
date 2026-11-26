@@ -153,7 +153,7 @@ fun Reactable(key: SessionKey?, messageId: String, current: String?, content: @C
         if (picking && key != null) Popup(OverOrUnder, onDismissRequest = { picking = false }, properties = PopupProperties(focusable = true)) {
             val shape = RoundedCornerShape(percent = 50)
             DisableSelection { Row(
-                Modifier.shadow(12.dp, shape).clip(shape).background(Wain.raised).border(0.5.dp, Color.White.copy(alpha = 0.14f), shape)
+                Modifier.shadow(12.dp, shape).clip(shape).background(Wain.raised).border(0.5.dp, Wain.text.copy(alpha = 0.14f), shape)
                     .padding(horizontal = 6.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {

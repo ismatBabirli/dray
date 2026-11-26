@@ -60,10 +60,9 @@ import com.wainhq.wain.net.ConnState
 import com.wainhq.wain.store.AgentPick
 import com.wainhq.wain.store.botSend
 import com.wainhq.wain.store.rememberedModel
+import com.wainhq.wain.store.usagePercent
 import com.wainhq.wain.voice.Dictation
 import com.wainhq.wain.voice.Dictations
-import com.wainhq.wain.voice.dictationEngine
-import com.wainhq.wain.voice.typesOnly
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -71,9 +70,8 @@ import kotlinx.coroutines.launch
 private data class ReplyPicks(val model: String? = null, val effort: String? = null, val stance: String? = null, val fast: Boolean? = null)
 
 /**
- * The reply dock at a session's foot, as iOS has it: the voice orb, tapped to talk, the words
- * waiting as the bubble they will send as, and under it the session's picks for the next reply,
- * the keyboard and Stop while a turn runs. ReplyDock.swift.
+ * The reply dock at a session's foot: the composer, with Stop while a turn runs, and under it
+ * the session's model and stance for the next reply, each opening This task. ReplyDock.swift.
  */
 @Composable
 fun ReplyDock(key: SessionKey) {
@@ -109,11 +107,6 @@ fun ReplyDock(key: SessionKey) {
     val modelId = (picks.model ?: pick?.model ?: item.model).let { if (moving) Picks.usableModel(models, it, harness) else it }
     val model = models.firstOrNull { it.id == modelId }
     val effort = picks.effort ?: if (moving) null else item.effort
-    val dictation = Dictations.state(key)
-    val listening = dictation != Dictation.Idle
-    // Nothing on the phone or any server can transcribe: the mic goes, and the field is the dock.
-    // Leaving mid-recording sends what was said into this session's draft, the desktop's rule.
-    DisposableEffect(key) { onDispose { if (Dictations.state(key) == Dictation.Recording) Dictations.stop(store, key) } }
 
     fun send() {
         val text = draft.trim()
@@ -144,47 +137,41 @@ fun ReplyDock(key: SessionKey) {
         }
     }
 
-    VoiceDock(
-        sending = sending,
-        ready = draft.isNotBlank() && connected && !sending,
-        failure = failed?.let { "Couldn't send. ${sentence(it)}" },
-        clearFailure = { failed = null },
-        start = ::send,
-        picks = { edit ->
-            Row(Modifier.height(28.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Row(Modifier.clickable { sheet = true }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    AgentMark(harness, 13.dp)
-                    Text(model?.label ?: modelId.ifEmpty { Picks.agentLabels[harness] ?: harness }, style = Wain.Font.footnoteStrong)
-                    effort?.let { Text(Picks.effortLabels[it] ?: it, style = Wain.Font.footnote.copy(color = Wain.tertiary)) }
-                }
-                Text("···", Modifier.clickable { sheet = true }, style = Wain.Font.footnoteStrong.copy(color = Wain.secondary))
-                edit?.let { Icon(Icons.Outlined.Keyboard, "Type", Modifier.clip(CircleShape).clickable(onClick = it).padding(2.dp).size(20.dp), tint = Wain.secondary) }
-                if (item.busy) {
-                    Box(
-                        Modifier.size(28.dp).clip(CircleShape).background(Wain.raised).clickable {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            store.interrupt(key)
-                        },
-                        contentAlignment = Alignment.Center,
-                    ) { Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(Wain.text)) }
-                }
-            }
-        },
-        modifier = Modifier.alpha(if (away) 0.4f else 1f),
-        draft = key,
-        words = DockWords.Reply,
-        covers = false,
-        header = if (!moving) null else ({
-            Row(Modifier.padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                AgentMark(harness, 13.dp)
-                Text(
-                    "Your next message goes to ${Picks.agentLabels[harness] ?: harness}",
-                    style = Wain.Font.footnote.copy(fontWeight = FontWeight.Medium),
-                    maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }),
-    )
+    val bot = store.bot(key)
+    val stance = Picks.stanceFor(harness, picks.stance ?: item.permissionMode)
+    Column(Modifier.alpha(if (away) 0.4f else 1f)) {
+        if (moving) Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            AgentMark(harness, 13.dp)
+            Text(
+                "Your next message goes to ${Picks.agentLabels[harness] ?: harness}",
+                style = Wain.Font.footnote.copy(fontWeight = FontWeight.Medium),
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+        }
+        failed?.let {
+            Text("Couldn't send. ${sentence(it)}", Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp).clickable { failed = null },
+                style = Wain.Font.footnote.copy(color = Wain.destructive))
+        }
+        val focus = ComposerFocus.key == key
+        LaunchedEffect(focus) { if (focus) ComposerFocus.key = null }
+        Composer(
+            draft = key,
+            placeholder = bot?.let { "Message ${it.name}" } ?: "Message",
+            busy = item.busy,
+            sending = sending,
+            canSend = connected && !sending,
+            send = ::send,
+            stop = { store.interrupt(key) },
+            focus = focus,
+        ) {
+            ComposerChip(
+                model?.label ?: modelId.ifEmpty { Picks.agentLabels[harness] ?: harness },
+                effort?.let { Picks.effortLabels[it] ?: it },
+                store.usagePercent(key, harness),
+            ) { sheet = true }
+            if (Picks.offersStances(harness)) ComposerChip(Picks.stances.firstOrNull { it.first == stance }?.second ?: "Auto") { sheet = true }
+        }
+    }
 
     // The agents up on the machine, and always the session's own, so a pick can be taken back.
     val choices = agents.filter { it.available }.map { it.harness }.let { up -> if (item.harness in up) up else listOf(item.harness) + up }

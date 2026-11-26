@@ -55,8 +55,8 @@ fun SettledStack(title: String, time: String) {
             Text(title.ifEmpty { "Untitled" }, Modifier.weight(1f), style = Wain.Font.body, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(time, style = Wain.Font.footnote.copy(color = Wain.tertiary))
         }
-        Sliver(Color(0xFF141414), 7.dp, 0.92f, 10.dp)
-        Sliver(Color(0xFF101010), 6.dp, 0.84f, 9.dp)
+        Sliver(Wain.well, 7.dp, 0.92f, 10.dp)
+        Sliver(Wain.lifted, 6.dp, 0.84f, 9.dp)
     }
 }
 

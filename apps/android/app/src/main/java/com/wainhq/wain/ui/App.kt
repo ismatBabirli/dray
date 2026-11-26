@@ -28,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import com.wainhq.wain.model.SessionKey
 import com.wainhq.wain.net.PairLink
@@ -35,7 +36,7 @@ import com.wainhq.wain.store.NewTask
 import com.wainhq.wain.store.Store
 import com.wainhq.wain.push.Push
 
-/** Where the app is: the list at the bottom of a stack, everything else pushed over it. */
+/** Where the app is: the tabs at the bottom of a stack, everything else pushed over them. */
 sealed interface Route {
     data object List : Route
     data class Session(val key: SessionKey) : Route
@@ -52,6 +53,9 @@ sealed interface Route {
     data class Pull(val target: PullTarget) : Route
     data object Issues : Route
     data class Issue(val server: String, val id: String, val identifier: String) : Route
+
+    /** A chat or a page of one: drawn beside the tabs on a tablet rather than over them. */
+    val inPane: Boolean get() = this is Session || this is Changes || this is BotStart || this is Pull || this is Issue
 
     /** A route as strings, for the saved state a rotation restores the stack from. */
     fun save(): kotlin.collections.List<String> = when (this) {
@@ -146,51 +150,66 @@ fun App(incoming: PairLink?, consumed: () -> Unit) {
     val context = LocalContext.current
     val task = remember { NewTask(store, context.applicationContext) }
 
+    var tab by rememberSaveable { mutableStateOf(Tab.Home) }
+    // Material's rule for top-level tabs: Back on another tab goes Home before it leaves the app.
+    BackHandler(stack.size == 1 && tab != Tab.Home) { tab = Tab.Home }
+    // A tablet keeps the tabs on screen and opens a chat beside them; anything else covers them.
+    val wide = LocalConfiguration.current.screenWidthDp >= 600
+    val paned = wide && stack.drop(1).all { it.inPane }
+    val nav = TabNav(
+        openSession = { push(Route.Session(it)) },
+        startBot = { server, bot -> push(Route.BotStart(server, bot)) },
+        openSettings = { push(it?.let(Route::ServerSettings) ?: Route.Settings) },
+        addServer = { push(Route.Add(scan = it)) },
+        openPulls = { push(Route.Pulls) },
+        openIssues = { push(Route.Issues) },
+    )
+
+    @Composable
+    fun Screen(route: Route) {
+        // Kept per route, so a tab comes back scrolled and filtered as it was left.
+        holder.SaveableStateProvider(route.toString()) { when (route) {
+            Route.List -> TabsScreen(tab, { tab = it }, nav, wide, detail = if (paned && stack.size > 1) ({ Screen(stack.last()) }) else null)
+            is Route.Session -> {
+                val bot = store.bot(route.key)
+                if (bot != null) BotChatScreen(route.key, bot, ::pop, openTask = { push(Route.Session(it)) },
+                    openSession = { push(Route.Session(it)) }, openRoutines = {
+                        forward.value = false
+                        stack.removeAll { it != Route.List }
+                        tab = Tab.Routines
+                    }) { push(Route.ServerSettings(it)) }
+                else TranscriptScreen(route.key, ::pop, openChanges = { push(Route.Changes(route.key)) }) { push(Route.ServerSettings(it)) }
+            }
+            is Route.Changes -> ChangesScreen(route.key, ::pop)
+            is Route.BotStart -> store.bots[route.server]?.firstOrNull { it.id == route.botId }?.let { bot ->
+                BotStartScreen(route.server, bot, ::pop) { key ->
+                    stack.removeAt(stack.lastIndex)
+                    push(Route.Session(key))
+                }
+            } ?: LaunchedEffect(Unit) { pop() }
+            is Route.Add -> AddServerScreen(route.link, route.scan, ::pop)
+            Route.Settings -> SettingsScreen(null, ::pop, { push(Route.Dictation) }, { push(Route.Notifications) }) { push(Route.Add()) }
+            is Route.ServerSettings -> SettingsScreen(route.id, ::pop, { push(Route.Dictation) }, { push(Route.Notifications) }) { push(Route.Add()) }
+            Route.Notifications -> NotificationSettings(::pop)
+            Route.Dictation -> DictationSettings(::pop)
+            Route.Pulls -> PullsScreen(::pop) { row ->
+                push(Route.Pull(PullTarget(row.server, row.key, row.repoName, row.mark.number, row.id, row.mark.headRefName)))
+            }
+            is Route.Pull -> PullDetailScreen(route.target, ::pop) { push(Route.Session(it)) }
+            Route.Issues -> IssuesScreen(::pop) { server, issue -> push(Route.Issue(server, issue.id, issue.identifier)) }
+            is Route.Issue -> IssueDetailScreen(route.server, route.id, route.identifier, ::pop) { push(Route.Session(it)) }
+        } }
+    }
+
     CompositionLocalProvider(LocalNewTask provides task) { Box(Modifier.fillMaxSize()) {
         AnimatedContent(
-            stack.last(),
+            if (paned) Route.List else stack.last(),
             transitionSpec = {
                 if (forward.value) (slideInHorizontally { it / 4 } + fadeIn()) togetherWith (slideOutHorizontally { -it / 8 } + fadeOut())
                 else (slideInHorizontally { -it / 8 } + fadeIn()) togetherWith (slideOutHorizontally { it / 4 } + fadeOut())
             },
             label = "route",
-        ) { route ->
-            // Kept per route, so the list comes back scrolled and filtered as it was left.
-            holder.SaveableStateProvider(route.toString()) { when (route) {
-                Route.List -> ListScreen(
-                    openSession = { push(Route.Session(it)) },
-                    openSettings = { push(it?.let(Route::ServerSettings) ?: Route.Settings) },
-                    addServer = { push(Route.Add(scan = it)) },
-                    startBot = { server, bot -> push(Route.BotStart(server, bot)) },
-                    openPulls = { push(Route.Pulls) },
-                    openIssues = { push(Route.Issues) },
-                )
-                is Route.Session -> {
-                    val bot = store.bot(route.key)
-                    if (bot != null) BotChatScreen(route.key, bot, ::pop, openTask = { push(Route.Session(it)) },
-                        openSession = { push(Route.Session(it)) }) { push(Route.ServerSettings(it)) }
-                    else TranscriptScreen(route.key, ::pop, openChanges = { push(Route.Changes(route.key)) }) { push(Route.ServerSettings(it)) }
-                }
-                is Route.Changes -> ChangesScreen(route.key, ::pop)
-                is Route.BotStart -> store.bots[route.server]?.firstOrNull { it.id == route.botId }?.let { bot ->
-                    BotStartScreen(route.server, bot, ::pop) { key ->
-                        stack.removeAt(stack.lastIndex)
-                        push(Route.Session(key))
-                    }
-                } ?: LaunchedEffect(Unit) { pop() }
-                is Route.Add -> AddServerScreen(route.link, route.scan, ::pop)
-                Route.Settings -> SettingsScreen(null, ::pop, { push(Route.Dictation) }, { push(Route.Notifications) }) { push(Route.Add()) }
-                is Route.ServerSettings -> SettingsScreen(route.id, ::pop, { push(Route.Dictation) }, { push(Route.Notifications) }) { push(Route.Add()) }
-                Route.Notifications -> NotificationSettings(::pop)
-                Route.Dictation -> DictationSettings(::pop)
-                Route.Pulls -> PullsScreen(::pop) { row ->
-                    push(Route.Pull(PullTarget(row.server, row.key, row.repoName, row.mark.number, row.id, row.mark.headRefName)))
-                }
-                is Route.Pull -> PullDetailScreen(route.target, ::pop) { push(Route.Session(it)) }
-                Route.Issues -> IssuesScreen(::pop) { server, issue -> push(Route.Issue(server, issue.id, issue.identifier)) }
-                is Route.Issue -> IssueDetailScreen(route.server, route.id, route.identifier, ::pop) { push(Route.Session(it)) }
-            } }
-        }
+        ) { route -> Screen(route) }
         Box(Modifier.align(Alignment.TopCenter).statusBarsPadding()) { ErrorToast() }
     } }
 }

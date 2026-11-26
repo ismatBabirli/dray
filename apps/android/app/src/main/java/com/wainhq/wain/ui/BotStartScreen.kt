@@ -57,14 +57,17 @@ import java.util.UUID
 
 /**
  * A bot before its first message: its greeting, and a field aimed at its folder. The send starts
- * the chat, which `started` opens in its place. iOS's `BotStartView`, under the same orb dock.
+ * the chat, which `started` opens in its place. iOS's `BotStartView`, over the same composer.
  */
+/** A bot with no chat yet keeps its first message here, like a reply's draft. */
+fun botStartDraft(server: String, botId: String) = SessionKey(server, "bot-start-$botId")
+
 @Composable
 fun BotStartScreen(server: String, bot: Bot, back: () -> Unit, started: (SessionKey) -> Unit) {
     val store = LocalStore.current
     val scope = rememberCoroutineScope()
     // Its words live in the drafts like a reply's, so dictation lands in them the same way.
-    val draft = SessionKey(server, "bot-start-${bot.id}")
+    val draft = botStartDraft(server, bot.id)
     val text = store.drafts[draft].orEmpty()
     var sending by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf<String?>(null) }
@@ -74,14 +77,6 @@ fun BotStartScreen(server: String, bot: Bot, back: () -> Unit, started: (Session
     // A chat that opened meanwhile (another client wrote first) takes this page's place.
     val chat = store.botChat(server, bot).lastOrNull()
     LaunchedEffect(chat) { chat?.let(started) }
-    // Leaving mid-recording keeps what was said in this bot's draft, as the reply dock does; the mic never outlives its controls.
-    androidx.compose.runtime.DisposableEffect(draft) {
-        onDispose {
-            if (com.wainhq.wain.voice.Dictations.state(draft) == com.wainhq.wain.voice.Dictation.Recording) {
-                com.wainhq.wain.voice.Dictations.stop(store, draft)
-            }
-        }
-    }
 
     fun send() {
         val words = text.trim()
@@ -127,19 +122,13 @@ fun BotStartScreen(server: String, bot: Bot, back: () -> Unit, started: (Session
         ) {
             for (line in bot.greeting ?: listOfNotNull(bot.welcome)) ReplyBubble(line)
         }
-        VoiceDock(
-            sending = sending,
-            ready = text.isNotBlank() && connected && !sending,
-            failure = failed?.let { "Couldn't send. ${sentence(it)}" },
-            clearFailure = { failed = null },
-            start = ::send,
-            picks = { edit ->
-                edit?.let { Icon(Icons.Outlined.Keyboard, "Type", Modifier.clip(CircleShape).clickable(onClick = it).padding(2.dp).size(20.dp), tint = Wain.secondary) }
-            },
-            draft = draft,
-            words = DockWords.Reply,
-            covers = false,
-        )
+        failed?.let {
+            Text("Couldn't send. ${sentence(it)}", Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp).clickable { failed = null },
+                style = Wain.Font.footnote.copy(color = Wain.destructive))
+        }
+        val focus = ComposerFocus.key == draft
+        LaunchedEffect(focus) { if (focus) ComposerFocus.key = null }
+        Composer(draft, "Message ${bot.name}", busy = false, sending = sending, canSend = connected && !sending, send = ::send, focus = focus)
     }
     if (editing) BotSheet(editing = server to bot, close = { editing = false })
 }

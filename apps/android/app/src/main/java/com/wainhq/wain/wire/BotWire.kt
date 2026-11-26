@@ -104,3 +104,19 @@ data class StallRow(
     /** `owner/name`, for merging through the bot's server a task the phone cannot reach. */
     val repo: String? = null,
 )
+
+/** A bot's scheduled check, as `list_routines` answers it. BotMore.swift's `Routine`. */
+@Serializable
+data class Routine(
+    val id: String,
+    val botId: String = "",
+    val name: String = "",
+    val schedule: RoutineSchedule = RoutineSchedule(),
+    val paused: Boolean = false,
+    /** RFC3339; none while paused. */
+    val nextRun: String? = null,
+)
+
+/** Every `everyMinutes`, or at `at` (local HH:MM) on `days`, 0 = Monday, none = every day. */
+@Serializable
+data class RoutineSchedule(val everyMinutes: Int? = null, val at: String? = null, val days: List<Int> = emptyList())

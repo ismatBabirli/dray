@@ -2,7 +2,7 @@
 <resources>
     <!-- The splash is the white mark alone on the page the app opens on; no icon background, so no tile. -->
     <style name="Theme.Wain" parent="Base.Theme.Wain">
-        <item name="android:windowSplashScreenBackground">@color/page</item>
+        <item name="android:windowSplashScreenBackground">@color/splash</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_mark</item>
     </style>
 </resources>

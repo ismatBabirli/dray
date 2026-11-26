@@ -9,6 +9,9 @@ import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -54,6 +57,12 @@ object PhoneSpeech {
         @Volatile var level = 0f
             private set
 
+        /** What it has made of the speech so far, for the composer to show as it comes. */
+        var heard by mutableStateOf("")
+            private set
+
+        private fun hear() { heard = (said + partial).filter { it.isNotBlank() }.joinToString(" ") }
+
         private val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
@@ -69,12 +78,13 @@ object PhoneSpeech {
                 override fun onRmsChanged(rmsdB: Float) { level = ((rmsdB + 2f) / 12f).coerceIn(0f, 1f) }
                 override fun onBufferReceived(buffer: ByteArray?) {}
                 override fun onEndOfSpeech() { level = 0f }
-                override fun onPartialResults(results: Bundle?) { partial = best(results) ?: partial }
+                override fun onPartialResults(results: Bundle?) { partial = best(results) ?: partial; hear() }
                 override fun onEvent(eventType: Int, params: Bundle?) {}
 
                 override fun onResults(results: Bundle?) {
                     best(results)?.takeIf { it.isNotBlank() }?.let { said += it }
                     partial = ""
+                    hear()
                     if (stopping) finish() else listen()
                 }
 

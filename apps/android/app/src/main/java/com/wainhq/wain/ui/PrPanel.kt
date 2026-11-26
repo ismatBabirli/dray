@@ -326,11 +326,11 @@ fun checksSummary(pr: PullRequest): String {
 }
 
 private fun tone(pr: PullRequest): Color {
-    if (pr.checksHold) return Wain.accent
+    if (pr.checksHold) return Wain.mark
     return when (pr.verdict) {
         MergeVerdict.Ready -> Wain.add
         MergeVerdict.Conflict -> Wain.destructive
-        MergeVerdict.Behind, MergeVerdict.Blocked, MergeVerdict.Unstable, MergeVerdict.Unknown -> Wain.accent
+        MergeVerdict.Behind, MergeVerdict.Blocked, MergeVerdict.Unstable, MergeVerdict.Unknown -> Wain.mark
         MergeVerdict.Merged -> Wain.merged
         MergeVerdict.Closed, MergeVerdict.Draft -> Wain.secondary
     }
@@ -545,7 +545,7 @@ fun MissingCli(kind: String, model: PrSource) {
         Modifier.fillMaxWidth().fillMaxHeight().padding(horizontal = 20.dp).padding(bottom = 120.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
     ) {
-        PrOutline(Wain.accent, 36.dp)
+        PrOutline(Wain.mark, 36.dp)
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Wain.Space.xs)) {
             Text(if (installing) "GitHub CLI isn't installed" else "GitHub CLI is logged out", style = Wain.Font.title, textAlign = TextAlign.Center)
             Text(

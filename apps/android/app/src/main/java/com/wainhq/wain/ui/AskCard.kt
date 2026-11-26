@@ -45,7 +45,7 @@ import com.wainhq.wain.wire.QuestionsRequest
 import kotlinx.coroutines.launch
 
 private val itemShape = RoundedCornerShape(Wain.Radius.md)
-private fun itemFill(picked: Boolean) = Color.White.copy(alpha = if (picked) 0.2f else 0.08f)
+private fun itemFill(picked: Boolean) = Wain.text.copy(alpha = if (picked) 0.2f else 0.08f)
 
 /** A card the agent is stopped on, answered in place: a permission, or questions. */
 @Composable
@@ -139,7 +139,7 @@ private fun QuestionsCard(key: SessionKey, request: QuestionsRequest) {
     if (request.questions.isEmpty()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("The agent asked nothing.", Modifier.weight(1f), style = Wain.Font.subhead.copy(color = Wain.secondary))
-            Text("Skip", Modifier.clickable { send() }, style = Wain.Font.subhead.copy(color = Color.White.copy(alpha = 0.5f)))
+            Text("Skip", Modifier.clickable { send() }, style = Wain.Font.subhead.copy(color = Wain.text.copy(alpha = 0.5f)))
         }
         return
     }
@@ -148,7 +148,7 @@ private fun QuestionsCard(key: SessionKey, request: QuestionsRequest) {
     Column(Modifier.alpha(if (busy) 0.6f else 1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.padding(2.dp)) {
             Text(q.question, Modifier.weight(1f), style = Wain.Font.subhead)
-            if (request.questions.size > 1) Text("${index + 1} of ${request.questions.size}", style = Wain.Font.footnote.copy(color = Color.White.copy(alpha = 0.3f)))
+            if (request.questions.size > 1) Text("${index + 1} of ${request.questions.size}", style = Wain.Font.footnote.copy(color = Wain.text.copy(alpha = 0.3f)))
         }
         for (option in q.options) {
             val picked = option.label in picks[index].orEmpty()
@@ -170,13 +170,13 @@ private fun QuestionsCard(key: SessionKey, request: QuestionsRequest) {
                     .padding(horizontal = 12.dp, vertical = 9.dp),
             ) {
                 Text(option.label, style = Wain.Font.body)
-                option.description?.let { Text(it, style = Wain.Font.footnote.copy(color = Color.White.copy(alpha = 0.4f))) }
+                option.description?.let { Text(it, style = Wain.Font.footnote.copy(color = Wain.text.copy(alpha = 0.4f))) }
             }
         }
         if (q.freeText != false) {
             val value = typed[index].orEmpty()
             Box(Modifier.fillMaxWidth().heightIn(min = 40.dp).clip(itemShape).background(itemFill(value.isNotEmpty())).padding(horizontal = 12.dp, vertical = 9.dp)) {
-                if (value.isEmpty()) Text("Something else…", style = Wain.Font.body.copy(color = Color.White.copy(alpha = 0.3f)))
+                if (value.isEmpty()) Text("Something else…", style = Wain.Font.body.copy(color = Wain.text.copy(alpha = 0.3f)))
                 BasicTextField(
                     value,
                     {
@@ -191,21 +191,21 @@ private fun QuestionsCard(key: SessionKey, request: QuestionsRequest) {
             }
         }
         Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-            if (index > 0) Text("Back", Modifier.clickable(enabled = !busy) { index-- }, style = Wain.Font.subhead.copy(color = Color.White.copy(alpha = 0.5f)))
+            if (index > 0) Text("Back", Modifier.clickable(enabled = !busy) { index-- }, style = Wain.Font.subhead.copy(color = Wain.text.copy(alpha = 0.5f)))
             Spacer(Modifier.weight(1f))
             Text("Skip", Modifier.clickable(enabled = !busy) {
                 picks.remove(index); typed.remove(index)
                 if (last) send() else index++
-            }, style = Wain.Font.subhead.copy(color = Color.White.copy(alpha = 0.5f)))
+            }, style = Wain.Font.subhead.copy(color = Wain.text.copy(alpha = 0.5f)))
             Text(
                 if (last) "Send" else "Next",
                 Modifier
                     .height(34.dp)
                     .clip(CircleShape)
-                    .background(Color.White)
+                    .background(Wain.primary)
                     .clickable(enabled = !busy) { if (last) send() else index++ }
                     .padding(horizontal = 16.dp, vertical = 7.dp),
-                style = Wain.Font.pill.copy(color = Color.Black),
+                style = Wain.Font.pill.copy(color = Wain.onPrimary),
             )
         }
     }

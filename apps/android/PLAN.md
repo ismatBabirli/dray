@@ -13,6 +13,31 @@ reads and drives it over the same WebSocket the desktop and iOS use
   the in-app scanner reads the same QR (CameraX + ML Kit); or paste the
   address and token, where a whole connect line fills both. Tokens are sealed
   with an Android Keystore key, never stored plain.
+- **Four tabs** (#28, Paper's "Android — tabs"; the rules both phones share
+  are in its Notes board): Home, Bots, Tasks and Routines on a Material 3
+  navigation bar, switched by hand on window width (`Tabs.kt`): at 600dp and
+  wider a navigation rail with New task at its top, and a chat opens beside
+  the tab's list instead of over it (`Route.inPane`). The bar hides in a chat
+  and under a sheet. Home is what waits on the reader, what works and what is
+  new (`model/Home.kt`, `store/StoreTabs.kt`), one row per session at its
+  most urgent place; Bots is the roster, waiting first, and a bot's chat says
+  "<machine> · N tasks" under its name and labels a reply to a routine run's
+  report with the routine; Tasks is the list below; Routines is every bot's routines
+  (`list_routines`, pause, delete), soonest first. Home's yellow badge counts
+  what waits; Bots' red one counts bots with unread replies.
+- **Machines**, where the gear was: the button leading every top bar, its dot
+  the worst of the shown machines, opening a sheet that shows every machine or
+  exactly one (`Store.machine`, kept per device), each with its health and
+  Retry, then Usage, Pair a machine and Settings.
+- **New task** is an extended FAB on Home and Tasks (the rail's button on a
+  tablet), opening a sheet over `NewTask`: the prompt and its mic, Run by (Me
+  or a bot, the aim-at-bot path), project, agent, machine, worktree, Save draft.
+- **Usage** (`wire/Usage.kt`, `model/Usage.kt`): `live_state.usage` and
+  `usage_changed`, one reading per agent per server. A reading's headline is
+  its five-hour window, else its fullest; a window may carry no figure (spent
+  on a limited reading, blank otherwise). Home's chips show each agent's worst
+  reading, a sheet every window by machine, and the composer's model chip a
+  ring with its own machine's figure. Times follow the phone's 12/24 hours.
 - **Every saved server at once, one merged list**: the desktop sidebar's
   stage runs, a child hanging off its parent on an elbow, PR marks from
   `pr_marks`, a project strip, the settled view, a waiting card under its
@@ -34,10 +59,13 @@ reads and drives it over the same WebSocket the desktop and iOS use
   reads with a call's body read whole on demand (`get_session_calls`);
   pictures inline and full screen (pager, pinch, double-tap, drag down);
   browser recordings play in place (Media3, token in `/file`'s query).
-- **Reply dock**: a message field (text first, as Android chat is, with
-  Wain's own dictation on the mic), the session's model and effort under it
-  opening **This task** (model, effort, fast mode, stance, each locked mid-turn
-  per `Picks.lockedMidTurn`), and Stop while a turn runs.
+- **Composer** (`Composer.kt`), in every chat: the field with the mic at its
+  end, which turns to Send once there are words; Stop beside it mid-turn, the
+  field then queueing. Tap the mic for hands-free dictation, hold it to talk
+  while held: the field grows into the strip (the words as they come, Cancel,
+  the level, the time, Done) and the words land in the field to edit. Under it
+  the session's model and stance open **This task** (model, effort, fast mode,
+  stance, each locked mid-turn per `Picks.lockedMidTurn`).
 - **Permission and question cards**, answered in place, in the transcript and
   under the row in the list.
 - **Servers** in Settings: state, on/off, Fix, remove, add.
@@ -53,11 +81,10 @@ reads and drives it over the same WebSocket the desktop and iOS use
   (on-device where it has one, AppleSpeech.swift's place), listening live and
   restarting across pauses; or a server's model, a 16 kHz WAV through `/upload`
   and `transcribe_upload`, kept for Retry where the server never answered.
-  Settings → Dictation picks one. **The voice orb** is VoiceOrb.metal's `prism`
-  as AGSL (Android 13+), the same math on the CPU below that, eased and clocked
-  as OrbDriver/OrbClock do. The list's foot is VoiceDock (orb, then Cancel and
-  Done, then the words and Start task); its picks and start are a stand-in
-  until New task lands (`NewTaskDock`). Debug builds carry `OrbDemoActivity`.
+  Settings → Dictation picks one. The phone's engine shows its words live
+  (`Dictations.heard`). **The voice orb** (VoiceOrb.metal's `prism` as AGSL)
+  is drawn nowhere since the composer replaced the docks; debug builds keep
+  it in `OrbDemoActivity`.
 - **Push** (`push/`, Push.swift on FCM): the FCM token is sealed by the relay
   (`/api/push/register` with `platform: "android"`) into a handle each server
   gets with `push_register`, exactly as iOS hands its APNs handle over; the
@@ -68,7 +95,7 @@ reads and drives it over the same WebSocket the desktop and iOS use
   where a bot's task alerts). Settings → Notifications holds the switches.
 
 - **Pull requests and Issues pages** (Pulls.swift, PullDetail.swift,
-  Issues.swift): beside Settings on the list. Each draws its last read at
+  Issues.swift): in the Tasks tab's top bar. Each draws its last read at
   once, from `page-pulls.json` and `page-issues.json` in the cache dir on a
   fresh launch, and reads behind it (`store/Pulls.kt`, `store/Issues.kt`).
   The PR list's search box narrows by title, number, author or branch on the
@@ -81,12 +108,12 @@ reads and drives it over the same WebSocket the desktop and iOS use
   reader's own task, its place, agent, model, effort and fast mode. A PR's task
   goes through `start_pr_session` on the PR's branch; an issue's through
   `send_msg` with its tag, link and body and `issueIds`, or
-  `send_issue_to_bot`, so nothing is handed to the list's dock. Share is the
+  `send_issue_to_bot`, so nothing goes through New task. Share is the
   system share sheet with the title and link; neither page opens a browser.
 
-Left for the tasks building on this: New task (Run with), bots and bot chat,
-Changes, the rest of Settings, the PR sheet, the runs sheet behind "N
-background tasks running", Share in the image viewer.
+Left for the tasks building on this: creating, editing or running a routine
+from the phone (the wire has list, pause and delete), the rest of Settings,
+the PR sheet, Share in the image viewer.
 
 ## Push setup
 
@@ -152,7 +179,11 @@ restates; a rule changed in one belongs in the other, and in the desktop file
 both restate (`tools.ts`, `permission.ts`, `liveControls.ts`, `model.ts`).
 
 **Every colour, size, radius and font is in [Theme.kt](app/src/main/java/com/wainhq/wain/ui/Theme.kt)**:
-the iOS app's dark tokens, dark only, yellow for *needs you* alone. Roboto
+the iOS app's dark tokens, and Paper's `--color-phone-light-*` for light mode,
+which follows the system (read once in `MainActivity`; a theme change
+recreates the activity). Yellow is for *needs you* alone: `accent` fills,
+`mark` for a small dot or word. The splash stays dark in both modes, since
+brand/build.py writes its mark white. Roboto
 stands in for SF Pro; Material is used where Android readers expect it
 (back arrow, bottom sheet, pull to refresh, switches).
 

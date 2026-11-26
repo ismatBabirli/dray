@@ -52,7 +52,7 @@ fun inlineMarkdown(text: String, base: SpanStyle = SpanStyle()): AnnotatedString
         append(text.substring(at, m.range.first))
         val g = m.groupValues
         when {
-            g[1].isNotEmpty() -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontSize = 0.88.em, background = Color.White.copy(alpha = 0.08f))) { append(g[1]) }
+            g[1].isNotEmpty() -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontSize = 0.88.em, background = Wain.text.copy(alpha = 0.08f))) { append(g[1]) }
             g[2].isNotEmpty() -> withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(inlineMarkdown(g[2], base)) }
             g[3].isNotEmpty() -> withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(inlineMarkdown(g[3], base)) }
             g[4].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(inlineMarkdown(g[4], base)) }
@@ -126,7 +126,7 @@ private fun Table(rows: List<List<String>>, style: TextStyle) {
         val longest = rows.maxOf { (it.getOrNull(c) ?: "").length }
         (longest * 8 + 20).coerceIn(72, 240).dp
     }
-    val line = Color.White.copy(alpha = 0.15f)
+    val line = Wain.text.copy(alpha = 0.15f)
     val shape = RoundedCornerShape(10.dp)
     Box(Modifier.horizontalScroll(rememberScrollState())) {
         Column(Modifier.clip(shape).border(1.dp, line, shape)) {
@@ -140,7 +140,7 @@ private fun Table(rows: List<List<String>>, style: TextStyle) {
                             Modifier
                                 .width(widths[c])
                                 .fillMaxHeight()
-                                .background(if (r == 0) Color.White.copy(alpha = 0.06f) else Color.Transparent)
+                                .background(if (r == 0) Wain.text.copy(alpha = 0.06f) else Color.Transparent)
                                 .padding(horizontal = 10.dp, vertical = 6.dp),
                             style = style.copy(fontWeight = if (r == 0) FontWeight.SemiBold else style.fontWeight),
                         )
