@@ -23,7 +23,7 @@ How Wain is run, kept beside `CLAUDE.md`'s engineering rules. **Where this file 
 - **Apple team `FBH9JL8MB9`** (Ismat's). **The iPhone app is `com.plorigo.wain.ios`**, Plorigo's namespace on that team; the site's push relay pins pushes to it. The Mac app and its server are `com.wainhq.wain`.
 - **`IslandView.composerCard` is split in four** (`cardContent`, `cardFill`, `cardFace`, `composerCard`): GitHub's Xcode 26 gave up type-checking it whole, which stopped the release. Keep it split.
 - **`wain upload` posts to Wain's own Worker** at `upload.wainhq.com`, its files served from `img.wainhq.com` (set up 26 Nov 2026). Nothing deploys it on push: after a change to `apps/upload-worker`, run infra's `scripts/upload-wain.sh --apply`. Its GitHub lookup token expires 26 Nov 2027, and uploads answer 503 until a new one goes in through `--token`.
-- **The `Claude Code Review` Action and `claude.yml` run on Ismat's Claude subscription** (`CLAUDE_CODE_OAUTH_TOKEN`, from `claude setup-token`; on since 26 Nov 2026), so `CLAUDE.md`'s review loop applies: a PR merges on a clean latest review of its head commit. Both are pinned, and `claude.yml` starts only for the owner's own `@claude`. A pull request from a fork gets no secrets, so its review cannot run; review that one in the session (`/code-review`).
+- **The `Claude review` Action and `claude.yml` run on Ismat's Claude subscription** (`CLAUDE_CODE_OAUTH_TOKEN`, from `claude setup-token`; on since 26 Nov 2026), so `CLAUDE.md`'s review loop applies: a PR merges on a clean latest review of its head commit. Both are pinned, and `claude.yml` starts only for the owner's own `@claude`. A pull request from a fork gets no secrets, so its review cannot run; review that one in the session (`/code-review`).
 
 ## Repo safety
 
@@ -36,7 +36,7 @@ The repo is public, so these hold on purpose (set 26 Nov 2026):
 - **Dependabot alerts and private vulnerability reporting are on**, so a security report arrives under Security → Advisories, not as a public issue. Dependabot opens no pull requests.
 - **Interaction limits are off on purpose**: the site's Feedback link sends people to issues, and a limit would block new accounts there.
 - **GitHub Apps that reach this repo:** Claude (the review workflows) and coolify-self-hosted-ismat (site deploys). Xcode Cloud's access is left from a dropped Xcode Cloud setup and can go. Showing or changing an app's access asks for Ismat's password.
-- Nothing deploys on push: Coolify's auto-deploy is off and the repo has no webhooks or deploy keys. Ismat is the only collaborator, and the Actions token defaults to read and cannot approve pull requests.
+- Nothing deploys on push: Coolify's auto-deploy is off and the repo has no webhooks or deploy keys. Ismat is the only collaborator, and the Actions token defaults to read. It may approve pull requests (on since 27 Nov 2026), which the Claude review needs: a workflow approves only where it asks for `pull-requests: write`, and outside pull requests' workflows wait for Ismat.
 - **The `caveman-commit` skill isn't installed.** Write commit messages by hand: a short plain subject, then why.
 
 ## Releases
