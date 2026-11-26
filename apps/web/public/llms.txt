@@ -1,6 +1,6 @@
 # Wain
 
-> Wain is a free, open-source app for running coding agents, on macOS and (in beta) Linux: Claude Code, Codex, pi, fx, Grok Build and OpenCode. It runs the official agent CLIs on your existing subscriptions, many sessions at once, on your computer or on remote machines.
+> Wain is a free, open-source app for running coding agents, on macOS, with Windows and Linux in beta: Claude Code, Codex, pi, fx, Grok Build and OpenCode. It runs the official agent CLIs on your existing subscriptions, many sessions at once, on your computer or on remote machines.
 
 ## Features
 
@@ -17,15 +17,19 @@
 
 - Is Wain free? Yes. Apache 2.0.
 - Is Wain safe to use with a Claude subscription? Yes. Wain runs Anthropic's own Claude Code CLI, so it works within Anthropic's terms.
+- Does Wain run on Windows? Yes, in beta: Windows 10 and 11 on x64, as an installer or an MSI. It updates itself like the Mac app.
 - Does Wain run on Linux? Yes. The Linux app is in beta: a .deb for Debian and Ubuntu, or an AppImage for other distros with glibc 2.35 or newer, on x64 and arm64. Wain also runs as a server on Linux.
 
 ## Links
 
 - [Download for Mac](https://downloads.wainhq.com/Wain_universal.dmg)
-- [All downloads](https://www.wainhq.com/download): Mac, Linux (beta: .deb and AppImage, x64 and arm64) and the server.
+- [Download for Windows (beta)](https://downloads.wainhq.com/Wain_x64-setup.exe)
+- [All downloads](https://www.wainhq.com/download): Mac, Windows (beta), Linux (beta: .deb and AppImage, x64 and arm64) and the server.
 - [Install on a server](https://www.wainhq.com/install.sh): `curl -fsSL https://www.wainhq.com/install.sh | sh`
+- [Install on Windows](https://www.wainhq.com/install.ps1): `irm https://www.wainhq.com/install.ps1 | iex` installs the `wain` CLI and server.
 - [GitHub](https://github.com/ismatbabirli/wain)
 - [Docs](https://www.wainhq.com/docs)
 - [Docs llms.txt](https://www.wainhq.com/docs/llms.txt): every docs page, one line each.
+- [Docs llms-full.txt](https://www.wainhq.com/docs/llms-full.txt): every docs page in full.
 - [FAQ](https://www.wainhq.com/faq): bots, agents, subscriptions and privacy.
 - [Changelog](https://www.wainhq.com/changelog)
