@@ -623,6 +623,7 @@ async fn start_core(sink: Sink) -> Result<PathBuf> {
     }
     sweep_browser_profiles().await;
     crate::auto_continue::rearm(&sink).await;
+    crate::usage::load().await;
 
     crate::remote_asks::forget_unanswered().await;
     tokio::spawn(crate::remote_reports::run(sink.clone()));
@@ -1036,7 +1037,10 @@ impl Live {
         // Always present, so a client tells a server that judges stalls from
         // one too old to, whose `live_state` has no such key.
         let stalls: Vec<&Value> = self.stalls.values().collect();
-        json!({ "asks": self.asks, "tasks": tasks, "queued": queued, "serving": serving, "boat": self.boat, "stalls": stalls })
+        // Kept by `usage`, not noted here: it outlives the process, so it is
+        // loaded from disk, which `note` never sees.
+        let usage = crate::usage::readings();
+        json!({ "asks": self.asks, "tasks": tasks, "queued": queued, "serving": serving, "boat": self.boat, "stalls": stalls, "usage": usage })
     }
 
     fn flags(&self) -> LiveFlags {
@@ -2485,6 +2489,14 @@ mod tests {
         assert!(open(&live).is_empty());
         assert!(live.tasks.is_empty());
         assert!(live.snapshot().contains("\"live_state\""));
+    }
+
+    #[test]
+    fn live_state_carries_usage() {
+        let reading = crate::usage::Reading::new(crate::harness::Harness::Codex, Vec::new());
+        crate::usage::note_for_test(reading);
+        let usage = Live::default().payload()["usage"].clone();
+        assert!(usage.as_array().unwrap().iter().any(|r| r["harness"] == "codex"), "{usage}");
     }
 
     #[test]

@@ -468,6 +468,33 @@ pub struct ApprovalRequest {
     pub available_decisions: Vec<Value>,
 }
 
+/// `account/rateLimits/updated` as Codex's usage reading (#26), read field by
+/// field so an unfamiliar shape costs a window, never the line. `None` for a
+/// bucket other than the account's own `codex`: per-model buckets would take
+/// turns overwriting it.
+pub fn usage_reading(params: &Value) -> Option<crate::usage::Reading> {
+    let limits = params.get("rateLimits")?;
+    if limits.get("limitId").and_then(Value::as_str).is_some_and(|id| id != "codex") {
+        return None;
+    }
+    let windows = ["primary", "secondary"]
+        .into_iter()
+        .filter_map(|key| {
+            let w = limits.get(key).filter(|w| w.is_object())?;
+            Some(crate::usage::Window::new(
+                w.get("windowDurationMins").and_then(Value::as_u64),
+                w.get("usedPercent").and_then(Value::as_f64),
+                w.get("resetsAt").and_then(Value::as_i64),
+            ))
+        })
+        .collect();
+    Some(crate::usage::Reading {
+        plan: limits.get("planType").and_then(Value::as_str).map(String::from),
+        limited: limits.get("rateLimitReachedType").is_some_and(|t| !t.is_null()),
+        ..crate::usage::Reading::new(crate::harness::Harness::Codex, windows)
+    })
+}
+
 /// Sorts one notification into [`CodexEvent`].
 ///
 /// Errors only where a method we *do* act on carried params we could not read;
@@ -559,6 +586,7 @@ pub fn parse_notification(method: &str, params: Value) -> Result<CodexEvent, ser
         | "process/outputDelta"
         | "process/exited"
         | "serverRequest/resolved"
+        // Draws nothing; the read loop takes it for usage first (`usage_reading`).
         | "account/rateLimits/updated"
         | "account/updated"
         | "mcpServer/startupStatus/updated"
@@ -700,5 +728,59 @@ mod tests {
             panic!("wrong variant");
         };
         assert_eq!(turn.turn.status, TurnStatus::Unknown);
+    }
+
+    /// Every `account/rateLimits/updated` in a capture, as readings.
+    fn usage_readings(fixture: &str) -> Vec<crate::usage::Reading> {
+        fixture
+            .lines()
+            .filter_map(|record| {
+                let record: Value = serde_json::from_str(record).ok()?;
+                let message: Value = serde_json::from_str(record["line"].as_str()?).ok()?;
+                (message["method"] == "account/rateLimits/updated").then(|| usage_reading(&message["params"]))?
+            })
+            .collect()
+    }
+
+    #[test]
+    fn rate_limits_read_as_five_hour_and_weekly() {
+        let readings = usage_readings(include_str!("fixtures/plan_updated.jsonl"));
+        let busiest = readings
+            .iter()
+            .find(|r| r.windows.first().and_then(|w| w.used_percent) == Some(6.0))
+            .expect("the capture reaches 6%");
+        let windows: Vec<_> = busiest.windows.iter().map(|w| (w.kind.as_str(), w.used_percent, w.minutes)).collect();
+        assert_eq!(windows, [("five_hour", Some(6.0), Some(300)), ("weekly", Some(9.0), Some(10080))]);
+        assert_eq!(busiest.plan.as_deref(), Some("plus"));
+        assert!(!busiest.limited && busiest.overage.is_none());
+        assert!(busiest.windows[0].resets_at.as_deref().is_some_and(|t| t.ends_with('Z')));
+        let tool_kinds = usage_readings(include_str!("fixtures/tool_kinds.jsonl"));
+        assert!(tool_kinds.iter().any(|r| r.windows.first().and_then(|w| w.used_percent) == Some(48.0)));
+    }
+
+    /// The free plan's one window is thirty days long, and no secondary.
+    #[test]
+    fn free_plan_window_is_other() {
+        let readings = usage_readings(include_str!("fixtures/subagent_sleep.jsonl"));
+        let free = readings.first().expect("the capture carries rate limits");
+        assert_eq!(free.plan.as_deref(), Some("free"));
+        assert_eq!(free.windows.len(), 1, "secondary is null");
+        assert_eq!(free.windows[0].kind, "other");
+        assert_eq!(free.windows[0].minutes, Some(43200));
+    }
+
+    #[test]
+    fn reached_type_is_limited_and_other_buckets_are_skipped() {
+        let limited = json!({ "rateLimits": {
+            "limitId": "codex", "primary": { "usedPercent": 100, "windowDurationMins": 300, "resetsAt": 1787957233 },
+            "secondary": null, "rateLimitReachedType": "primary"
+        }});
+        let reading = usage_reading(&limited).unwrap();
+        assert!(reading.limited);
+        assert_eq!(reading.windows[0].used_percent, Some(100.0));
+
+        let other = json!({ "rateLimits": { "limitId": "codex_mini", "primary": { "usedPercent": 1 } } });
+        assert!(usage_reading(&other).is_none());
+        assert!(usage_reading(&json!({ "rateLimits": "?" })).unwrap().windows.is_empty());
     }
 }

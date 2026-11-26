@@ -257,6 +257,14 @@ pub struct RateLimitInfo {
     pub overage_disabled_reason: Option<String>,
     #[serde(default)]
     pub is_using_overage: Option<bool>,
+    /// The older shape's one figure, 0-1, for the window `rate_limit_type` names.
+    #[serde(default)]
+    pub utilization: Option<Value>,
+    /// `{five_hour, seven_day}`, each `{utilization 0-1, resetsAt}`. Both kept
+    /// as `Value` and read field by field: a shape this build has not seen
+    /// must cost a window, never the line and the noteworthy event with it.
+    #[serde(default)]
+    pub unified_windows: Option<Value>,
 }
 
 /// Statuses that mean work continues and nothing needs saying.
@@ -285,6 +293,47 @@ impl RateLimitInfo {
             .is_some_and(|status| HEALTHY_STATUSES.contains(&status));
 
         self.is_using_overage.unwrap_or(false) || !healthy
+    }
+
+    /// This line as Claude Code's usage reading (#26), whatever its status;
+    /// `None` when it names neither window, so the last reading stands.
+    pub fn usage_reading(&self) -> Option<crate::usage::Reading> {
+        // Only the two the contract names, in both shapes: a per-model window
+        // would draw a bar no client can label.
+        const KEYS: [&str; 2] = ["five_hour", "seven_day"];
+        let window = |key: &str, utilization: Option<&Value>, resets_at: Option<i64>| {
+            let minutes = match key {
+                "five_hour" => Some(300),
+                "seven_day" => Some(10080),
+                _ => None,
+            };
+            // Rounded, or 0.03 reads as 3.0000000000000004.
+            let used = utilization.and_then(Value::as_f64).map(|u| (u * 10_000.0).round() / 100.0);
+            crate::usage::Window::new(minutes, used, resets_at)
+        };
+        let windows: Vec<_> = match self.unified_windows.as_ref().and_then(Value::as_object) {
+            Some(all) => KEYS
+                .into_iter()
+                .filter_map(|key| {
+                    let w = all.get(key)?;
+                    Some(window(key, w.get("utilization"), w.get("resetsAt").and_then(Value::as_i64)))
+                })
+                .collect(),
+            None => KEYS
+                .into_iter()
+                .filter(|key| self.rate_limit_type.as_deref() == Some(*key))
+                .map(|key| window(key, self.utilization.as_ref(), self.resets_at))
+                .collect(),
+        };
+        if windows.is_empty() {
+            return None;
+        }
+        Some(crate::usage::Reading {
+            limited: self.status.as_deref() == Some("rejected"),
+            overage: self.overage_status.clone(),
+            using_overage: self.is_using_overage.unwrap_or(false),
+            ..crate::usage::Reading::new(crate::harness::Harness::ClaudeCode, windows)
+        })
     }
 }
 
@@ -1758,5 +1807,84 @@ mod tests {
 
         assert!(tool_results.iter().any(|result| result.is_object()));
         assert!(tool_results.iter().any(|result| result.is_string()));
+    }
+
+    fn usage_readings(fixture: &str) -> Vec<crate::usage::Reading> {
+        parse_fixture(fixture)
+            .into_iter()
+            .filter_map(|event| match event {
+                ClaudeCodeEvent::RateLimitEvent { rate_limit_info, .. } => rate_limit_info.usage_reading(),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn unified_windows_read_as_five_hour_and_weekly() {
+        let readings = usage_readings(include_str!("fixtures/background_bash_monitor.jsonl"));
+        let last = readings.last().expect("the capture carries rate limits");
+        let windows: Vec<_> = last.windows.iter().map(|w| (w.kind.as_str(), w.used_percent, w.minutes)).collect();
+        assert_eq!(windows, [("five_hour", Some(4.0), Some(300)), ("weekly", Some(1.0), Some(10080))]);
+        assert_eq!(last.windows[1].resets_at.as_deref(), Some("2026-08-28T17:00:00.000Z"));
+        assert!(!last.limited && !last.using_overage);
+        assert_eq!(last.overage.as_deref(), Some("rejected"));
+        assert_eq!(last.plan, None);
+    }
+
+    /// Captured from 2.1.332 on 26 Nov 2026: `unifiedWindows` can leave
+    /// `five_hour` out, so a reading can hold the weekly window alone.
+    #[test]
+    fn a_window_can_be_missing() {
+        let readings = usage_readings(include_str!("fixtures/rate_limit_weekly_only.jsonl"));
+        let windows: Vec<_> = readings[0].windows.iter().map(|w| (w.kind.as_str(), w.used_percent)).collect();
+        assert_eq!(windows, [("weekly", Some(74.0))]);
+    }
+
+    /// The older shape: no `unifiedWindows`, one top-level `utilization` for
+    /// the window `rateLimitType` names, and a `rejected` with none at all.
+    #[test]
+    fn older_shape_reads_one_window() {
+        let readings = usage_readings(include_str!("fixtures/file_write.jsonl"));
+        let [warning, rejected] = readings.as_slice() else { panic!("two rate limits: {readings:?}") };
+        assert_eq!(warning.windows.len(), 1);
+        assert_eq!(warning.windows[0].kind, "five_hour");
+        assert_eq!(warning.windows[0].used_percent, Some(99.0));
+        assert!(!warning.limited, "allowed_warning is near the ceiling, not over it");
+
+        assert!(rejected.limited);
+        assert!(rejected.using_overage);
+        assert_eq!(rejected.windows[0].used_percent, None);
+        assert!(rejected.windows[0].resets_at.is_some(), "the chip's \"back HH:MM\"");
+    }
+
+    /// A shape this build has not seen costs the window, never the line: the
+    /// noteworthy event rides the same one.
+    #[test]
+    fn unfamiliar_windows_keep_the_line() {
+        let line = r#"{"type":"rate_limit_event","rate_limit_info":{"status":"rejected","utilization":"high","unifiedWindows":{"five_hour":[1],"seven_day":{"utilization":"x"}}},"session_id":"s"}"#;
+        let ClaudeCodeEvent::RateLimitEvent { rate_limit_info, .. } = parse_line(line).unwrap() else {
+            panic!("wrong variant");
+        };
+        assert!(rate_limit_info.is_noteworthy());
+        let reading = rate_limit_info.usage_reading().expect("both windows are named");
+        assert!(reading.limited);
+        assert_eq!(reading.windows.len(), 2);
+        assert!(reading.windows.iter().all(|w| w.used_percent.is_none()));
+    }
+
+    /// A per-model or untyped window is no reading at all, in either shape, so
+    /// it never replaces one a client can draw.
+    #[test]
+    fn unnamed_windows_leave_the_last_reading() {
+        for line in [
+            r#"{"type":"rate_limit_event","rate_limit_info":{"status":"rejected","rateLimitType":"seven_day_opus","utilization":0.9,"resetsAt":1795730400},"session_id":"s"}"#,
+            r#"{"type":"rate_limit_event","rate_limit_info":{"status":"allowed"},"session_id":"s"}"#,
+            r#"{"type":"rate_limit_event","rate_limit_info":{"status":"allowed","unifiedWindows":{"seven_day_opus":{"utilization":0.5}}},"session_id":"s"}"#,
+        ] {
+            let ClaudeCodeEvent::RateLimitEvent { rate_limit_info, .. } = parse_line(line).unwrap() else {
+                panic!("wrong variant");
+            };
+            assert!(rate_limit_info.usage_reading().is_none(), "{line}");
+        }
     }
 }

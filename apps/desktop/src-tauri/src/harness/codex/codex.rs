@@ -675,6 +675,13 @@ async fn read_stdout(
             }
         };
 
+        // Before the thread check below: the server can report it first.
+        if method == "account/rateLimits/updated" {
+            if let Some(reading) = parser::usage_reading(&params) {
+                crate::usage::record(reading, &handles.app).await;
+            }
+        }
+
         let event = match parser::parse_notification(&method, params) {
             Ok(event) => event,
             Err(err) => {
