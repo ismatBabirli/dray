@@ -289,6 +289,8 @@ private struct AllClear: View {
         }
         .padding(.horizontal, 40)
         .padding(.bottom, 80)
+        // Settled tasks are read only on asking; Tasks asks too, but Home may be the only tab opened.
+        .task(id: store.live.filter { store.serverState[$0.id] == .connected }.count) { await store.loadSettled() }
     }
 }
 
