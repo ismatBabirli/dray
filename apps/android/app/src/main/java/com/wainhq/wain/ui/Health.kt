@@ -132,7 +132,7 @@ fun HealthBanner(health: Health, floating: Boolean = false, retry: () -> Unit = 
     Row(
         Modifier
             .fillMaxWidth()
-            .then(if (floating) Modifier.shadow(12.dp, shape).clip(shape).background(Wain.raised).border(0.5.dp, Color.White.copy(alpha = 0.14f), shape)
+            .then(if (floating) Modifier.shadow(12.dp, shape).clip(shape).background(Wain.raised).border(0.5.dp, Wain.text.copy(alpha = 0.14f), shape)
                   else Modifier.clip(shape).background(Wain.card))
             .heightIn(min = if (floating) 0.dp else 64.dp)
             .padding(horizontal = 14.dp, vertical = if (floating) 8.dp else 12.dp),
@@ -141,7 +141,7 @@ fun HealthBanner(health: Health, floating: Boolean = false, retry: () -> Unit = 
     ) {
         Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
             if (health.working) Orb(OrbKind.Reconnecting, 20.dp)
-            else Icon(health.icon, null, tint = if (health.needsYou) Wain.accent else Wain.secondary)
+            else Icon(health.icon, null, tint = if (health.needsYou) Wain.mark else Wain.secondary)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(health.title, style = Wain.Font.subhead)
@@ -152,7 +152,7 @@ fun HealthBanner(health: Health, floating: Boolean = false, retry: () -> Unit = 
             Text(
                 if (action == Health.Action.Fix) "Fix" else "Retry",
                 Modifier.clip(RoundedCornerShape(8.dp)).clickable { if (action == Health.Action.Fix) fix() else retry() }.padding(6.dp),
-                style = Wain.Font.pill.copy(color = if (health.needsYou) Wain.accent else Wain.text),
+                style = Wain.Font.pill.copy(color = if (health.needsYou) Wain.mark else Wain.text),
             )
         }
     }

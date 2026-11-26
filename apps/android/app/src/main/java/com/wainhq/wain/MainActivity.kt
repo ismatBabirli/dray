@@ -1,6 +1,7 @@
 package com.wainhq.wain
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -19,6 +20,7 @@ import com.wainhq.wain.wire.str
 import com.wainhq.wain.wire.wireJson
 import kotlinx.serialization.json.JsonObject
 import com.wainhq.wain.ui.App
+import com.wainhq.wain.ui.Wain
 import com.wainhq.wain.ui.WainTheme
 import com.wainhq.wain.ui.LocalStore
 
@@ -27,7 +29,10 @@ class MainActivity : ComponentActivity() {
     private var incoming by mutableStateOf<PairLink?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.dark(android.graphics.Color.TRANSPARENT), SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
+        // Read once: a change of system theme recreates the activity, as nothing here handles `uiMode`.
+        Wain.dark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_NO
+        val bars = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+        enableEdgeToEdge(bars, bars)
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) take(intent)
         val store = (application as WainApplication).store

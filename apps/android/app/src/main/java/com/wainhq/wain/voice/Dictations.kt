@@ -177,6 +177,9 @@ object Dictations {
     fun level(draft: SessionKey): Float =
         recorders[draft]?.let { loudness(it.takePeak()) } ?: listeners[draft]?.level ?: 0f
 
+    /** The words heard so far, live; empty from a server's model, which reads the recording only once it ends. */
+    fun heard(draft: SessionKey): String = listeners[draft]?.heard.orEmpty()
+
     /** Starts listening into `draft`. The dock has the microphone's permission before it calls this. */
     fun start(store: Store, engine: DictationEngine, draft: SessionKey) {
         if (state(draft) != Dictation.Idle || kept[draft] != null) return

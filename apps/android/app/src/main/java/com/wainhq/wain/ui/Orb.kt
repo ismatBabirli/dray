@@ -66,7 +66,7 @@ fun ChecksSpinner(size: Dp = 15.dp) {
     Canvas(Modifier.size(size)) {
         val w = 1.5.dp.toPx()
         rotate(angle) {
-            drawCircle(Wain.accent, this.size.minDimension / 2 - w, style = Stroke(w, pathEffect = PathEffect.dashPathEffect(floatArrayOf(2.4.dp.toPx(), 3.dp.toPx()))))
+            drawCircle(Wain.mark, this.size.minDimension / 2 - w, style = Stroke(w, pathEffect = PathEffect.dashPathEffect(floatArrayOf(2.4.dp.toPx(), 3.dp.toPx()))))
         }
     }
 }

@@ -239,7 +239,7 @@ private fun ServerCard(server: Server, onClick: () -> Unit) {
                 Text(
                     buildAnnotatedString {
                         withStyle(SpanStyle(color = Wain.secondary)) { append("${store.stateLabel(server.id)} · ") }
-                        withStyle(SpanStyle(color = if (update) Wain.accent else Wain.tertiary)) { append(if (update) "Update available" else place) }
+                        withStyle(SpanStyle(color = if (update) Wain.mark else Wain.tertiary)) { append(if (update) "Update available" else place) }
                     },
                     style = Wain.Font.footnote, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
@@ -300,8 +300,8 @@ fun StatusDot(server: String, size: Dp = 8.dp) {
     val state = store.serverState[server]
     val tone = when {
         store.servers.firstOrNull { it.id == server }?.on == false -> Wain.tertiary
-        state == ConnState.Connected -> if (store.loadErrors[server] == null) Wain.add else Wain.accent
-        state is ConnState.Failed && !state.problem.retries -> Wain.accent
+        state == ConnState.Connected -> if (store.loadErrors[server] == null) Wain.add else Wain.mark
+        state is ConnState.Failed && !state.problem.retries -> Wain.mark
         else -> Wain.dim
     }
     Box(Modifier.size(size).clip(CircleShape).background(tone))
@@ -550,7 +550,7 @@ private fun StatusBox(title: String, needsYou: Boolean, detail: @Composable () -
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, style = Wain.Font.subhead.copy(color = if (needsYou) Wain.accent else Wain.text))
+            Text(title, style = Wain.Font.subhead.copy(color = if (needsYou) Wain.mark else Wain.text))
             androidx.compose.material3.ProvideTextStyle(Wain.Font.footnote.copy(color = Wain.secondary)) { detail() }
         }
         button()

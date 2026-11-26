@@ -28,7 +28,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -88,17 +91,16 @@ import java.util.Calendar
 
 private const val PAGE = 40
 
-/** The merged list of every server's tasks: the desktop sidebar's runs, no title, no headings. */
+/**
+ * The Tasks tab: every shown machine's tasks, the desktop sidebar's runs, bots left to their own
+ * tab. Its title is the menu for Live, Drafts and Settled; projects are filter chips.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ListScreen(
-    openSession: (SessionKey) -> Unit,
-    openSettings: (String?) -> Unit,
-    addServer: (scan: Boolean) -> Unit,
-    startBot: (server: String, botId: String) -> Unit = { _, _ -> },
-    openPulls: () -> Unit = {},
-    openIssues: () -> Unit = {},
-) {
+fun ListScreen(list: LazyListState, nav: TabNav, sheets: TabSheets, machineButton: Boolean) {
+    val openSession = nav.openSession
+    val openSettings = nav.openSettings
+    val addServer = nav.addServer
     val store = LocalStore.current
     val scope = rememberCoroutineScope()
     var settled by rememberSaveable { mutableStateOf(false) }
@@ -107,22 +109,17 @@ fun ListScreen(
     var project by rememberSaveable { mutableStateOf<String?>(null) }
     var refreshing by remember { mutableStateOf(false) }
     var shown by remember(settled, project) { mutableIntStateOf(PAGE) }
-    val anyConnected = store.live.any { store.serverState[it.id] == ConnState.Connected }
+    var menu by remember { mutableStateOf(false) }
 
-    val names = store.live.flatMap { store.projects[it.id].orEmpty() }.map { it.name }.distinct().sorted()
+    val names = store.shown.flatMap { store.projects[it.id].orEmpty() }.map { it.name }.distinct().sorted()
     // A picked project that leaves the list is ignored rather than showing nothing.
     val filter = project?.takeIf { it in names }
     val runs = if (drafts) emptyList() else store.runs(filter, settled)
-    val hasSettled = store.items.values.any { it.archived == true && it.hidden != true }
-    val connected = store.live.count { store.serverState[it.id] == ConnState.Connected }
+    val connected = store.shown.count { store.serverState[it.id] == ConnState.Connected }
 
-    var newBot by remember { mutableStateOf(false) }
-    var listTop by remember { mutableFloatStateOf(0f) }
-    var botsFoot by remember { mutableFloatStateOf(0f) }
     // The row whose Delete is waiting on its confirm.
     var deleting by remember { mutableStateOf<ListRow?>(null) }
-    // Read whatever the view, and again as servers come up: the Settled button shows only when there are some,
-    // and an empty live list counts what was settled today.
+    // Read whatever the view, and again as servers come up: an empty live list counts what was settled today.
     LaunchedEffect(settled, connected) { if (connected > 0) store.loadSettled() }
     // Every connected server's drafts, newest first. A server whose read fails keeps what it last said,
     // so a dropped reply never reads as no drafts.
@@ -131,7 +128,7 @@ fun ListScreen(
     LaunchedEffect(drafts, connected, store.draftsRevision) {
         var all = listOf<Pair<String, DraftItem>>()
         var failed: String? = null
-        for (s in store.live.filter { store.serverState[it.id] == ConnState.Connected }) {
+        for (s in store.shown.filter { store.serverState[it.id] == ConnState.Connected }) {
             val read = runCatching { decodeList<DraftItem>(store.call(s.id, "list_drafts")) }
             read.exceptionOrNull()?.let { failed = it.message ?: "The server didn't answer." }
             all = all + (read.getOrNull()?.map { s.id to it } ?: draftRows.filter { it.first == s.id })
@@ -140,38 +137,31 @@ fun ListScreen(
         draftsError = failed
     }
 
-    Column(Modifier.fillMaxSize().background(Wain.page).statusBarsPadding()) {
-        Row(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton({ openSettings(null) }) { Icon(Icons.Outlined.Settings, "Settings", tint = Wain.text) }
-            // The desktop's two pages beside Settings. Reachable with every server down: each draws its last read.
+    Column(Modifier.fillMaxSize()) {
+        val title = when { drafts -> "Drafts"; settled -> "Settled"; else -> "Tasks" }
+        TabBar(title, sheets, machineButton, menu = {
+            Box {
+                Row(Modifier.clip(RoundedCornerShape(Wain.Radius.md)).clickable { menu = true }.padding(end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(title, style = TitleStyle())
+                    Glyph24(20.dp) { drawPath(androidx.compose.ui.graphics.vector.PathParser().parsePathString("M7 10l5 5 5-5z").toPath(), Wain.secondary) }
+                }
+                DropdownMenu(menu, { menu = false }, containerColor = Wain.raised) {
+                    for ((label, d, st) in listOf(Triple("Live", false, false), Triple("Drafts", true, false), Triple("Settled", false, true))) {
+                        DropdownMenuItem(
+                            { Text(label, style = Wain.Font.body) },
+                            { drafts = d; settled = st; menu = false },
+                            trailingIcon = { if (drafts == d && settled == st) Glyph24(18.dp) { checkGlyph(Wain.text, 2.2f) } },
+                        )
+                    }
+                }
+            }
+        }) {
+            // The desktop's two pages. Reachable with every server down: each draws its last read.
             if (store.live.isNotEmpty()) {
-                IconButton(openPulls) { PrOutline(Wain.text, 22.dp, "Pull requests") }
-                IconButton(openIssues) { Icon(Icons.Outlined.RadioButtonChecked, "Issues", tint = Wain.text) }
+                BarAction("Pull requests", nav.openPulls) { prGlyph(Wain.text) }
+                BarAction("Issues", nav.openIssues) { issuesGlyph(Wain.text) }
             }
-            Spacer(Modifier.weight(1f))
-            if (drafts || (anyConnected && draftRows.isNotEmpty())) {
-                Row(
-                    Modifier.padding(end = 8.dp).clip(CircleShape).background(Wain.raised)
-                        .clickable { drafts = !drafts; settled = false }.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(Icons.Outlined.Circle, null, Modifier.size(16.dp), tint = if (drafts) Wain.text else Wain.secondary)
-                    Text("Drafts", style = Wain.Font.pill.copy(color = if (drafts) Wain.text else Wain.secondary))
-                }
-            }
-            if (settled || (anyConnected && hasSettled)) {
-                Row(
-                    Modifier.padding(end = 8.dp).clip(CircleShape).background(Wain.raised)
-                        .clickable { settled = !settled; drafts = false }.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    CheckCheck(if (settled) Wain.text else Wain.secondary, 20.dp, 1.6f)
-                    Text("Settled", style = Wain.Font.pill.copy(color = if (settled) Wain.text else Wain.secondary))
-                }
-            }
-            if (anyConnected) IconButton({ newBot = true }) { Icon(Icons.Outlined.Add, "New bot", tint = Wain.text) }
         }
 
         Box(Modifier.weight(1f)) {
@@ -190,30 +180,19 @@ fun ListScreen(
         ) {
             val rows = runs.flatMap { it.rows }
             val empty = !settled && !drafts && runs.isEmpty()
-            val bots = if (settled || drafts) emptyList() else store.allBots
-            LazyColumn(Modifier.fillMaxSize().onGloballyPositioned { listTop = it.positionInWindow().y }, contentPadding = PaddingValues(top = 12.dp, bottom = 120.dp)) {
-                for (s in store.live) {
+            LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(top = 4.dp, bottom = 96.dp)) {
+                for (s in store.shown) {
                     val h = store.health(s.id) ?: continue
                     if (store.serverState[s.id] != ConnState.Connected && !h.needsYou) continue
                     item("health-${s.id}") {
-                        Box(Modifier.padding(start = 20.dp, end = 12.dp, bottom = 14.dp)) {
+                        Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
                             HealthBanner(h, retry = { store.retry(s.id) }, fix = { openSettings(s.id) })
                         }
                     }
                 }
-                // Bots lead the live list, as on the desktop: a bot belongs to no project, so no filter narrows them.
-                bots.forEachIndexed { i, (server, bot) ->
-                    item("bot-$server-${bot.id}") {
-                        val chat = store.botChat(server, bot).lastOrNull()
-                        // The last bot's foot is where an empty list's screen starts, so it never draws over them.
-                        Box(if (i == bots.lastIndex) Modifier.onGloballyPositioned { botsFoot = it.positionInWindow().y + it.size.height } else Modifier) {
-                            BotListRow(server, bot, chat) { if (chat != null) openSession(chat) else startBot(server, bot.id) }
-                        }
-                    }
-                }
-                if (names.size > 1 && (filter != null || rows.isNotEmpty())) {
+                if (names.size > 1 && (filter != null || rows.isNotEmpty() || drafts)) {
                     item("projects") { ProjectStrip(names, filter) { project = it } }
-                } else if (bots.isNotEmpty() && rows.isNotEmpty()) item("bots-gap") { Spacer(Modifier.height(16.dp)) }
+                }
                 if (drafts) {
                     val shownDrafts = draftRows.filter { filter == null || it.second.project == filter }
                     draftsError?.let { err ->
@@ -229,8 +208,8 @@ fun ListScreen(
                     }
                     shownDrafts.forEach { (server, d) ->
                         item("draft-$server-${d.id}") {
-                            // A draft opens in the dock, on its own picks, ready to start or edit.
-                            DraftRow(d) { task.open(d, server); drafts = false }
+                            // A draft opens in the new-task sheet, on its own picks, ready to start or edit.
+                            DraftRow(d) { task.open(d, server); sheets.newTask() }
                         }
                     }
                 }
@@ -263,13 +242,13 @@ fun ListScreen(
                     val rowsHere = run.rows.take(cut)
                     rowsHere.forEachIndexed { i, row ->
                         item(row.key.toString()) {
-                            var menu by remember { mutableStateOf(false) }
+                            var rowMenu by remember { mutableStateOf(false) }
                             Box {
                                 Box(Modifier.alpha(if (run.stage == Stage.Aside) 0.3f else 1f)) {
-                                    SessionRow(rowsHere, i, longPress = { menu = true }) { openSession(row.key) }
+                                    SessionRow(rowsHere, i, longPress = { rowMenu = true }) { openSession(row.key) }
                                 }
                                 RowMenu(
-                                    menu, { menu = false }, row,
+                                    rowMenu, { rowMenu = false }, row,
                                     aside = run.stage == Stage.Aside || row.item.aside == true,
                                     inheritsPin = run.stage == Stage.Pinned && row.depth > 0 && row.item.pinned != true,
                                     opened = openSession,
@@ -279,36 +258,29 @@ fun ListScreen(
                         }
                         if (!settled) store.asks[row.key]?.firstOrNull()?.let { ask ->
                             item("ask-${row.key}") {
-                                AskCard(row.key, ask, Modifier.padding(start = 20.dp, top = 2.dp, end = 20.dp, bottom = 12.dp))
+                                AskCard(row.key, ask, Modifier.padding(start = 16.dp, top = 2.dp, end = 16.dp, bottom = 12.dp))
                             }
                         }
                     }
                 }
                 if (shown < rows.size) item("more") { LaunchedEffect(Unit) { shown += PAGE }; Spacer(Modifier.height(1.dp)) }
             }
-            if (empty) {
-                val above = if (bots.isEmpty()) 0.dp else with(LocalDensity.current) { (botsFoot - listTop).coerceAtLeast(0f).toDp() }
-                Box(Modifier.padding(top = above)) { EmptyList(filter, addServer, openSettings) }
-            }
+            if (empty) EmptyList(filter, addServer, openSettings)
         }
-        if (!settled) NewTaskDock(openSession, Modifier.align(Alignment.BottomCenter))
         }
     }
-    if (newBot) BotSheet(editing = null, close = { newBot = false }, started = openSession)
     deleting?.let { DeleteConfirm(it) { deleting = null } }
 }
 
 @Composable
 private fun ProjectStrip(names: List<String>, picked: String?, pick: (String?) -> Unit) {
     LazyRow(
-        Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 12.dp),
-        contentPadding = PaddingValues(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        item { Text("All", Modifier.clickable { pick(null) }, style = Wain.Font.body.copy(color = if (picked == null) Wain.text else Wain.tertiary)) }
-        items(names) { n ->
-            Text(n, Modifier.clickable { pick(n) }, style = Wain.Font.body.copy(color = if (picked == n) Wain.text else Wain.tertiary))
-        }
+        item { FilterPill("All", picked == null) { pick(null) } }
+        items(names) { n -> FilterPill(n, picked == n) { pick(if (picked == n) null else n) } }
     }
 }
 
@@ -336,7 +308,7 @@ private fun SessionRow(rows: List<ListRow>, i: Int, longPress: () -> Unit, onCli
     ) {
         Box(Modifier.width(14.dp), contentAlignment = Alignment.Center) {
             val rail = when {
-                store.isAsking(row.key) -> Wain.accent
+                store.isAsking(row.key) -> Wain.mark
                 item.status == "completed" -> Wain.add
                 else -> null
             }
@@ -419,8 +391,8 @@ private fun EmptyList(filter: String?, addServer: (Boolean) -> Unit, openSetting
             when {
                 last != null -> EmptyScreen({ SettledStack(last.first.item.title, shortAge(last.second)) }, "All clear",
                     if (today.size == 1) "1 settled today." else "${today.size} settled today.")
-                filter != null -> EmptyScreen(EmptyArtKind.Project, "Nothing in $filter", "Write one below to start it.")
-                else -> EmptyScreen(EmptyArtKind.Tasks, "No tasks yet", "Write one below to start it.")
+                filter != null -> EmptyScreen(EmptyArtKind.Project, "Nothing in $filter", "Tap New task to start one.")
+                else -> EmptyScreen(EmptyArtKind.Tasks, "No tasks yet", "Tap New task to start one.")
             }
         }
     }

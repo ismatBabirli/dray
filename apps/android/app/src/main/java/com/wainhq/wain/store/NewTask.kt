@@ -151,6 +151,9 @@ class NewTask(private val store: Store, context: Context) {
 
     fun aim(at: Bot, on: String) { bot = on to at }
 
+    /** Run by Me: off the bot, staying on its machine. */
+    fun runByMe() { bot?.let { pickServer(it.first) } }
+
     /** The saved draft the dock holds, by server and id: dropped once its text goes somewhere else. */
     var draftId by mutableStateOf<Pair<String, String>?>(null)
         private set

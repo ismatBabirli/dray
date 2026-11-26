@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="icon_background">#FEFEFE</color>
-    <color name="page">#0A0A0A</color>
+    <!-- Theme.kt's page, light here and dark under values-night. -->
+    <color name="page">#FFFFFF</color>
+    <!-- The splash stays dark in both modes: the mark brand/build.py writes is white. -->
+    <color name="splash">#0A0A0A</color>
 </resources>

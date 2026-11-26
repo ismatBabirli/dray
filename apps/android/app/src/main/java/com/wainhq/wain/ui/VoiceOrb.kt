@@ -39,32 +39,13 @@ import kotlin.math.ceil
 import kotlin.math.exp
 import kotlin.math.min
 
-/** The voice orb both docks draw: tapped to talk, tapped again to stop. VoiceDock.swift's `DockOrb`. */
-@Composable
-fun DockOrb(draft: SessionKey, size: Dp, tap: () -> Unit, modifier: Modifier = Modifier) {
-    val state = Dictations.state(draft)
-    Box(
-        modifier
-            .size(size)
-            .shadow(if (size > 76.dp) 20.dp else 14.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black)
-            .clip(CircleShape)
-            .border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape)
-            .clickable(remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = tap)
-            .semantics {
-                contentDescription = "Voice"
-                stateDescription = if (state == Dictation.Recording) "Recording" else ""
-            },
-    ) {
-        VoiceOrb(size, state) { if (state == Dictation.Recording) Dictations.level(draft) else 0f }
-    }
-}
-
 /**
  * The dictation orb: clear dark glass with sunlight caught inside it, split into a rainbow band
  * with a white filament through it. A wave flows along the band, swelling with the voice;
  * transcribing curls the band into an arc that orbits the rim, and stopping brings the arc home
  * before it uncurls. The Island's VoiceOrb.swift and its `prism` shader, as AGSL; a phone before
- * Android 13 has no runtime shaders and runs the same math on the CPU.
+ * Android 13 has no runtime shaders and runs the same math on the CPU. Only the debug build's
+ * `OrbDemoActivity` draws it since the composer replaced the docks.
  */
 @Composable
 fun VoiceOrb(size: Dp, state: Dictation, cpu: Boolean = false, level: () -> Float) {

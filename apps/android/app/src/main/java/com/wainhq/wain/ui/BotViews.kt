@@ -103,7 +103,7 @@ import kotlinx.coroutines.launch
 // BotViews.swift, restated: the list's bot row, the bot chat's rows, merge cards, Waiting on you and the Tasks sheet.
 
 /** A bot row's unread count: the desktop's dark `oklch(0.55 0.2 25)`, deeper so white reads on it. */
-private val unread = Color(0xFFCC272E)
+
 
 // The list's row
 
@@ -120,14 +120,16 @@ fun BotListRow(server: String, bot: Bot, chat: SessionKey?, onClick: () -> Unit)
     val asking = (chat?.let { store.isAsking(it) } ?: false) || store.hiddenAsks(store.botTasks(store.botChat(server, bot))).isNotEmpty()
     val isUnread = item?.status == "completed"
     val preview = chat?.let { store.botState.previews[it] }
+    // Faded while its machine is out of reach: the row is the last thing it said.
+    val away = server in store.lost
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 8.dp).clip(RoundedCornerShape(Wain.Radius.md)).clickable(onClick = onClick)
-            .padding(start = 6.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+            .alpha(if (away) 0.5f else 1f).padding(start = 8.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Box {
-            BotFace(bot, 48.dp)
+            BotFace(bot, 44.dp)
             Box(Modifier.align(Alignment.BottomEnd)) { Badge(asking, isUnread, preview?.replies ?: 0) }
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -146,8 +148,12 @@ fun BotListRow(server: String, bot: Bot, chat: SessionKey?, onClick: () -> Unit)
                 ?: previewLine(preview?.text ?: bot.greeting?.lastOrNull() ?: bot.welcome ?: "")
             if (item?.busy == true && !asking) {
                 Box(Modifier.heightIn(min = 20.dp), contentAlignment = Alignment.CenterStart) { TypingDots() }
+            } else if (asking) {
+                Text(if (line.isEmpty()) "Waiting on you" else "Waiting on you: $line", style = Wain.Font.footnote.copy(fontSize = 14.sp, lineHeight = 20.sp, color = Wain.mark),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
             } else if (line.isNotEmpty()) {
-                Text(line, style = Wain.Font.subhead.copy(color = Wain.secondary), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(line, style = Wain.Font.footnote.copy(fontSize = 14.sp, lineHeight = 20.sp, color = if (isUnread) Wain.text else Wain.secondary),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -158,13 +164,13 @@ fun BotListRow(server: String, bot: Bot, chat: SessionKey?, onClick: () -> Unit)
 private fun Badge(asking: Boolean, isUnread: Boolean, replies: Int) {
     if (asking) {
         Box(
-            Modifier.offset(x = 1.dp).size(12.dp).clip(CircleShape).background(Wain.page).padding(2.dp).clip(CircleShape).background(Wain.accent)
+            Modifier.offset(x = 1.dp).size(12.dp).clip(CircleShape).background(Wain.page).padding(2.dp).clip(CircleShape).background(Wain.mark)
                 .semantics { contentDescription = "Waiting on you" },
         )
     } else if (isUnread) {
         Box(
             Modifier.offset(x = 2.dp, y = 1.dp).clip(CircleShape).background(Wain.page).padding(2.dp)
-                .heightIn(min = 18.dp).widthIn(min = 18.dp).clip(CircleShape).background(unread)
+                .heightIn(min = 18.dp).widthIn(min = 18.dp).clip(CircleShape).background(Wain.unread)
                 .semantics { contentDescription = if (replies == 1) "1 new reply" else "$replies new replies" },
             contentAlignment = Alignment.Center,
         ) {
@@ -455,9 +461,9 @@ private fun words(pr: PrMark?, verdict: BotVerdict?): Pair<String, Color>? {
     return when (verdict) {
         BotVerdict.Merged -> "Merged" to Wain.tertiary
         BotVerdict.Closed -> "Closed without merging" to Wain.tertiary
-        BotVerdict.Unknown -> "Checking mergeability…" to Wain.accent
-        BotVerdict.Behind -> "Behind base" to Wain.accent
-        BotVerdict.Blocked -> "Blocked" to Wain.accent
+        BotVerdict.Unknown -> "Checking mergeability…" to Wain.mark
+        BotVerdict.Behind -> "Behind base" to Wain.mark
+        BotVerdict.Blocked -> "Blocked" to Wain.mark
         else -> null
     }
 }
@@ -797,7 +803,7 @@ private fun TaskRow(server: String, key: SessionKey, onClick: () -> Unit) {
         }
         Text(
             item.title.ifEmpty { "Untitled" }, Modifier.weight(1f),
-            style = Wain.Font.body.copy(color = if (asking) Wain.accent else Wain.text), maxLines = 1, overflow = TextOverflow.Ellipsis,
+            style = Wain.Font.body.copy(color = if (asking) Wain.mark else Wain.text), maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
         // Asked of the bot's server, not `key`: a machine paired directly and shared too can hand the shared copy of a task that runs right here.
         if (store.items[SessionKey(server, key.id)] == null) Icon(Icons.Outlined.Dns, "Runs on ${store.name(key.server)}", Modifier.size(12.dp), tint = Wain.secondary)

@@ -23,6 +23,7 @@ import com.wainhq.wain.net.ConnState
 import com.wainhq.wain.net.Connection
 import com.wainhq.wain.net.socketUrl
 import com.wainhq.wain.wire.AgentEvent
+import com.wainhq.wain.wire.UsageReading
 import com.wainhq.wain.wire.BackgroundTask
 import com.wainhq.wain.wire.Bot
 import com.wainhq.wain.wire.DeletedEvent
@@ -167,6 +168,29 @@ class Store(private val context: Context) {
     /** Bot chats' previews, stall cards and pending agent picks: StoreBots.kt. */
     val botState = BotState()
 
+    /** Each server's newest usage reading per agent, from `live_state` and `usage_changed`. */
+    val usage = mutableStateMapOf<String, List<UsageReading>>()
+    /** Bumped on every `routines_changed`, so the Routines tab reads again. */
+    var routinesRevision by mutableIntStateOf(0)
+
+    /**
+     * The one machine the Machines sheet shows, or null for all of them. Kept per device;
+     * a pick naming a machine that is gone reads as all.
+     */
+    var machine by mutableStateOf(prefs.getString("machine", null))
+        private set
+
+    fun showMachine(id: String?) {
+        machine = id
+        prefs.edit().putString("machine", id).apply()
+    }
+
+    /** The pick while it names a live machine. */
+    val shownMachine: String? get() = machine?.takeIf { m -> live.any { it.id == m } }
+
+    /** The live servers the Machines pick shows: every tab draws from these. */
+    val shown: List<Server> get() = shownMachine?.let { m -> live.filter { it.id == m } } ?: live
+
     /** The pull requests and issues pages' last reads, drawn at once when either opens. */
     val pulls by lazy { PullsModel(this, cache) }
     val issues by lazy { IssuesModel(this, cache) }
@@ -300,6 +324,7 @@ class Store(private val context: Context) {
     }
 
     fun removeServer(s: Server) {
+        if (machine == s.id) showMachine(null)
         // A copy coming back in its place takes the push handle over on that same server; unregistering
         // would race its registering, and the server drops a handle whatever tag it was given under.
         val heldFor = shared.flatMap { (p, ms) -> ms.map { Via(p, it.id) } }.filter { twin(it) == s.id }
@@ -713,8 +738,9 @@ class Store(private val context: Context) {
     fun runs(project: String?, settled: Boolean = false): List<Run> {
         val chats = bots.mapValues { (_, list) -> list.map { it.path } }
         val hidden = covered
+        val only = shownMachine
         val list = items.filter { (key, item) ->
-            key.server !in hidden && item.hidden != true && (item.archived == true) == settled &&
+            key.server !in hidden && (only == null || key.server == only) && item.hidden != true && (item.archived == true) == settled &&
                 (project == null || project == item.project) &&
                 // A bot's chat is its row in the bots section, never a task row.
                 !(!settled && chats[key.server].orEmpty().any { samePath(it, item.cwd) }) &&
@@ -1016,6 +1042,8 @@ class Store(private val context: Context) {
                     queued.keys.filter { it.server == server }.forEach { queued.remove(it) }
                     for (q in decodeList<QueueChanged>(held)) if (q.queued.isNotEmpty()) queued[SessionKey(server, q.sessionId)] = q.queued
                 }
+                // Absent from a server older than usage readings: it has none to show.
+                usage[server] = UsageReading.list(live["usage"])
                 serving.keys.filter { it.server == server }.forEach { serving.remove(it) }
                 for (s in decodeList<ServingEvent>(live["serving"])) if (s.ports.isNotEmpty()) serving[SessionKey(server, s.sessionId)] = s.ports
             }
@@ -1047,6 +1075,8 @@ class Store(private val context: Context) {
             }
             "session_deleted" -> decodeOrNull<DeletedEvent>(payload)?.let { forget(SessionKey(server, it.sessionId)) }
             "bots_changed" -> scope.launch { loadBots(server) }
+            "routines_changed" -> routinesRevision++
+            "usage_changed" -> usage[server] = UsageReading.list(payload["usage"])
             // Any client saved or dropped a draft, the CLI included: the drafts view reads again.
             "drafts_changed" -> draftsRevision++
             "clone_progress" -> decodeOrNull<com.wainhq.wain.model.CloneProgress>(payload)?.let { p ->
