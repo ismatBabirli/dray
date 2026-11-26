@@ -29,30 +29,25 @@ struct DraftItem: Decodable, Identifiable {
 struct SessionList: View {
     @Environment(Store.self) private var store
     @Environment(NewTask.self) private var task
-    @Binding var selection: SessionKey?
-    @Binding var sheet: RootSheet?
-    /// This launch's one chance to open Settings' launch bot; anything the reader does first spends it.
-    /// The root's, so the new task page's dock spends it too.
-    @Binding var autoOpen: Bool
-    /// The list is a split view's sidebar, beside an open chat, rather than the whole screen.
-    var sidebar = false
-    /// Opens the new task page in the main pane.
-    var newTaskPage: () -> Void = {}
+    @Environment(Nav.self) private var nav
+    /// An iPad sidebar's project: the list held to it, with no strip.
+    var only: String? = nil
     @State private var project: String?
     @State private var mode = ListMode.live
     @State private var drafts: [(server: UUID, draft: DraftItem)] = []
     @State private var shown = Self.pageSize
-    /// The launch bot with no chat yet, opened on its own page.
-    @State private var starting: BotStart?
-    @State private var newBot = false
-    @AppStorage(LaunchBot.key) private var launchBot = ""
     /// The pull requests or issues page, opened over the list.
     @State private var listPage: ListPage?
-    @Environment(\.scenePhase) private var phase
     /// The row whose Delete is waiting on its confirm.
     @State private var deleting: ListRow?
 
     private static let pageSize = 40
+
+    /// The row on top of this tab's stack, which the list draws as the open one.
+    private var selection: Binding<SessionKey?> {
+        Binding(get: { if case .session(let k)? = nav.paths[nav.tab]?.first { k } else { nil } },
+                set: { key in if let key { nav.open(.session(key)) } })
+    }
 
     /// The runs cut to their first `limit` rows, a nest never split across the cut.
     private func page(_ runs: [(stage: Stage, rows: [ListRow])], _ limit: Int) -> [(stage: Stage, rows: [ListRow])] {
@@ -68,162 +63,122 @@ struct SessionList: View {
     }
 
     var body: some View {
+        let machines = nav.shownIds(store)
         // One entry per name: the same repo on two machines is one project here.
         var seen = Set<String>()
-        let names = store.live.flatMap { store.projects[$0.id] ?? [] }.map(\.name).filter { seen.insert($0).inserted }
+        let names = nav.shown(store).flatMap { store.projects[$0.id] ?? [] }.map(\.name).filter { seen.insert($0).inserted }
         // A picked project that left the list narrows nothing.
-        let filter = names.contains { $0 == project } ? project : nil
-        let all = mode == .drafts ? [] : store.runs(project: filter, settled: mode == .settled)
+        let filter = only ?? (names.contains { $0 == project } ? project : nil)
+        let all = mode == .drafts ? [] : store.runs(project: filter, settled: mode == .settled, servers: machines)
         // Paged: only the first `shown` rows are drawn, more as the last one comes on screen.
         let runs = page(all, shown)
         let more = runs.reduce(0) { $0 + $1.rows.count } < all.reduce(0) { $0 + $1.rows.count }
         // Nested where its parent is listed anywhere: a pinned child draws at depth 0 still holding the link.
         let listed = Set(all.flatMap { $0.rows.map(\.key) })
-        // Bots lead the live list, as on the desktop: a bot belongs to no project, so no filter narrows them.
-        let botRows = mode == .live ? store.allBots.map { b in
-            (id: "\(b.server)/\(b.bot.id)", server: b.server, bot: b.bot, chat: store.botChat(b.server, b.bot).last)
-        } : []
-        let blank = mode == .live && runs.isEmpty && botRows.isEmpty
+        let blank = mode == .live && runs.isEmpty
         // A picked filter keeps its strip, or there would be no way back to All.
-        let strip = names.count > 1 && (filter != nil || !(mode == .drafts ? drafts.isEmpty : all.isEmpty))
-        let dock = !store.live.isEmpty
-        let lone = autoOpen ? loneBot : nil
-        let read = store.live.allSatisfy { store.read($0.id) } && store.awaitingShares.isEmpty
-        VStack(spacing: 0) {
-            List(selection: $selection) {
-                // Quiet about reconnects, never about a read that failed or a server waiting on the reader.
-                ForEach(store.live.filter { s in store.health(s.id).map { store.serverState[s.id] == .connected || $0.needsYou } ?? false }) { s in
-                    if let health = store.health(s.id) {
-                        HealthBanner(health: health,
-                                     retry: { Task { await store.retry(s.id) } },
-                                     fix: { sheet = .settings(server: s.id) })
-                            .bannerRow()
-                    }
+        let strip = only == nil && names.count > 1 && (filter != nil || !(mode == .drafts ? drafts.isEmpty : all.isEmpty))
+        List(selection: selection) {
+            // Quiet about reconnects, never about a read that failed or a server waiting on the reader.
+            ForEach(nav.shown(store).filter { s in store.health(s.id).map { store.serverState[s.id] == .connected || $0.needsYou } ?? false }) { s in
+                if let health = store.health(s.id) {
+                    HealthBanner(health: health,
+                                 retry: { Task { await store.retry(s.id) } },
+                                 fix: { nav.sheet = .settings(server: s.id) })
+                        .bannerRow()
                 }
-                ForEach(botRows, id: \.id) { b in
-                    if let chat = b.chat {
-                        BotListRow(server: b.server, bot: b.bot, chat: chat)
-                            .tag(chat)
-                            .sessionRow(selected: selection == chat)
-                    } else {
-                        // No chat yet: the dock aims at its folder, and the first message starts one.
-                        Button {
-                            task.aim(at: b.bot, on: b.server)
-                            // Beside the main pane, the new task page is where that dock is.
-                            newTaskPage()
-                        } label: {
-                            BotListRow(server: b.server, bot: b.bot, chat: nil)
-                        }
-                        .buttonStyle(RowButtonStyle())
-                        .sessionRow(selected: selection == nil && task.bot?.bot.id == b.bot.id)
-                    }
-                }
-                // Under the bots, since no filter narrows them; its top padding is the gap after them.
-                if strip {
-                    ProjectStrip(names: names, picked: filter) { project = $0 }
-                        .padding(.bottom, Theme.Space.m)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .selectionDisabled()
-                } else if !botRows.isEmpty && !runs.isEmpty { Color.clear.frame(height: Theme.Space.l).plainRow() }
-                if mode == .drafts {
-                    draftRows(filter)
-                } else if runs.isEmpty && mode == .settled {
-                    Text("Nothing settled.").font(Theme.Font.subhead).foregroundStyle(Theme.tertiary)
-                        .padding(.leading, 14).frame(height: 44, alignment: .leading)
+            }
+            if strip {
+                ProjectStrip(names: names, picked: filter) { project = $0 }
+                    .padding(.bottom, Theme.Space.m)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .selectionDisabled()
+            }
+            if mode == .drafts {
+                draftRows(filter)
+            } else if runs.isEmpty && mode == .settled {
+                Text("Nothing settled.").font(Theme.Font.subhead).foregroundStyle(Theme.tertiary)
+                    .padding(.leading, 14).frame(height: 44, alignment: .leading)
+                    .plainRow()
+            }
+            // One block per run: the gap between them is the whole signal, never a heading.
+            ForEach(Array(runs.enumerated()), id: \.element.stage) { i, run in
+                if i > 0 { Color.clear.frame(height: Theme.Space.l).plainRow() }
+                // The one run with a heading: nothing else on the rows says why they lead.
+                if run.stage == .pinned {
+                    // In line with the titles: the rows' 6pt inset and 14pt rail, past this row's own 16.
+                    Text("Pinned").font(Theme.Font.footnote).foregroundStyle(Theme.secondary)
+                        .padding(.leading, Theme.Space.xs).padding(.bottom, Theme.Space.xs)
                         .plainRow()
                 }
-                // One block per run: the gap between them is the whole signal, never a heading.
-                ForEach(Array(runs.enumerated()), id: \.element.stage) { i, run in
-                    if i > 0 { Color.clear.frame(height: Theme.Space.l).plainRow() }
-                    // The one run with a heading: nothing else on the rows says why they lead.
-                    if run.stage == .pinned {
-                        // In line with the titles: the rows' 6pt inset and 14pt rail, past this row's own 16.
-                        Text("Pinned").font(Theme.Font.footnote).foregroundStyle(Theme.secondary)
-                            .padding(.leading, Theme.Space.xs).padding(.bottom, Theme.Space.xs)
-                            .plainRow()
-                    }
-                    ForEach(Array(run.rows.enumerated()), id: \.element.id) { j, row in
-                        // Set aside fades as the desktop sidebar's does, back to full once it is the open one.
-                        SessionRow(key: row.key, item: row.item, lines: elbows(run.rows, j))
-                            .opacity(run.stage == .aside && selection != row.key ? 0.3 : 1)
-                            .tag(row.key)
-                            .sessionRow(selected: selection == row.key)
-                            .contextMenu {
-                                RowMenu(row: row, aside: run.stage == .aside || row.item.aside == true,
-                                        inheritsPin: run.stage == .pinned && row.depth > 0 && row.item.pinned != true,
-                                        nested: row.item.parentSessionId.map { listed.contains(SessionKey(server: row.key.server, id: $0)) } ?? false,
-                                        opened: { selection = $0 }, delete: { deleting = row })
-                            }
-                        if mode == .live, let ask = store.asks[row.key]?.first {
-                            AskCard(key: row.key, event: ask)
-                                .padding(EdgeInsets(top: 2, leading: 14, bottom: Theme.Space.m, trailing: Theme.Space.m))
-                                .listRowInsets(EdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 8))
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(Color.clear)
-                                .selectionDisabled()
+                ForEach(Array(run.rows.enumerated()), id: \.element.id) { j, row in
+                    // Set aside fades as the desktop sidebar's does, back to full once it is the open one.
+                    SessionRow(key: row.key, item: row.item, lines: elbows(run.rows, j))
+                        .opacity(run.stage == .aside && selection.wrappedValue != row.key ? 0.3 : 1)
+                        .tag(row.key)
+                        .sessionRow(selected: selection.wrappedValue == row.key)
+                        .contextMenu {
+                            RowMenu(row: row, aside: run.stage == .aside || row.item.aside == true,
+                                    inheritsPin: run.stage == .pinned && row.depth > 0 && row.item.pinned != true,
+                                    nested: row.item.parentSessionId.map { listed.contains(SessionKey(server: row.key.server, id: $0)) } ?? false,
+                                    opened: { nav.open(.session($0)) }, delete: { deleting = row })
                         }
+                    if mode == .live, let ask = store.asks[row.key]?.first {
+                        AskCard(key: row.key, event: ask)
+                            .padding(EdgeInsets(top: 2, leading: 14, bottom: Theme.Space.m, trailing: Theme.Space.m))
+                            .listRowInsets(EdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 8))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .selectionDisabled()
                     }
                 }
-                if more {
-                    // Comes on screen as the reader nears the end, and draws the next page.
-                    Color.clear.frame(height: 1).plainRow()
-                        .onAppear { shown += Self.pageSize }
-                }
             }
-            .listStyle(.plain)
-            // With a hardware keyboard a tap focused the row, and its focus ring drew a white box round it.
-            .focusable(false)
-            .contentMargins(.top, Theme.Space.m, for: .scrollContent)
-            // The resting dock's height, so the last row scrolls clear of the orb.
-            .contentMargins(.bottom, dock ? (sidebar ? 96 : 160) : 0, for: .scrollContent)
-            // The breaks between runs are 16pt, under the 44pt a list row otherwise takes.
-            .environment(\.defaultMinListRowHeight, 1)
-            .themedList()
-            .animation(Theme.motion, value: runs.map { $0.rows.map(\.id) })
-            .refreshable {
-                await store.refresh()
-                // Both, whatever the view: a failed read hides a button, and this is the way to retry it.
-                await loadDrafts()
-                await store.loadSettled()
+            if more {
+                // Comes on screen as the reader nears the end, and draws the next page.
+                Color.clear.frame(height: 1).plainRow()
+                    .onAppear { shown += Self.pageSize }
             }
-            .overlay { if blank { empty(filter) } }
         }
-        .overlay(alignment: .bottom) {
-            // Beside the main pane the orb is the new task page's, opened from here.
-            if dock && sidebar {
-                Button {
-                    task.bot = nil
-                    newTaskPage()
-                } label: {
-                    Label("New task", systemImage: "square.and.pencil")
-                }
-                .buttonStyle(DockButtonStyle())
-                .padding(.horizontal, Theme.Space.l)
-                .padding(.top, Theme.Space.xxl)
-                .padding(.bottom, Theme.Space.l)
-                .background {
-                    LinearGradient(stops: [.init(color: Theme.page.opacity(0), location: 0), .init(color: Theme.page, location: 0.4)],
-                                   startPoint: .top, endPoint: .bottom).ignoresSafeArea()
-                }
-            } else if dock {
-                // Dim while nothing is connected: the screen above says why.
-                VoiceDock(task: task, started: { selection = $0 }, engaged: { autoOpen = false }).opacity(blank && !anyConnected ? 0.3 : 1)
-            }
+        .listStyle(.plain)
+        // With a hardware keyboard a tap focused the row, and its focus ring drew a white box round it.
+        .focusable(false)
+        .contentMargins(.top, Theme.Space.m, for: .scrollContent)
+        // The breaks between runs are 16pt, under the 44pt a list row otherwise takes.
+        .environment(\.defaultMinListRowHeight, 1)
+        .themedList()
+        .animation(Theme.motion, value: runs.map { $0.rows.map(\.id) })
+        .refreshable {
+            await store.refresh()
+            // Both, whatever the view: a failed read hides a button, and this is the way to retry it.
+            await loadDrafts()
+            await store.loadSettled()
+        }
+        .overlay {
+            if let blocked = ConnectState(store: store, nav: nav) { blocked } else if blank { empty(filter) }
         }
         // A new view or filter starts on its first page.
         .onChange(of: "\(mode)\(filter ?? "")") { shown = Self.pageSize }
         .page()
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { header }
-        .navigationDestination(item: $starting) { b in
-            BotStartView(task: task, server: b.server, bot: b.bot) { key in
-                starting = nil
-                selection = key
+        .tabBar(only ?? title) {
+            Menu {
+                Picker("View", selection: $mode) {
+                    Label("Live", systemImage: "circle.fill").tag(ListMode.live)
+                    Label("Drafts", systemImage: "circle.dashed").tag(ListMode.drafts)
+                    Label("Settled", systemImage: "checkmark").tag(ListMode.settled)
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Text(only ?? title)
+                    Image(systemName: "chevron.down").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.secondary)
+                }
+                .foregroundStyle(Theme.text)
             }
+            .accessibilityIdentifier("viewMenu")
         }
-        // Its own stack in a sheet: pushed inside the split view's sidebar, a page's own pushes looped.
+        .toolbar { header }
+        // Its own stack in a sheet, so a page's own pushes never tangle with the tab's.
         .sheet(item: $listPage) { p in
             NavigationStack {
                 switch p {
@@ -241,81 +196,47 @@ struct SessionList: View {
                 Task {
                     guard await store.delete(row.key) else { return Haptic.error() }
                     // Deleting the open one falls back to the list, never a neighbour: the desktop's rule.
-                    if selection == row.key { selection = nil }
+                    if selection.wrappedValue == row.key { nav.paths[nav.tab] = [] }
                 }
             }
         } message: { _ in
             Text("Its conversation goes for good.")
         }
-        .sheet(isPresented: $newBot) { BotSheet(editing: nil) { selection = $0 } }
-        .onChange(of: lone, initial: true) { open(lone) }
-        // Every server and shared machine has answered and the list is more than one bot: the chance is gone.
-        .onChange(of: read) { if read && lone == nil { autoOpen = false } }
-        // Anything the reader starts spends it. Never a tap gesture over the list: one cancels
-        // the List's own touches, and no row could be selected (#1196).
-        .onChange(of: selection) { if selection != nil { autoOpen = false } }
-        .onChange(of: task.bot?.bot.id) { autoOpen = false }
-        .onChange(of: "\(mode)\(project ?? "")") { autoOpen = false }
-        .onChange(of: sheet?.id) { autoOpen = false }
-        .onChange(of: newBot) { autoOpen = false }
-        .onChange(of: listPage) { autoOpen = false }
-        .onChange(of: phase) { if phase == .background { autoOpen = false } }
-        // ponytail: a server that takes longer than this to answer never opens its bot; a read-progress signal if that bites.
-        .task { try? await Task.sleep(for: .seconds(10)); autoOpen = false }
         // Again once a server comes up: a view opened before it connected read nothing from it.
-        // Drafts and settled are read whatever the view: their buttons show only when there are some,
-        // and an empty live list counts what was settled today.
+        // Drafts and settled are read whatever the view, and an empty live list counts what was settled today.
         .task(id: "\(mode) \(store.live.filter { store.serverState[$0.id] == .connected }.count) \(store.draftsRevision)") {
             await loadDrafts()
             await store.loadSettled()
         }
     }
 
-    /// Settings on the left; the drafts and settled views sharing one glass pill
-    /// on the right, then New bot. While one view is shown, the other dims, so the lit one reads as on.
+    private var title: String {
+        switch mode {
+        case .live: "Tasks"
+        case .drafts: "Drafts"
+        case .settled: "Settled"
+        }
+    }
+
+    /// The desktop's two pages and New task on the right. The pages show whenever
+    /// a machine is on, up or not: both draw their kept lists while one reconnects.
     @ToolbarContentBuilder private var header: some ToolbarContent {
-        // The desktop's two pages beside Settings, each a push over the list. Whenever a server is on,
-        // up or not: both draw their kept lists while one reconnects, so a dropped socket hides nothing.
-        ToolbarItemGroup(placement: .topBarLeading) {
-            Button { sheet = .settings(server: nil) } label: { Image(systemName: "gearshape") }
-                .accessibilityLabel("Settings")
-            if !store.live.isEmpty {
+        if !store.machines.isEmpty {
+            ToolbarItemGroup(placement: .topBarTrailing) {
                 Button { listPage = .pulls } label: { Image(systemName: "arrow.triangle.pull") }
                     .accessibilityLabel("Pull requests")
                 Button { listPage = .issues } label: { Image(systemName: "smallcircle.circle") }
                     .accessibilityLabel("Issues")
             }
         }
-        // Each only where it has something to show, or is the view up now so there is a way back.
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            if mode == .drafts || (anyConnected && !drafts.isEmpty) {
-                viewToggle(.drafts, label: "Drafts") { Image(systemName: "circle.dashed") }
-            }
-            if mode == .settled || (anyConnected && store.items.values.contains { $0.archived == true && $0.hidden != true }) {
-                viewToggle(.settled, label: "Settled") { CheckCheck().frame(width: 20, height: 20) }
-            }
+        if #available(iOS 26.0, *) {
+            ToolbarSpacer(.fixed, placement: .topBarTrailing)
         }
-        if anyConnected {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { newBot = true } label: { Image(systemName: "plus") }
-                    .accessibilityLabel("New bot")
-            }
-        }
-    }
-
-    private func viewToggle(_ target: ListMode, label: String, @ViewBuilder icon: () -> some View) -> some View {
-        Button {
-            Haptic.select()
-            mode = mode == target ? .live : target
-        } label: {
-            icon().foregroundStyle(mode == .live || mode == target ? Theme.text : Theme.tertiary)
-        }
-        .accessibilityLabel(label)
-        .accessibilityAddTraits(mode == target ? .isSelected : [])
+        ToolbarItem(placement: .topBarTrailing) { ComposeButton() }
     }
 
     @ViewBuilder private func draftRows(_ filter: String?) -> some View {
-        let shown = drafts.filter { filter == nil || $0.draft.project == filter }
+        let shown = drafts.filter { (filter == nil || $0.draft.project == filter) && nav.shownIds(store).contains($0.server) }
         if shown.isEmpty {
             Text("No drafts.").font(Theme.Font.subhead).foregroundStyle(Theme.tertiary)
                 .padding(.leading, 14).frame(height: 44).plainRow()
@@ -323,8 +244,7 @@ struct SessionList: View {
         ForEach(shown, id: \.draft.id) { entry in
             Button {
                 task.open(entry.draft, on: entry.server)
-                mode = .live
-                newTaskPage()
+                nav.sheet = .newTask
             } label: {
                 RowLine(title: entry.draft.title, time: entry.draft.created.flatMap(parseDate))
             }
@@ -349,125 +269,23 @@ struct SessionList: View {
         drafts = all.sorted { ($0.draft.created ?? "") > ($1.draft.created ?? "") }
     }
 
-    /// Settings' Open bot at launch, once its bot is on the list: the late path, for a bot with
-    /// no chat cached yet. A cached chat is the root's first screen already (`WainApp.launch`).
-    private var loneBot: BotStart? {
-        guard !launchBot.isEmpty, !store.live.isEmpty,
-              store.live.allSatisfy({ store.known($0.id) }), store.awaitingShares.isEmpty,
-              let b = LaunchBot.bot(store) else { return nil }
-        return BotStart(server: b.server, bot: b.bot)
-    }
-
-    /// Opens the launch bot as a tap on its row would, unanimated.
-    private func open(_ b: BotStart?) {
-        // A held orb is no tap, and a recording must not be carried off under the reader.
-        guard let b, selection == nil, sheet == nil, starting == nil, !newBot, mode == .live,
-              Dictations.shared.state(.newSession) == .idle else { return }
-        autoOpen = false
-        var t = Transaction()
-        t.disablesAnimations = true
-        withTransaction(t) {
-            if let chat = store.botChat(b.server, b.bot).last {
-                selection = chat
-            } else {
-                // No chat yet: its own page, which carries the dock aimed at it.
-                task.aim(at: b.bot, on: b.server)
-                starting = b
-            }
-        }
-    }
-
-    /// What the list says with no rows: no server yet, one coming up, or nothing started.
-    private var anyConnected: Bool { store.live.contains { store.serverState[$0.id] == .connected } }
-    private var startHint: String { sidebar ? "Tap New task to start one." : "Tap the orb to start one." }
-
-    /// The whole screen when the live list has nothing: pair, connecting, can't reach,
-    /// or nothing to do yet — the last pointing at the orb, or at today's settled work.
+    /// The live list with nothing in it: all clear with today's settled work, or nothing started yet.
     @ViewBuilder private func empty(_ filter: String?) -> some View {
-        if store.live.isEmpty && !store.servers.isEmpty {
-            // Not in the frames: every server switched off on this phone.
-            EmptyScreen(art: EmptyArt(kind: .connect), title: "Every server is off",
-                        message: "Turn one back on in Settings to see its tasks.") {
-                Button("Open Settings") { sheet = .settings(server: nil) }
-                    .buttonStyle(EmptyCapsuleStyle(kind: .dark))
-                    .padding(.top, Theme.Space.xs)
-            }
-            .padding(.horizontal, Theme.Space.xxl)
-            .padding(.bottom, 80)
-        } else if store.live.isEmpty {
-            EmptyScreen(art: EmptyArt(kind: .connect), title: "Connect a server", message: "Pair with a machine running Wain.") {
-                VStack(spacing: 10) {
-                    Button { sheet = .add(nil, scan: true) } label: {
-                        HStack(spacing: Theme.Space.s) { QRCodeIcon(); Text("Scan QR code") }
-                    }
-                    .buttonStyle(EmptyCapsuleStyle(kind: .light))
-                    Button("Enter an address") { sheet = .add(nil, scan: false) }
-                        .buttonStyle(EmptyCapsuleStyle(kind: .dark))
-                }
-                .padding(.top, Theme.Space.xs)
-            }
-            .padding(.horizontal, Theme.Space.xxl)
-            .padding(.bottom, 80)
-        } else if !anyConnected || !store.live.contains(where: { store.read($0.id) }) {
-            // Connected but not read yet is still connecting: "No tasks yet" there was a flash of a lie.
-            Group {
-                if store.live.allSatisfy({ if case .connecting(0)? = store.serverState[$0.id] { true } else { false } }) {
-                    EmptyScreen(art: EmptyArt(kind: .connecting), title: "Connecting",
-                                message: store.live.map(\.name).joined(separator: ", "))
-                } else if !store.online {
-                    EmptyScreen(art: EmptyArt(kind: .unreachable), title: "You're offline",
-                                message: "Tasks keep running on their servers.")
-                } else if let p = store.live.lazy.compactMap({ s in self.store.health(s.id).map { (s, $0) } })
-                            .first(where: { !$0.1.working }) {
-                    unreachable(p.0, p.1)
-                } else {
-                    EmptyScreen(art: EmptyArt(kind: .connecting), title: "Connecting",
-                                message: store.live.map(\.name).joined(separator: ", "))
-                }
-            }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 184)
-        } else {
-            let today = store.runs(project: filter, settled: true).flatMap(\.rows)
-                .compactMap { r in parseDate(r.item.modified).map { (row: r, at: $0) } }
-                .filter { Calendar.current.isDateInToday($0.at) }
-            Group {
-                if let last = today.max(by: { $0.at < $1.at }) {
-                    EmptyScreen(art: SettledStack(title: last.row.item.title, time: shortAge(last.at)),
-                                title: "All clear", message: today.count == 1 ? "1 settled today." : "\(today.count) settled today.")
-                } else if let filter {
-                    EmptyScreen(art: EmptyArt(kind: .project), title: "Nothing in \(filter)",
-                                message: startHint, pointsAtOrb: true)
-                } else {
-                    EmptyScreen(art: EmptyArt(kind: .tasks), title: "No tasks yet",
-                                message: startHint, pointsAtOrb: true)
-                }
-            }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 140)
-        }
-    }
-
-    /// One server's trouble as the screen: frame 03's countdown for a server it can't reach,
-    /// else that trouble's own words and action.
-    private func unreachable(_ server: Server, _ health: Health) -> some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
-            EmptyScreen(art: EmptyArt(kind: .unreachable), title: health.title, message: message(health, at: context.date)) {
-                if let action = health.action {
-                    Button(action == .fix ? "Fix" : "Retry now") {
-                        Haptic.tap()
-                        if action == .fix { sheet = .settings(server: server.id) } else { Task { await store.retry(server.id) } }
-                    }
-                    .buttonStyle(EmptyCapsuleStyle(kind: .retry))
-                }
+        let today = store.runs(project: filter, settled: true, servers: nav.shownIds(store)).flatMap(\.rows)
+            .compactMap { r in parseDate(r.item.modified).map { (row: r, at: $0) } }
+            .filter { Calendar.current.isDateInToday($0.at) }
+        Group {
+            if let last = today.max(by: { $0.at < $1.at }) {
+                EmptyScreen(art: SettledStack(title: last.row.item.title, time: shortAge(last.at)),
+                            title: "All clear", message: today.count == 1 ? "1 settled today." : "\(today.count) settled today.")
+            } else if let filter {
+                EmptyScreen(art: EmptyArt(kind: .project), title: "Nothing in \(filter)", message: "Tap the compose button to start one.")
+            } else {
+                EmptyScreen(art: EmptyArt(kind: .tasks), title: "No tasks yet", message: "Tap the compose button to start one.")
             }
         }
-    }
-
-    private func message(_ health: Health, at now: Date) -> String {
-        guard let until = health.until else { return health.detail ?? "Check that it's awake and online." }
-        let left = Int(until.timeIntervalSince(now).rounded(.up))
-        return (left > 0 ? "Trying again in \(left)s." : "Trying again…") + " Check that it's awake and online."
+        .padding(.horizontal, 40)
+        .padding(.bottom, 140)
     }
 }
 
@@ -515,8 +333,8 @@ extension View {
     }
 }
 
-/// Every project by name, All first, the picked one in full ink. Fades out at
-/// the right edge, where a long list runs off.
+/// Every project by name as a chip, All first, the picked one filled. Fades out
+/// at the right edge, where a long list runs off.
 struct ProjectStrip: View {
     let names: [String]
     let picked: String?
@@ -524,15 +342,15 @@ struct ProjectStrip: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .firstTextBaseline, spacing: 18) {
+            HStack(spacing: Theme.Space.s) {
                 chip("All", nil)
                 ForEach(names, id: \.self) { chip($0, $0) }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, Theme.Space.l)
         }
         .mask(LinearGradient(stops: [.init(color: .black, location: 0.82), .init(color: .clear, location: 1)],
                              startPoint: .leading, endPoint: .trailing))
-        .padding(.top, 14)
+        .padding(.top, Theme.Space.xs)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Project filter")
     }
@@ -543,8 +361,11 @@ struct ProjectStrip: View {
             pick(value)
         } label: {
             Text(label)
-                .font(Theme.Font.body)
-                .foregroundStyle(picked == value ? Theme.text : Theme.tertiary)
+                .font(Theme.Font.footnoteStrong)
+                .foregroundStyle(picked == value ? Theme.onPrimary : Theme.text)
+                .padding(.horizontal, 14)
+                .frame(height: 32)
+                .background(picked == value ? Theme.primary : Theme.raised, in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(picked == value ? .isSelected : [])
@@ -625,12 +446,7 @@ private struct RowMenu: View {
 
     private func attach(_ bot: Bot) { Task { await store.attach(row.key, to: bot) } }
 
-    /// A bot's face as a bitmap: a menu draws only an image as an item's icon, never a Canvas.
-    private func face(_ bot: Bot) -> Image {
-        let r = ImageRenderer(content: BotFace(bot: bot, size: 22))
-        r.scale = scale
-        return r.uiImage.map { Image(uiImage: $0).renderingMode(.original) } ?? Image(systemName: "link")
-    }
+    private func face(_ bot: Bot) -> Image { faceImage(bot, size: 22, scale: scale) }
 
     private func fork(worktree: Bool) {
         Task { if let key = await store.fork(row.key, worktree: worktree) { opened(key) } }
@@ -734,18 +550,5 @@ private struct Elbow: View {
         }
         .frame(width: 24, height: 44)
         .accessibilityHidden(true)
-    }
-}
-
-/// Lucide's check-check, the settled view's mark; SF Symbols has no twin.
-private struct CheckCheck: View {
-    var body: some View {
-        Canvas { ctx, size in
-            ctx.scaleBy(x: size.width / 24, y: size.height / 24)
-            var p = Path()
-            p.move(to: CGPoint(x: 18, y: 6)); p.addLine(to: CGPoint(x: 7, y: 17)); p.addLine(to: CGPoint(x: 2, y: 12))
-            p.move(to: CGPoint(x: 22, y: 10)); p.addLine(to: CGPoint(x: 14.5, y: 17.5)); p.addLine(to: CGPoint(x: 13, y: 16))
-            ctx.stroke(p, with: .foreground, style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
-        }
     }
 }

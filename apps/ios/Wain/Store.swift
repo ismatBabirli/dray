@@ -108,6 +108,8 @@ final class Store {
     /// Each server's "Waiting on you" cards by bot id, where it judges them
     /// (#1259). A server absent here is too old to, and the phone judges its bots.
     private(set) var stallCards: [UUID: [String: BotStalls]] = [:]
+    /// Each server's usage readings, one per agent (`live_state.usage`, `usage_changed`).
+    private(set) var usage: [UUID: [UsageReading]] = [:]
     /// Each server's bots: any server can hold them (#887).
     private(set) var bots: [UUID: [Bot]] = [:] { didSet { keepList() } }
     /// Servers whose index was read since this launch: before that, an empty list
@@ -319,6 +321,7 @@ final class Store {
         for key in queued.keys where key.server == id { queued[key] = nil }
         projects[id] = nil
         bots[id] = nil
+        usage[id] = nil
         loadErrors[id] = nil
         listed.remove(id)
         botsRead.remove(id)
@@ -886,7 +889,7 @@ final class Store {
     /// What the list draws, in the desktop sidebar's runs: the live sessions,
     /// or the settled ones, narrowed to one project by name when one is picked —
     /// by name, so a repo checked out on two machines is one project.
-    func runs(project: String?, settled: Bool = false) -> [(stage: Stage, rows: [ListRow])] {
+    func runs(project: String?, settled: Bool = false, servers: Set<UUID>? = nil) -> [(stage: Stage, rows: [ListRow])] {
         // A bot's chat is its row in the Bots section, never a task row.
         let chats = Dictionary(uniqueKeysWithValues: bots.map { ($0.key, $0.value.map(\.path)) })
         let list = items.filter { key, item in
@@ -896,6 +899,7 @@ final class Store {
                 // The index lands before the bots, and a bot's chat would draw as a task row until they do.
                 && (settled || known(key.server))
                 && !covered.contains(key.server)
+                && (servers?.contains(key.server) ?? true)
         }.map { (key: $0.key, item: $0.value) }
         return stageRuns(list, pins: !settled) { stage($0.key, $0.item) }
     }
@@ -1353,9 +1357,13 @@ final class Store {
             }
             for key in serving.keys where key.server == server { serving[key] = nil }
             for s in live.serving ?? [] where !s.ports.isEmpty { serving[SessionKey(server: server, id: s.sessionId)] = s.ports }
+            usage[server] = live.usage?.compactMap(\.value)
             stallCards[server] = live.stalls.map { list in
                 Dictionary(list.compactMap(\.value).map { card in (card.botId, card) }, uniquingKeysWith: { _, last in last })
             }
+        case "usage_changed":
+            guard let u = try? decoder.decode(EventFrame<UsageChanged>.self, from: data).payload else { return }
+            usage[server] = u.usage.compactMap(\.value)
         case "bot_stalls_changed":
             // Only from a server that judges stalls, whose `live_state` already said so.
             guard let card = try? decoder.decode(EventFrame<BotStalls>.self, from: data).payload else { return }

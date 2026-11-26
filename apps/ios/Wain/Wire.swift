@@ -285,6 +285,54 @@ struct LiveState: Decodable {
     /// Every bot's "Waiting on you" card on this server; absent from a server
     /// that predates #1259, whose cards the phone judges itself.
     let stalls: [Lenient<BotStalls>]?
+    /// Each agent's newest usage reading on this server; absent from an older one.
+    let usage: [Lenient<UsageReading>]?
+}
+
+/// `usage_changed`: the server's whole list again, whenever one reading moves.
+struct UsageChanged: Decodable {
+    let usage: [Lenient<UsageReading>]
+}
+
+/// One agent's rate-limit windows as its server last heard them (#26's contract).
+/// Only `harness`, `at` and `windows` are sure to be there.
+struct UsageReading: Decodable, Hashable {
+    struct Window: Decodable, Hashable {
+        /// `five_hour`, `weekly`, else `other`.
+        let kind: String
+        /// 0 to 100. Absent from Claude's older `rejected` line, which sends the reset alone.
+        let usedPercent: Double?
+        let resetsAt: String?
+        let minutes: Int?
+    }
+    let harness: String
+    let plan: String?
+    let limited: Bool?
+    /// Claude's `overageStatus` as sent.
+    let overage: String?
+    let usingOverage: Bool?
+    let at: String
+    let windows: [Window]
+
+    enum CodingKeys: String, CodingKey { case harness, plan, limited, overage, usingOverage, at, windows }
+
+    init(harness: String, plan: String? = nil, limited: Bool? = nil, overage: String? = nil, usingOverage: Bool? = nil,
+         at: String, windows: [Window]) {
+        (self.harness, self.plan, self.limited, self.overage, self.usingOverage, self.at, self.windows)
+            = (harness, plan, limited, overage, usingOverage, at, windows)
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        harness = try c.decode(String.self, forKey: .harness)
+        plan = try? c.decode(String.self, forKey: .plan)
+        limited = try? c.decode(Bool.self, forKey: .limited)
+        overage = try? c.decode(String.self, forKey: .overage)
+        usingOverage = try? c.decode(Bool.self, forKey: .usingOverage)
+        at = (try? c.decode(String.self, forKey: .at)) ?? ""
+        // A window that fails alone costs itself, not the reading.
+        windows = ((try? c.decode([Lenient<Window>].self, forKey: .windows)) ?? []).compactMap(\.value)
+    }
 }
 
 /// One entry that may fail alone, so a bad one costs itself and not its list.
@@ -568,17 +616,18 @@ enum Payload: Decodable {
                     failed: try c.decode(String.self, forKey: "status") == "error" && !stop.hasPrefix("aborted"),
                     finalText: try c.decodeIfPresent(String.self, forKey: "finalText"))
             case "user_message":
-                // Optional values, and never a throw: a relay from this
-                // machine carries `"machine": null`, which `[String: String]`
-                // refuses — and a throw here costs the prompt, not its label.
-                let from = (try? c.decodeIfPresent([String: String?].self, forKey: "from")) ?? nil
+                // Any values, and never a throw: a relay from this machine carries
+                // `"machine": null` and a routine's report `"routine": true`, either of
+                // which a string map refuses whole — and the report then drew as the reader's.
+                let from = (try? c.decodeIfPresent([String: JSON].self, forKey: "from")) ?? nil
+                let field = { (k: String) -> String? in if case .string(let v)? = from?[k] { v } else { nil } }
                 self = .userMessage(
                     text: try c.decode(String.self, forKey: "text"),
-                    fromTitle: from?["title"] ?? nil, fromId: from?["sessionId"] ?? nil,
+                    fromTitle: field("title"), fromId: field("sessionId"),
                     queued: (try? c.decode(Bool.self, forKey: "queued")) ?? false,
                     images: decodeImages(c),
                     kickoff: (try? c.decode(Bool.self, forKey: "kickoff")) ?? false,
-                    fromBot: from?["botId"] ?? nil)
+                    fromBot: field("botId"))
             case "assistant_text":
                 self = .assistantText(try c.decode(String.self, forKey: "text"))
             case "tool_call_started":

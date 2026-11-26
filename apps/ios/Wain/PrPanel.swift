@@ -385,7 +385,7 @@ private struct MergeButton: View {
             }
             .accessibilityLabel("Merge method")
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(Theme.onBadge)
         .frame(height: 44)
         .background(Theme.merge, in: Capsule())
         // Dim while GitHub would refuse it; inert while checks run or fail, as the line above says.

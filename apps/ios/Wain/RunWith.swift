@@ -450,7 +450,7 @@ struct MenuValue: View {
     }
 }
 
-/// The frames' switch: white with a dark knob when on, grey when off.
+/// The phone's switch: green with a white knob when on, as Paper's tabs pages draw it; grey when off.
 struct PickSwitch: View {
     let label: String
     @Binding var isOn: Bool
@@ -462,10 +462,10 @@ struct PickSwitch: View {
             Haptic.select()
         } label: {
             Capsule()
-                .fill(isOn ? Theme.primary : Theme.off)
+                .fill(isOn ? Theme.add : Theme.off)
                 .frame(width: 51, height: 31)
                 .overlay(alignment: isOn ? .trailing : .leading) {
-                    Circle().fill(isOn ? Theme.onPrimary : Theme.secondary).frame(width: 27, height: 27).padding(2)
+                    Circle().fill(isOn ? Theme.onBadge : Theme.knobOff).frame(width: 27, height: 27).padding(2)
                 }
                 .opacity(enabled ? 1 : 0.35)
         }

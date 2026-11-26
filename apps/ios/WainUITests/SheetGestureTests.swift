@@ -1,15 +1,16 @@
 import XCTest
 
-/// The typing sheet opens short over the keyboard and its header drags it to full height, on the
-/// list and in a task; in a bot's chat a swipe in from the right edge opens Tasks, a swipe across
-/// a code block only scrolls it, and the left edge still goes back (#1415). Against a server
-/// holding the bot `TEST_RUNNER_WAIN_BOT`, with one task, whose chat ends on a code block wider
-/// than the screen starting `let WIDE`, with the microphone granted so the orb stays:
-///   xcrun simctl privacy <udid> grant microphone com.plorigo.wain.ios
-///   TEST_RUNNER_WAIN_URL=ws://127.0.0.1:… TEST_RUNNER_WAIN_TOKEN=… TEST_RUNNER_WAIN_BOT=Ops \
+/// In a bot's chat a swipe in from the right edge opens Tasks, a swipe across a code block only
+/// scrolls it, one up the right edge only scrolls the chat, and the left edge still goes back
+/// (#1415); a task opened from the sheet opens no Tasks by that swipe, and its composer types.
+/// The short typing sheet this also dragged went with the tabs (#27): every chat's foot is a
+/// composer now. Against `scripts/sheet_gesture_seed.py`'s server, bot `Ops`:
+///   python3 scripts/sheet_gesture_seed.py /private/tmp/wain-sheet-gesture
+///   WAIN_HOME=/private/tmp/wain-sheet-gesture wain-serve --port <port> &
+///   TEST_RUNNER_WAIN_URL=ws://127.0.0.1:<port> TEST_RUNNER_WAIN_TOKEN=<printed> TEST_RUNNER_WAIN_BOT=Ops \
 ///   xcodebuild test -only-testing:WainUITests/SheetGestureTests
 final class SheetGestureTests: XCTestCase {
-    func testShortSheetAndEdgeSwipe() throws {
+    func testEdgeSwipes() throws {
         let env = ProcessInfo.processInfo.environment
         guard let url = env["WAIN_URL"], let token = env["WAIN_TOKEN"], let bot = env["WAIN_BOT"] else {
             throw XCTSkip("set TEST_RUNNER_WAIN_URL, _TOKEN and _BOT")
@@ -27,50 +28,15 @@ final class SheetGestureTests: XCTestCase {
         if allow.waitForExistence(timeout: 5) { allow.tap() }
 
         let screen = app.windows.firstMatch.frame
-        let editor = app.textViews.firstMatch
         let tasksSheet = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "Tasks, ")).firstMatch
+        // The nav bar's, never the hidden tab bar's button of that name.
+        let tasks = app.navigationBars.buttons["Tasks"]
         let at = { (x: CGFloat, y: CGFloat) in app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: y)) }
 
-        /// Opens short and goes to full height by its header alone. Words typed on the list would
-        /// open the dock over it, so only the task's sheet is typed into.
-        func typingSheet(_ screenName: String, title: String, typing: Bool) {
-            app.buttons["Keyboard"].firstMatch.tap()
-            XCTAssertTrue(editor.waitForExistence(timeout: 5), "the keyboard opened no sheet on \(screenName)")
-            XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "no keyboard on \(screenName)")
-            // A new simulator's keyboard opens on its own tip.
-            let tip = app.buttons["Continue"]
-            if tip.waitForExistence(timeout: 2) { tip.tap() }
-            sleep(1)
-            let short = editor.frame
-            XCTAssertGreaterThan(short.minY, screen.height * 0.3, "the sheet opened full height on \(screenName)")
-            XCTAssertLessThan(short.maxY, app.keyboards.firstMatch.frame.minY + 1, "the keyboard covers the text on \(screenName)")
-            if typing { editor.typeText("Short sheet on \(screenName)") }
-            snap(app, "\(screenName)-short")
-            // A drag up the text leaves the sheet where it is.
-            editor.swipeUp()
-            sleep(1)
-            XCTAssertGreaterThan(editor.frame.minY, screen.height * 0.3, "a swipe on the text resized the sheet on \(screenName)")
-            let header = app.staticTexts[title].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            header.press(forDuration: 0.05, thenDragTo: header.withOffset(CGVector(dx: 0, dy: -200)))
-            sleep(1)
-            XCTAssertLessThan(editor.frame.minY, screen.height * 0.25, "the header didn't drag the sheet to full height on \(screenName)")
-            snap(app, "\(screenName)-full")
-            // And back down by a short drag; a long one closes it, as before.
-            header.press(forDuration: 0.05, thenDragTo: header.withOffset(CGVector(dx: 0, dy: 70)))
-            sleep(1)
-            XCTAssertGreaterThan(editor.frame.minY, screen.height * 0.3, "the header didn't drag the sheet back down on \(screenName)")
-            app.buttons["Done"].firstMatch.tap()
-            XCTAssertTrue(editor.waitForNonExistence(timeout: 5), "Done left the sheet up on \(screenName)")
-            sleep(1)
-        }
-
-        let row = app.staticTexts[bot].firstMatch
+        app.tab("Bots")
+        let row = app.buttons["bot.\(bot)"]
         XCTAssertTrue(row.waitForExistence(timeout: 20), "no bot row")
-        XCTAssertTrue(app.buttons["Keyboard"].waitForExistence(timeout: 15), "no dock on the list")
-        typingSheet("list", title: "New task", typing: false)
-
         row.tap()
-        let tasks = app.buttons["Tasks"]
         XCTAssertTrue(tasks.waitForExistence(timeout: 10), "no Tasks button")
         let code = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "let WIDE")).firstMatch
         XCTAssertTrue(code.waitForExistence(timeout: 15), "no code block in the bot's chat")
@@ -108,21 +74,33 @@ final class SheetGestureTests: XCTestCase {
         XCTAssertTrue(task.waitForExistence(timeout: 5), "no task in the sheet")
         task.tap()
         XCTAssertTrue(tasksSheet.waitForNonExistence(timeout: 5), "the task left the sheet up")
-        XCTAssertTrue(app.buttons["Keyboard"].waitForExistence(timeout: 15), "no dock in the task")
+        XCTAssertTrue(app.composer.waitForExistence(timeout: 15), "no composer in the task")
         sleep(1)
         // A task has no Tasks sheet to open.
         edgeSwipe()
         sleep(1)
         XCTAssertFalse(tasksSheet.exists, "the edge swipe opened Tasks in a task")
-        typingSheet("task", title: "Reply", typing: true)
 
-        snap(app, "task-after")
-        // The left edge still goes back, to the bot's chat and then the list.
+        // Its composer takes words, and Send comes in for the mic. Left unsent.
+        app.composer.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "no keyboard in the task")
+        // A new simulator's keyboard opens on its own tip.
+        let tip = app.buttons["Continue"]
+        if tip.waitForExistence(timeout: 2) { tip.tap() }
+        app.composer.typeText("Typed in the task")
+        XCTAssertEqual(app.composer.value as? String, "Typed in the task", "the composer lost the words")
+        XCTAssertTrue(app.buttons["send"].exists, "no Send for the words")
+        XCTAssertLessThan(app.composer.frame.maxY, app.keyboards.firstMatch.frame.minY + 1, "the keyboard covers the composer")
+        snap(app, "task-typed")
+        app.composer.clearText()
+
+        // The left edge still goes back, keyboard up, to the bot's chat and then the list.
         at(0, screen.height * 0.5).press(forDuration: 0.05, thenDragTo: at(screen.width * 0.7, screen.height * 0.5))
         XCTAssertTrue(tasks.waitForExistence(timeout: 5), "the back swipe didn't return to the bot's chat")
         sleep(1)
         at(0, screen.height * 0.5).press(forDuration: 0.05, thenDragTo: at(screen.width * 0.7, screen.height * 0.5))
         XCTAssertTrue(tasks.waitForNonExistence(timeout: 5), "the back swipe didn't leave the bot's chat")
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "the back swipe didn't land on Bots")
     }
 
     private func snap(_ app: XCUIApplication, _ name: String) {

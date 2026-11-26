@@ -15,6 +15,7 @@ struct TranscriptView: View {
     @State private var editingBot = false
     @Environment(\.openTask) private var openTask
     @Environment(\.readOnly) private var readOnly
+    @Environment(\.scenePhase) private var phase
     /// The floating banner's height, kept clear above the first row so it never sits on "Load earlier".
     @State private var bannerHeight: CGFloat = 0
     /// Whether new rows scroll into view: dropped by the reader scrolling up (`FollowsBottom`).
@@ -190,6 +191,10 @@ struct TranscriptView: View {
         }
         .modifier(LocalServersButton(key: key, shown: bot == nil))
         .task { await open() }
+        // A reply landing in front of the reader is read; tabs keep hidden chats alive, so only the one on screen.
+        .onChange(of: "\(store.items[key]?.status ?? "") \(phase)") {
+            if store.items[key]?.status == "completed", phase == .active, Push.shared.viewing == key { Task { await store.open(key) } }
+        }
         .onChange(of: chatMark) { settleUnread() }
         .changesButton(key, shown: bot == nil)
         .prPanel(key)
@@ -223,7 +228,9 @@ struct TranscriptView: View {
     /// A task's title over where it runs, its project and its machine; a bot's chip.
     @ViewBuilder private var title: some View {
         if let bot = store.bot(key) {
-            BotTitle(bot: bot) { editingBot = true }
+            let tasks = store.botTasks(store.botChat(key.server, bot)).filter { store.items[$0]?.aside != true }.count
+            BotTitle(bot: bot, subtitle: botSubtitle(machine: store.name(of: key.server), tasks: tasks),
+                     open: { showingTasks = true }, edit: { editingBot = true })
         } else {
             taskTitle
         }
@@ -277,7 +284,9 @@ struct TranscriptView: View {
     /// The bot chat's items across its sessions on screen. An agent switch draws nothing: the
     /// reader just picked the agent (#1414). The desktop's `chatItems`.
     private func chatItems(_ segments: [SessionKey]) -> [BotItem] {
-        segments.flatMap { botItems(store.transcripts[$0]?.events ?? []) }
+        // Routine runs by index entry: a report-back from one heads the reply with its routine's name.
+        let routines = Set(store.items.filter { $0.key.server == key.server && $0.value.routineRun != nil }.map { $0.key.id.lowercased() })
+        return segments.flatMap { botItems(store.transcripts[$0]?.events ?? [], routines: routines) }
     }
 
     private func chat(_ bot: Bot?) -> [BotItem] { bot == nil ? [] : chatItems(segments(bot)) }

@@ -1,32 +1,22 @@
 import SwiftUI
 import UIKit
 
-/// The foot of a session: the voice orb, held to reply, and under it the
-/// session's model, its stance behind "···", the keyboard and, while a turn
-/// runs, Stop. The list's `VoiceDock` with a reply in place of a new task: the
-/// words show as the bubble they will send as, and nothing here saves a draft.
+/// The foot of a session: the composer, and under it the session's model and
+/// stance, both opening This task. While a turn runs Stop sits beside the field
+/// and a send queues.
 struct ReplyDock: View {
     @Environment(Store.self) private var store
     @Environment(\.openSession) private var openSession
     let key: SessionKey
-    @AppStorage(Dictations.serverKey) private var dictationPick = ""
-    @AppStorage(SwipeHint.key) private var swiped = 0
     @State private var models: [Model] = []
     /// The machine's agents, read when This task opens.
     @State private var agents: [AgentAvailability] = []
-    @State private var keyboard = false
-    /// The home indicator's inset, which the dock sits on rather than ignores.
-    @State private var homeInset: CGFloat = 0
     /// Picks for the next reply; nil is the session's own.
     @State private var model: String?
     @State private var effort: String?
     @State private var stance: String?
     @State private var fast: Bool?
     @State private var picking = false
-    @State private var hint: String?
-    @State private var confirming = false
-    @State private var editing = false
-    @State private var sheetTitle = "Reply"
     @State private var sending = false
     /// Why the last send failed; the words stay to send again.
     @State private var failed: String?
@@ -35,23 +25,9 @@ struct ReplyDock: View {
     private var busy: Bool { item?.busy ?? false }
     private var dictation: Dictation { Dictations.shared.state(key) }
     private var text: String { (store.drafts[key] ?? "").trimmingCharacters(in: .whitespacesAndNewlines) }
-    /// Nothing can transcribe: a text field stands where the orb would. Never mid-recording,
-    /// or losing the one server that could would take Done away with the mic still on.
-    private var typing: Bool { store.typesOnly && dictation == .idle }
-    private var phase: DockPhase {
-        if typing { return .rest }
-        switch dictation {
-        case .starting, .recording: return .recording
-        case .transcribing: return .transcribing
-        case .idle: return text.isEmpty ? .rest : .ready
-        }
-    }
-    private var open: Bool { phase != .rest }
     private var connected: Bool { store.serverState[key.server] == .connected }
     /// Down long enough that its session says so; a quick reconnect dims nothing.
     private var away: Bool { store.lost.contains(key.server) }
-    /// Settings' pick, else anything that can: the words come back to this draft whoever reads them.
-    private var transcriber: DictationEngine? { store.dictationEngine(dictationPick) }
     /// An agent and model picked here or in the bot sheet, waiting for this reply.
     private var pick: AgentPick? { store.unsent[key] }
     /// The reply moves the session to another agent (#1414).
@@ -62,66 +38,44 @@ struct ReplyDock: View {
     private var effortNow: String? { effort ?? (moving ? nil : item?.effort) }
     private var stanceNow: String { stance ?? item?.permissionMode ?? "" }
     private var fastNow: Bool { fast ?? item?.fast ?? false }
-    private var note: String? { failed.map { "Couldn't send. \(sentence($0))" } ?? Dictations.shared.notes[key] }
+    /// This machine's reading for the agent, which the model chip's ring draws.
+    private var reading: UsageReading? { store.usage[key.server]?.first { $0.harness == harness } }
 
     var body: some View {
-        VStack(spacing: 14) {
-            if phase == .ready { bubble.transition(.opacity) }
-            if moving, !open {
+        VStack(alignment: .leading, spacing: 10) {
+            if moving {
                 HStack(spacing: 6) {
                     AgentMark(harness: harness).frame(width: 13, height: 13)
                     Text("Your next message goes to \(Picks.agentLabels[harness] ?? harness)")
                         .font(Theme.Font.footnoteMedium).foregroundStyle(Theme.text).lineLimit(1)
                 }
+                .padding(.leading, Theme.Space.xs)
             }
-            if !open, let line = hint ?? note {
-                KeptNote(line: line, draft: key).transition(.opacity)
-            } else if !open, !typing, swiped < SwipeHint.learned {
-                Text(SwipeHint.line).font(Theme.Font.footnote).foregroundStyle(Theme.tertiary).transition(.opacity)
+            if let failed {
+                Text("Couldn't send. \(sentence(failed))").font(Theme.Font.footnote).foregroundStyle(Theme.destructive)
+                    .padding(.leading, Theme.Space.xs)
             }
-            VStack(spacing: 14) {
-                // Dim while the server or the network is away; the banner up top says why, and typing still works.
-                if typing {
-                    ChatInput(placeholder: "Message", text: Binding(get: { store.drafts[key] ?? "" }, set: { store.drafts[key] = $0 }),
-                              sending: sending, sendable: !text.isEmpty && !sending && connected, send: send)
-                } else {
-                    // New task's size while it listens; back to rest size once the bubble takes the room.
-                    DockOrb(draft: key, size: phase == .recording || phase == .transcribing ? 120 : 76, tap: tapped)
-                        .opacity(away ? 0.4 : 1)
-                }
-                if open {
-                    actions
-                        .padding(.top, 6)
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
-                picks.opacity(away ? 0.4 : 1).typingAligned(typing)
-            }
-            .padding(.bottom, typing && keyboard ? 30 : max(0, 30 - homeInset))
-            .swipeUpToType(phase == .rest && !typing, edit)
+            Composer(draft: key, placeholder: busy ? "Queue a message" : store.bot(key).map { "Message \($0.name)" } ?? "Message",
+                     busy: busy, sending: sending, canSend: connected && dictation == .idle, send: send,
+                     stop: { Task { await store.interrupt(key) } })
+            .opacity(away ? 0.6 : 1)
+            picks.opacity(away ? 0.4 : 1)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, Theme.Space.m)
+        .padding(.horizontal, Theme.Space.m)
+        .padding(.top, Theme.Space.s)
+        .padding(.bottom, Theme.Space.s)
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
-        // Everything in the dock's frame is inset the chat stops at, so the fade reaches up past it
-        // rather than padding it, and the dock sits on the home indicator's inset rather than
-        // ignoring it, which `safeAreaInset` counts under the dock either way: 80pt of gap between them.
+        // The chat fades out under the composer rather than stopping at a line.
         .background {
-            LinearGradient(stops: [.init(color: Theme.page.opacity(0), location: 0), .init(color: Theme.page, location: 0.3)],
+            LinearGradient(stops: [.init(color: Theme.page.opacity(0), location: 0), .init(color: Theme.page, location: 0.35)],
                            startPoint: .top, endPoint: .bottom)
-                .padding(.top, -28)
+                .padding(.top, -24)
                 .ignoresSafeArea()
-                .onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.bottom }) { if !keyboard { homeInset = $0 } }
         }
-        // The keyboard lifts the field, never the orb.
-        .ignoresSafeArea(typing ? [] : .keyboard, edges: .bottom)
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboard = true }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboard = false }
-        .animation(Theme.motion, value: phase)
-        .animation(Theme.motion, value: confirming)
-        .animation(Theme.motion, value: hint)
         .animation(Theme.motion, value: connected)
-        .onChange(of: phase) { confirming = false }
+        .animation(Theme.motion, value: failed)
+        .onChange(of: text) { if !text.isEmpty { failed = nil } }
         // The bot sheet's pick is the newer word on model and effort; the dock's own would override it.
         .onChange(of: pick) {
             model = nil
@@ -147,10 +101,6 @@ struct ReplyDock: View {
                 if usable != pick.model { store.unsent[key] = AgentPick(harness: pick.harness, model: usable) }
             }
         }
-        .sheet(isPresented: $editing) {
-            TextSheet(title: sheetTitle, text: Binding(get: { store.drafts[key] ?? "" }, set: { store.drafts[key] = $0 }),
-                      send: { editing = false; send() }, sendable: dictation == .idle)
-        }
         .sheet(isPresented: $picking) { thisTask }
         // Leaving mid-recording sends what was said into this session's draft, the desktop's rule.
         .onDisappear {
@@ -158,131 +108,35 @@ struct ReplyDock: View {
         }
     }
 
-    /// The reply as it will send: the reader's own bubble, its last lines, so each recording
-    /// shows what it added. Tapped, the sheet holds the whole text.
-    private var bubble: some View {
-        VStack(alignment: .trailing, spacing: 6) {
-            Text(spokenTail(text))
-                .font(Theme.Font.body)
-                .foregroundStyle(Theme.onSent)
-                .lineLimit(3)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 14)
-                .background(Theme.sent, in: UnevenRoundedRectangle(topLeadingRadius: 20, bottomLeadingRadius: 20,
-                                                                      bottomTrailingRadius: 6, topTrailingRadius: 20, style: .continuous))
-                .frame(maxWidth: 290, alignment: .trailing)
-                .onTapGesture { edit() }
-                .accessibilityLabel(text)
-                .accessibilityAddTraits(.isButton)
-                .accessibilityHint("Opens it to edit")
-        }
-        .frame(maxWidth: .infinity, alignment: .trailing)
-    }
-
-    @ViewBuilder private var actions: some View {
-        VStack(spacing: Theme.Space.m) {
-            if confirming {
-                Text(phase == .ready ? "Discard this reply?" : "Discard this recording?")
-                    .font(Theme.Font.subhead).foregroundStyle(Theme.secondary)
-            } else if let note {
-                HStack(spacing: Theme.Space.s) {
-                    Text(note).font(Theme.Font.subhead).foregroundStyle(Theme.secondary).multilineTextAlignment(.center)
-                    // The recording alone: the reply's words stay.
-                    if Dictations.shared.kept[key] != nil {
-                        Button("Retry") { Task { await Dictations.shared.retry(store, draft: key) } }
-                            .font(Theme.Font.subhead).foregroundStyle(Theme.text)
-                        Button("Discard") { Dictations.shared.dismiss(key) }
-                            .font(Theme.Font.subhead).foregroundStyle(Theme.destructive)
-                    }
-                }
-            }
-            HStack(spacing: Theme.Space.m) {
-                if confirming { confirmButtons } else { mainButtons }
-            }
-        }
-    }
-
-    @ViewBuilder private var mainButtons: some View {
-        Button("Cancel") { confirming = true }
-            .buttonStyle(DockButtonStyle())
-        if phase == .recording {
-            Button { Task { await Dictations.shared.stop(store, draft: key) } } label: {
-                HStack(spacing: Theme.Space.s) {
-                    RoundedRectangle(cornerRadius: 3).frame(width: 12, height: 12)
-                    Text("Done")
-                    StopTimer(since: Dictations.shared.since[key])
-                }
-            }
-            .buttonStyle(DockButtonStyle(kind: .primary))
-            .disabled(dictation != .recording)
-            .accessibilityLabel("Done")
-        } else {
-            Button { send() } label: {
-                if sending { ProgressView().tint(.black) } else { Label("Send", systemImage: "arrow.up").labelStyle(SendLabel()) }
-            }
-            .buttonStyle(DockButtonStyle(kind: .primary))
-            .disabled(phase != .ready || sending || !connected)
-            .accessibilityLabel("Send")
-        }
-    }
-
-    @ViewBuilder private var confirmButtons: some View {
-        Button(phase == .recording ? "Keep recording" : "Keep") { confirming = false }
-            .buttonStyle(DockButtonStyle())
-        Button("Discard") {
-            if phase == .ready {
-                store.drafts[key] = nil
-                failed = nil
-            } else {
-                Dictations.shared.cancel(key)
-            }
-            Haptic.tap()
-        }
-        .buttonStyle(DockButtonStyle(kind: .destructive))
-    }
-
-    /// Model and effort, and "···", both opening This task; the keyboard, and Stop while a turn runs.
+    /// The model with its effort, and the stance: each opens This task. The model's chip
+    /// carries this machine's five-hour reading for the agent as a ring, once there is one.
     private var picks: some View {
-        HStack(spacing: Theme.Space.l) {
-            Button { picking = true } label: {
+        HStack(spacing: Theme.Space.s) {
+            PickChipButton(action: { picking = true }) {
                 HStack(spacing: 5) {
-                    AgentMark(harness: harness).frame(width: 13, height: 13)
+                    if let reading, reading.headline != nil {
+                        UsageRing(percent: reading.atLimit ? 100 : reading.percent, size: 13,
+                                  tone: reading.atLimit ? Theme.destructive : Theme.text)
+                    } else {
+                        AgentMark(harness: harness).frame(width: 13, height: 13)
+                    }
                     Text(current?.label ?? item?.model ?? "Model").font(Theme.Font.footnoteStrong).foregroundStyle(Theme.text)
                     if let effortNow, current?.efforts.isEmpty == false {
-                        Text(Picks.effortLabels[effortNow] ?? effortNow).font(Theme.Font.footnote).foregroundStyle(Theme.tertiary)
+                        Text(Picks.effortLabels[effortNow] ?? effortNow).foregroundStyle(Theme.tertiary)
                     }
                 }
-                .fixedSize()
             }
             .accessibilityLabel("Model")
             .accessibilityValue(current?.label ?? item?.model ?? "")
-            Button { picking = true } label: {
-                Image(systemName: "ellipsis").font(.system(size: 15, weight: .bold)).frame(width: 24, height: 20)
-            }
-            .accessibilityLabel("More picks")
-            if !typing {
-                Button { edit() } label: {
-                    Image(systemName: "keyboard").font(.system(size: 16)).frame(width: 24, height: 20)
+            if Picks.offersStances(harness) {
+                PickChipButton(action: { picking = true }) {
+                    Text(Picks.stances.first { $0.0 == Picks.stanceFor(harness, stanceNow) }?.1 ?? "Auto")
+                        .font(Theme.Font.footnoteStrong).foregroundStyle(Theme.text)
                 }
-                .accessibilityLabel("Keyboard")
-            }
-            if busy {
-                Button {
-                    Haptic.firm()
-                    Task { await store.interrupt(key) }
-                } label: {
-                    RoundedRectangle(cornerRadius: 2).fill(Theme.text).frame(width: 10, height: 10)
-                        .frame(width: 28, height: 28)
-                        .background(Theme.raised, in: Circle())
-                }
-                .accessibilityLabel("Stop")
-                .transition(.opacity)
+                .accessibilityLabel("Permissions")
             }
         }
-        .foregroundStyle(Theme.secondary)
-        .lineLimit(1)
-        .frame(height: 28)
-        .animation(Theme.motion, value: busy)
+        .padding(.leading, Theme.Space.xs)
     }
 
     /// The session's picks for the next reply, each locked mid-turn where the harness can't carry it
@@ -393,36 +247,6 @@ struct ReplyDock: View {
             : AgentPick(harness: agent, model: Prefs.map("models")[agent] ?? Picks.defaultModel[agent] ?? "")
     }
 
-    /// Tap to talk, tap again to stop: the orb is never held.
-    private func tapped() {
-        if dictation == .recording {
-            Task { await Dictations.shared.stop(store, draft: key) }
-            return
-        }
-        guard phase == .rest || phase == .ready else { return }
-        guard let transcriber else { return flash("Nothing can transcribe right now. Type instead.") }
-        // A kept recording is the only copy of what was said; it goes by Retry or Discard, never by a new tap.
-        guard Dictations.shared.kept[key] == nil else { return }
-        Dictations.shared.dismiss(key)
-        failed = nil
-        Task { await Dictations.shared.start(store, engine: transcriber, draft: key) }
-    }
-
-    private func flash(_ line: String) {
-        hint = line
-        Task {
-            try? await Task.sleep(for: .seconds(2))
-            if hint == line { hint = nil }
-        }
-    }
-
-    /// The title is read once, or typing into an empty reply retitles the sheet mid-word.
-    private func edit() {
-        sheetTitle = text.isEmpty ? "Reply" : "Edit message"
-        if Dictations.shared.kept[key] == nil { Dictations.shared.notes[key] = nil }
-        editing = true
-    }
-
     private func send() {
         let words = text
         // Spoken words still on their way would land after this send, as a reply of their own.
@@ -450,16 +274,6 @@ struct ReplyDock: View {
                 Haptic.error()
             }
             sending = false
-        }
-    }
-}
-
-/// "↑ Send": the arrow before the word, 8pt apart, in the word's colour.
-private struct SendLabel: LabelStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 8) {
-            configuration.icon.font(.system(size: 16, weight: .bold))
-            configuration.title
         }
     }
 }

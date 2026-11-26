@@ -1,16 +1,29 @@
 import XCTest
 
 extension XCUIApplication {
-    /// The session dock's reply by keyboard: open the sheet, type, back to the dock, Send.
+    /// A reply from the session's composer: type into its field, then Send.
     func reply(_ text: String) {
-        buttons["Keyboard"].tap()
-        let editor = textViews.firstMatch
-        XCTAssertTrue(editor.waitForExistence(timeout: 5), "the keyboard opened no sheet")
-        editor.typeText(text)
-        buttons["Done"].tap()
-        buttons["Send"].tap()
+        let field = composer
+        XCTAssertTrue(field.waitForExistence(timeout: 5), "no composer")
+        field.tap()
+        field.typeText(text)
+        buttons["send"].tap()
     }
 
-    /// The session dock, drawn once the session is open.
-    var dock: XCUIElement { buttons["Keyboard"] }
+    /// The session's composer, drawn once the session is open.
+    var composer: XCUIElement { descendants(matching: .any)["composer"] }
+    var dock: XCUIElement { composer }
+
+    /// One of the four tabs.
+    func tab(_ name: String) {
+        tabBars.buttons[name].firstMatch.tap()
+    }
+}
+
+extension XCUIElement {
+    /// Deletes whatever the field holds.
+    func clearText() {
+        guard let value = value as? String, !value.isEmpty else { return }
+        typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+    }
 }

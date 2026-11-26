@@ -7,8 +7,32 @@ phone reads and drives it over the same WebSocket the desktop uses
 
 ## What v1 does
 
-- **Every saved server at once, one merged list**, the desktop sidebar's live
-  list: stages workspace-wide with a gap between runs and no headings, PR marks
+- **Four tabs: Home, Bots, Tasks, Routines** (#27, Paper's "iPhone — tabs"),
+  always all four and in that order, a tab never an action. The rules both
+  phone apps follow are restated in `TabsLogic.swift` and held by
+  `TabsLogicTests`. Home answers what wants the reader across every bot and
+  task on the shown machines: usage chips, then **Waiting on you** (cards
+  answered in place, PRs ready to merge with Merge on the card, a bot's task
+  gone quiet), **Working**, and **New since you looked**, each hidden when
+  empty; all empty is All clear. Its badge (yellow) counts what waits. Bots is
+  the roster (waiting, unread, working, the rest, newest first), its badge
+  (red) the bots with unread replies. Routines lists every bot's routines,
+  soonest next run first and paused ones last; the switch pauses one, a long
+  press deletes it, a tap opens its bot, and making one is asked of a bot. The
+  tab bar hides inside a chat (`setTabBarHidden`, driven from the root: the
+  adaptable tab view read SwiftUI's per-view setting from tabs not on screen).
+- **Machines** leads every tab's bar, its dot the worst state of the shown
+  machines: green all fine, yellow one needs the reader, grey one out of
+  reach. Its sheet shows all machines or one (kept on the phone, cleared when
+  that machine is removed), each with its health and Retry, then Usage, Pair
+  a machine and Settings. The filter is the phone's alone.
+- **Usage** (#26): `live_state.usage` and `usage_changed` carry one reading per
+  agent per server. Home's chips take each agent's worst five-hour reading
+  across the shown machines, red with "back HH:MM" once at its limit; the
+  Usage sheet draws every window by machine; the composer's model chip rings
+  the session's own machine's reading; Machines counts how many are at their
+  limit.
+- **Tasks is the desktop sidebar's live list**, bots left out: stages workspace-wide with a gap between runs and no headings, PR marks
   read through `pr_marks` once per repo, and a strip of project names under
   the bar to narrow it. Drafts (`list_drafts`) and settled sessions are two
   more views of the same list. A session's card is answered under its row.
@@ -18,16 +42,14 @@ phone reads and drives it over the same WebSocket the desktop uses
   running turn keeps its newest five rows on screen. No diffs, no
   highlighting. A tapped picture opens full screen among the rest of its
   turn's: swipe or the strip to page, pinch to zoom, drag down to close.
-- **Reply** from a dock at the session's foot, the list's orb held to talk:
-  the words show as the bubble they will send as, the keyboard edits them
-  in a sheet that can also send, and Cancel asks first. A swipe up from the
-  resting orb or under it opens that sheet too, on every dock (#1302);
-  "Swipe up to type" sits over the orb until the reader has done it three times.
-  The sheet opens short over the keyboard, as Android's does, and a drag up
-  its header takes it to full height (#1415): one detent at a time, since a
-  sheet offered both goes to the larger as soon as the keyboard is up. A
-  swipe down the short sheet closes it with the keyboard, never the keyboard
-  alone (#1453). In a
+- **Reply** from the composer at the session's foot (`Composer.swift`): a
+  field with the mic at its trailing edge, Send once there are words, and
+  Stop beside it while a turn runs, when it reads "Queue a message". A tap on
+  the mic dictates hands-free: the field grows, a level meter, the time so
+  far, Cancel and Done; holding it talks while held. The words land in the
+  field to edit. Words come back once the recording is read, not as they are
+  spoken, since neither engine streams. Where nothing can transcribe the mic
+  is hidden. In a
   bot's chat a swipe in from the right edge opens its Tasks sheet, the button
   being a reach to the top of the screen. The model chip and
   "···" open **This task**: the session's model, effort, fast mode and
@@ -50,25 +72,22 @@ phone reads and drives it over the same WebSocket the desktop uses
   copied there while the chat is open (`react_to_message`). The pick is a badge
   beside the bubble's bottom corner; the bot's own sits beside the top corner
   of the reader's. Both are overlays, so neither moves a row.
-- **New task by voice**, from a dock under the list: hold the orb to talk,
-  and the recording runs hands-free until Done or Cancel. The words land as
-  the task's text; holding again adds to them, the keyboard edits them in a
-  sheet, and Cancel offers Save draft (`create_draft`), Keep or Discard.
-  Run with offers Save draft too once there are words, the one way to it
-  in keyboard mode, whose field has no Cancel.
-  Every pick under the orb opens **Run with**: server (where two hold the
+- **New task** from the compose button at the top right of Home and Tasks:
+  a sheet with the composer's field and mic, then Run by (Me, or a bot, whose
+  folder the words go to), Project, Agent, Machine and Worktree, and Start
+  task. Save keeps it as a draft (`create_draft`); Cancel with words offers
+  Save draft, Discard or Keep editing. The Agent row opens **Run with**: server (where two hold the
   project), project with Attach inside its menu, worktree, the agent and its
   model as chips, effort, fast mode and stance. Double-tapping a model stars
   it, on this phone, per agent; starred ones lead. With the worktree off a
   Branch row switches the checkout at once (`checkout_branch`), asking
   Bring or Stash first where files are uncommitted, as the desktop does.
-  On an iPad or an unfolded Duo (#1390) the list is a sidebar whose foot is
-  a **New task** button instead: the same dock fills the main pane, which
-  shows it whenever no session is open. A sidebar laid over the pane shuts;
-  one beside it stays, as a row tap does.
+  On an iPad or an unfolded Duo the tabs become a sidebar
+  (`.sidebarAdaptable`, iOS 18): Home, each bot under Bots, All tasks and each
+  project, Routines, with the chosen one beside it.
 - **Open bot at launch** (Settings, Off by default): a cold launch opens the
-  picked bot's chat as its first screen, read off the cached list before the
-  first frame, so the list never shows first; Back is the list. A bot with no
+  picked bot's chat on the Bots tab as its first screen, read off the cached
+  list before the first frame, so the list never shows first; Back is the roster. A bot with no
   chat cached waits on its server's index and bots, then opens its own page.
   Coming back from the background, a link, a tap first or ten seconds and the
   list stays. Nothing opens by itself with it Off, one bot or not.
@@ -117,11 +136,10 @@ phone reads and drives it over the same WebSocket the desktop uses
   disabled. Apple asks no speech recognition permission: that prompt is the
   old `SFSpeechRecognizer`'s and says speech goes to Apple. The simulator's
   analyzer offers no audio format, so a read there fails; test it on a phone.
-  Where nothing can transcribe, every dock trades the orb for a text field
-  and send. The Island's `VoiceOrb` draws it.
+  Where nothing can transcribe, every composer hides its mic. The Island's
+  `VoiceOrb.swift` is still compiled in for the `Dictation` states it defines.
 - **Pull requests and Issues** (#1361), the desktop's two pages, each a
-  button beside Settings opening a sheet with its own stack. Pushed inside
-  the split view's sidebar instead, a page's own push looped the layout.
+  button at the top right of Tasks opening a sheet with its own stack.
   GitHub's search and the trackers are asked through `trackerServer`: the
   Mac app's server where one is connected, else the first. Both keep their
   last answers on disk, per server; a server switched off loses its kept
@@ -155,9 +173,11 @@ forks, settle/pin, the settled list, spaces.
 
 ## Stack
 
-SwiftUI, iOS 17 (`@Observable`), iPhone and iPad from one
-`NavigationSplitView`. **One dependency**, [Thinking Orbs](https://github.com/yogesharc/thinking-orbs)
-for the orb, pinned to a revision in `project.yml`. Everything else is the
+SwiftUI, iOS 17 (`@Observable`), iPhone and iPad from one `TabView`:
+`Tab`, `TabSection` and `.sidebarAdaptable` from iOS 18, a plain tab bar on
+17. Each tab owns a `NavigationStack` whose path lives in `Nav` (`Tabs.swift`).
+**One dependency**, [Thinking Orbs](https://github.com/yogesharc/thinking-orbs)
+for the working orb, pinned to a revision in `project.yml`. Everything else is the
 platform's: `URLSessionWebSocketTask` for the socket, `AttributedString(markdown:)`
 for text, VisionKit's `DataScannerViewController` for QR, Keychain for tokens.
 
@@ -187,23 +207,25 @@ the build, so `CURRENT_PROJECT_VERSION` never needs bumping by hand.
 
 ## Design
 
-Dark only, one palette: the desktop's dark tokens, its one yellow and its
-radius scale. **Every colour, size, radius, font and haptic is in
-[Theme.swift](Wain/Theme.swift)** and nowhere else; a view naming a hex or a
+Follows the system's appearance: the desktop's dark tokens, and Paper's
+`--color-phone-light-*` for light; yellow fills keep `--color-phone-accent`
+(`Theme.accentFill`), small yellow marks and words take the light accent.
+Its one yellow and its radius scale. **Every colour, size, radius, font and
+haptic is in [Theme.swift](Wain/Theme.swift)** and nowhere else; a view naming a hex or a
 point size is a bug. Yellow means *needs you* — a card, a refused token, an
 app to update — and nothing else, so the global tint is the page's ink.
 Rationale and the screens it was judged on are in #631.
 
-- **The list has no title.** Settings on the left, the drafts and settled
-  views in one glass pill on the right, each only while a server is connected
-  and it has something in it, the project strip under them once there are two
-  projects. Rows are one line; a child hangs off its parent on a solid elbow,
+- **Each tab's bar leads with Machines and its title beside it.** Tasks'
+  title is the Live / Drafts / Settled menu, Pull requests and Issues share
+  one glass pill on its right, then New task; the project strip of chips sits
+  under the bar once there are two projects. Rows are one line; a child hangs off its parent on a solid elbow,
   and a waiting card sits under its row, a fill and no border.
 - **An empty list is the whole screen** ([EmptyArt.swift](Wain/EmptyArt.swift)),
-  drawn in the middle: connect a server (no dock until one is paired),
-  connecting, can't reach with its countdown (the dock dims), no tasks yet or
-  nothing in this project with a line down to the orb, and all clear with
-  the last task settled today and how many were.
+  drawn in the middle, on every tab while nothing shown answers: pair a
+  machine, connecting, can't reach with its countdown. Then each tab's own:
+  Home's All clear, No bots yet, No routines yet with Ask a bot, and Tasks'
+  no tasks yet or all clear with the last task settled today.
 - **One type scale** in `Theme.Font`, five rungs, SF Pro only, regular and
   semibold only. Buttons are semibold: Headline full-width, `pill` compact;
   a text-only action stays regular.
@@ -220,9 +242,8 @@ Rationale and the screens it was judged on are in #631.
   alert.
 - **Orbs.** [Orb.swift](Wain/Orb.swift) is the one place app states map to
   the package's: working, delegating (gyro), background (spiral), reconnecting
-  (lighthouse, fast), loading. Dictation is the Island's `VoiceOrb`, shared by
-  path from `apps/island/Island` the way the Island shares this app's client,
-  driven by the recorder's meter.
+  (lighthouse, fast), loading. Dictation draws no orb: the composer's strip
+  shows the recorder's meter.
 
 **Screens are checked by `DesignTests`**, which walks every screen and failure
 state and attaches a screenshot of each. Two stand-ins answer the failure
@@ -236,7 +257,7 @@ One socket per server. Address is the `wss://…` Remote access shows, or any
 ```text
 → {"v":1,"token":"…"}
 ← {"v":1,"version":…,"release":…,"stale":…}   or {"err":"…"}
-← {"event":"live_state","payload":{"asks":[…],"tasks":[…]}}
+← {"event":"live_state","payload":{"asks":[…],"tasks":[…],"usage":[…]}}
 → {"id":n,"cmd":"…","args":{…}}               camelCase args, as invoke sends
 ← {"id":n,"ok":…} | {"id":n,"err":…}
 ← {"event":"agent_event"|"session_status"|"session_created"|"session_title"|…,"payload":…}
@@ -251,7 +272,9 @@ Commands used: `list_session_index_items`, `get_session_by_id`,
 `list_branches`, `checkout_branch`, `mark_session_read`, `work_status`,
 `prs_for_branch`, `merge_pr`, `mark_pr_ready`, `reopen_pr`, `set_last_selected_project`,
 `add_project`, `github_repos`, `clone_github_repo`, `recheck_gh`, `pr_marks`,
-`transcribe_upload`, `create_draft`, `delete_draft`.
+`transcribe_upload`, `create_draft`, `delete_draft`, `list_bots`,
+`list_routines`, `set_routine_paused`, `delete_routine`. Events read beyond
+the session ones: `usage_changed`, whose payload is the server's whole list.
 
 **A new task restates the desktop composer's rules** (`Picks` in
 `Picks.swift`): which stances each harness honours (`permission.ts`),
