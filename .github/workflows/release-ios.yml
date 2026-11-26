@@ -1,0 +1,135 @@
+name: Release iOS
+
+# Wain: the iPhone app goes to TestFlight from here, and only when Ismat starts
+# it (FORK.md). Upstream archives on a Mac of its own. Actions are pinned to
+# commit SHAs for release.yml's reason: this job holds the signing keys.
+#
+# Signing is manual: the CI-only iOS Distribution certificate (IOS_CERTIFICATE)
+# and two App Store profiles, read by name from App Store Connect with the
+# ASC_API_KEY that also uploads the build. App Store Connect numbers the build
+# (manageAppVersionAndBuildNumber), so nothing here bumps CURRENT_PROJECT_VERSION.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-ios
+
+jobs:
+  pick:
+    uses: ./.github/workflows/pick-mac.yml
+    secrets: inherit
+
+  testflight:
+    needs: pick
+    runs-on: ${{ fromJSON(needs.pick.outputs.mac) }}
+    timeout-minutes: 45
+    env:
+      ASC_KEY_ID: ${{ vars.ASC_API_KEY_ID }}
+      ASC_ISSUER_ID: ${{ vars.ASC_API_ISSUER_ID }}
+    steps:
+      # The newest Xcode on the image: App Store Connect takes only builds made
+      # with a recent SDK, and GitHub's default lags it.
+      - name: Select Xcode
+        run: |
+          X=$(ls -d /Applications/Xcode_2[6-9]*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$X" ]; then echo "DEVELOPER_DIR=$X/Contents/Developer" >> "$GITHUB_ENV"; echo "Xcode: $X"; fi
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: apple-actions/import-codesign-certs@63fff01cd422d4b7b855d40ca1e9d34d2de9427d # v3
+        with:
+          p12-file-base64: ${{ secrets.IOS_CERTIFICATE }}
+          p12-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+
+      - name: Install the App Store profiles
+        env:
+          ASC_API_KEY: ${{ secrets.ASC_API_KEY }}
+        run: |
+          export ASC_KEY_PATH="$RUNNER_TEMP/asc.p8"
+          echo "ASC_KEY_PATH=$ASC_KEY_PATH" >> "$GITHUB_ENV"
+          (umask 077 && printf %s "$ASC_API_KEY" | base64 -d > "$ASC_KEY_PATH")
+          ruby - "Wain iOS App Store" "Wain Notify App Store" <<'RUBY'
+          require "openssl"; require "json"; require "base64"; require "net/http"; require "fileutils"
+          b64 = ->(s) { Base64.urlsafe_encode64(s, padding: false) }
+          key = OpenSSL::PKey::EC.new(File.read(ENV.fetch("ASC_KEY_PATH")))
+          now = Time.now.to_i
+          head = b64.(JSON.dump(alg: "ES256", kid: ENV.fetch("ASC_KEY_ID"), typ: "JWT"))
+          body = b64.(JSON.dump(iss: ENV.fetch("ASC_ISSUER_ID"), iat: now, exp: now + 600, aud: "appstoreconnect-v1"))
+          # A JWT wants the raw r|s pair, where OpenSSL signs DER.
+          r, s = OpenSSL::ASN1.decode(key.sign("SHA256", "#{head}.#{body}")).value.map { |i| i.value.to_s(2).rjust(32, "\0") }
+          uri = URI("https://api.appstoreconnect.apple.com/v1/profiles")
+          uri.query = URI.encode_www_form("filter[name]" => ARGV.join(","), "fields[profiles]" => "name,profileState,uuid,profileContent")
+          req = Net::HTTP::Get.new(uri, "Authorization" => "Bearer #{head}.#{body}.#{b64.(r + s)}")
+          res = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(req) }
+          abort "App Store Connect answered #{res.code}: #{res.body[0, 300]}" unless res.is_a?(Net::HTTPSuccess)
+          found = JSON.parse(res.body)["data"].map { |p| p["attributes"] }.select { |a| a["profileState"] == "ACTIVE" }
+          missing = ARGV - found.map { |a| a["name"] }
+          abort "no active profile named #{missing.join(", ")}" unless missing.empty?
+          dirs = ["~/Library/MobileDevice/Provisioning Profiles", "~/Library/Developer/Xcode/UserData/Provisioning Profiles"].map { |d| File.expand_path(d) }
+          found.each do |a|
+            dirs.each { |d| FileUtils.mkdir_p(d); File.binwrite(File.join(d, "#{a["uuid"]}.mobileprovision"), Base64.decode64(a["profileContent"])) }
+            puts "#{a["name"]}: #{a["uuid"]}"
+          end
+          RUBY
+
+      # project.yml stays upstream's. The App Store signing rides an include
+      # instead, so a sync never conflicts on it and Debug stays automatic.
+      - name: Generate the project
+        working-directory: apps/ios
+        run: |
+          command -v xcodegen >/dev/null || brew install xcodegen
+          cat > ci.yml <<'YML'
+          include: [project.yml]
+          targets:
+            Wain:
+              settings:
+                configs:
+                  Release:
+                    CODE_SIGN_STYLE: Manual
+                    CODE_SIGN_IDENTITY: iPhone Distribution
+                    PROVISIONING_PROFILE_SPECIFIER: Wain iOS App Store
+            WainNotify:
+              settings:
+                configs:
+                  Release:
+                    CODE_SIGN_STYLE: Manual
+                    CODE_SIGN_IDENTITY: iPhone Distribution
+                    PROVISIONING_PROFILE_SPECIFIER: Wain Notify App Store
+          YML
+          xcodegen generate --spec ci.yml
+
+      - name: Archive
+        working-directory: apps/ios
+        run: |
+          xcodebuild -quiet -project Wain.xcodeproj -scheme Wain -configuration Release \
+            -destination generic/platform=iOS -archivePath "$RUNNER_TEMP/Wain.xcarchive" archive
+
+      - name: Upload to TestFlight
+        run: |
+          cat > "$RUNNER_TEMP/export.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>FBH9JL8MB9</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>iPhone Distribution</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.plorigo.wain.ios</key><string>Wain iOS App Store</string>
+              <key>com.plorigo.wain.ios.notify</key><string>Wain Notify App Store</string>
+            </dict>
+            <key>manageAppVersionAndBuildNumber</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Wain.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
