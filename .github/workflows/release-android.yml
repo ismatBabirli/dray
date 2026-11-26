@@ -5,14 +5,14 @@ name: Release Android
 # Actions are pinned to commit SHAs for release.yml's reason: this job holds the
 # upload key and the Play key.
 #
-# Play wants a new app's first bundle uploaded by hand in Play Console, so a run
-# with `upload` off only builds it, as an artifact. After that, every run uploads.
+# A run with `upload` off only builds the bundle, as an artifact. The package was
+# claimed when the app was made in Play Console, so even the first upload took the API.
 
 on:
   workflow_dispatch:
     inputs:
       upload:
-        description: Upload to Play's internal track (off for the very first bundle)
+        description: Upload to Play's internal track (off only builds the bundle)
         type: boolean
         default: true
 
