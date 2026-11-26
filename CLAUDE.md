@@ -108,6 +108,8 @@ Wain keep to one visual language — one radius scale, one yellow, filled button
 
 **Rules, rejected alternatives and the reasoning all live in [DESIGN.md](apps/desktop/DESIGN.md)** — read it before restyling anything, changing window chrome, or reworking a panel, card, row or button. Two things there fail *silently* and cost an afternoon each: vibrancy's `body` specificity, and window drag needing both an explicit capability and `data-tauri-drag-region="deep"`.
 
+**Paper first, code second.** Any visual change — desktop app, iPhone, Android, Wain Island, the site or the docs — is made in Paper before any code changes. The design source is the Paper file "Wain — Design System" (https://app.paper.design/file/01M8BVHAZ93HFSTFB0Z4MDKB39): tokens, a Components board, and a page per platform. Change the token or component there, update the screens that use it, then write the code to match. A new colour, size or radius starts as a Paper token. The file has no page for the site or docs yet, so the first change there adds one. Paper's components are copies, not linked instances, so editing one means updating every screen that copies it.
+
 ## Commands
 
 Use **pnpm**, not npm. `tauri.conf.json` hardcode `pnpm dev` / `pnpm build` as before-commands.
