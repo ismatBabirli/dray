@@ -1,0 +1,77 @@
+name: Release Android
+
+# Wain: the Android app goes to Google Play's internal testing track from here,
+# and only when Ismat starts it (FORK.md). Upstream builds its bundle by hand.
+# Actions are pinned to commit SHAs for release.yml's reason: this job holds the
+# upload key and the Play key.
+#
+# Play wants a new app's first bundle uploaded by hand in Play Console, so a run
+# with `upload` off only builds it, as an artifact. After that, every run uploads.
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: Upload to Play's internal track (off for the very first bundle)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-android
+
+jobs:
+  play:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Signing, Firebase and version
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_UPLOAD_KEYSTORE }}
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          (umask 077 && printf %s "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/upload.p12")
+          echo "WAIN_ANDROID_STORE_FILE=$RUNNER_TEMP/upload.p12" >> "$GITHUB_ENV"
+          if [ -n "$GOOGLE_SERVICES" ]; then
+            printf %s "$GOOGLE_SERVICES" | base64 -d > apps/android/app/google-services.json
+          else
+            echo "::warning::No GOOGLE_SERVICES_JSON secret: this build has no push."
+          fi
+          # Play refuses a versionCode it has seen, and this run number only grows.
+          sed -i -E "s/versionCode = [0-9]+/versionCode = $GITHUB_RUN_NUMBER/" apps/android/app/build.gradle.kts
+          grep -q "versionCode = $GITHUB_RUN_NUMBER" apps/android/app/build.gradle.kts
+
+      - name: Build the bundle
+        working-directory: apps/android
+        env:
+          WAIN_ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_PASSWORD }}
+          WAIN_ANDROID_KEY_ALIAS: upload
+          WAIN_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_PASSWORD }}
+        run: ./gradlew --no-daemon :app:bundleRelease
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wain-android-${{ github.run_number }}
+          path: apps/android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 14
+
+      # A draft app (nothing reviewed yet) takes only draft releases; set the
+      # variable PLAY_RELEASE_STATUS to `draft` until Play Console allows more.
+      - if: inputs.upload
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
+          packageName: com.plorigo.wain
+          releaseFiles: apps/android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: ${{ vars.PLAY_RELEASE_STATUS || 'completed' }}
