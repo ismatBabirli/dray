@@ -295,8 +295,12 @@ impl RateLimitInfo {
         self.is_using_overage.unwrap_or(false) || !healthy
     }
 
-    /// This line as Claude Code's usage reading (#26), whatever its status.
-    pub fn usage_reading(&self) -> crate::usage::Reading {
+    /// This line as Claude Code's usage reading (#26), whatever its status;
+    /// `None` when it names neither window, so the last reading stands.
+    pub fn usage_reading(&self) -> Option<crate::usage::Reading> {
+        // Only the two the contract names, in both shapes: a per-model window
+        // would draw a bar no client can label.
+        const KEYS: [&str; 2] = ["five_hour", "seven_day"];
         let window = |key: &str, utilization: Option<&Value>, resets_at: Option<i64>| {
             let minutes = match key {
                 "five_hour" => Some(300),
@@ -307,28 +311,29 @@ impl RateLimitInfo {
             let used = utilization.and_then(Value::as_f64).map(|u| (u * 10_000.0).round() / 100.0);
             crate::usage::Window::new(minutes, used, resets_at)
         };
-        let windows = match self.unified_windows.as_ref().and_then(Value::as_object) {
-            // Only the two the contract names: a per-model window would draw a
-            // bar no client can label.
-            Some(all) => ["five_hour", "seven_day"]
+        let windows: Vec<_> = match self.unified_windows.as_ref().and_then(Value::as_object) {
+            Some(all) => KEYS
                 .into_iter()
                 .filter_map(|key| {
                     let w = all.get(key)?;
                     Some(window(key, w.get("utilization"), w.get("resetsAt").and_then(Value::as_i64)))
                 })
                 .collect(),
-            None => vec![window(
-                self.rate_limit_type.as_deref().unwrap_or_default(),
-                self.utilization.as_ref(),
-                self.resets_at,
-            )],
+            None => KEYS
+                .into_iter()
+                .filter(|key| self.rate_limit_type.as_deref() == Some(*key))
+                .map(|key| window(key, self.utilization.as_ref(), self.resets_at))
+                .collect(),
         };
-        crate::usage::Reading {
+        if windows.is_empty() {
+            return None;
+        }
+        Some(crate::usage::Reading {
             limited: self.status.as_deref() == Some("rejected"),
             overage: self.overage_status.clone(),
             using_overage: self.is_using_overage.unwrap_or(false),
             ..crate::usage::Reading::new(crate::harness::Harness::ClaudeCode, windows)
-        }
+        })
     }
 }
 
@@ -1808,7 +1813,7 @@ mod tests {
         parse_fixture(fixture)
             .into_iter()
             .filter_map(|event| match event {
-                ClaudeCodeEvent::RateLimitEvent { rate_limit_info, .. } => Some(rate_limit_info.usage_reading()),
+                ClaudeCodeEvent::RateLimitEvent { rate_limit_info, .. } => rate_limit_info.usage_reading(),
                 _ => None,
             })
             .collect()
@@ -1861,9 +1866,25 @@ mod tests {
             panic!("wrong variant");
         };
         assert!(rate_limit_info.is_noteworthy());
-        let reading = rate_limit_info.usage_reading();
+        let reading = rate_limit_info.usage_reading().expect("both windows are named");
         assert!(reading.limited);
         assert_eq!(reading.windows.len(), 2);
         assert!(reading.windows.iter().all(|w| w.used_percent.is_none()));
+    }
+
+    /// A per-model or untyped window is no reading at all, in either shape, so
+    /// it never replaces one a client can draw.
+    #[test]
+    fn unnamed_windows_leave_the_last_reading() {
+        for line in [
+            r#"{"type":"rate_limit_event","rate_limit_info":{"status":"rejected","rateLimitType":"seven_day_opus","utilization":0.9,"resetsAt":1795730400},"session_id":"s"}"#,
+            r#"{"type":"rate_limit_event","rate_limit_info":{"status":"allowed"},"session_id":"s"}"#,
+            r#"{"type":"rate_limit_event","rate_limit_info":{"status":"allowed","unifiedWindows":{"seven_day_opus":{"utilization":0.5}}},"session_id":"s"}"#,
+        ] {
+            let ClaudeCodeEvent::RateLimitEvent { rate_limit_info, .. } = parse_line(line).unwrap() else {
+                panic!("wrong variant");
+            };
+            assert!(rate_limit_info.usage_reading().is_none(), "{line}");
+        }
     }
 }

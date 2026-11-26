@@ -133,7 +133,9 @@ healthy or not; Grok, fx, pi and OpenCode report nothing. A reading:
   `seven_day` alone, so a reading may have no `five_hour`. Its older shape has no
   `unifiedWindows` and one top-level `utilization` for the window
   `rateLimitType` names; a `rejected` line there carries no figure at all, only
-  `limited` and the window's `resetsAt`.
+  `limited` and the window's `resetsAt`. Either shape is read for `five_hour`
+  and `seven_day` alone, and a line naming neither (a per-model window) leaves
+  the last reading as it was.
 - `limited` is Claude's `rejected` or Codex's `rateLimitReachedType` set. `plan`
   is Codex's `planType`; `overage` and `usingOverage` are Claude's. Only
   `harness`, `at` and `windows` are always there.
