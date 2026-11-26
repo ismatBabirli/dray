@@ -18,7 +18,7 @@ Wain is a renamed fork of Dray (`monorepo-labs/dray`). `CLAUDE.md` below is upst
 ## Things that differ from upstream
 
 - **Upstream's people and money are not Wain's.** No founder quotes, sponsors, testimonials, author numbers, upstream social accounts or upstream payment links. They were removed in Wain; a sync must not bring them back. `FORK-PLAN.md` §5 lists them.
-- **Logo:** every asset is built by `python3 brand/build.py --install` from `brand/wain-brand-sheet.png`, then `apps/desktop/scripts/icons.sh`. Don't edit the generated files by hand. That includes the iPhone app's icon (all three appearances) and launch mark, and Android's launcher, splash and notification glyph. All are the desktop's dark tile with a white W, so Android lost upstream's soft shadow bitmaps and `scripts/launcher_icon.sh`, which `apps/android/PLAN.md` still names. On a sync conflict there, keep Wain's files and rerun the script.
+- **Logo:** every asset is built by `python3 brand/build.py --install` from `brand/wain-brand-sheet.png`, then `apps/desktop/scripts/icons.sh`. Don't edit the generated files by hand. That includes the iPhone app's icon (all three appearances) and launch mark, and Android's launcher, splash and notification glyph. All are the desktop's dark tile with a white W, so Android lost upstream's soft shadow bitmaps and `scripts/launcher_icon.sh`. On a sync conflict there, keep Wain's files and rerun the script.
 - **Pictures upstream made with Dray in them are retaken from Wain's own code** (26 Nov 2026). On a sync conflict over one, keep Wain's file and retake it if upstream's change is wanted:
   - The docs' server-setup screenshots: `node scripts/docs-screenshots.mjs` against the desktop's dev server (the script says how).
   - The homepage's phone stills (`hero-mobile*.webp`) are the live app window captured at 1x (dark) and 1.2x (light), and its bot scene's video (`bots/changelog-0.42.mp4`) is `/changelog` with the story's made-up 0.42 release added on top, scrolling. The bots-video demo's `homepage.jpg` and `changelog.mp4` are the same captures.
@@ -31,7 +31,7 @@ Wain is a renamed fork of Dray (`monorepo-labs/dray`). `CLAUDE.md` below is upst
 - **The iPhone app is `com.plorigo.wain.ios`**, Plorigo's namespace on that same team, by a `rebrand.mjs` rule ahead of the general one. The site's push relay pins pushes to it. The Mac app and its server stay `com.wainhq.wain`.
 - **`IslandView.composerCard` is split in four** (`cardContent`, `cardFill`, `cardFace`, `composerCard`). GitHub's Xcode 26 gave up type-checking it whole, which stopped the release; upstream builds on a newer Xcode and never sees it. On a sync conflict there, keep the split and carry upstream's change into it.
 - **`wain upload` doesn't work yet**: it posts to upstream's upload worker. Attach screenshots to the PR through GitHub instead.
-- **The `Claude Code Review` Action and `claude.yml` are disabled** (`gh workflow disable`), and their secret is not set. Until both change, review in the session (`/code-review`) before asking for a merge. They are the only workflows an outsider can start, by a comment or a pull request, so before `gh workflow enable`: pin their two actions to a SHA, as every other workflow is, and gate `claude.yml` on the commenter being the owner.
+- **The `Claude Code Review` Action and `claude.yml` are disabled** (`gh workflow disable`), and their secret, `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`), is not set. Until both change, review in the session (`/code-review`) before asking for a merge. Both are pinned, and `claude.yml` runs only for the owner's own `@claude`, so setting the secret and enabling them is all that is left.
 
 ## Repo safety
 
@@ -40,6 +40,10 @@ The repo is public, so these hold on purpose (set 26 Nov 2026):
 - **Every outside pull request's workflows wait for Ismat's approval** (`fork-pr-contributor-approval: all_external_contributors`), not only a first-timer's.
 - **Ruleset "main stays":** `main` cannot be deleted or force-pushed, by anyone. Ordinary pushes, the upstream sync's merges included, go through.
 - **Ruleset "release tags: admin only":** only a repo admin creates, moves or deletes `v*` and `cli-v*`, so no token or app can start a release.
+- **Every action is pinned to a full commit SHA, and GitHub refuses one that isn't** (`sha_pinning_required`). Pages' own build of the updater feed still runs under it. The sync warns when upstream brings in an unpinned one: pin it the way the others are, the version in a trailing comment.
+- **Dependabot alerts and private vulnerability reporting are on**, so a security report arrives under Security → Advisories, not as a public issue. Dependabot opens no pull requests.
+- **Interaction limits are off on purpose**: the site's Feedback link sends people to issues, and a limit would block new accounts there.
+- **GitHub Apps that reach this repo:** Claude (the review workflows) and coolify-self-hosted-ismat (site deploys). Xcode Cloud's access is left from the dropped Xcode Cloud setup and can go. Showing or changing an app's access asks for Ismat's password.
 - Nothing deploys on push: Coolify's auto-deploy is off and the repo has no webhooks or deploy keys. Ismat is the only collaborator, and the Actions token defaults to read and cannot approve pull requests.
 - **The `caveman-commit` skill isn't installed.** Write commit messages by hand: a short plain subject, then why.
 
