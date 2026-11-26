@@ -29,6 +29,8 @@ const RULES = [
   // Upstream's Apple team. Wain signs iOS and Island as Ismat's, and the site's
   // APNs default must name the team the push key belongs to.
   [/7WYP3LRDL8/g, "FBH9JL8MB9"],
+  // Upstream's App Store listing; Wain's own is "Wain: AI Coding Agents".
+  [/id6824145317/g, "id6839484995"],
   [/DRAY/g, "WAIN"],
   [/Dray/g, "Wain"],
   [/dray/g, "wain"],
@@ -117,6 +119,7 @@ function selfTest() {
     ["Copyright 2026 Yogesh Dhakal", "Copyright 2026 Yogesh Dhakal"],
     ["https://github.com/Monorepo-Labs/dray/pull/1", "https://github.com/IsmatBabirli/wain/pull/1"],
     ["DEVELOPMENT_TEAM: 7WYP3LRDL8", "DEVELOPMENT_TEAM: FBH9JL8MB9"],
+    ["https://apps.apple.com/app/id6824145317", "https://apps.apple.com/app/id6839484995"],
   ];
   for (const [from, to] of cases) assert.equal(rebrand(from), to);
 

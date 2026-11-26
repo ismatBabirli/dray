@@ -251,6 +251,7 @@ def main():
     print(f"wrote brand/wain-{{mark,wordmark,lockup}}.svg and {len(list(out.glob('*.png')))} PNGs in brand/png")
     if "--install" in sys.argv:
         install(out, lw, lh, body, mark.w * 96 / mark.h, mark.path(96 / mark.h))
+        install_phones(mark)
 
 
 def install(out, lw, lh, body, mark_w_96, mark_path_96):
@@ -280,6 +281,67 @@ def install(out, lw, lh, body, mark_w_96, mark_path_96):
     (ROOT / "apps/desktop/public/assets/icon.svg").write_text(
         f'<svg width="{mw:g}" height="96" viewBox="0 0 {mw:g} 96" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="{mark_path_96}" fill="black"/>\n</svg>\n')
     print("installed into apps/desktop, apps/web, apps/docs and apps/gpui")
+
+
+def android_vector(size, body, comment, viewport=None):
+    v = viewport or size
+    return (f'<?xml version="1.0" encoding="utf-8"?>\n<!-- {comment} Written by brand/build.py. -->\n'
+            f'<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
+            f'    android:width="{size}dp"\n    android:height="{size}dp"\n'
+            f'    android:viewportWidth="{v}"\n    android:viewportHeight="{v}">\n{body}\n</vector>\n')
+
+
+def centred(mark, canvas, width, fill):
+    """An Android path of the mark, width wide at the centre of a canvas-unit viewport."""
+    k = width / mark.w
+    d = mark.path(k, (canvas - width) / 2, (canvas - mark.h * k) / 2)
+    return f'    <path android:fillColor="{fill}" android:fillType="evenOdd" android:pathData="{d}" />'
+
+
+def install_phones(mark):
+    """The iPhone and Android apps' icons, launch marks and status bar glyph, dark as
+    the desktop's: Dray's white tile and soft shadow are its look, not Wain's."""
+    ios = ROOT / "apps/ios/Wain/Assets.xcassets"
+    # iOS rounds the corners itself and refuses an icon with alpha: square and opaque.
+    dark = tile_icon(mark, 1024, TILE_DARK, WHITE, rounded=False).convert("RGB")
+    dark.save(ios / "AppIcon.appiconset/default.png")
+    dark.save(ios / "AppIcon.appiconset/dark.png")
+    # The tinted slot is coloured by the system from its luminance alone.
+    tile_icon(mark, 1024, (0, 0, 0), WHITE, rounded=False).convert("RGB").save(ios / "AppIcon.appiconset/tinted.png")
+    lh = 32
+    lw = round(mark.w * lh / mark.h, 2)
+    (ios / "LaunchMark.imageset/launch-mark.svg").write_text(
+        f'<svg width="{lw:g}" height="{lh}" viewBox="0 0 {lw:g} {lh}" fill="none" xmlns="http://www.w3.org/2000/svg">\n'
+        f'<path d="{mark.path(lh / mark.h)}" fill="white" fill-rule="evenodd"/>\n</svg>\n')
+
+    res = ROOT / "apps/android/app/src/main/res"
+    draw = res / "drawable"
+    # 46dp wide fills the 72dp a launcher mask shows as the desktop tile's 0.64 does,
+    # and its corners stay inside the 66dp safe circle.
+    (draw / "ic_launcher_mark.xml").write_text(android_vector(108, centred(mark, 108, 46, "#FFFFFFFF"),
+        "The Wain mark on the adaptive icon's 108dp canvas."))
+    (draw / "ic_launcher_monochrome.xml").write_text(android_vector(108, centred(mark, 108, 46, "#FF000000"),
+        "Themed icons tint this from its alpha alone; same geometry as ic_launcher_mark."))
+    (draw / "ic_launcher_background.xml").write_text(android_vector(108,
+        '    <path android:fillColor="#FF{:02X}{:02X}{:02X}" android:pathData="M0,0h108v108h-108z" />'.format(*TILE_DARK),
+        "The desktop icon's dark tile."))
+    (draw / "ic_launcher_foreground.xml").write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n<!-- The mark alone: a dark tile wants no shadow under it. Written by brand/build.py. -->\n'
+        '<layer-list xmlns:android="http://schemas.android.com/apk/res/android">\n'
+        '    <item android:drawable="@drawable/ic_launcher_mark" />\n</layer-list>\n')
+    (draw / "splash_mark.xml").write_text(android_vector(288, centred(mark, 288, 72, "#FFFFFFFF"),
+        "The splash's icon with no icon background: the mark 72dp wide in white at the centre of a 288dp canvas."))
+    (draw / "ic_notification.xml").write_text(android_vector(24, centred(mark, 120, 110, "#FFFFFFFF"),
+        "The Wain mark, centred: Android tints a status bar icon from its alpha alone.", viewport=120))
+    for dpi in ("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"):
+        (draw.parent / f"drawable-{dpi}" / "ic_launcher_shadow.png").unlink(missing_ok=True)
+    # Legacy launchers: the tile 44dp on a 48dp canvas.
+    for dpi, px in (("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)):
+        legacy = Image.new("RGBA", (px, px), (0, 0, 0, 0))
+        t = round(px * 44 / 48)
+        legacy.paste(tile_icon(mark, t, TILE_DARK, WHITE), ((px - t) // 2, (px - t) // 2))
+        legacy.save(res / f"mipmap-{dpi}" / "ic_launcher.png")
+    print("installed into apps/ios and apps/android")
 
 
 if __name__ == "__main__":
