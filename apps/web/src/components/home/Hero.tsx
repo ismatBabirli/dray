@@ -8,7 +8,7 @@ import { PhoneDownloads } from "./PhoneDownloads";
 import { SiteNav } from "./SiteNav";
 
 /// The top of the page: nav, headline and the live app window, over the
-/// pixel-blue backdrop. Upstream's sponsor line is gone: its sponsor is Dray's.
+/// pixel-blue backdrop.
 export function Hero() {
   // The phone still is the page's LCP, and lazy loading started it only after
   // layout. A preload in <head> starts it at once for the system's scheme; a

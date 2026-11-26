@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-@FORK.md
+@MAINTAINING.md
 
 File give Claude Code (claude.ai/code) guidance for work with code in this repo.
 
@@ -29,7 +29,7 @@ File give Claude Code (claude.ai/code) guidance for work with code in this repo.
 
 **Nothing for him to look at = no wait.** Backend or data fix, tooling, no UI change: open the PR ready and loop the Claude review right away.
 
-**One repo, `ismatbabirli/wain`. Assign every issue to `yogesharc`.** `gh issue create --repo ismatbabirli/wain --assignee yogesharc`.
+**One repo, `ismatbabirli/wain`. Assign every issue to `ismatBabirli`.** `gh issue create --repo ismatbabirli/wain --assignee ismatBabirli`.
 
 **A session working an issue link it**: `wain issue link ismatbabirli/wain#255 --title "<title>" --url "<url>"`. Identifier is always `owner/repo#123` — a bare `#123` is refused on purpose, a number alone naming no repository. That is the app's own rule about its GitHub tracker and it applies to this repo's own work too.
 

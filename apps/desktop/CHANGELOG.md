@@ -45,8 +45,8 @@ reads:
 
 ### Changed
 
-- **Wain's server listens on port 7417**, not 7317, so it runs beside a
-  Dray server on the same machine. A server you set up over SSH moves
+- **Wain's server listens on port 7417**, not 7317, so it runs beside
+  another server already on 7317. A server you set up over SSH moves
   to the new port when it updates. One added by address
   (`wain machine add … ws://host:7317`) needs the new port.
 
@@ -56,7 +56,7 @@ reads:
   shortcut no longer runs past its edge.
 ## 0.34.3 · 2026-11-25
 
-The first release of Wain, made from Dray 0.34.3.
+The first release of Wain.
 
 ### Improved
 

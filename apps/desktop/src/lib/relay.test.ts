@@ -44,14 +44,14 @@ describe("stripSenderPrefix", () => {
 
   // Pinned against the string `attribute` builds in orchestration.rs.
   it("takes off the line naming a sender on another machine", () => {
-    const remote = { sessionId: "abc-123", title: "Fan out", machine: "Yogesh's Mac" };
-    const text = `[message from the Wain session "Fan out" (abc-123) on Yogesh's Mac]\n\ngo`;
+    const remote = { sessionId: "abc-123", title: "Fan out", machine: "Morgan's Mac" };
+    const text = `[message from the Wain session "Fan out" (abc-123) on Morgan's Mac]\n\ngo`;
     expect(stripSenderPrefix(text, remote)).toBe("go");
   });
 
   it("takes off the one-way wording older transcripts carry", () => {
-    const remote = { sessionId: "abc-123", title: "Fan out", machine: "Yogesh's Mac" };
-    const text = `[message from the Wain session "Fan out" (abc-123) on Yogesh's Mac, which this machine cannot message back]\n\ngo`;
+    const remote = { sessionId: "abc-123", title: "Fan out", machine: "Morgan's Mac" };
+    const text = `[message from the Wain session "Fan out" (abc-123) on Morgan's Mac, which this machine cannot message back]\n\ngo`;
     expect(stripSenderPrefix(text, remote)).toBe("go");
   });
 

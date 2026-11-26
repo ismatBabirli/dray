@@ -7,7 +7,7 @@ launch; `15-agent-mode.md`, `14-headless-mode.md`, `17-sessions.md`,
 matter), and Wain as of `main` at `223794cf`.
 
 **Captured live against `grok 1.0.40 (eb1a2256660d) [stable]`**
-(`/Users/yogesh/.local/bin/grok`, signed in through `auth.x.ai` OIDC), on
+(`/Users/morgan/.local/bin/grok`, signed in through `auth.x.ai` OIDC), on
 2026-09-22. Every wire value below was read off a running `grok agent stdio`
 or `grok -p`, not the docs. Raw captures sit under `/tmp/grok-probe/` for now —
 **do not commit them as they are**: `_x.ai/mcp/servers_updated` echoes the

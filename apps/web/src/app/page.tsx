@@ -47,8 +47,6 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SCHEMA }} />
       <Hero />
       <main>
-        {/* Upstream's Proof (its author's own numbers) and Testimonials (people
-            praising Dray) are not Wain's to show. */}
         <Bots />
         <Everywhere />
         <Subscriptions />

@@ -2664,7 +2664,7 @@ mod tests {
         let said = |text: &str| json!({"type": "assistant_text", "block": null, "text": text});
         let events = vec![
             event(prompt("[Wain: greet]", true, json!(null)), false),
-            event(said("Hi Yogesh"), false),
+            event(said("Hi Morgan"), false),
             event(prompt("ship it", false, json!(null)), false),
             event(said("subagent chatter"), true),
             event(json!({"type": "error", "source": "harness", "message": "boom", "fatal": false}), false),
@@ -2675,7 +2675,7 @@ mod tests {
         assert_eq!(
             replay(&events),
             vec![
-                "You: Hi Yogesh",
+                "You: Hi Morgan",
                 "User: ship it",
                 "[message from the Wain session \"T\" (x)]\n\ndone",
                 "You: It landed.",
@@ -2770,7 +2770,7 @@ mod tests {
 
     #[test]
     fn every_template_is_filled_whole() {
-        let block = bot_block(&bot(), "", "a", &UserName::Known("Yogesh".into()), Harness::ClaudeCode);
+        let block = bot_block(&bot(), "", "a", &UserName::Known("Morgan".into()), Harness::ClaudeCode);
         let kickoff = fill(KICKOFF_PROMPT, &[("name", "Ops"), ("projects", "wain"), ("greet", "Hi"), ("unnamed", "")]);
         let review = fill(include_str!("bots/review_prompt.md"), &[("reason", "The user just corrected you.")]);
         for text in [&block, &kickoff, &review] {
@@ -2781,15 +2781,15 @@ mod tests {
 
     #[test]
     fn the_bot_is_told_its_name_and_the_users() {
-        let known = bot_block(&bot(), "", "", &UserName::Known("Yogesh".into()), Harness::ClaudeCode);
+        let known = bot_block(&bot(), "", "", &UserName::Known("Morgan".into()), Harness::ClaudeCode);
         assert!(known.starts_with("# Your name is Ops"));
-        assert!(known.contains("Call the user Yogesh."));
+        assert!(known.contains("Call the user Morgan."));
         let unknown = bot_block(&bot(), "", "", &UserName::Unknown, Harness::ClaudeCode);
         assert!(unknown.contains("Never guess it"));
         assert!(unknown.contains(USER_FILE));
-        let handle = bot_block(&bot(), "", "", &UserName::Handle("yogesharc".into()), Harness::ClaudeCode);
-        assert!(handle.contains("\"Should I call you yogesharc, or something else?\""));
-        assert!(!handle.contains("Call the user yogesharc"));
+        let handle = bot_block(&bot(), "", "", &UserName::Handle("morganarc".into()), Harness::ClaudeCode);
+        assert!(handle.contains("\"Should I call you morganarc, or something else?\""));
+        assert!(!handle.contains("Call the user morganarc"));
     }
 
     fn account(name: &str, github_login: Option<&str>) -> crate::wain_account::WainUser {
@@ -2807,15 +2807,15 @@ mod tests {
     #[test]
     fn the_account_name_is_trusted_unless_it_is_the_github_login() {
         let known = |n: &str| UserName::Known(n.into());
-        assert_eq!(account_name(&account("Yogesh Dhakal", Some("yogesharc"))), known("Yogesh"));
-        assert_eq!(account_name(&account("yogesh dhakal", None)), known("yogesh"));
-        assert_eq!(account_name(&account("yogesh", None)), known("yogesh"));
-        assert_eq!(account_name(&account("YogeshArc", None)), known("YogeshArc"));
+        assert_eq!(account_name(&account("Morgan Dhakal", Some("morganarc"))), known("Morgan"));
+        assert_eq!(account_name(&account("morgan dhakal", None)), known("morgan"));
+        assert_eq!(account_name(&account("morgan", None)), known("morgan"));
+        assert_eq!(account_name(&account("MorganArc", None)), known("MorganArc"));
         assert_eq!(account_name(&account("sam", None)), known("sam"));
         assert_eq!(account_name(&account("Anne-Marie O'Neil", None)), known("Anne-Marie"));
         assert_eq!(account_name(&account("李明", None)), known("李明"));
         // GitHub names the account after the login where the profile has no name.
-        assert_eq!(account_name(&account("yogesharc", Some("YogeshArc"))), UserName::Handle("yogesharc".into()));
+        assert_eq!(account_name(&account("morganarc", Some("MorganArc"))), UserName::Handle("morganarc".into()));
         assert_eq!(account_name(&account("  ", None)), UserName::Unknown);
     }
 
@@ -2826,16 +2826,16 @@ mod tests {
         assert_eq!(asking.len(), 2);
         assert!(asking[0].starts_with("Hi! I'm Jarvis,"));
         assert_eq!(asking[1], ASK_NAME);
-        assert_eq!(greeting(&wain, &UserName::Known("Yogesh".into())), vec![welcome_text("Jarvis", Some("Yogesh"))]);
+        assert_eq!(greeting(&wain, &UserName::Known("Morgan".into())), vec![welcome_text("Jarvis", Some("Morgan"))]);
         assert!(greeting(&bot(), &UserName::Unknown).is_empty());
-        let confirming = greeting(&wain, &UserName::Handle("yogesharc".into()));
+        let confirming = greeting(&wain, &UserName::Handle("morganarc".into()));
         assert!(confirming[0].starts_with("Hi! I'm Jarvis,"));
-        assert_eq!(confirming[1], "Should I call you yogesharc, or something else?");
+        assert_eq!(confirming[1], "Should I call you morganarc, or something else?");
     }
 
     #[test]
     fn a_written_name_is_kept_to_one_short_line() {
-        assert_eq!(clean_name("\n# Yogesh\nmore").as_deref(), Some("Yogesh"));
+        assert_eq!(clean_name("\n# Morgan\nmore").as_deref(), Some("Morgan"));
         assert_eq!(clean_name("\"Yogi\" [x]").as_deref(), Some("Yogi x"));
         assert_eq!(clean_name(&"a".repeat(100)).map(|n| n.len()), Some(60));
         assert_eq!(clean_name(" \n\n"), None);

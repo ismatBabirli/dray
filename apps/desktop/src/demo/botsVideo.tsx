@@ -10,7 +10,7 @@
 //
 // Record it in a visible window: a hidden tab clamps timers to a second.
 //
-// The story, quick on purpose: Yogesh asks for the changelog, Wain starts a
+// The story, quick on purpose: Morgan asks for the changelog, Wain starts a
 // task and says nothing, the PR turns ready and its merge card lands with the
 // task's proof video, the card is merged, which settles the task. Then a rule
 // Wain answers with 👍 and learns, and the iOS task joins "Waiting on you".
@@ -49,13 +49,13 @@ const yesterday = (h: number, m: number) => {
 const LOCAL = "local";
 /// The machine most tasks run on, drawn as the server glyph on their rows.
 const SANDBOX = "sandbox";
-const REPO = "/Users/yogesh/code/wain";
+const REPO = "/Users/morgan/code/wain";
 /// The same repository's checkout on the sandbox, as that server spells it.
 const SANDBOX_REPO = "/home/wain/wain";
-const BOTS_DIR = "/Users/yogesh/.wain/bots";
+const BOTS_DIR = "/Users/morgan/.wain/bots";
 /// Where `wain browser record` and `screenshot` write, so the chat draws a
 /// player and a picture. Served from `demo/bots-video/` by `fileSrc` below.
-const MEDIA = "/Users/yogesh/.wain/browser/recordings/019a7c00-0000-7000-8000-00000000c0de";
+const MEDIA = "/Users/morgan/.wain/browser/recordings/019a7c00-0000-7000-8000-00000000c0de";
 
 const BOTS: Bot[] = [
   { id: "b0000001", name: "Wain", path: `${BOTS_DIR}/b0000001`, created: yesterday(9, 0), avatar: { shape: "nub", hue: 250 } },

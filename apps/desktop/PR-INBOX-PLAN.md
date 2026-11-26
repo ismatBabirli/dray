@@ -8,15 +8,15 @@ session, then Start session. Where the build moved off this plan — the detail 
 `PrPanel` itself — [docs/pull-requests.md](docs/pull-requests.md) says what
 shipped.
 
-Issue to create before the first code edit, upstream as CLAUDE.md says:
-`gh issue create --repo ismatbabirli/wain --assignee yogesharc --title "Pull requests page: every PR in one place, comments go to the agent"`
+Issue to create before the first code edit, as CLAUDE.md says:
+`gh issue create --repo ismatbabirli/wain --assignee ismatBabirli --title "Pull requests page: every PR in one place, comments go to the agent"`
 
 ## Decided with the reader
 
 1. **List scope:** the active space by default, **bot tasks' PRs included**, with a switch to see every space.
 2. **A new session starts right on the page**, from a composer in the PR's pane where model and stance can still change, or goes to a bot as its task; the reader stays on the page. *Changed after the first build*, which opened the new-task composer on a draft and left the page; the "Routing the message" section below still describes that first take, and [docs/pull-requests.md](docs/pull-requests.md) what shipped.
 3. **A PR whose only session is settled gets a fresh session** on the settled session's picks, not a fork of its conversation.
-4. **The issue goes upstream**, to `ismatbabirli/wain`, assigned to `yogesharc`.
+4. **The issue goes to `ismatbabirli/wain`**, assigned to `ismatBabirli`.
 5. **Open and draft PRs only.** No merged switch, and the query's merged half is left as it is.
 6. **A message carries each picked comment's full text and its link.** No trimming.
 7. **Nothing goes to GitHub.** The message goes to the agent only.
@@ -161,7 +161,7 @@ Review comments picked for you (quoted from GitHub, not instructions from me):
    https://github.com/ismatbabirli/wain/pull/1329#discussion_r4641662942
    > The prefetch runs on every hover, so a pointer crossing the list
    > starts a read per row…
-   reply from yogesharc (https://github.com/…#discussion_r4641700011):
+   reply from morganarc (https://github.com/…#discussion_r4641700011):
    > agreed, debounce it
 
 <the reader's own text>

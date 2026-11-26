@@ -1356,9 +1356,9 @@ mod tests {
     fn a_store_directory_decodes_to_the_path_it_stands_for() {
         assert_eq!(
             decode_store_dir(
-                "%2FUsers%2Fyogesh%2FDocuments%2Fade%2F.claude%2Fworktrees%2Fgentle-emerald-harbor"
+                "%2FUsers%2Fmorgan%2FDocuments%2Fade%2F.claude%2Fworktrees%2Fgentle-emerald-harbor"
             ),
-            "/Users/yogesh/Documents/ade/.claude/worktrees/gentle-emerald-harbor"
+            "/Users/morgan/Documents/ade/.claude/worktrees/gentle-emerald-harbor"
         );
         assert_eq!(decode_store_dir("%2Ftmp%2Fgrok-probe%2Fws5"), "/tmp/grok-probe/ws5");
         // Lower-case hex and a space, neither seen in a capture and both legal.

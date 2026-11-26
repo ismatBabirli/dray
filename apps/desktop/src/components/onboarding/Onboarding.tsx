@@ -242,8 +242,6 @@ function MeetBot({ bot, onStart }: { bot: Bot | undefined; onStart: () => void }
             <h1 className="text-[36px] leading-10 font-light tracking-[-0.03em]">Meet Wain Bot.</h1>
           </div>
           <div className="ob-in relative flex max-w-[440px] flex-col gap-2 pt-1" style={{ animationDelay: "60ms" }}>
-            {/* Upstream quoted its founder here; the words are kept as a plain
-                description, since no one at Wain said them. */}
             <p className="text-[15px] leading-6 text-white/70">
               Tell Wain Bot what you want. It starts the tasks, keeps them moving and only comes back when it needs you.
               Far calmer than watching every task yourself.

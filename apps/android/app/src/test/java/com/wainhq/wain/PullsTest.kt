@@ -39,7 +39,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PullsTest {
-    private fun row(title: String = "Fix the parser", author: String = "yogesharc", branch: String = "worktree-opal", number: Int = 1503) =
+    private fun row(title: String = "Fix the parser", author: String = "morganarc", branch: String = "worktree-opal", number: Int = 1503) =
         PullRow(
             "srv", "/repo", "github.com/ismatbabirli/wain",
             PrMark(number = number, headRefName = branch, state = "OPEN", url = "https://github.com/ismatbabirli/wain/pull/$number"),
@@ -62,7 +62,7 @@ class PullsTest {
         assertTrue(r.matches("FIX parser"))
         assertTrue(r.matches("#1503"))
         assertTrue(r.matches("150"))
-        assertTrue(r.matches("yogesh"))
+        assertTrue(r.matches("morgan"))
         assertTrue(r.matches("opal"))
         assertTrue(r.matches("wain"))
         assertFalse(r.matches("#1504"))
@@ -221,9 +221,9 @@ class PullsTest {
         assertEquals("#12", d.issue.short)
         assertEquals("Body", d.description)
         assertEquals("hey", d.comments.single().body)
-        val issue = Issue(id = "1", identifier = "DRA-53", title = "Parser drops lines", assignee = IssuePerson("Yogesh"))
+        val issue = Issue(id = "1", identifier = "DRA-53", title = "Parser drops lines", assignee = IssuePerson("Morgan"))
         assertTrue(issue.matches("dra-53"))
-        assertTrue(issue.matches("parser yogesh"))
+        assertTrue(issue.matches("parser morgan"))
         assertFalse(issue.matches("lexer"))
     }
 }

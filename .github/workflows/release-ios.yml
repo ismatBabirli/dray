@@ -1,8 +1,7 @@
 name: Release iOS
 
-# Wain: the iPhone app goes to TestFlight from here, and only when Ismat starts
-# it (FORK.md). Upstream archives on a Mac of its own. Actions are pinned to
-# commit SHAs for release.yml's reason: this job holds the signing keys.
+# The iPhone app goes to TestFlight from here, and only when Ismat starts it
+# (MAINTAINING.md). Actions are pinned to commit SHAs for release.yml's reason: this job holds the signing keys.
 #
 # Signing is manual: the CI-only iOS Distribution certificate (IOS_CERTIFICATE)
 # and two App Store profiles, read by name from App Store Connect with the
@@ -20,7 +19,7 @@ concurrency:
 
 jobs:
   testflight:
-    # Xcode 27, what upstream builds with: Xcode 26 fails to compile the app
+    # Xcode 27: Xcode 26 fails to compile the app
     # (ImageViewer.swift, ListView.swift). IOS_RUNNER overrides the label.
     runs-on: ${{ vars.IOS_RUNNER || 'xcode-27' }}
     timeout-minutes: 45
@@ -73,8 +72,8 @@ jobs:
           end
           RUBY
 
-      # project.yml stays upstream's. The App Store signing rides an include
-      # instead, so a sync never conflicts on it and Debug stays automatic.
+      # project.yml stays as it is. The App Store signing rides an include
+      # instead, so Debug stays automatic.
       - name: Generate the project
         working-directory: apps/ios
         run: |

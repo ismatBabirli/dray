@@ -27,9 +27,6 @@ export const COMPANY = "Wain";
 /// Where people write for help, and where account deletion requests go.
 export const SUPPORT_EMAIL = "support@wainhq.com";
 
-// No sponsor checkout: upstream's Dodo products paid upstream, so the support
-// page, its links and the Support component were removed (FORK-PLAN.md §5).
-
 /// What the nav shows when GitHub cannot be asked. Bump it now and then so a
 /// rate-limited render does not undercount by much.
 export const STARS_FALLBACK = 0;

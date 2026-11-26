@@ -1,7 +1,7 @@
 name: Release Android
 
-# Wain: the Android app goes to Google Play's internal testing track from here,
-# and only when Ismat starts it (FORK.md). Upstream builds its bundle by hand.
+# The Android app goes to Google Play's internal testing track from here, and
+# only when Ismat starts it (MAINTAINING.md).
 # Actions are pinned to commit SHAs for release.yml's reason: this job holds the
 # upload key and the Play key.
 #

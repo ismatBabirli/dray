@@ -120,7 +120,7 @@ function fieldCells() {
 
 const svg = (path, size, fill = "currentColor") =>
   `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="${fill}" d="${path}"/></svg>`;
-// Wain: the W is wide where Dray's D was tall, so it sits at 0.6 of the label height it was given.
+// The W is wide, so it sits at 0.6 of the label height it was given.
 const mark = (h, [w, mh] = MARK_SIZE, ht = h * 0.6) =>
   `<svg viewBox="0 0 ${w} ${mh}" width="${(ht * w) / mh}" height="${ht}" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${MARK}"/></svg>`;
 const CLAUDE = (s) => svg(CLAUDE_PATH, s, "#D97757");

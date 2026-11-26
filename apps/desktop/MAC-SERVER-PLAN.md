@@ -20,8 +20,7 @@ architectures; macOS judges file access (Documents, Desktop, Downloads) by
 the program asking, so a second program would ask again for what the reader
 already granted Wain, from a background process with no window to explain it;
 and the server's code is the same function either way, so switching later
-changes how it is started and nothing else. Yogesh was unsure and asked for
-the recommendation.
+changes how it is started and nothing else.
 
 **The app keeps only what needs the Mac's screen**: the Chromium browser,
 dictation, notification banners, the dock badge, the updater, opening other

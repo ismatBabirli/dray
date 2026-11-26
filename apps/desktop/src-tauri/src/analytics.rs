@@ -660,7 +660,7 @@ mod tests {
         );
         assert_eq!(trim_source_path("src/session.rs"), "src/session.rs");
         assert_eq!(
-            trim_source_path("/Users/yogesh/Documents/ade/apps/desktop/src-tauri/src/lib.rs"),
+            trim_source_path("/Users/morgan/Documents/ade/apps/desktop/src-tauri/src/lib.rs"),
             "lib.rs"
         );
     }

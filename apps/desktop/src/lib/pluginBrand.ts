@@ -22,9 +22,8 @@ import { parseSlashCommand } from "@/lib/slash";
 ///
 /// [AgentIcon]: ../components/AgentIcon.tsx
 ///
-/// Empty in Wain: Greptile's green was used with their permission, which was
-/// given to Dray, not to this fork (FORK-PLAN.md §3). The mechanism stays for
-/// a vendor Wain itself agrees a colour with.
+/// Empty: a vendor's colour is used only with its permission, and Wain has
+/// none yet. The mechanism stays for a vendor Wain agrees a colour with.
 const PLUGIN_BRAND: Record<string, string> = {};
 
 /// The brand colour a sent prompt's bubble carries, or `null` for every

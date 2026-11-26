@@ -202,8 +202,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: .github/scripts/cli-publish-gate.sh decide "$GITHUB_REF_NAME"
 
-      # Wain: CLI_PUBLISH_GATE=off (a repo variable) skips the wait, for a CLI
-      # released before any app release exists to wait for (FORK.md).
+      # CLI_PUBLISH_GATE=off (a repo variable) skips the wait, for a CLI
+      # released before any app release exists to wait for (MAINTAINING.md).
       - if: steps.decide.outputs.moved == 'true' && vars.CLI_PUBLISH_GATE != 'off'
         env:
           GH_TOKEN: ${{ github.token }}

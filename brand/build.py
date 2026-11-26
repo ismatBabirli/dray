@@ -178,7 +178,7 @@ def tile_icon(mark, size, fill, ink, glyph=0.64, rounded=True):
 
 
 def lockup(mark, word, height=96):
-    """Mark plus wordmark in one row, mark full height, as the 466x96 Dray lockup was laid out."""
+    """Mark plus wordmark in one row, mark full height, 96 high."""
     ms = height / mark.h
     cap = height * 0.75
     ws = cap / word.h
@@ -262,8 +262,8 @@ def install(out, lw, lh, body, mark_w_96, mark_path_96):
     brand/wain-lockup.svg; afterwards apps/desktop/scripts/icons.sh rebuilds icns/ico."""
     import shutil
     icons = ROOT / "apps/desktop/src-tauri/icons/src"
-    # Dark is the app icon in both slots: the light tile (black glyph on white)
-    # is the pattern Dray's own icon uses, so Wain does not lead with it.
+    # Dark is the app icon in both slots: Wain does not lead with the light tile
+    # (black glyph on white).
     shutil.copy(out / "icon-dark-1024.png", icons / "icon-1024.png")
     shutil.copy(out / "icon-dark-1024.png", icons / "icon-dark-1024.png")
     shutil.copy(out / "icon-dev-1024.png", icons / "icon-dev-1024.png")
@@ -302,7 +302,7 @@ def centred(mark, canvas, width, fill):
 
 def install_phones(mark):
     """The iPhone and Android apps' icons, launch marks and status bar glyph, dark as
-    the desktop's: Dray's white tile and soft shadow are its look, not Wain's."""
+    the desktop's, with no shadow."""
     ios = ROOT / "apps/ios/Wain/Assets.xcassets"
     # iOS rounds the corners itself and refuses an icon with alpha: square and opaque.
     dark = tile_icon(mark, 1024, TILE_DARK, WHITE, rounded=False).convert("RGB")
