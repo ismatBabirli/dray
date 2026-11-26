@@ -179,6 +179,7 @@ export default function ServersSettings() {
   // The host-key question for a saved row, whose loop parked on it.
   const [trusting, setTrusting] = useState<{ server: ServerInfo; fix: TrustHost } | null>(null);
   const [pairing, setPairing] = useState<ServerInfo | null>(null);
+  const [pairingPhone, setPairingPhone] = useState<ServerInfo | null>(null);
   // A server with no Wain on it, being set up: from its row, or from Add.
   const [installing, setInstalling] = useState<{
     line: string;
@@ -268,6 +269,7 @@ export default function ServersSettings() {
               setConfirming(null);
               setRenaming(server.id);
             }}
+            onPair={server.status === "connected" ? () => setPairingPhone(server) : undefined}
             beta={server.beta}
             onBeta={(beta) => void invoke("set_server_beta", { id: server.id, beta }, LOCAL).catch(console.error)}
             confirming={confirming === server.id || confirming === `unlink:${server.id}`}
@@ -312,6 +314,14 @@ export default function ServersSettings() {
       />
       {installing && <ServerSetupDialog {...installing} onClose={() => setInstalling(null)} />}
       {pairing && <ConnectAssistantDialog server={pairing.id} name={pairing.name} onClose={() => setPairing(null)} />}
+      {pairingPhone && (
+        <PairDialog
+          server={pairingPhone.id}
+          name={pairingPhone.named ? pairingPhone.name : undefined}
+          label={pairingPhone.name}
+          onClose={() => setPairingPhone(null)}
+        />
+      )}
       {trusting?.server.ssh && (
         <HostKeyDialog
           line={trusting.server.ssh}
@@ -600,59 +610,134 @@ function CopyIcon({ label, done, onClick }: { label: string; done: boolean; onCl
   );
 }
 
-/// The phone's way in: a QR of address, token and this Mac's name. It
-/// carries the token, so it is fetched on open and dropped on close, and
-/// never sits on screen unasked.
+/// This Mac's QR button, at the end of its address strip.
 function PairButton() {
-  const [svg, setSvg] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  // Bumped on open and close, so an answer landing after either is dropped
-  // rather than putting the token back in state.
-  const asked = useRef(0);
-
-  const show = () => {
-    const ask = ++asked.current;
-    setSvg(null);
-    setError(null);
-    setOpen(true);
-    void invoke<string>("remote_access_qr", {}, LOCAL)
-      .then((qr) => ask === asked.current && setSvg(qr))
-      .catch((e) => ask === asked.current && setError(String(e)));
-  };
-  const close = () => {
-    asked.current++;
-    setOpen(false);
-    setSvg(null);
-    setError(null);
-  };
-
   return (
     <>
-      <button type="button" aria-label="Pair a phone" onClick={show} className={STRIP_ICON}>
+      <button type="button" aria-label="Pair a phone" onClick={() => setOpen(true)} className={STRIP_ICON}>
         <QrCode className="size-3.5" />
       </button>
-      <Dialog open={open} onOpenChange={(next) => !next && close()}>
-        <DialogContent className="max-w-80">
-          <DialogHeader>
-            <DialogTitle>Pair a phone</DialogTitle>
-            <DialogDescription>
-              Point the iPhone's Camera at this, or scan it from Wain's Add server. Anyone holding it can use this {MACHINE}.
-            </DialogDescription>
-          </DialogHeader>
-          {/* White under the code whatever the theme: a scanner reads dark on light. */}
-          <div className="flex aspect-square min-w-0 items-center justify-center rounded-lg bg-white p-3">
+      {open && <PairDialog server={LOCAL} label={`this ${MACHINE}`} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+/// The phone's way in to one server (#23): a QR of that server's public
+/// address, token and name, which the server itself draws. It carries the
+/// token, so it is fetched while this is mounted and gone with it. A server
+/// with no public address gets the switch for one, and never a Turn off: a
+/// restart drops every client, and an app reaching it by that address could
+/// not get back in.
+function PairDialog({
+  server,
+  name,
+  label,
+  onClose,
+}: {
+  server: string;
+  /// What the phone will call the server. None lets the server name itself.
+  name?: string;
+  /// How this copy names the server.
+  label: string;
+  onClose: () => void;
+}) {
+  const [remote, setRemote] = useState<RemoteAccess | null>(null);
+  const [svg, setSvg] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [old, setOld] = useState(false);
+  const [turningOn, setTurningOn] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    let unlisten: (() => void) | undefined;
+    void listen<RemoteAccess>("remote_access_changed", ({ payload, server: from }) => {
+      if (from === server) setRemote(payload);
+    }).then((off) => {
+      if (!live) return off();
+      unlisten = off;
+      void invoke<RemoteAccess>("get_remote_access", {}, server)
+        .then((now) => live && setRemote(now))
+        .catch((e) => {
+          if (!live) return;
+          // A server from before #23 answers this on a Mac alone.
+          if (String(e).includes("unknown command")) setOld(true);
+          else setError(String(e));
+        });
+    });
+    return () => {
+      live = false;
+      unlisten?.();
+    };
+  }, [server]);
+
+  const address = remote?.on ? remote.address : null;
+  useEffect(() => {
+    if (!address) return;
+    let live = true;
+    setSvg(null);
+    setError(null);
+    void invoke<string>("remote_access_qr", { name }, server)
+      .then((qr) => live && setSvg(qr))
+      .catch((e) => live && setError(String(e)));
+    return () => {
+      live = false;
+    };
+  }, [server, name, address]);
+
+  const turnOn = () => {
+    setTurningOn(true);
+    void invoke<RemoteAccess>("set_remote_access", { on: true }, server)
+      .then(setRemote)
+      .catch((e) => setError(String(e)))
+      .finally(() => setTurningOn(false));
+  };
+
+  const off = remote && !remote.on;
+  return (
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-80">
+        <DialogHeader>
+          <DialogTitle>Pair a phone</DialogTitle>
+          <DialogDescription>
+            {old
+              ? `${label} runs a Wain from before pairing from here. Update it from its ⋯ menu, or run this on it:`
+              : off
+                ? `A phone reaches ${label} through a public address, and it has none yet. The phone still needs the code to get in, and the relay can't read your traffic.`
+                : `Point the iPhone's Camera at this, or scan it from Wain's Add server. Anyone holding it can use ${label}.`}
+          </DialogDescription>
+        </DialogHeader>
+        {old ? (
+          <CommandChip command="wain server pair" />
+        ) : off ? (
+          <div className="flex flex-col items-end gap-2">
+            {error && <p className="self-stretch text-ui text-destructive">{error}</p>}
+            <Button size="sm" disabled={turningOn} onClick={turnOn}>
+              {turningOn ? <Spinner className="size-3.5" /> : <Globe />}
+              Turn on public address
+            </Button>
+          </div>
+        ) : (
+          // White under the code whatever the theme: a scanner reads dark on light.
+          <div className="flex aspect-square min-w-0 flex-col items-center justify-center gap-2.5 rounded-lg bg-white p-3">
             {svg ? (
               <img alt="Pairing QR code" className="size-full" src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`} />
-            ) : error ? (
-              <p className="text-center text-ui text-black/60">{error}</p>
+            ) : error || (remote?.on && !address && remote.error) ? (
+              <p className="px-3 text-center text-ui text-black/60">{error ?? remote?.error}</p>
             ) : (
-              <Spinner className="size-4 text-black/40" />
+              <>
+                <Spinner className="size-4 text-black/40" />
+                {remote?.on && !address && (
+                  <p className="px-3 text-center text-ui text-black/60">
+                    Starting its public address. The first time takes about 30 seconds.
+                  </p>
+                )}
+              </>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -849,6 +934,7 @@ function Row({
   onToggle,
   onRetry,
   onRename,
+  onPair,
   beta = false,
   onBeta,
   onCheckUpdate,
@@ -881,6 +967,8 @@ function Row({
   /// Present while a connect is not running, to start one now.
   onRetry?: () => void;
   onRename?: () => void;
+  /// Present while connected: the QR comes from the server itself.
+  onPair?: () => void;
   /// The server takes beta releases. Its own channel, never the app's.
   beta?: boolean;
   onBeta?: (beta: boolean) => void;
@@ -961,6 +1049,7 @@ function Row({
                     }}
                   >
                     {onRename && <DropdownMenuItem onSelect={elsewhere(onRename)}>Rename</DropdownMenuItem>}
+                    {onPair && <DropdownMenuItem onSelect={elsewhere(onPair)}>Pair a phone…</DropdownMenuItem>}
                     {onAssistant && (
                       <DropdownMenuItem className="whitespace-nowrap" onSelect={elsewhere(onAssistant)}>
                         Connect an assistant…
