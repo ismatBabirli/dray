@@ -7,14 +7,20 @@ import com.wainhq.wain.wire.parseDate
 // Usage readings as the phones draw them: the Home chips, the Usage sheet, the composer's ring.
 // The rules are mobile-tabs-rules.md's, shared with the iPhone app.
 
-/** One chip on Home: an agent's worst five-hour reading across the machines shown. */
+/** One chip on Home: an agent's worst reading across the machines shown, read by its headline window. */
 data class UsageChip(
     val harness: String,
     val percent: Double,
     val limited: Boolean,
     /** When the spent window comes back, RFC3339; drawn as "back HH:MM". */
     val back: String?,
+    /** The headline window's name, `windowLabel`'s: "5-hour", "Weekly". */
+    val window: String = "5-hour",
 )
+
+/** What TalkBack reads for a chip: its agent, then "back …" once spent (`back` already worded), else the headline's own window. */
+fun chipSpoken(chip: UsageChip, back: String?): String =
+    usageAgent(chip.harness) + ", " + (back ?: "${chip.percent.toInt()}% of the ${chip.window.lowercase()} window")
 
 /**
  * A window's figure as the phones read it. Claude's older `rejected` line sends none: on a
@@ -46,7 +52,7 @@ fun usageChips(readings: List<UsageReading>): List<UsageChip> =
         val window = worst.headline!!
         // What comes back last is what holds the agent: a spent weekly outlasts the five-hour.
         val spent = worst.windows.filter { (worst.used(it) ?: 0.0) >= 100 }.maxByOrNull { parseDate(it.resetsAt) ?: 0L }
-        UsageChip(harness, worst.headlinePercent!!, worst.atLimit, (spent ?: window).resetsAt)
+        UsageChip(harness, worst.headlinePercent!!, worst.atLimit, (spent ?: window).resetsAt, windowLabel(window))
     }.sortedWith(compareByDescending<UsageChip> { it.limited }.thenByDescending { it.percent })
 
 /** "5-hour", "Weekly", or "N-day" for any other window. */

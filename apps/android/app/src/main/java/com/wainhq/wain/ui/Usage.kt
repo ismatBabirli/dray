@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.wainhq.wain.model.Picks
 import com.wainhq.wain.model.UsageChip
 import com.wainhq.wain.model.atLimit
+import com.wainhq.wain.model.chipSpoken
 import com.wainhq.wain.model.used
 import com.wainhq.wain.model.planLabel
 import com.wainhq.wain.model.usageAgent
@@ -112,7 +113,7 @@ private fun UsageChipView(chip: UsageChip, open: () -> Unit) {
         Modifier.height(32.dp).clip(shape)
             .then(if (chip.limited) Modifier.background(Wain.destructive.copy(alpha = if (Wain.dark) 0.16f else 0.12f)) else Modifier.border(1.dp, Wain.outline, shape))
             .clickable(onClick = open)
-            .semantics { contentDescription = "$name, ${back ?: "${chip.percent.toInt()}% of five hours"}" }
+            .semantics { contentDescription = chipSpoken(chip, back) }
             .padding(start = 8.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),

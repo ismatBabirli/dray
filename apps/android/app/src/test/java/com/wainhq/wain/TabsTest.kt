@@ -6,6 +6,7 @@ import com.wainhq.wain.model.HomeKind
 import com.wainhq.wain.model.HomeSection
 import com.wainhq.wain.model.MachineDot
 import com.wainhq.wain.model.botOrder
+import com.wainhq.wain.model.chipSpoken
 import com.wainhq.wain.model.homeSections
 import com.wainhq.wain.model.machineDot
 import com.wainhq.wain.model.nextRunLabel
@@ -127,6 +128,15 @@ class TabsTest {
         ))
         assertEquals("weekly", weeklyOnly.headline?.kind)
         assertEquals(74.0, usageChips(listOf(weeklyOnly)).single().percent, 0.0)
+    }
+
+    @Test fun aChipSaysWhichWindowItReads() {
+        val weekly = usageChips(listOf(UsageReading("claude_code", at = "x", windows = listOf(UsageWindow("weekly", 77.0, null, 10080))))).single()
+        assertEquals("Weekly", weekly.window)
+        assertEquals("Claude, 77% of the weekly window", chipSpoken(weekly, null))
+        val five = usageChips(listOf(reading("codex", 49.0))).single()
+        assertEquals("Codex, 49% of the 5-hour window", chipSpoken(five, null))
+        assertEquals("Codex, back 15:30", chipSpoken(five, "back 15:30"))
     }
 
     @Test fun aWindowWithNoFigureIsSpentOnlyOnALimitedReading() {
