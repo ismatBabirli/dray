@@ -34,7 +34,7 @@ final class DictationTests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 15), "no session listed")
         row.tap()
 
-        let orb = app.descendants(matching: .any)["mic"]
+        let orb = app.buttons["mic"]
         XCTAssertTrue(orb.waitForExistence(timeout: 15), "no dock in the session")
         snap(app, "1-orb")
         orb.tap()

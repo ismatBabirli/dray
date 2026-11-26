@@ -2,16 +2,23 @@ import XCTest
 
 /// A chat opens on its newest rows, in view, never scrolled past them onto
 /// blank; and a bot's Tasks sheet lists its tasks on shared machines too.
-/// Against a real server holding a bot (`WAIN_BOT`) with a task started on a
-/// machine that server shares:
-///   TEST_RUNNER_WAIN_URL=ws://127.0.0.1:… TEST_RUNNER_WAIN_TOKEN=… TEST_RUNNER_WAIN_BOT=Wain xcodebuild test …
+/// Against a scratch server holding a bot (`WAIN_BOT`, opened from Bots) with a
+/// task on a machine that server shares (`wain machine add` then `wain machine
+/// share on`), and tasks (`WAIN_CHATS`, opened from Tasks) of tall turns with a
+/// screenshot and a recording under `browser/recordings/<id>/`, all behind
+/// `scripts/late_turns_proxy.py`; `scripts/open_at_bottom_seed.py` makes both homes. Each test's comment says what else it wants:
+///   python3 scripts/late_turns_proxy.py <port> <server port> <WAIN_HOME> &
+///   TEST_RUNNER_WAIN_URL=ws://127.0.0.1:<port> TEST_RUNNER_WAIN_TOKEN=… TEST_RUNNER_WAIN_BOT=Ops \
+///   TEST_RUNNER_WAIN_CHATS='Media check|Ops' TEST_RUNNER_WAIN_LATE=http://127.0.0.1:<port>/late \
+///   xcodebuild test -only-testing:WainUITests/OpenAtBottomTests/<test> …
 final class OpenAtBottomTests: XCTestCase {
     private var env: [String: String] { ProcessInfo.processInfo.environment }
 
     func testChatsOpenAtTheBottom() throws {
         guard let name = env["WAIN_BOT"] else { throw XCTSkip("set TEST_RUNNER_WAIN_BOT") }
         let app = try connected()
-        let bot = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+        app.tab("Bots")
+        let bot = app.buttons["bot.\(name)"]
         XCTAssertTrue(bot.waitForExistence(timeout: 20), "no bot row")
         // The shared machines connect after the paired server does.
         sleep(15)
@@ -21,7 +28,8 @@ final class OpenAtBottomTests: XCTestCase {
         assertRowsInView(app, "bot chat")
         snap(app, "bot-chat")
 
-        app.buttons["Tasks"].tap()
+        let tasks = app.navigationBars.buttons["Tasks"]
+        tasks.tap()
         sleep(2)
         snap(app, "bot-tasks")
         let rows = app.buttons.matching(identifier: "botTask")
@@ -31,7 +39,7 @@ final class OpenAtBottomTests: XCTestCase {
 
         // Each task opened over the chat, and back: one drawing blank fails.
         for i in 0..<count {
-            app.buttons["Tasks"].tap()
+            tasks.tap()
             sleep(1)
             let row = rows.element(boundBy: i)
             guard row.waitForExistence(timeout: 5) else { break }
@@ -40,15 +48,15 @@ final class OpenAtBottomTests: XCTestCase {
             assertRowsInView(app, "task \(i) \(title)")
             snap(app, "task-\(i)")
             app.navigationBars.buttons.element(boundBy: 0).tap()
-            XCTAssertTrue(app.buttons["Tasks"].waitForExistence(timeout: 5))
+            XCTAssertTrue(tasks.waitForExistence(timeout: 5))
             assertRowsInView(app, "bot chat after task \(i)")
         }
     }
 
-    /// The newest row sits whole just above the dock on every open: cold, then again from
+    /// The newest row sits whole just above the composer on every open: cold, then again from
     /// memory, checked once more after the chat's pictures and videos have loaded. Wants
-    /// `WAIN_CHATS`, the list rows to open, "|" between them: a session's title, or the start of
-    /// a bot row's label. Long ones with media, behind `scripts/late_turns_proxy.py`.
+    /// `WAIN_CHATS`, the chats to open, "|" between them: a bot's name, or the start of a task's
+    /// title. Long ones with media, behind `scripts/late_turns_proxy.py`.
     func testNewestRowClearsTheDock() throws {
         let app = try connected()
         for round in 1...(Int(env["WAIN_ROUNDS"] ?? "") ?? 3) {
@@ -100,11 +108,17 @@ final class OpenAtBottomTests: XCTestCase {
         return chats
     }
 
+    /// A bot by its name on Bots, else a task by its title on Tasks.
     private func open(_ app: XCUIApplication, _ chat: String) {
-        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", chat)).firstMatch
+        app.tab("Bots")
+        var row = app.buttons["bot.\(chat)"]
+        if !row.waitForExistence(timeout: 5) {
+            app.tab("Tasks")
+            row = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", chat)).firstMatch
+        }
         XCTAssertTrue(row.waitForExistence(timeout: 20), "no row for \(chat)")
         row.tap()
-        XCTAssertTrue(app.dock.waitForExistence(timeout: 10), "\(chat) did not open")
+        XCTAssertTrue(app.composer.waitForExistence(timeout: 10), "\(chat) did not open")
     }
 
     private func back(_ app: XCUIApplication) {
@@ -126,30 +140,31 @@ final class OpenAtBottomTests: XCTestCase {
     }
 
     /// A beat in, once the read has landed, and once late media has: the lowest thing the
-    /// transcript draws sits just above the dock each time, neither under it nor far up.
+    /// transcript draws sits just above the composer each time, neither under it nor far up.
     private func assertAtEnd(_ app: XCUIApplication, _ what: String, file: StaticString = #filePath, line: UInt = #line) {
         for wait in [1, 3, 6] {
             sleep(UInt32(wait))
-            let gap = gapAboveOrb(app)
+            let gap = gapAboveComposer(app)
             print("GAP \(what) +\(wait)s: \(gap)")
             snap(app, "\(what) +\(wait)s \(gap.rounded())")
-            XCTAssertGreaterThanOrEqual(gap, 74, "\(what), +\(wait)s: the newest row is behind the dock", file: file, line: line)
-            XCTAssertLessThanOrEqual(gap, 160, "\(what), +\(wait)s: the chat is not at its end", file: file, line: line)
+            XCTAssertGreaterThanOrEqual(gap, 8, "\(what), +\(wait)s: the newest row is behind the composer", file: file, line: line)
+            XCTAssertLessThanOrEqual(gap, 76, "\(what), +\(wait)s: the chat is not at its end", file: file, line: line)
         }
     }
 
-    /// From the lowest thing the transcript draws down to the orb's top. At the end that is the
-    /// stack's last spacing and padding, the dock's fade and the home indicator's inset, 114pt
-    /// and a bot chat's 28 more; under 74 is a row behind the dock.
-    private func gapAboveOrb(_ app: XCUIApplication) -> CGFloat {
+    /// From the lowest thing the transcript draws down to the composer's field. At the end that is the
+    /// stack's last spacing, the dock's padding and the field's own, 48pt, and a bot chat's 10 more,
+    /// its bubble's; under 8 is a row behind the composer.
+    private func gapAboveComposer(_ app: XCUIApplication) -> CGFloat {
         // A long chat mid-layout can time a snapshot out; the next one answers.
         guard let tree = (0..<3).lazy.compactMap({ _ in try? app.scrollViews.firstMatch.snapshot() }).first else { return .nan }
-        // Leaves alone, a video's controls among them, and none as thin as a scroll indicator.
+        // Leaves alone, a video's controls among them, none as thin as a scroll indicator, and none
+        // the size of the view, which a bot chat keeps behind its rows and no row is.
         func drawn(_ n: XCUIElementSnapshot) -> [XCUIElementSnapshot] {
-            n.children.isEmpty ? (n.frame.width < 10 ? [] : [n]) : n.children.flatMap(drawn)
+            n.children.isEmpty ? (n.frame.width < 10 || n.frame.height >= tree.frame.height ? [] : [n]) : n.children.flatMap(drawn)
         }
         let lowest = drawn(tree).map(\.frame.maxY).max() ?? .nan
-        return app.buttons["mic"].frame.minY - lowest
+        return app.composer.frame.minY - lowest
     }
 
     /// What the cache draws, replaced by a read that holds less: run `testHeldShrinks1`, append
@@ -157,6 +172,7 @@ final class OpenAtBottomTests: XCTestCase {
     /// server holding one session titled "Scroll check" of tall turns.
     func testHeldShrinks1() throws {
         let app = try connected()
+        app.tab("Tasks")
         let row = app.staticTexts["Scroll check"]
         XCTAssertTrue(row.waitForExistence(timeout: 20), "no session")
         row.tap()
@@ -168,6 +184,7 @@ final class OpenAtBottomTests: XCTestCase {
         guard env["WAIN_URL"] != nil else { throw XCTSkip("run after testHeldShrinks1, with TEST_RUNNER_WAIN_URL set") }
         let app = XCUIApplication()
         app.launch()
+        app.tab("Tasks")
         let row = app.staticTexts["Scroll check"]
         XCTAssertTrue(row.waitForExistence(timeout: 20), "no session")
         row.tap()
@@ -205,7 +222,7 @@ final class OpenAtBottomTests: XCTestCase {
         snap(app, "left alone")
         XCTAssertEqual(top(app, mark), place, accuracy: 4, "a turn landing moved the reader off their place")
 
-        for _ in 0..<40 where gapAboveOrb(app) < 74 { scroll.swipeUp(velocity: .fast) }
+        for _ in 0..<40 where gapAboveComposer(app) < 8 { scroll.swipeUp(velocity: .fast) }
         sleep(2)
         try land(app, late, "\(chat), back at the end")
     }
@@ -240,11 +257,13 @@ final class OpenAtBottomTests: XCTestCase {
     }
 
     /// A bot's working line names its running tool on one line, however long the
-    /// command. Wants the bot `WAIN_BOT` mid-way through a long Bash call.
+    /// command. Wants the bot `WAIN_BOT` mid-way through a long Bash call: Claude Code
+    /// refuses a long foreground `sleep`, so time it with `ping -c 110 127.0.0.1`.
     func testRunningToolIsOneLine() throws {
         guard let name = env["WAIN_BOT"] else { throw XCTSkip("set TEST_RUNNER_WAIN_BOT") }
         let app = try connected()
-        let bot = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+        app.tab("Bots")
+        let bot = app.buttons["bot.\(name)"]
         XCTAssertTrue(bot.waitForExistence(timeout: 20), "no bot row")
         bot.tap()
         let line = app.descendants(matching: .any)
@@ -288,6 +307,9 @@ final class OpenAtBottomTests: XCTestCase {
         let add = app.buttons["Add"]
         XCTAssertTrue(add.waitForExistence(timeout: 10), "the link opened no add sheet")
         add.tap()
+        // A first launch asks about notifications, over whatever is tapped next.
+        let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
         return app
     }
 

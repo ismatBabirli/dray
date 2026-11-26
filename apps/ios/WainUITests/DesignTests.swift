@@ -109,7 +109,9 @@ final class DesignTests: XCTestCase {
         snap(app, "19-run-with")
         app.buttons["Done"].tap()
         app.buttons["Cancel"].tap()
-        app.buttons["Keep editing"].tap()
+        // On a phone the dialog is a popover off Cancel, and its Keep editing is a tap outside it.
+        let keep = app.buttons["Keep editing"]
+        if keep.waitForExistence(timeout: 2) { keep.tap() } else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.36)).tap() }
         app.swipeDown(velocity: .fast)
 
         // The same screens in the other appearance.
@@ -160,7 +162,7 @@ final class DesignTests: XCTestCase {
         app.composer.tap()
         app.composer.clearText()
 
-        app.descendants(matching: .any)["mic"].tap()
+        app.buttons["mic"].tap()
         app.tap()  // lets the interruption monitor answer the microphone prompt
         let stop = app.buttons["dictationDone"]
         if stop.waitForExistence(timeout: 10) {
@@ -178,7 +180,7 @@ final class DesignTests: XCTestCase {
         sleep(2)
         snap(app, "35-home-failed-load")
         app.buttons["newTask"].tap()
-        let mic = app.descendants(matching: .any)["mic"]
+        let mic = app.buttons["mic"]
         XCTAssertTrue(mic.waitForExistence(timeout: 15))
         mic.tap()
         if app.buttons["dictationDone"].waitForExistence(timeout: 10) {

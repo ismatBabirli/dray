@@ -1,42 +1,65 @@
 import XCTest
 
-/// The #825 screens against a real server: pairs through a `wain://connect`
-/// link, then walks the list, a session and the empty states, attaching a
-/// screenshot of each. Export them with `xcrun xcresulttool export attachments`.
-///   TEST_RUNNER_WAIN_URL=ws://127.0.0.1:… TEST_RUNNER_WAIN_TOKEN=… xcodebuild test …
+/// The #825 screens on the four tabs against a real server: pairs through a
+/// `wain://connect` link, then walks Tasks, a session, New task, Run with and
+/// the empty states, attaching a screenshot of each. Export them with
+/// `xcrun xcresulttool export attachments`. Against the homes
+/// `scripts/redesign_seed.py` makes, `studio` first and `empty` second; its
+/// docstring says which live sessions to start before which test.
+///   TEST_RUNNER_WAIN_URL=ws://127.0.0.1:… TEST_RUNNER_WAIN_TOKEN=… \
+///   TEST_RUNNER_WAIN_EMPTY_URL=ws://127.0.0.1:… TEST_RUNNER_WAIN_EMPTY_TOKEN=… \
+///   xcodebuild test -only-testing:WainUITests/RedesignTests …
 final class RedesignTests: XCTestCase {
     private var env: [String: String] { ProcessInfo.processInfo.environment }
 
     func testScreens() throws {
         let app = try pair()
+        sleep(3)
+        snap(app, "home")
+        app.tab("Tasks")
         let row = labelled(app, "Check the Xcode version")
         XCTAssertTrue(row.waitForExistence(timeout: 20), "no session listed")
-        sleep(3)
+        sleep(2)
         snap(app, "list")
-        app.buttons["Drafts"].tap()
+        view(app, "Drafts")
         XCTAssertTrue(labelled(app, "Add retry with backoff to the upload client").waitForExistence(timeout: 10), "no draft listed")
         snap(app, "list-drafts")
-        app.buttons["Settled"].tap()
+        view(app, "Settled")
         XCTAssertTrue(labelled(app, "Port tools.ts labels to Swift").waitForExistence(timeout: 10), "no settled session listed")
         snap(app, "list-settled")
-        app.buttons["Settled"].tap()
+        view(app, "Live")
         app.buttons["thinking-orbs"].tap()
+        XCTAssertTrue(row.waitForNonExistence(timeout: 5), "the strip narrowed nothing")
         sleep(1)
         snap(app, "list-project")
+        // A project with no task: the strip shows only while some other project has one.
+        app.buttons["notes"].tap()
+        XCTAssertTrue(app.staticTexts["Nothing in notes"].waitForExistence(timeout: 10), "no empty project")
+        snap(app, "list-project-empty")
+        app.buttons["thinking-orbs"].tap()
         labelled(app, "Fix flaky reconnect test").tap()
+        XCTAssertTrue(app.composer.waitForExistence(timeout: 15), "the session never opened")
         sleep(3)
         snap(app, "session")
     }
 
-    /// Answers both inline cards from the list. Spends the seeded asks, so run it last.
+    /// Answers both cards in place: the permission under its row in Tasks, the question on
+    /// Home. Wants `redesign_seed.py live allow question` just before, and spends both.
     func testAnswerInline() throws {
         let app = try pair()
         let allow = app.buttons["Allow once"]
-        XCTAssertTrue(allow.waitForExistence(timeout: 20), "no permission card in the list")
+        XCTAssertTrue(app.staticTexts["Waiting on you"].waitForExistence(timeout: 20), "nothing waits on Home")
+        XCTAssertTrue(allow.waitForExistence(timeout: 20), "no permission card on Home")
+        XCTAssertTrue(labelled(app, "iPhone SE").exists, "no question card on Home")
         sleep(2)
+        snap(app, "home-cards")
+        app.tab("Tasks")
+        XCTAssertTrue(allow.waitForExistence(timeout: 10), "no permission card in the list")
+        sleep(1)
+        snap(app, "list-cards")
         allow.tap()
         XCTAssertTrue(allow.waitForNonExistence(timeout: 15), "the permission card stayed")
-        sleep(1)
+        app.tab("Home")
         labelled(app, "iPhone SE").tap()
         app.buttons["Next"].tap()
         XCTAssertTrue(labelled(app, "Should I post screenshots on the PR?").waitForExistence(timeout: 5))
@@ -48,85 +71,65 @@ final class RedesignTests: XCTestCase {
         snap(app, "answered")
     }
 
-    /// A new task by voice: tap for the hint, hold to record, cancel and keep,
-    /// stop, edit the words, then start it. Wants the microphone granted and
-    /// something saying words near the Mac's microphone while it runs.
+    /// A new task by voice: tap the mic to record, Cancel throws it away, record again and
+    /// stop, edit the words, then start it. Wants the microphone granted; something saying
+    /// words near the Mac's microphone gives words, and the simulator's Apple dictation,
+    /// which cannot read audio, gives a note instead.
     func testVoiceTask() throws {
         let app = try pair()
-        let orb = app.descendants(matching: .any)["mic"]
-        XCTAssertTrue(orb.waitForExistence(timeout: 20), "no voice dock")
+        let compose = app.buttons["newTask"]
+        XCTAssertTrue(compose.waitForExistence(timeout: 20), "no New task button")
         sleep(2)
+        compose.tap()
+        let mic = app.buttons["mic"]  // not its symbol, which carries the same identifier
+        XCTAssertTrue(mic.waitForExistence(timeout: 10), "the new task has no mic")
         snap(app, "voice-rest")
-        orb.tap()
-        let stop = app.buttons["Done"]
-        XCTAssertTrue(stop.waitForExistence(timeout: 10), "tapping the orb started no recording")
+        mic.tap()
+        let done = app.buttons["dictationDone"]
+        XCTAssertTrue(done.waitForExistence(timeout: 10), "tapping the mic started no recording")
         sleep(3)
         snap(app, "voice-recording")
-        app.buttons["Cancel"].tap()
-        XCTAssertTrue(app.staticTexts["Discard this recording?"].waitForExistence(timeout: 3))
-        snap(app, "voice-recording-confirm")
-        app.buttons["Keep recording"].tap()
+        stripCancel(app).tap()
+        XCTAssertTrue(done.waitForNonExistence(timeout: 5), "Cancel kept recording")
+        XCTAssertFalse(app.staticTexts["Discard this recording?"].exists, "Cancel asked first")
+        mic.tap()
+        XCTAssertTrue(done.waitForExistence(timeout: 10), "the second tap started no recording")
         sleep(4)
-        stop.tap()
+        done.tap()
         snap(app, "voice-transcribing")
-        // Words need a microphone that hears something; a muted Mac gives the
-        // simulator silence, and the dock then says so instead.
-        let start = app.buttons["Start task"]
-        // A query, not the element: an element that goes between two reads throws.
-        let heard = app.buttons.matching(NSPredicate(format: "label == 'Start task' AND isEnabled == true"))
-        let silent = app.staticTexts["No words heard."]
-        for _ in 0..<90 where heard.count == 0 && !silent.exists { sleep(1) }
-        let spoke = heard.count > 0
-        XCTAssertTrue(spoke || silent.exists, "transcription never answered")
-        sleep(1)
-        snap(app, spoke ? "voice-ready" : "voice-no-words")
-        if spoke {
-            app.buttons["Cancel"].tap()
-            XCTAssertTrue(app.staticTexts["Discard this task?"].waitForExistence(timeout: 3))
-            snap(app, "voice-ready-confirm")
-            app.buttons["Keep"].tap()
-            sleep(1)
-        }
-        app.buttons["Keyboard"].tap()
-        let editor = app.textViews[spoke ? "Edit task" : "New task"]
-        XCTAssertTrue(editor.waitForExistence(timeout: 5), "the keyboard opened no sheet")
-        editor.typeText(spoke ? " Reply with the single word: done." : "Reply with the single word: done.")
+        let start = app.buttons["startTask"]
+        let spoke = heard(app, "voice") { start.isEnabled }
+        app.composer.tap()
+        app.composer.typeText(spoke ? " Reply with the single word: done." : "Reply with the single word: done.")
         snap(app, "voice-edit")
-        app.buttons["Done"].tap()
+        app.navigationBars.buttons["Cancel"].tap()
+        XCTAssertTrue(app.staticTexts["Keep this task?"].waitForExistence(timeout: 3), "Cancel with words asked nothing")
+        snap(app, "voice-ready-confirm")
+        // On a phone the dialog is a popover off Cancel, and its Keep editing is a tap outside it.
+        let keep = app.buttons["Keep editing"]
+        if keep.exists { keep.tap() } else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.36)).tap() }
+        XCTAssertTrue(app.staticTexts["Keep this task?"].waitForNonExistence(timeout: 3), "the dialog stayed")
         sleep(1)
-        if !spoke {
-            snap(app, "voice-ready")
-            app.buttons["Cancel"].tap()
-            XCTAssertTrue(app.staticTexts["Discard this task?"].waitForExistence(timeout: 3))
-            snap(app, "voice-ready-confirm")
-            app.buttons["Keep"].tap()
-            sleep(1)
-        }
         start.tap()
-        // The started task opens.
-        // The list dock's Project pick, which the session's dock has none of: the orb is in both.
-        XCTAssertTrue(app.buttons["Project"].waitForNonExistence(timeout: 60), "the task never started")
+        XCTAssertTrue(start.waitForNonExistence(timeout: 60), "the task never started")
+        XCTAssertTrue(app.composer.waitForExistence(timeout: 15), "the started task did not open")
         sleep(4)
         snap(app, "voice-started")
     }
 
-    /// Typing a task from scratch, then saving it as a draft from Cancel.
-    /// A session's foot: hold to reply, the reply as a bubble, the sheet, Send, and Stop while it runs.
-    /// Opens a session from the list, scrolled clear of the dock first.
+    /// Opens a session from Tasks, scrolled clear of the tab bar first.
     func openRow(_ app: XCUIApplication, _ title: String) {
-        // Below the two cards, so off screen at first: the list is lazy and only draws what scrolls in.
-        let orb = app.descendants(matching: .any)["mic"]
-        XCTAssertTrue(orb.waitForExistence(timeout: 20))
+        app.tab("Tasks")
         let row = labelled(app, title)
-        // The dock floats over the list, so a row behind it still reads as hittable and the tap lands on the orb.
-        let clear = { row.exists && row.isHittable && row.frame.maxY < orb.frame.minY - 40 }
+        XCTAssertTrue(row.waitForExistence(timeout: 20), "no row \(title)")
+        // The bar floats over the list, so a row behind it still reads as hittable and the tap lands on a tab.
+        let bar = app.tabBars.firstMatch
+        let clear = { row.exists && row.isHittable && row.frame.maxY < bar.frame.minY - 20 }
         for _ in 0..<8 where !clear() { app.swipeUp() }
         if !clear() { app.swipeDown(velocity: .slow) }
         XCTAssertTrue(clear(), "no row to open")
         row.tap()
-        // The list's dock has a Project pick and the session's has none; both have the orb.
-        XCTAssertTrue(app.buttons["Project"].waitForNonExistence(timeout: 20), "the session never opened")
-        XCTAssertTrue(orb.waitForExistence(timeout: 20), "no dock in the session")
+        XCTAssertTrue(app.composer.waitForExistence(timeout: 20), "the session never opened")
     }
 
     /// A server going bad under an open session, then the list: reconnecting, can't reach,
@@ -154,89 +157,78 @@ final class RedesignTests: XCTestCase {
         XCTAssertTrue(unreachable.waitForExistence(timeout: 60), "no can't-reach banner")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Trying again'")).firstMatch.exists)
         snap(app, "conn-session-unreachable")
-        // At the top, the first row sits clear of the banner rather than under it.
-        for _ in 0..<6 { app.swipeDown(velocity: .fast) }
-        snap(app, "conn-session-top")
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        // The banner heads the list, and opening the row left it scrolled down.
-        for _ in 0..<5 where !unreachable.waitForExistence(timeout: 2) { app.swipeDown() }
-        XCTAssertTrue(unreachable.exists, "the list says nothing of the server")
+        // With nothing reachable, the list gives its whole screen to saying so.
+        XCTAssertTrue(unreachable.waitForExistence(timeout: 5), "the list says nothing of the server")
         sleep(1)
         snap(app, "conn-list-unreachable")
 
         mode("older")
-        app.buttons["Retry"].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["Studio Mac needs an update"].waitForExistence(timeout: 30), "no needs-update banner")
-        openRow(app, "Tighten session row spacing")
+        app.buttons["Retry now"].tap()
+        XCTAssertTrue(app.staticTexts["Studio Mac needs an update"].waitForExistence(timeout: 30), "no needs-update screen")
         sleep(1)
-        snap(app, "conn-session-older")
+        snap(app, "conn-list-older")
 
         mode("token")
-        app.buttons["Retry"].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["Studio Mac refused the token"].waitForExistence(timeout: 30), "no token banner")
+        app.buttons["Retry now"].tap()
+        XCTAssertTrue(app.staticTexts["Studio Mac refused the token"].waitForExistence(timeout: 30), "no token screen")
         sleep(1)
-        snap(app, "conn-session-token")
+        snap(app, "conn-list-token")
         app.buttons["Fix"].firstMatch.tap()
         XCTAssertTrue(app.staticTexts["Paste a new token"].waitForExistence(timeout: 10)
             || app.textFields["Token"].waitForExistence(timeout: 1), "Fix opened no settings")
     }
 
-    /// No network: the session says its task keeps running, the list says it once for all.
+    /// No network: the session says its task keeps running, and Tasks says it once for all.
+    /// The simulator follows the Mac's network, so `-offline` only tells the app it is
+    /// offline, and the server has to go for real: the harness watches for the stop file,
+    /// then stops it. Spends the server, so run it last.
+    ///   TEST_RUNNER_WAIN_STOP_FILE=/tmp/…
     func testOfflineBanners() throws {
+        guard let stopAt = env["WAIN_STOP_FILE"] else { throw XCTSkip("set TEST_RUNNER_WAIN_STOP_FILE") }
         let app = try pair(offline: true)
         openRow(app, "Tighten session row spacing")
-        XCTAssertTrue(app.staticTexts["The task keeps running on Studio Mac."].waitForExistence(timeout: 10))
+        FileManager.default.createFile(atPath: stopAt, contents: nil)
+        XCTAssertTrue(app.staticTexts["The task keeps running on Studio Mac."].waitForExistence(timeout: 60),
+                      "the session says nothing of being offline")
         sleep(1)
         snap(app, "conn-session-offline")
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        let offline = app.staticTexts["Tasks keep running on their servers."]
-        for _ in 0..<5 where !offline.waitForExistence(timeout: 2) { app.swipeDown() }
-        XCTAssertTrue(offline.exists, "the list says nothing of being offline")
+        XCTAssertTrue(app.staticTexts["You're offline"].waitForExistence(timeout: 10), "Tasks says nothing of being offline")
+        XCTAssertTrue(app.staticTexts["Tasks keep running on their machines."].exists)
         sleep(1)
         snap(app, "conn-list-offline")
     }
 
+    /// A session's foot: the mic records and Cancel throws it away, a recording's words or
+    /// note, typing, Send, Stop while the turn runs, and This task from the model chip.
     func testReplyDock() throws {
         let app = try pair()
         openRow(app, "Tighten session row spacing")
-        let orb = app.descendants(matching: .any)["mic"]
+        let mic = app.buttons["mic"]  // not its symbol, which carries the same identifier
+        XCTAssertTrue(mic.waitForExistence(timeout: 10), "no mic in the composer")
         sleep(3)
         snap(app, "reply-rest")
 
-        orb.tap()
-        let done = app.buttons["Done"]
-        XCTAssertTrue(done.waitForExistence(timeout: 10), "holding the orb started no recording")
+        mic.tap()
+        let done = app.buttons["dictationDone"]
+        XCTAssertTrue(done.waitForExistence(timeout: 10), "tapping the mic started no recording")
         sleep(2)
         snap(app, "reply-recording")
-        app.buttons["Cancel"].tap()
-        XCTAssertTrue(app.staticTexts["Discard this recording?"].waitForExistence(timeout: 3))
-        app.buttons["Keep recording"].tap()
+        stripCancel(app).tap()
+        XCTAssertTrue(done.waitForNonExistence(timeout: 5), "Cancel kept recording")
+        mic.tap()
+        XCTAssertTrue(done.waitForExistence(timeout: 10))
+        sleep(3)
         done.tap()
         snap(app, "reply-transcribing")
-        let heard = app.buttons.matching(NSPredicate(format: "label == 'Send' AND isEnabled == true"))
-        let silent = app.staticTexts["No words heard."]
-        for _ in 0..<90 where heard.count == 0 && !silent.exists { sleep(1) }
-        let spoke = heard.count > 0
-        XCTAssertTrue(spoke || silent.exists, "transcription never answered")
+        let spoke = heard(app, "reply") { app.buttons["send"].exists }
 
-        app.buttons["Keyboard"].tap()
-        let editor = app.textViews[spoke ? "Edit message" : "Reply"]
-        XCTAssertTrue(editor.waitForExistence(timeout: 5), "the keyboard opened no sheet")
-        editor.typeText("Run `sleep 20` in the shell, then reply with the single word SLEPT.")
-        snap(app, "reply-sheet")
-        app.buttons["Done"].tap()
-        sleep(1)
+        app.composer.tap()
+        if spoke { app.composer.clearText() }
+        app.composer.typeText("Run `sleep 20` in the shell, then reply with the single word SLEPT.")
         snap(app, "reply-ready")
-        app.buttons["Cancel"].tap()
-        XCTAssertTrue(app.staticTexts["Discard this reply?"].waitForExistence(timeout: 3))
-        snap(app, "reply-confirm")
-        app.buttons["Keep"].tap()
-        app.buttons["Keyboard"].tap()
-        XCTAssertTrue(app.textViews["Edit message"].waitForExistence(timeout: 5), "the sheet lost its title")
-        snap(app, "reply-edit")
-        app.buttons["Done"].tap()
-        sleep(1)
-        app.buttons["Send"].tap()
+        app.buttons["send"].tap()
 
         let stop = app.buttons["Stop"]
         XCTAssertTrue(stop.waitForExistence(timeout: 60), "no Stop while the turn runs")
@@ -252,28 +244,32 @@ final class RedesignTests: XCTestCase {
         snap(app, "reply-answered")
     }
 
-    /// Run with from the list's dock: the model chips, the project menu, and a branch switch over uncommitted
-    /// files. Wants `thinking-orbs` on the server holding a `fix-reconnect` branch and dirty files.
+    /// Run with from New task's Agent row: the model chips, the project menu, and a branch switch over
+    /// uncommitted files. Wants `thinking-orbs` on the server holding a `fix-reconnect` branch and dirty files.
     func testRunWithSheet() throws {
         let app = try pair()
-        let model = app.buttons["Model"]
-        XCTAssertTrue(model.waitForExistence(timeout: 20))
+        let compose = app.buttons["newTask"]
+        XCTAssertTrue(compose.waitForExistence(timeout: 20))
         sleep(2)
-        snap(app, "picks-dock")
-        model.tap()
-        XCTAssertTrue(app.staticTexts["Run with"].waitForExistence(timeout: 5), "the model pick opened no sheet")
+        compose.tap()
+        let agent = app.buttons["row.Agent"]
+        XCTAssertTrue(agent.waitForExistence(timeout: 10), "New task has no Agent row")
+        snap(app, "picks-new-task")
+        agent.tap()
+        XCTAssertTrue(app.staticTexts["Run with"].waitForExistence(timeout: 5), "the Agent row opened no sheet")
         XCTAssertTrue(app.buttons["More models"].waitForExistence(timeout: 15), "no model chips")
         sleep(1)
         snap(app, "picks-run-with")
 
-        app.buttons["row.Project"].tap()
+        last(app.buttons.matching(identifier: "row.Project")).tap()
         let orbs = menuItem(app, "thinking-orbs")
         XCTAssertTrue(orbs.exists, "no thinking-orbs in the project menu")
         XCTAssertTrue(app.buttons["Attach project…"].exists, "no Attach inside the project menu")
         snap(app, "picks-project-menu")
         orbs.tap()
 
-        let worktree = app.switches["Worktree"]
+        // The sheet under this one has a switch of the same name.
+        let worktree = last(app.switches.matching(identifier: "Worktree"))
         if worktree.value as? String == "On" { worktree.tap() }
         let branch = app.buttons["row.Branch"]
         XCTAssertTrue(branch.waitForExistence(timeout: 10), "worktree off shows no branch row")
@@ -297,35 +293,44 @@ final class RedesignTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Run with"].waitForNonExistence(timeout: 5))
     }
 
-    /// An open menu's item: the last of its name, since the list under the sheet can hold the same one.
+    /// An open menu's item: the last of its name, since the sheet under it can hold the same one.
     private func menuItem(_ app: XCUIApplication, _ label: String) -> XCUIElement {
         let all = app.buttons.matching(NSPredicate(format: "label == %@", label))
         _ = all.firstMatch.waitForExistence(timeout: 5)
         sleep(1)
-        return all.allElementsBoundByIndex.last { $0.isHittable } ?? all.firstMatch
+        return last(all)
     }
 
+    /// The last hittable match: the one on the sheet on top.
+    private func last(_ query: XCUIElementQuery) -> XCUIElement {
+        query.allElementsBoundByIndex.last { $0.isHittable } ?? query.firstMatch
+    }
+
+    /// Typing a task from scratch, then saving it as a draft from Cancel, and opening it again from Drafts.
     func testTypeAndSaveDraft() throws {
         let app = try pair()
-        let keyboard = app.buttons["Keyboard"]
-        XCTAssertTrue(keyboard.waitForExistence(timeout: 20))
+        let compose = app.buttons["newTask"]
+        XCTAssertTrue(compose.waitForExistence(timeout: 20))
         sleep(2)
-        keyboard.tap()
-        let editor = app.textViews["New task"]
+        compose.tap()
+        let editor = app.composer
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
         editor.typeText("Add retry with backoff to the upload client")
         snap(app, "type-new")
-        app.buttons["Done"].tap()
-        app.buttons["Cancel"].tap()
+        app.navigationBars.buttons["Cancel"].tap()
+        XCTAssertTrue(app.staticTexts["Keep this task?"].waitForExistence(timeout: 3), "Cancel with words asked nothing")
         snap(app, "type-confirm")
         app.buttons["Save draft"].tap()
-        XCTAssertTrue(app.buttons["Start task"].waitForNonExistence(timeout: 10), "saving left the dock open")
-        app.buttons["Drafts"].tap()
+        XCTAssertTrue(app.buttons["startTask"].waitForNonExistence(timeout: 10), "saving left the sheet open")
+        app.tab("Tasks")
+        view(app, "Drafts")
         sleep(2)
         snap(app, "type-drafts")
-        // Opening it brings its words back to the dock, ready to start.
-        labelled(app, "Add retry with backoff to the upload client").firstMatch.tap()
-        XCTAssertTrue(app.buttons["Start task"].waitForExistence(timeout: 10), "the draft opened nothing")
+        // Opening it brings its words back to the New task sheet, ready to start.
+        labelled(app, "Add retry with backoff to the upload client").tap()
+        XCTAssertTrue(app.buttons["startTask"].waitForExistence(timeout: 10), "the draft opened nothing")
+        XCTAssertEqual(app.composer.value as? String, "Add retry with backoff to the upload client", "the draft's words did not come back")
         snap(app, "type-draft-opened")
     }
 
@@ -334,8 +339,38 @@ final class RedesignTests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
     }
 
-    /// The list with nothing in it, from no server to a quiet one. Wants a second server with no
-    /// sessions behind `/tmp/wain825-proxy.py`, and two projects on it, `thinking-orbs` one of them:
+    /// Tasks' title menu, then one of its views.
+    private func view(_ app: XCUIApplication, _ name: String) {
+        app.buttons["viewMenu"].tap()
+        let item = app.buttons[name]
+        XCTAssertTrue(item.waitForExistence(timeout: 5), "no \(name) in the view menu")
+        item.tap()
+    }
+
+    /// The dictation strip's Cancel, below a sheet's own Cancel where there is one.
+    private func stripCancel(_ app: XCUIApplication) -> XCUIElement {
+        let all = app.buttons.matching(NSPredicate(format: "label == 'Cancel'")).allElementsBoundByIndex
+        return all.max { $0.frame.minY < $1.frame.minY } ?? app.buttons["Cancel"]
+    }
+
+    /// Waits on a recording's outcome: words (`words` holds), or a note in their place, whose
+    /// kept recording is discarded once shot. The simulator's Apple dictation cannot read
+    /// audio and notes "Couldn't transcribe"; a silent Mac microphone gives "No words heard.".
+    private func heard(_ app: XCUIApplication, _ shot: String, words: () -> Bool) -> Bool {
+        let note = app.staticTexts.matching(NSPredicate(
+            format: "label BEGINSWITH 'Couldn' OR label == 'No words heard.' OR label == 'No sound reached the microphone.'"))
+        for _ in 0..<90 where !words() && note.count == 0 { sleep(1) }
+        let spoke = words()
+        XCTAssertTrue(spoke || note.count > 0, "transcription never answered")
+        sleep(1)
+        snap(app, spoke ? "\(shot)-words" : "\(shot)-no-words")
+        if !spoke, app.buttons["Discard"].exists { app.buttons["Discard"].tap() }
+        return spoke
+    }
+
+    /// The Tasks list with nothing in it, from no server to a quiet one. Wants a second server
+    /// with no sessions behind `/tmp/wain825-proxy.py`, and two projects on it, `thinking-orbs`
+    /// one of them: redesign_seed.py's `empty` home with its index emptied.
     ///   TEST_RUNNER_WAIN_EMPTY_URL=ws://127.0.0.1:… TEST_RUNNER_WAIN_EMPTY_TOKEN=… TEST_RUNNER_WAIN_EMPTY_MODE=/tmp/…
     func testEmptyStates() throws {
         guard let url = env["WAIN_EMPTY_URL"], let token = env["WAIN_EMPTY_TOKEN"], let modeFile = env["WAIN_EMPTY_MODE"] else {
@@ -347,11 +382,10 @@ final class RedesignTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-servers", ""]
         app.launch()
-        XCTAssertTrue(app.staticTexts["Connect a server"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Pair a machine"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Scan QR code"].exists && app.buttons["Enter an address"].exists)
-        XCTAssertFalse(app.descendants(matching: .any)["mic"].exists, "a dock before any server")
-        // Nothing to show in either view, so neither button.
-        XCTAssertFalse(app.buttons["Drafts"].exists || app.buttons["Settled"].exists, "view buttons with no server")
+        XCTAssertFalse(app.composer.exists, "a composer before any server")
+        XCTAssertFalse(app.buttons["newTask"].isEnabled, "New task with no machine to run it")
         sleep(1)
         snap(app, "empty-01-connect")
 
@@ -370,44 +404,47 @@ final class RedesignTests: XCTestCase {
         XCTAssertTrue(retry.waitForExistence(timeout: 30), "no Retry now")
         mode("forward")
         retry.tap()
-        XCTAssertTrue(app.staticTexts["No tasks yet"].waitForExistence(timeout: 30), "no empty list once connected")
-        XCTAssertFalse(app.buttons["Drafts"].exists || app.buttons["Settled"].exists, "view buttons with nothing in them")
+        XCTAssertTrue(app.staticTexts["All clear"].waitForExistence(timeout: 30), "no quiet Home once connected")
+        app.tab("Tasks")
+        XCTAssertTrue(app.staticTexts["No tasks yet"].waitForExistence(timeout: 10), "no empty list once connected")
+        // Nothing listed in any project, so nothing to narrow; testScreens draws "Nothing in notes".
+        XCTAssertFalse(app.buttons["thinking-orbs"].exists, "a project strip over an empty list")
         sleep(1)
         snap(app, "empty-04-no-tasks")
-
-        // The strip's, not the dock's project pick of the same name.
-        app.descendants(matching: .any).matching(NSPredicate(format: "label == 'thinking-orbs'"))
-            .allElementsBoundByIndex.min { $0.frame.minY < $1.frame.minY }?.tap()
-        XCTAssertTrue(app.staticTexts["Nothing in thinking-orbs"].waitForExistence(timeout: 10), "no empty project")
-        sleep(1)
-        snap(app, "empty-05-project")
     }
 
-    /// The same quiet server once a task was settled there today.
+    /// The quiet server once a task was settled there today: Home and Tasks both say All clear.
     func testAllClear() throws {
         guard let url = env["WAIN_EMPTY_URL"], let token = env["WAIN_EMPTY_TOKEN"] else {
             throw XCTSkip("set TEST_RUNNER_WAIN_EMPTY_URL and TEST_RUNNER_WAIN_EMPTY_TOKEN")
         }
         let app = try pair(url: url, token: token)
-        XCTAssertTrue(app.staticTexts["All clear"].waitForExistence(timeout: 30), "no all-clear screen")
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'settled today.'")).firstMatch.exists)
-        XCTAssertTrue(app.buttons["Settled"].exists && !app.buttons["Drafts"].exists, "Settled should show alone")
+        let settled = app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'settled today.'")).firstMatch
+        XCTAssertTrue(app.staticTexts["All clear"].waitForExistence(timeout: 30), "no all-clear Home")
+        sleep(1)
+        snap(app, "empty-06-all-clear-home")
+        app.tab("Tasks")
+        XCTAssertTrue(app.staticTexts["All clear"].waitForExistence(timeout: 10), "no all-clear Tasks")
+        XCTAssertTrue(app.staticTexts["1 settled today."].waitForExistence(timeout: 10), "Tasks does not count today's settled task")
         sleep(1)
         snap(app, "empty-06-all-clear")
+        app.tab("Home")
+        XCTAssertTrue(settled.waitForExistence(timeout: 5), "Home does not count today's settled task")
     }
 
-    /// Switching a server off on the phone: its tasks leave the list, Settings reads Off, and on brings them back.
+    /// Switching a server off on the phone: its tasks leave Tasks, Settings reads Off, and on brings them back.
     func testServerOff() throws {
         guard let url2 = env["WAIN_EMPTY_URL"], let token2 = env["WAIN_EMPTY_TOKEN"] else {
             throw XCTSkip("set TEST_RUNNER_WAIN_EMPTY_URL and TEST_RUNNER_WAIN_EMPTY_TOKEN")
         }
         let app = try pair()
+        app.tab("Tasks")
         let row = app.staticTexts["Tighten session row spacing"]
         XCTAssertTrue(row.waitForExistence(timeout: 30), "no task from Studio Mac")
         // Through Settings, not a second link: opening one relaunches the app, and its launch
         // arguments clear the server just paired.
-        app.buttons["Settings"].tap()
-        app.staticTexts["Add server"].tap()
+        settings(app)
+        app.buttons["Add server"].tap()
         let address = app.textFields["Address"]
         XCTAssertTrue(address.waitForExistence(timeout: 5))
         address.tap()
@@ -418,11 +455,12 @@ final class RedesignTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Build Box"].waitForExistence(timeout: 10), "Build Box wasn't added")
 
         app.staticTexts["Studio Mac"].firstMatch.tap()
+        let on = app.switches["server.on"]
         XCTAssertTrue(app.staticTexts["Connected"].waitForExistence(timeout: 10), "no live state in the switch row")
         sleep(1)
         snap(app, "server-08-on")
 
-        app.switches.firstMatch.tap()
+        on.tap()
         XCTAssertTrue(app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Off'")).firstMatch.waitForExistence(timeout: 5), "the switch row never read Off")
         XCTAssertTrue(app.staticTexts["Its tasks are hidden until you turn it back on. They keep running on Studio Mac."].exists)
         sleep(1)
@@ -435,17 +473,26 @@ final class RedesignTests: XCTestCase {
         snap(app, "settings-01d-off")
 
         app.buttons["Done"].tap()
-        XCTAssertTrue(row.waitForNonExistence(timeout: 10), "the off server's task stayed in the list")
+        XCTAssertTrue(row.waitForNonExistence(timeout: 10), "the off server's task stayed in Tasks")
         sleep(1)
         snap(app, "server-list-off")
 
-        app.buttons["Settings"].tap()
+        settings(app)
         app.staticTexts["Studio Mac"].firstMatch.tap()
-        app.switches.firstMatch.tap()
+        on.tap()
         XCTAssertTrue(app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Connected'")).firstMatch.waitForExistence(timeout: 30), "turning it on never reconnected")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         app.buttons["Done"].tap()
         XCTAssertTrue(row.waitForExistence(timeout: 30), "the task didn't come back")
+    }
+
+    /// Settings, reached through Machines, settled before anything in it is tapped:
+    /// a tap while Machines gives way to it opens nothing.
+    private func settings(_ app: XCUIApplication) {
+        app.buttons["machines"].firstMatch.tap()
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5), "Machines opened no Settings")
+        sleep(1)
     }
 
     /// A fresh launch with no saved server, paired through the link a QR carries.
@@ -460,7 +507,7 @@ final class RedesignTests: XCTestCase {
         return app
     }
 
-    /// Adds a server through the link a QR carries.
+    /// Adds a server through the link a QR carries, then turns down the alerts prompt a fresh install raises.
     func connect(_ app: XCUIApplication, url: String, token: String, name: String = "Studio Mac") {
         var link = URLComponents(string: "wain://connect")!
         link.queryItems = [.init(name: "url", value: url), .init(name: "token", value: token), .init(name: "name", value: name)]
@@ -468,6 +515,8 @@ final class RedesignTests: XCTestCase {
         let add = app.buttons["Add"]
         XCTAssertTrue(add.waitForExistence(timeout: 10), "the link opened no add sheet")
         add.tap()
+        let deny = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.buttons["Don’t Allow"]
+        if deny.waitForExistence(timeout: 3) { deny.tap() }
     }
 
     func snap(_ app: XCUIApplication, _ name: String) {
