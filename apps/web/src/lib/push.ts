@@ -12,7 +12,7 @@ export type PushEnv = "sandbox" | "production";
 export type Phone = { platform: "apns"; token: string; env: PushEnv } | { platform: "fcm"; token: string };
 
 /// The iPhone app's bundle id: every push is pinned to it, so a handle can only ever reach Wain.
-const TOPIC = "com.wainhq.wain.ios";
+const TOPIC = "com.plorigo.wain.ios";
 
 /// Whether the relay can reach a platform at all; without its keys a register or send for it answers 503.
 export function pushReady(platform: Phone["platform"]): boolean {

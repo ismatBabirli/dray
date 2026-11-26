@@ -256,7 +256,7 @@ final class Push: NSObject, UNUserNotificationCenterDelegate {
     }
 }
 
-let pushLog = Logger(subsystem: "com.wainhq.wain.ios", category: "push")
+let pushLog = Logger(subsystem: "com.plorigo.wain.ios", category: "push")
 
 
 /// What the relay puts under `wain` in an alert.

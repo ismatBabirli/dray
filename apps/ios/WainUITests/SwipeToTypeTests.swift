@@ -6,8 +6,8 @@ import XCTest
 /// to type" sits over the orb until the third swipe. Against `lone_bot_seed.py`'s `visible` home,
 /// on a fresh install, since a launch argument would pin the swipe count, with the microphone
 /// granted so Apple's engine keeps the orb:
-///   xcrun simctl uninstall <udid> com.wainhq.wain.ios
-///   xcrun simctl privacy <udid> grant microphone com.wainhq.wain.ios
+///   xcrun simctl uninstall <udid> com.plorigo.wain.ios
+///   xcrun simctl privacy <udid> grant microphone com.plorigo.wain.ios
 ///   TEST_RUNNER_WAIN_URL=ws://127.0.0.1:… TEST_RUNNER_WAIN_TOKEN=… xcodebuild test -only-testing:WainUITests/SwipeToTypeTests
 final class SwipeToTypeTests: XCTestCase {
     func testSwipeUpOpensKeyboard() throws {

@@ -4,7 +4,7 @@ import XCTest
 /// the orb stays, Settings › Dictation defaults to Apple, and a recording comes
 /// back read on the phone — words, or "No words heard." in a quiet room. Grant
 /// the microphone first:
-///   xcrun simctl privacy booted grant microphone com.wainhq.wain.ios
+///   xcrun simctl privacy booted grant microphone com.plorigo.wain.ios
 ///   TEST_RUNNER_WAIN_URL=ws://127.0.0.1:… TEST_RUNNER_WAIN_TOKEN=… xcodebuild test -only-testing:WainUITests/AppleDictationTests
 final class AppleDictationTests: XCTestCase {
     func testDictateOnThePhone() throws {

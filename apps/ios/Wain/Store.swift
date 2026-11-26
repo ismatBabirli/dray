@@ -1479,7 +1479,7 @@ final class Store {
 
 /// Tokens live in the Keychain, never in defaults.
 enum Keychain {
-    private static let service = "com.wainhq.wain.ios.servers"
+    private static let service = "com.plorigo.wain.ios.servers"
 
     private static func query(_ account: String) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword,
