@@ -1,4 +1,4 @@
-import { CLAUDE_PATH, MARK, OPENAI_PATH, WORDMARK_PATHS } from "./marks.js";
+import { CLAUDE_PATH, MARK, MARK_SIZE, OPENAI_PATH, WORDMARK_PATHS, WORDMARK_SIZE } from "./marks.js";
 import { CLOSING, FIELD, NODES } from "./tiles.js";
 
 export const W = 1920;
@@ -120,7 +120,9 @@ function fieldCells() {
 
 const svg = (path, size, fill = "currentColor") =>
   `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true"><path fill="${fill}" d="${path}"/></svg>`;
-const mark = (h) => `<svg viewBox="0 0 159 200" width="${(h * 159) / 200}" height="${h}" aria-hidden="true"><path fill="currentColor" d="${MARK}"/></svg>`;
+// Wain: the W is wide where Dray's D was tall, so it sits at 0.6 of the label height it was given.
+const mark = (h, [w, mh] = MARK_SIZE, ht = h * 0.6) =>
+  `<svg viewBox="0 0 ${w} ${mh}" width="${(ht * w) / mh}" height="${ht}" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${MARK}"/></svg>`;
 const CLAUDE = (s) => svg(CLAUDE_PATH, s, "#D97757");
 const OPENAI = (s) => svg(OPENAI_PATH, s);
 const ARROW = `<svg width="20" height="20" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -192,7 +194,7 @@ export function mount(stage) {
     </div></div>
     <canvas id="fx" width="${W}" height="${H}"></canvas>
     <div id="end" class="overlay"><h1>${words(OUTRO)}</h1></div>
-    <div id="wm" class="overlay"><svg viewBox="0 0 466 96" width="250" height="52">${WORDMARK_PATHS.map((d) => `<path fill="currentColor" d="${d}"/>`).join("")}</svg></div>`;
+    <div id="wm" class="overlay"><svg viewBox="0 0 ${WORDMARK_SIZE[0]} ${WORDMARK_SIZE[1]}" width="${(52 * WORDMARK_SIZE[0]) / WORDMARK_SIZE[1]}" height="52">${WORDMARK_PATHS.map((d) => `<path fill="currentColor" fill-rule="evenodd" d="${d}"/>`).join("")}</svg></div>`;
 
   const $ = (s) => stage.querySelector(s);
   const bg = $("#bg").getContext("2d");

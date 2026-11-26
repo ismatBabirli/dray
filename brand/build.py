@@ -252,6 +252,8 @@ def main():
     if "--install" in sys.argv:
         install(out, lw, lh, body, mark.w * 96 / mark.h, mark.path(96 / mark.h))
         install_phones(mark)
+        # Upstream's red profile picture, kept under its name with Wain's mark on it.
+        tile_icon(mark, 800, (255, 0, 0), WHITE, rounded=False).save(ROOT / "apps/desktop/public/assets/wain-profile-red-fill.png")
 
 
 def install(out, lw, lh, body, mark_w_96, mark_path_96):
