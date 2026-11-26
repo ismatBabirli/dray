@@ -93,37 +93,41 @@ func routineOrder<T>(_ rows: [T], paused: (T) -> Bool, next: (T) -> Date?) -> [T
 // MARK: Usage
 
 extension UsageReading {
+    /// A window's figure: as sent, or spent where a limited reading sent none.
+    func used(_ w: Window) -> Double? { w.usedPercent ?? (limited == true ? 100 : nil) }
     var fiveHour: Window? { windows.first { $0.kind == "five_hour" } }
-    /// The window that says how close the agent is: five-hour, else the fullest it sent.
-    var headline: Window? { fiveHour ?? windows.max { $0.usedPercent < $1.usedPercent } }
+    /// The window the reading speaks by: five-hour, else its fullest. Never one with no figure.
+    var headline: Window? {
+        if let f = fiveHour, used(f) != nil { return f }
+        return windows.filter { used($0) != nil }.max { used($0)! < used($1)! }
+    }
+    var percent: Double { headline.flatMap(used) ?? 0 }
+    var spent: [Window] { windows.filter { (used($0) ?? 0) >= 100 } }
     /// Spent: the server says so, or a window is full.
-    var atLimit: Bool { limited == true || windows.contains { $0.usedPercent >= 100 } }
-    /// When a spent reading comes back: the full window's reset, else five-hour's.
+    var atLimit: Bool { limited == true || !spent.isEmpty }
+    /// When it is back: the latest reset of its spent windows, else its headline's.
     var back: Date? {
-        (windows.first { $0.usedPercent >= 100 } ?? fiveHour)?.resetsAt.flatMap(parseDate)
+        spent.compactMap { $0.resetsAt.flatMap(parseDate) }.max() ?? headline?.resetsAt.flatMap(parseDate)
     }
 }
 
-/// One agent's chip on Home: its worst reading across the machines shown.
+/// One agent's chip on Home.
 struct UsageChip: Equatable, Identifiable {
     let harness: String
     let percent: Double
     let limited: Bool
-    /// When a limited agent is back: the soonest any of its machines is.
     let back: Date?
     var id: String { harness }
 }
 
-/// One chip per agent with a reading: the highest five-hour percent across the
-/// machines, red with its way back once any machine is at its limit. Limited
-/// ones lead, then the fullest.
+/// One chip per agent with a reading, spoken for by its worst reading across the shown
+/// machines: one at its limit first, then the highest headline percent. Nothing is mixed
+/// across machines. Limited chips lead, then the fullest.
 func usageChips(_ readings: [UsageReading]) -> [UsageChip] {
-    let byAgent = Dictionary(grouping: readings, by: \.harness)
-    let chips = byAgent.map { harness, list -> UsageChip in
-        let spent = list.filter(\.atLimit)
-        let percent = list.compactMap { $0.headline?.usedPercent }.max() ?? 0
-        return UsageChip(harness: harness, percent: spent.isEmpty ? percent : max(percent, 100), limited: !spent.isEmpty,
-                         back: spent.compactMap(\.back).min())
+    let worse = { (a: UsageReading, b: UsageReading) in a.atLimit != b.atLimit ? a.atLimit : a.percent > b.percent }
+    let chips = Dictionary(grouping: readings, by: \.harness).compactMap { harness, list -> UsageChip? in
+        guard let r = list.sorted(by: worse).first else { return nil }
+        return UsageChip(harness: harness, percent: r.percent, limited: r.atLimit, back: r.back)
     }
     return chips.sorted { a, b in
         if a.limited != b.limited { return a.limited }

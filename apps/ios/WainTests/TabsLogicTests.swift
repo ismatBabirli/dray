@@ -86,7 +86,7 @@ final class TabsLogicTests: XCTestCase {
         return UsageReading(harness: harness, limited: limited, at: "2026-11-26T12:00:00Z", windows: windows)
     }
 
-    /// The worst five-hour reading per agent across machines; limited agents lead, then the fullest.
+    /// One reading speaks for each agent: its worst across machines. Limited agents lead, then the fullest.
     func testChipsTakeTheWorstReading() {
         let chips = usageChips([
             reading("codex", five: 49),
@@ -98,12 +98,25 @@ final class TabsLogicTests: XCTestCase {
         XCTAssertEqual(chips[1].percent, 84)
         XCTAssertFalse(chips[1].limited)
         XCTAssertTrue(chips[0].limited)
+        XCTAssertEqual(chips[0].percent, 60, "the limited reading's own headline, not 100")
         XCTAssertEqual(chips[0].back, parseDate("2026-11-26T15:30:00Z"))
     }
 
-    /// A full window is a limit whatever `limited` says, and its own reset is the way back.
-    func testFullWindowIsALimit() {
-        let r = reading("claude_code", five: 20, weekly: 100)
+    /// A limited reading outranks a fuller one elsewhere, and nothing from the other machine is mixed in.
+    func testLimitedReadingSpeaksAlone() {
+        let chips = usageChips([
+            reading("claude_code", five: 95, resets: "2026-11-26T13:00:00Z"),
+            reading("claude_code", five: 40, limited: true, resets: "2026-11-26T16:00:00Z"),
+        ])
+        XCTAssertEqual(chips.count, 1)
+        XCTAssertTrue(chips[0].limited)
+        XCTAssertEqual(chips[0].percent, 40)
+        XCTAssertEqual(chips[0].back, parseDate("2026-11-26T16:00:00Z"))
+    }
+
+    /// A full window is a limit whatever `limited` says; "back" is the latest of the spent windows' resets.
+    func testBackIsTheLatestSpentReset() {
+        let r = reading("claude_code", five: 100, weekly: 100, resets: "2026-11-26T14:00:00Z")
         XCTAssertTrue(r.atLimit)
         XCTAssertEqual(r.back, parseDate("2026-12-01T09:00:00Z"))
         let chip = usageChips([r])[0]
@@ -111,9 +124,39 @@ final class TabsLogicTests: XCTestCase {
         XCTAssertEqual(chip.percent, 100)
     }
 
+    /// Not at a limit, "back" is the headline window's reset.
+    func testBackFallsToTheHeadline() {
+        XCTAssertEqual(reading("claude_code", five: 20, weekly: 60).back, parseDate("2026-11-26T14:00:00Z"))
+    }
+
     /// With no five-hour window the fullest window stands in.
     func testNoFiveHourWindow() {
         XCTAssertEqual(usageChips([reading("claude_code", five: nil, weekly: 75)])[0].percent, 75)
+    }
+
+    /// A window with no figure: spent on a limited reading, never the headline on any other.
+    func testWindowWithNoFigure() throws {
+        let json = """
+        [{"harness":"claude_code","limited":true,"at":"2026-11-26T12:00:00Z",
+          "windows":[{"kind":"five_hour","resetsAt":"2026-11-26T15:30:00Z","minutes":300}]},
+         {"harness":"codex","at":"2026-11-26T12:00:00Z",
+          "windows":[{"kind":"five_hour","resetsAt":"2026-11-26T15:00:00Z","minutes":300},
+                     {"kind":"weekly","usedPercent":12,"resetsAt":"2026-12-01T09:00:00Z","minutes":10080}]}]
+        """
+        let list = try JSONDecoder().decode([UsageReading].self, from: Data(json.utf8))
+        let rejected = list[0]
+        XCTAssertEqual(rejected.windows.count, 1, "a window with no figure still decodes")
+        XCTAssertEqual(rejected.used(rejected.windows[0]), 100)
+        XCTAssertTrue(rejected.atLimit)
+        XCTAssertEqual(rejected.back, parseDate("2026-11-26T15:30:00Z"))
+        let codex = list[1]
+        XCTAssertNil(codex.used(codex.windows[0]))
+        XCTAssertEqual(codex.headline?.kind, "weekly")
+        XCTAssertEqual(codex.percent, 12)
+        XCTAssertFalse(codex.atLimit)
+        let chips = usageChips(list)
+        XCTAssertEqual(chips.map(\.harness), ["claude_code", "codex"])
+        XCTAssertEqual(chips[0].back, parseDate("2026-11-26T15:30:00Z"))
     }
 
     func testWindowLabels() {
@@ -122,8 +165,8 @@ final class TabsLogicTests: XCTestCase {
         XCTAssertEqual(windowLabel(.init(kind: "other", usedPercent: 1, resetsAt: nil, minutes: 43200)), "30-day")
     }
 
-    /// The contract's shape, an unknown field, a window missing its percent and a reading missing its harness:
-    /// each costs itself alone.
+    /// The contract's shape, an unknown field, a window missing its percent (kept, with no figure) and a
+    /// reading missing its harness (dropped alone).
     func testUsageDecodesLeniently() throws {
         let json = """
         {"asks":[],"tasks":[],"usage":[
@@ -138,11 +181,36 @@ final class TabsLogicTests: XCTestCase {
         let live = try JSONDecoder().decode(LiveState.self, from: Data(json.utf8))
         let usage = (live.usage ?? []).compactMap(\.value)
         XCTAssertEqual(usage.map(\.harness), ["claude_code", "codex"])
-        XCTAssertEqual(usage[0].windows.count, 1)
+        XCTAssertEqual(usage[0].windows.count, 2)
+        XCTAssertNil(usage[0].windows[1].usedPercent)
         XCTAssertEqual(usage[0].plan, "max")
         XCTAssertEqual(usage[0].overage, "rejected")
         XCTAssertNil(usage[1].limited)
         let older = try JSONDecoder().decode(LiveState.self, from: Data(#"{"asks":[],"tasks":[]}"#.utf8))
         XCTAssertNil(older.usage)
+    }
+}
+
+/// A routine's report-back heads the bot's reply with its routine's name; a task's draws nothing, as before.
+final class RoutineLabelTests: XCTestCase {
+    private func events(_ lines: [(String, String)]) throws -> [AgentEvent] {
+        try lines.map { id, payload in
+            try JSONDecoder().decode(AgentEvent.self, from: Data(#"{"id":"\#(id)","sessionId":"s","ts":"2026-11-27T09:01:00Z","subagent":null,"payload":\#(payload)}"#.utf8))
+        }
+    }
+
+    func testRoutineReportDrawsItsLabel() throws {
+        let lines = [
+            ("r", #"{"type":"user_message","text":"[from Morning PR sweep] two PRs","from":{"title":"Morning PR sweep","sessionId":"RUN-1"}}"#),
+            ("a", #"{"type":"assistant_text","text":"Two PRs wait on your review."}"#),
+            ("t", #"{"type":"user_message","text":"[from Fix login] done","from":{"title":"Fix login","sessionId":"task-1"}}"#),
+            ("b", #"{"type":"assistant_text","text":"The login fix is in."}"#),
+        ]
+        let items = botItems(try events(lines), routines: ["run-1"])
+        XCTAssertEqual(items.map(\.id), ["r", "a", "b"])
+        guard case .routine(_, let name, let ts) = items[0] else { return XCTFail("no routine label") }
+        XCTAssertEqual(name, "Morning PR sweep")
+        XCTAssertEqual(ts, "2026-11-27T09:01:00Z")
+        XCTAssertEqual(botItems(try events(lines)).map(\.id), ["a", "b"], "with no routine runs held, no label")
     }
 }

@@ -114,8 +114,8 @@ struct ReplyDock: View {
         HStack(spacing: Theme.Space.s) {
             PickChipButton(action: { picking = true }) {
                 HStack(spacing: 5) {
-                    if let reading, let w = reading.fiveHour {
-                        UsageRing(percent: reading.atLimit ? 100 : w.usedPercent, size: 13,
+                    if let reading, reading.headline != nil {
+                        UsageRing(percent: reading.atLimit ? 100 : reading.percent, size: 13,
                                   tone: reading.atLimit ? Theme.destructive : Theme.text)
                     } else {
                         AgentMark(harness: harness).frame(width: 13, height: 13)

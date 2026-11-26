@@ -136,6 +136,7 @@ struct NewTaskSheet: View {
                 }
             }
             .disabled(task.server == nil)
+            .accessibilityIdentifier("row.Project")
         } else {
             PickMenu("Project", value: task.projectChoice?.label ?? "") {
                 Picker("Project", selection: Binding(get: { task.projectChoice }, set: task.pick)) {

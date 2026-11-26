@@ -123,7 +123,7 @@ struct UsageSheet: View {
                     .compactMap { $0 }.joined(separator: " · "))
                     .font(Theme.Font.footnote).foregroundStyle(Theme.tertiary)
             }
-            ForEach(Array(r.windows.enumerated()), id: \.offset) { _, w in bar(w, limited: r.limited == true) }
+            ForEach(Array(r.windows.enumerated()), id: \.offset) { _, w in bar(w, used: r.used(w)) }
             if r.atLimit, r.overage == "rejected" {
                 Text("Extra usage is off for this account.").font(Theme.Font.footnote).foregroundStyle(Theme.tertiary)
             } else if r.usingOverage == true {
@@ -134,8 +134,9 @@ struct UsageSheet: View {
         .background(Theme.raised, in: .rect(cornerRadius: Theme.Radius.lg, style: .continuous))
     }
 
-    private func bar(_ w: UsageReading.Window, limited: Bool) -> some View {
-        let full = w.usedPercent >= 100
+    /// A window's line and its bar; with no figure, the line alone.
+    private func bar(_ w: UsageReading.Window, used: Double?) -> some View {
+        let full = (used ?? 0) >= 100
         let reset = w.resetsAt.flatMap(parseDate)
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
@@ -143,18 +144,22 @@ struct UsageSheet: View {
                     .compactMap { $0 }.joined(separator: " · "))
                     .foregroundStyle(full ? Theme.destructive : Theme.secondary)
                 Spacer(minLength: Theme.Space.s)
-                Text("\(Int(w.usedPercent.rounded()))%").font(Theme.Font.footnoteStrong.font.monospacedDigit())
-                    .foregroundStyle(full ? Theme.destructive : Theme.text)
+                if let used {
+                    Text("\(Int(used.rounded()))%").font(Theme.Font.footnoteStrong.font.monospacedDigit())
+                        .foregroundStyle(full ? Theme.destructive : Theme.text)
+                }
             }
             .font(Theme.Font.footnote)
-            GeometryReader { g in
-                Capsule().fill(Theme.tile)
-                    .overlay(alignment: .leading) {
-                        Capsule().fill(full ? Theme.destructive : Theme.text)
-                            .frame(width: g.size.width * min(max(w.usedPercent, 0), 100) / 100)
-                    }
+            if let used {
+                GeometryReader { g in
+                    Capsule().fill(Theme.tile)
+                        .overlay(alignment: .leading) {
+                            Capsule().fill(full ? Theme.destructive : Theme.text)
+                                .frame(width: g.size.width * min(max(used, 0), 100) / 100)
+                        }
+                }
+                .frame(height: 6)
             }
-            .frame(height: 6)
         }
         .accessibilityElement(children: .combine)
     }

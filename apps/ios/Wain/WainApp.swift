@@ -72,6 +72,7 @@ struct RootView: View {
     @Environment(\.horizontalSizeClass) private var width
     @Environment(\.displayScale) private var scale
     @AppStorage(LaunchBot.key) private var launchBot = ""
+    @AppStorage(StallDismissals.key) private var dismissedStalls = ""
     /// This launch's one chance to open Settings' launch bot; anything the reader does first spends it.
     @State private var autoOpen: Bool
     private let launch: SessionKey?
@@ -85,7 +86,7 @@ struct RootView: View {
     var body: some View {
         @Bindable var nav = nav
         let shown = nav.shownIds(store)
-        let waiting = store.waitingCount(shown)
+        let waiting = store.waitingCount(shown, dismissed: StallDismissals.parse(dismissedStalls))
         let unread = store.unreadBots(shown)
         tabs(waiting: waiting, unread: unread)
             .onAppear {

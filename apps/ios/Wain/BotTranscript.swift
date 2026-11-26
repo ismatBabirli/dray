@@ -22,12 +22,14 @@ enum BotItem: Identifiable {
     /// "Messaged" another bot, by the id `wain bot send` printed where it did.
     case botSent(id: String, name: String, botId: String?, ts: String?)
     case learned(id: String, lesson: Lesson, commit: String, undone: Bool, ts: String?)
+    /// A routine's report-back: its name and when it reported, over the bot's reply to it.
+    case routine(id: String, name: String, ts: String?)
 
     var id: String {
         switch self {
         case .user(let id, _, _, _, _), .assistant(let id, _, _, _, _), .notice(let id, _, _), .card(let id, _, _),
              .issues(let id, _, _, _, _), .task(let id, _, _, _), .sent(let id, _, _), .botMessage(let id, _, _, _, _), .botSent(let id, _, _, _),
-             .learned(let id, _, _, _, _): id
+             .learned(let id, _, _, _, _), .routine(let id, _, _): id
         }
     }
 
@@ -35,7 +37,7 @@ enum BotItem: Identifiable {
         switch self {
         case .user(_, _, _, _, let ts), .assistant(_, _, _, _, let ts), .notice(_, _, let ts), .card(_, _, let ts),
              .issues(_, _, _, _, let ts), .task(_, _, _, let ts), .sent(_, _, let ts), .botMessage(_, _, _, _, let ts), .botSent(_, _, _, let ts),
-             .learned(_, _, _, _, let ts): ts
+             .learned(_, _, _, _, let ts), .routine(_, _, let ts): ts
         }
     }
 }
@@ -61,8 +63,9 @@ enum BotRow: Identifiable {
 }
 
 /// The chat's items from one session's events. Task reports carry no row: the
-/// bot's reply already says what they held. Kickoffs and review turns draw nothing.
-func botItems(_ events: [AgentEvent]) -> [BotItem] {
+/// bot's reply already says what they held. A routine's report, a session among
+/// `routines`, draws its label. Kickoffs and review turns draw nothing.
+func botItems(_ events: [AgentEvent], routines: Set<String> = []) -> [BotItem] {
     let main = events.filter { $0.subagent == nil }
     var undone = Set<String>()
     for e in main { if case .learnedUndone(let commit, let path) = e.payload { undone.insert("\(commit)\0\(path)") } }
@@ -91,7 +94,10 @@ func botItems(_ events: [AgentEvent]) -> [BotItem] {
             if let fromBot {
                 items.append(.botMessage(id: e.id, botId: fromBot, title: fromTitle ?? "",
                                          text: stripSender(text, title: fromTitle, id: fromId, bot: true), ts: e.ts))
-            } else if fromId != nil {
+            } else if let fromId {
+                if routines.contains(fromId.lowercased()) {
+                    items.append(.routine(id: e.id, name: fromTitle ?? "Routine", ts: e.ts))
+                }
                 continue
             } else if !kickoff {
                 items.append(.user(id: e.id, text: text, images: images, reaction: reactions[e.id], ts: e.ts))

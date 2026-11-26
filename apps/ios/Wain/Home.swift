@@ -7,7 +7,7 @@ import ThinkingOrbs
 struct HomeView: View {
     @Environment(Store.self) private var store
     @Environment(Nav.self) private var nav
-    @AppStorage("bot.dismissedStalls") private var dismissedRaw = ""
+    @AppStorage(StallDismissals.key) private var dismissedRaw = ""
 
     var body: some View {
         // Stalls ripen with time alone, so Home files again each minute.
@@ -65,7 +65,7 @@ struct HomeView: View {
         }
     }
 
-    private var dismissed: Set<String> { Set(dismissedRaw.split(separator: "\n").map(String.init)) }
+    private var dismissed: Set<String> { StallDismissals.parse(dismissedRaw) }
 
     private func heading(_ title: String, count: Int? = nil, tone: Color = Theme.secondary) -> some View {
         HStack(alignment: .firstTextBaseline) {
@@ -78,6 +78,12 @@ struct HomeView: View {
         .padding(.bottom, Theme.Space.s)
         .accessibilityAddTraits(.isHeader)
     }
+}
+
+/// The stall card's X: rows the reader put away, which Home and its badge leave out too.
+enum StallDismissals {
+    static let key = "bot.dismissedStalls"
+    static func parse(_ raw: String) -> Set<String> { Set(raw.split(separator: "\n").map(String.init)) }
 }
 
 extension Store {
@@ -116,8 +122,10 @@ extension Store {
         return Array(facts.values)
     }
 
-    /// Home's badge: what waits on the reader.
-    func waitingCount(_ shown: Set<UUID>) -> Int { homeSections(homeFacts(shown)).waiting.count }
+    /// Home's badge: its Waiting on you rows, one per session, read as Home reads them.
+    func waitingCount(_ shown: Set<UUID>, dismissed: Set<String>) -> Int {
+        homeSections(homeFacts(shown, dismissed: dismissed)).waiting.count
+    }
 
     /// Bots' badge: bots with a reply the reader has not read.
     func unreadBots(_ shown: Set<UUID>) -> Int {
@@ -143,7 +151,8 @@ private struct WaitingRow: View {
             switch row {
             case .ask:
                 Button { nav.open(.session(key)) } label: { head(title, item, dot: true) }.buttonStyle(RowButtonStyle())
-                if let ask = store.asks[key]?.first { AskCard(key: key, event: ask, bare: true) }
+                // Every card the session holds, in the one row it has.
+                ForEach(store.asks[key] ?? []) { AskCard(key: key, event: $0, bare: true) }
             case .merge:
                 mergeRow(key, item, title)
             default:

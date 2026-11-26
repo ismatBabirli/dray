@@ -117,16 +117,22 @@ func previewLine(_ text: String) -> String {
     return s.split(whereSeparator: \.isWhitespace).joined(separator: " ")
 }
 
-/// A bot's header: a bot's folder is no project, so its face and name as a chip, which opens the bot.
+/// A bot's header: its face and name, and under them "<machine> · N tasks". A tap opens its
+/// Tasks sheet; editing the bot is in the long-press menu, as there is no tasks sheet before a chat.
 struct BotTitle: View {
     let bot: Bot
-    let edit: () -> Void
+    let subtitle: String
+    let open: () -> Void
+    var edit: (() -> Void)? = nil
 
     var body: some View {
-        Button(action: edit) {
-            HStack(spacing: 6) {
+        Button(action: open) {
+            HStack(spacing: Theme.Space.s) {
                 BotFace(bot: bot, size: 32)
-                Text(bot.name).font(Theme.Font.headline).foregroundStyle(Theme.text).lineLimit(1)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(bot.name).font(Theme.Font.headline).foregroundStyle(Theme.text).lineLimit(1)
+                    Text(subtitle).font(Theme.Font.footnote).foregroundStyle(Theme.secondary).lineLimit(1)
+                }
             }
             .padding(.leading, 6)
             .padding(.trailing, 16)
@@ -134,10 +140,18 @@ struct BotTitle: View {
             .glassChip()
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: 240)
+        .frame(maxWidth: 260)
+        .contextMenu { if let edit { Button("Edit bot", systemImage: "pencil", action: edit) } }
+        .accessibilityElement(children: .combine)
         .accessibilityLabel(bot.name)
+        .accessibilityValue(subtitle)
         .accessibilityIdentifier("botChip")
     }
+}
+
+/// "studio · 3 tasks": the machine a bot runs on and its tasks not set aside, the Tasks sheet's count.
+func botSubtitle(machine: String, tasks: Int) -> String {
+    "\(machine) · \(tasks == 0 ? "No tasks" : tasks == 1 ? "1 task" : "\(tasks) tasks")"
 }
 
 /// A bot with no chat yet, picked from a list showing bots alone.
@@ -191,7 +205,11 @@ struct BotStartView: View {
         .page()
         .navigationBarTitleDisplayMode(.inline)
         .modifier(BareTopEdge(on: true))
-        .toolbar { ToolbarItem(placement: .principal) { BotTitle(bot: bot) { editing = true } } }
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                BotTitle(bot: bot, subtitle: botSubtitle(machine: store.name(of: server), tasks: 0)) { editing = true }
+            }
+        }
         .sheet(isPresented: $editing) { BotSheet(editing: (server, bot)) }
         .task(id: "\(task.server?.uuidString ?? "")|\(task.harness)") { await task.load() }
         // Re-aimed on every visit: a pick elsewhere leaves the bot, and Back is not a send.
@@ -294,6 +312,7 @@ func chatTime(_ date: Date, now: Date = .now) -> String {
 
 private struct BotRowView: View {
     @Environment(Store.self) private var store
+    @Environment(Nav.self) private var nav
     @Environment(\.openTask) private var openTask
     @Environment(\.openSession) private var openSession
     let key: SessionKey
@@ -325,6 +344,22 @@ private struct BotRowView: View {
                 line("Started a new task") { taskChip(id, title: title) }
             case .sent:
                 EmptyView()
+            case .routine(_, let name, let ts):
+                // Tight over the reply it heads, inside the chat's row spacing.
+                Button { nav.tab = .routines } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "clock.arrow.circlepath").font(.system(size: 11, weight: .semibold))
+                        Text([name, ts.flatMap(parseDate).map { $0.formatted(date: .omitted, time: .shortened) }]
+                            .compactMap { $0 }.joined(separator: " · "))
+                    }
+                    .font(Theme.Font.footnote)
+                    .foregroundStyle(Theme.tertiary)
+                    .padding(.leading, Theme.Space.xs)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(RowButtonStyle())
+                .padding(.bottom, -20)
+                .accessibilityIdentifier("routineLabel")
             case .botMessage(_, let botId, let title, let text, _):
                 VStack(alignment: .trailing, spacing: Theme.Space.xs) {
                     line("Message from") { botChip(id: botId, name: title) }
@@ -867,7 +902,7 @@ struct StalledCard: View {
     /// The bot, whose server judges its card where it can.
     let botId: String?
     let tasks: [SessionKey]
-    @AppStorage("bot.dismissedStalls") private var dismissedRaw = ""
+    @AppStorage(StallDismissals.key) private var dismissedRaw = ""
     /// A row's reply, held only while its sheet is up.
     @State private var picked: Picked?
     /// The row whose reply is being read, and the read, cancelled when the

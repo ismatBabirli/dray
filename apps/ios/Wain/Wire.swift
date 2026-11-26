@@ -300,8 +300,8 @@ struct UsageReading: Decodable, Hashable {
     struct Window: Decodable, Hashable {
         /// `five_hour`, `weekly`, else `other`.
         let kind: String
-        /// 0 to 100.
-        let usedPercent: Double
+        /// 0 to 100. Absent from Claude's older `rejected` line, which sends the reset alone.
+        let usedPercent: Double?
         let resetsAt: String?
         let minutes: Int?
     }
