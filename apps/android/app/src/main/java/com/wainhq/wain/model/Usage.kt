@@ -16,22 +16,37 @@ data class UsageChip(
     val back: String?,
 )
 
-/** The window a chip and the composer's ring read: five-hour, or the first window where there is none. */
-val UsageReading.headline: UsageWindow? get() = windows.firstOrNull { it.kind == "five_hour" } ?: windows.firstOrNull()
+/**
+ * A window's figure as the phones read it. Claude's older `rejected` line sends none: on a
+ * limited reading that window is spent (100); on any other it has no figure at all.
+ */
+fun UsageReading.used(w: UsageWindow): Double? = w.usedPercent ?: if (limited) 100.0 else null
+
+/** The window a chip and the composer's ring read: five-hour, else the fullest window with a figure. */
+val UsageReading.headline: UsageWindow?
+    get() = windows.firstOrNull { it.kind == "five_hour" && used(it) != null }
+        ?: windows.filter { used(it) != null }.maxByOrNull { used(it)!! }
+
+/** The headline's figure. */
+val UsageReading.headlinePercent: Double? get() = headline?.let { used(it) }
 
 /** Spent: the server said so, or a window is full. */
-val UsageReading.atLimit: Boolean get() = limited || windows.any { it.usedPercent >= 100 }
+val UsageReading.atLimit: Boolean get() = limited || windows.any { (used(it) ?: 0.0) >= 100 }
 
-/** One chip per agent with a reading, its highest five-hour across machines; spent ones first, then fullest. */
+/**
+ * One chip per agent with a reading: the one reading that is its worst across the shown machines
+ * (spent first, then the fullest headline) speaks for it, nothing mixed in from the others.
+ * "back" is the latest reset among that reading's spent windows, else its headline's.
+ */
 fun usageChips(readings: List<UsageReading>): List<UsageChip> =
     readings.groupBy { it.harness }.mapNotNull { (harness, list) ->
         val worst = list.filter { it.headline != null }.maxWithOrNull(
-            compareBy<UsageReading>({ it.atLimit }, { it.headline!!.usedPercent }),
+            compareBy<UsageReading>({ it.atLimit }, { it.headlinePercent }),
         ) ?: return@mapNotNull null
         val window = worst.headline!!
         // What comes back last is what holds the agent: a spent weekly outlasts the five-hour.
-        val spent = worst.windows.filter { it.usedPercent >= 100 }.maxByOrNull { parseDate(it.resetsAt) ?: 0L }
-        UsageChip(harness, window.usedPercent, worst.atLimit, (spent ?: window).resetsAt)
+        val spent = worst.windows.filter { (worst.used(it) ?: 0.0) >= 100 }.maxByOrNull { parseDate(it.resetsAt) ?: 0L }
+        UsageChip(harness, worst.headlinePercent!!, worst.atLimit, (spent ?: window).resetsAt)
     }.sortedWith(compareByDescending<UsageChip> { it.limited }.thenByDescending { it.percent })
 
 /** "5-hour", "Weekly", or "N-day" for any other window. */

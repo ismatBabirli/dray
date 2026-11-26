@@ -81,7 +81,7 @@ fun HomeTab(home: Map<HomeSection, List<HomeEntry<HomeItem>>>, list: LazyListSta
 }
 
 private fun key(e: HomeEntry<HomeItem>): String = when (val v = e.value) {
-    is HomeItem.Ask -> "ask-${v.event.id}"
+    is HomeItem.Ask -> "ask-${v.key}"
     is HomeItem.Merge -> "merge-${v.stall.task}"
     is HomeItem.Idle -> "idle-${v.stall.id}"
     is HomeItem.Task -> "task-${v.key}"
@@ -116,7 +116,7 @@ private fun WaitingCard(item: HomeItem, nav: TabNav) {
                     style = CardTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(store.where(item.key), style = Small)
             }
-            AskCard(item.key, item.event)
+            for (e in item.events) AskCard(item.key, e)
         }
         is HomeItem.Merge -> StallCard(item.stall, item.chat, nav, merge = true)
         is HomeItem.Idle -> StallCard(item.stall, item.chat, nav, merge = false)

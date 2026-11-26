@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.wainhq.wain.model.Picks
 import com.wainhq.wain.model.UsageChip
 import com.wainhq.wain.model.atLimit
+import com.wainhq.wain.model.used
 import com.wainhq.wain.model.planLabel
 import com.wainhq.wain.model.usageAgent
 import com.wainhq.wain.model.usageChips
@@ -48,6 +49,8 @@ import com.wainhq.wain.store.shownUsage
 import com.wainhq.wain.wire.UsageWindow
 import com.wainhq.wain.wire.parseDate
 import com.wainhq.wain.wire.shortAge
+import android.text.format.DateFormat
+import androidx.compose.ui.platform.LocalContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -69,19 +72,24 @@ fun UsageRing(percent: Double, limited: Boolean, size: Dp = 18.dp, track: Color 
     }
 }
 
-/** A reset as the sheet says it: the time today, else the day and time, 24-hour as the design writes it. */
-fun resetLabel(iso: String?, now: Long = System.currentTimeMillis()): String? {
+/** A reset as the sheet says it: the time today, else the day and time, on the phone's 12/24-hour setting. */
+fun resetLabel(iso: String?, h24: Boolean, now: Long = System.currentTimeMillis()): String? {
     val at = parseDate(iso) ?: return null
     val a = Calendar.getInstance().apply { timeInMillis = at }
     val b = Calendar.getInstance().apply { timeInMillis = now }
     val sameDay = a.get(Calendar.YEAR) == b.get(Calendar.YEAR) && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR)
+    val time = if (h24) "HH:mm" else "h:mm a"
     val pattern = when {
-        sameDay -> "HH:mm"
-        at - now < 6 * 86_400_000L -> "EEE HH:mm"
+        sameDay -> time
+        at - now < 6 * 86_400_000L -> "EEE $time"
         else -> "MMM d"
     }
     return SimpleDateFormat(pattern, Locale.getDefault()).format(Date(at))
 }
+
+/** Whether the phone writes times 24-hour, read where a reset is drawn. */
+@Composable
+private fun h24(): Boolean = DateFormat.is24HourFormat(LocalContext.current)
 
 /** Home's strip: one chip per agent with a reading on the shown machines. */
 @Composable
@@ -99,7 +107,7 @@ fun UsageChips(open: () -> Unit) {
 private fun UsageChipView(chip: UsageChip, open: () -> Unit) {
     val shape = RoundedCornerShape(8.dp)
     val name = usageAgent(chip.harness)
-    val back = if (chip.limited) resetLabel(chip.back)?.let { "back $it" } ?: "at limit" else null
+    val back = if (chip.limited) resetLabel(chip.back, h24())?.let { "back $it" } ?: "at limit" else null
     Row(
         Modifier.height(32.dp).clip(shape)
             .then(if (chip.limited) Modifier.background(Wain.destructive.copy(alpha = if (Wain.dark) 0.16f else 0.12f)) else Modifier.border(1.dp, Wain.outline, shape))
@@ -139,7 +147,7 @@ fun UsageSheet(dismiss: () -> Unit) {
                             val age = parseDate(r.at)?.let { shortAge(it).let { a -> if (a == "now") "just now" else "$a ago" } }
                             Text(listOfNotNull(planLabel(r.plan), age).joinToString(" · "), style = Wain.Font.footnote.copy(fontSize = 12.sp, lineHeight = 16.sp, color = Wain.tertiary))
                         }
-                        for (w in r.windows) WindowBar(w, w.usedPercent >= 100)
+                        for (w in r.windows) WindowBar(w, r.used(w))
                         when {
                             r.usingOverage -> Text("Using extra usage.", style = Wain.Font.footnote.copy(color = Wain.tertiary))
                             r.atLimit && r.overage == "rejected" -> Text("Extra usage is off for this account.", style = Wain.Font.footnote.copy(color = Wain.tertiary))
@@ -155,9 +163,11 @@ fun UsageSheet(dismiss: () -> Unit) {
     }
 }
 
+/** One window: its name and reset over a bar; a window with no figure gets no bar. */
 @Composable
-private fun WindowBar(w: UsageWindow, spent: Boolean) {
-    val reset = resetLabel(w.resetsAt)
+private fun WindowBar(w: UsageWindow, used: Double?) {
+    val spent = (used ?: 0.0) >= 100
+    val reset = resetLabel(w.resetsAt, h24())
     val label = windowLabel(w) + when {
         spent -> " · limit reached" + (reset?.let { " · back $it" } ?: "")
         else -> reset?.let { " · resets $it" } ?: ""
@@ -166,10 +176,13 @@ private fun WindowBar(w: UsageWindow, spent: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row {
             Text(label, Modifier.weight(1f), style = Wain.Font.footnote.copy(fontSize = 14.sp, lineHeight = 20.sp, color = ink))
-            Text("${w.usedPercent.toInt()}%", style = Wain.Font.footnote.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium,
-                color = if (spent) Wain.destructive else Wain.text))
+            used?.let {
+                Text("${it.toInt()}%", style = Wain.Font.footnote.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium,
+                    color = if (spent) Wain.destructive else Wain.text))
+            }
         }
-        val f = (w.usedPercent / 100).coerceIn(0.0, 1.0).toFloat()
+        if (used == null) return@Column
+        val f = (used / 100).coerceIn(0.0, 1.0).toFloat()
         Row(Modifier.fillMaxWidth().height(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             if (spent) Box(Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp)).background(Wain.destructive))
             else {

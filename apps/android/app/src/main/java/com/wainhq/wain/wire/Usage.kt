@@ -3,11 +3,11 @@ package com.wainhq.wain.wire
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
-/** One window of an agent's plan: `five_hour`, `weekly` or `other`, filled 0–100. */
+/** One window of an agent's plan: `five_hour`, `weekly` or `other`, filled 0–100; Claude's older `rejected` line gives no figure. */
 @Serializable
 data class UsageWindow(
     val kind: String = "other",
-    val usedPercent: Double = 0.0,
+    val usedPercent: Double? = null,
     /** RFC3339. */
     val resetsAt: String? = null,
     val minutes: Int? = null,

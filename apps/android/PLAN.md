@@ -19,8 +19,10 @@ reads and drives it over the same WebSocket the desktop and iOS use
   wider a navigation rail with New task at its top, and a chat opens beside
   the tab's list instead of over it (`Route.inPane`). The bar hides in a chat
   and under a sheet. Home is what waits on the reader, what works and what is
-  new (`model/Home.kt`, `store/StoreTabs.kt`); Bots is the roster, waiting
-  first; Tasks is the list below; Routines is every bot's routines
+  new (`model/Home.kt`, `store/StoreTabs.kt`), one row per session at its
+  most urgent place; Bots is the roster, waiting first, and a bot's chat says
+  "<machine> · N tasks" under its name and labels a reply to a routine run's
+  report with the routine; Tasks is the list below; Routines is every bot's routines
   (`list_routines`, pause, delete), soonest first. Home's yellow badge counts
   what waits; Bots' red one counts bots with unread replies.
 - **Machines**, where the gear was: the button leading every top bar, its dot
@@ -31,9 +33,11 @@ reads and drives it over the same WebSocket the desktop and iOS use
   tablet), opening a sheet over `NewTask`: the prompt and its mic, Run by (Me
   or a bot, the aim-at-bot path), project, agent, machine, worktree, Save draft.
 - **Usage** (`wire/Usage.kt`, `model/Usage.kt`): `live_state.usage` and
-  `usage_changed`, one reading per agent per server. Home's chips show each
-  agent's worst five-hour window, a sheet every window by machine, and the
-  composer's model chip a ring with its own machine's figure.
+  `usage_changed`, one reading per agent per server. A reading's headline is
+  its five-hour window, else its fullest; a window may carry no figure (spent
+  on a limited reading, blank otherwise). Home's chips show each agent's worst
+  reading, a sheet every window by machine, and the composer's model chip a
+  ring with its own machine's figure. Times follow the phone's 12/24 hours.
 - **Every saved server at once, one merged list**: the desktop sidebar's
   stage runs, a child hanging off its parent on an elbow, PR marks from
   `pr_marks`, a project strip, the settled view, a waiting card under its

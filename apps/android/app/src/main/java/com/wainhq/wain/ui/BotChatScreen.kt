@@ -29,6 +29,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.wainhq.wain.store.stalls
+import com.wainhq.wain.store.judgedStalls
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -68,7 +74,10 @@ import kotlinx.coroutines.launch
  * newer one, which the screen follows.
  */
 @Composable
-fun BotChatScreen(opened: SessionKey, bot: Bot, back: () -> Unit, openTask: (SessionKey) -> Unit, openSession: (SessionKey) -> Unit, openSettings: (String) -> Unit) {
+fun BotChatScreen(
+    opened: SessionKey, bot: Bot, back: () -> Unit, openTask: (SessionKey) -> Unit, openSession: (SessionKey) -> Unit,
+    openRoutines: () -> Unit = {}, openSettings: (String) -> Unit,
+) {
     val store = LocalStore.current
     val scope = rememberCoroutineScope()
     val chat = store.botChat(opened.server, bot)
@@ -100,7 +109,8 @@ fun BotChatScreen(opened: SessionKey, bot: Bot, back: () -> Unit, openTask: (Ses
     val hidden = chat.indexOf(segments[0]).let { if (it > 0) chat[it - 1] else null }
     val complete = store.transcripts[segments[0]]?.olderBefore == null && hidden == null
     // An agent switch draws nothing between them: the reader just picked the agent (#1417).
-    val items = segments.flatMap { botItems(store.transcripts[it]?.events.orEmpty()) }
+    val runs = store.items.filter { (k, v) -> k.server == key.server && v.routineRun != null }.keys.map { it.id }.toSet()
+    val items = segments.flatMap { botItems(store.transcripts[it]?.events.orEmpty(), runs) }
     val rows = botRows(items)
 
     // Where unread replies begin, settled once so reading the chat never moves it.
@@ -152,17 +162,29 @@ fun BotChatScreen(opened: SessionKey, bot: Bot, back: () -> Unit, openTask: (Ses
     ) {
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().background(Wain.page).statusBarsPadding().navigationBarsPadding().imePadding()) {
-                Row(Modifier.fillMaxWidth().height(60.dp).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     IconButton(back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Wain.text) }
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) { BotTitle(bot) { editing = true } }
-                    // The PR button's place: a bot has no PR, and its tasks are what the list leaves out.
-                    Row(
-                        Modifier.clip(RoundedCornerShape(Wain.Radius.md)).clickable { showingTasks = true }.padding(10.dp)
+                    // The face edits the bot; the name and its line open the Tasks sheet, as the button does.
+                    BotFace(bot, 36.dp, Modifier.clip(CircleShape).clickable(onClickLabel = "Edit bot") { editing = true })
+                    val machine = if (store.connection(key.server)?.welcome?.macApp == true) "This Mac" else store.name(key.server)
+                    Column(Modifier.weight(1f).clip(RoundedCornerShape(Wain.Radius.md)).clickable(onClickLabel = "Tasks") { showingTasks = true }
+                        .padding(horizontal = 4.dp, vertical = 2.dp)) {
+                        Text(bot.name, style = Wain.Font.body.copy(fontSize = 18.sp, lineHeight = 24.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("$machine · ${if (taskCount == 0) "No tasks" else plural(taskCount, "task")}",
+                            style = Wain.Font.footnote.copy(fontSize = 12.sp, lineHeight = 16.sp, color = Wain.secondary), maxLines = 1)
+                    }
+                    // Yellow while one of its tasks waits on the reader, as the stall card below says.
+                    val waiting = taskAsks.isNotEmpty() ||
+                        (store.judgedStalls(key.server, bot.id, tasks, System.currentTimeMillis()) ?: store.stalls(tasks)).isNotEmpty()
+                    Box(
+                        Modifier.size(48.dp).clip(CircleShape).clickable { showingTasks = true }
                             .semantics { contentDescription = if (taskCount == 0) "Tasks" else "Tasks, $taskCount" },
-                        verticalAlignment = Alignment.CenterVertically,
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Outlined.Checklist, null, Modifier.size(22.dp), tint = Wain.text)
-                        if (taskCount > 0) Text(" $taskCount", style = Wain.Font.headline)
+                        Glyph24 { tasksGlyph(Wain.text, false) }
+                        if (waiting) Box(Modifier.align(Alignment.TopEnd).offset(x = (-7).dp, y = 8.dp).size(13.dp).clip(CircleShape)
+                            .background(Wain.page).padding(2.dp).clip(CircleShape).background(Wain.accent))
                     }
                 }
                 Box(Modifier.weight(1f)) {
@@ -211,7 +233,7 @@ fun BotChatScreen(opened: SessionKey, bot: Bot, back: () -> Unit, openTask: (Ses
                             }
                             queued.reversed().forEach { q -> item("queued-${q.id}") { MaxWidth { BotUserBubble(q.text) } } }
                             for (i in rows.indices.reversed()) item(rows[i].id) {
-                                MaxWidth { BotChatRow(key, rows, i, items, newFrom?.at, openTask, openSession) }
+                                MaxWidth { BotChatRow(key, rows, i, items, newFrom?.at, openTask, openSession, openRoutines) }
                             }
                             if (transcript == null) item("placeholder") {
                                 MaxWidth {

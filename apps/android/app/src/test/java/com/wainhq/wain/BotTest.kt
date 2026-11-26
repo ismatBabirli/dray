@@ -51,6 +51,21 @@ class BotTest {
         ev(id, """{"type":"tool_call_completed","callId":"$call","result":{"text":${q(text)},"isError":false}}""")
 
     @Test
+    fun aRoutineReportLabelsTheReplyAndATaskReportDoesNot() {
+        fun report(id: String, from: String, title: String) =
+            ev(id, """{"type":"user_message","text":"done","from":{"sessionId":"$from","title":"$title"}}""")
+        val items = botItems(listOf(
+            report("r1", "run-1", "Morning PR sweep"), said("a1", "Two PRs wait on you."),
+            report("r2", "task-1", "Fix login"), said("a2", "Login is fixed."),
+            user("u1", "thanks"), said("a3", "Any time."),
+        ), routineRuns = setOf("run-1"))
+        val replies = items.filterIsInstance<BotItem.Assistant>()
+        assertEquals("Morning PR sweep", replies[0].routine?.name)
+        assertEquals(listOf(null, null), replies.drop(1).map { it.routine })
+        assertEquals(1, items.count { it is BotItem.User })
+    }
+
+    @Test
     fun anIssueCardKnowsWhatWasStartedFromIt() {
         val card = """{"type":"issue_card","repo":"acme/app","issues":[
             {"number":1,"title":"Fix login","url":"u1","closed":false,"labels":[{"name":"bug","color":"d73a4a"}],"excerpt":"Nothing happens."},

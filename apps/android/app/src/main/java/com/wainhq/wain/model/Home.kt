@@ -5,23 +5,22 @@ package com.wainhq.wain.model
 
 enum class HomeSection { Waiting, Working, Fresh }
 
-/**
- * One thing Home could draw: what it is (`value`), the task or bot it belongs to (`owner`),
- * where it goes and when it last moved.
- */
-data class HomeEntry<T>(val owner: String, val section: HomeSection, val at: Long, val value: T)
+/** Why a session is on Home, most urgent first: a card, a ready PR, a stall, then working, then new. */
+enum class HomeKind(val section: HomeSection) {
+    Card(HomeSection.Waiting), Merge(HomeSection.Waiting), Stall(HomeSection.Waiting),
+    Working(HomeSection.Working), Fresh(HomeSection.Fresh),
+}
+
+/** One reason a session could be on Home: what it is (`value`), the session it belongs to, and when it last moved. */
+data class HomeEntry<T>(val session: String, val kind: HomeKind, val at: Long, val value: T)
 
 /**
- * Home's sections, newest first in each. An owner keeps only its most urgent place: a task
- * waiting on the reader is never also under Working. Waiting keeps every entry, since a card
- * and a merge on one task are two things to do. Empty sections are absent.
+ * Home's sections, newest first in each: every session once, at its most urgent place. The
+ * Waiting count, Home's yellow badge, counts these rows. Empty sections are absent.
  */
-fun <T> homeSections(entries: List<HomeEntry<T>>): Map<HomeSection, List<HomeEntry<T>>> {
-    val top = entries.groupBy { it.owner }.mapValues { (_, same) -> same.minOf { it.section.ordinal } }
-    val kept = entries.filter { it.section.ordinal == top[it.owner] }
-        .let { list -> list.filter { it.section == HomeSection.Waiting } + list.filter { it.section != HomeSection.Waiting }.sortedByDescending { it.at }.distinctBy { it.owner } }
-    return kept.sortedByDescending { it.at }.groupBy { it.section }.toSortedMap()
-}
+fun <T> homeSections(entries: List<HomeEntry<T>>): Map<HomeSection, List<HomeEntry<T>>> =
+    entries.groupBy { it.session }.values.map { same -> same.minWith(compareBy({ it.kind.ordinal }, { -it.at })) }
+        .sortedByDescending { it.at }.groupBy { it.kind.section }.toSortedMap()
 
 /** Where a bot sits in the roster: waiting on the reader, unread, working, then the rest. */
 data class BotRank(val waiting: Boolean, val unread: Boolean, val working: Boolean, val at: Long) {

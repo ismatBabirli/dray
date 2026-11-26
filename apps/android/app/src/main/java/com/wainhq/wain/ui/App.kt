@@ -173,7 +173,11 @@ fun App(incoming: PairLink?, consumed: () -> Unit) {
             is Route.Session -> {
                 val bot = store.bot(route.key)
                 if (bot != null) BotChatScreen(route.key, bot, ::pop, openTask = { push(Route.Session(it)) },
-                    openSession = { push(Route.Session(it)) }) { push(Route.ServerSettings(it)) }
+                    openSession = { push(Route.Session(it)) }, openRoutines = {
+                        forward.value = false
+                        stack.removeAll { it != Route.List }
+                        tab = Tab.Routines
+                    }) { push(Route.ServerSettings(it)) }
                 else TranscriptScreen(route.key, ::pop, openChanges = { push(Route.Changes(route.key)) }) { push(Route.ServerSettings(it)) }
             }
             is Route.Changes -> ChangesScreen(route.key, ::pop)

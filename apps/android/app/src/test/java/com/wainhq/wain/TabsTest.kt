@@ -2,6 +2,7 @@ package com.wainhq.wain
 
 import com.wainhq.wain.model.BotRank
 import com.wainhq.wain.model.HomeEntry
+import com.wainhq.wain.model.HomeKind
 import com.wainhq.wain.model.HomeSection
 import com.wainhq.wain.model.MachineDot
 import com.wainhq.wain.model.botOrder
@@ -12,6 +13,8 @@ import com.wainhq.wain.model.routineOrder
 import com.wainhq.wain.model.scheduleLabel
 import com.wainhq.wain.model.usageChips
 import com.wainhq.wain.model.windowLabel
+import com.wainhq.wain.model.headline
+import com.wainhq.wain.model.used
 import com.wainhq.wain.wire.Routine
 import com.wainhq.wain.wire.RoutineSchedule
 import com.wainhq.wain.wire.UsageReading
@@ -24,21 +27,23 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TabsTest {
-    private fun e(owner: String, s: HomeSection, at: Long) = HomeEntry(owner, s, at, "$owner/$s")
+    private fun e(session: String, k: HomeKind, at: Long) = HomeEntry(session, k, at, "$session/$k")
 
-    @Test fun homeKeepsTheMostUrgentPlace() {
+    @Test fun homeFilesEachSessionOnceAtItsMostUrgentPlace() {
         val out = homeSections(listOf(
-            e("a", HomeSection.Working, 5), e("a", HomeSection.Waiting, 1),
-            e("b", HomeSection.Fresh, 9), e("b", HomeSection.Working, 2),
-            e("c", HomeSection.Fresh, 3),
+            e("a", HomeKind.Working, 5), e("a", HomeKind.Card, 1),
+            e("b", HomeKind.Fresh, 9), e("b", HomeKind.Working, 2),
+            e("c", HomeKind.Fresh, 3),
+            // A card outranks a ready PR, and a ready PR a stall, on one session.
+            e("d", HomeKind.Merge, 8), e("d", HomeKind.Card, 4), e("e", HomeKind.Stall, 7), e("e", HomeKind.Merge, 6),
         ))
-        assertEquals(listOf("a"), out[HomeSection.Waiting]!!.map { it.owner })
-        assertEquals(listOf("b"), out[HomeSection.Working]!!.map { it.owner })
-        assertEquals(listOf("c"), out[HomeSection.Fresh]!!.map { it.owner })
+        assertEquals(listOf("e/Merge", "d/Card", "a/Card"), out[HomeSection.Waiting]!!.map { it.value })
+        assertEquals(listOf("b"), out[HomeSection.Working]!!.map { it.session })
+        assertEquals(listOf("c"), out[HomeSection.Fresh]!!.map { it.session })
     }
 
-    @Test fun waitingKeepsEveryCardNewestFirst() {
-        val out = homeSections(listOf(e("a", HomeSection.Waiting, 1), e("a", HomeSection.Waiting, 7), e("b", HomeSection.Waiting, 4)))
+    @Test fun waitingCountsRowsNewestFirst() {
+        val out = homeSections(listOf(e("a", HomeKind.Card, 1), e("b", HomeKind.Stall, 7), e("c", HomeKind.Merge, 4)))
         assertEquals(listOf(7L, 4L, 1L), out[HomeSection.Waiting]!!.map { it.at })
         assertNull(out[HomeSection.Working])
         assertTrue(homeSections(emptyList<HomeEntry<String>>()).isEmpty())
@@ -114,6 +119,28 @@ class TabsTest {
         val chip = usageChips(listOf(reading("claude_code", 40.0, weekly = 100.0))).single()
         assertTrue(chip.limited)
         assertEquals("2026-12-01T09:00:00Z", chip.back)
+    }
+
+    @Test fun aReadingWithNoFiveHourIsReadByItsFullestWindow() {
+        val weeklyOnly = UsageReading("claude_code", at = "x", windows = listOf(
+            UsageWindow("other", 20.0, "2026-12-20T00:00:00Z", 43200), UsageWindow("weekly", 74.0, "2026-12-01T09:00:00Z", 10080),
+        ))
+        assertEquals("weekly", weeklyOnly.headline?.kind)
+        assertEquals(74.0, usageChips(listOf(weeklyOnly)).single().percent, 0.0)
+    }
+
+    @Test fun aWindowWithNoFigureIsSpentOnlyOnALimitedReading() {
+        val rejected = UsageReading("claude_code", limited = true, at = "x", windows = listOf(UsageWindow("five_hour", null, "2026-11-26T14:00:00Z")))
+        assertEquals(100.0, rejected.used(rejected.windows[0]))
+        val chip = usageChips(listOf(rejected)).single()
+        assertTrue(chip.limited)
+        assertEquals(100.0, chip.percent, 0.0)
+        assertEquals("2026-11-26T14:00:00Z", chip.back)
+        // Not limited: no figure, never the headline, and no chip from it alone.
+        val blank = UsageReading("codex", at = "x", windows = listOf(UsageWindow("five_hour", null), UsageWindow("weekly", 8.0)))
+        assertNull(blank.used(blank.windows[0]))
+        assertEquals("weekly", blank.headline?.kind)
+        assertTrue(usageChips(listOf(UsageReading("pi", at = "x", windows = listOf(UsageWindow("five_hour", null))))).isEmpty())
     }
 
     @Test fun windowNames() {
