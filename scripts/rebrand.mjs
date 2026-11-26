@@ -22,6 +22,7 @@ const RULES = [
   [/Monorepo-Labs/g, "IsmatBabirli"],
   // The iPhone app ships under the company: Plorigo, on the same team.
   [/com\.yogesh\.dray\.ios/g, "com.plorigo.wain.ios"],
+  [/com\.dray\.app\b/g, "com.plorigo.wain"],
   [/com([./])yogesh\1dray/g, "com$1wainhq$1dray"],
   // server_id's pinned vector in Rust, Swift and Kotlin: sha256 of "dray-server\0test-token"
   // becomes the "wain-server\0" one, or all three tests fail on the renamed salt.
@@ -113,6 +114,7 @@ function selfTest() {
     ['owner: "monorepo-labs", repo: "dray"', 'owner: "ismatbabirli", repo: "wain"'],
     ["com.yogesh.dray.server", "com.wainhq.wain.server"],
     ["com.yogesh.dray.ios.notify com.yogesh.dray.ios", "com.plorigo.wain.ios.notify com.plorigo.wain.ios"],
+    ['applicationId = "com.dray.app"', 'applicationId = "com.plorigo.wain"'],
     ["app/src/main/java/com/yogesh/dray/wire/Wire.kt", "app/src/main/java/com/wainhq/wain/wire/Wire.kt"],
     // His own MIT package, a real dependency: must survive.
     ["@yogesharc/thinking-orbs com.github.yogesharc:thinking-orbs", "@yogesharc/thinking-orbs com.github.yogesharc:thinking-orbs"],
