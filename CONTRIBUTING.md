@@ -76,18 +76,15 @@ screenshot or recording for the PR.
 2. **Open the PR as a draft** while you work: `gh pr create --draft`. Drafts
    are not reviewed.
 3. **Mark it ready** (`gh pr ready`) when it is done. That runs the
-   `Claude Code Review` Action
-   ([workflow](.github/workflows/claude-code-review.yml),
-   [prompt](.claude/commands/ci-code-review.md)) on every push from then on.
-   Its `claude-review` check is required on `main`.
-4. **Fix what it finds** and push. It reviews each push again. A PR is ready
-   to merge when the latest review on the head commit says "No issues found",
-   "No new issues found since …", or "Skipped: …" for a trivial change. A run
-   that posts no comment is a broken review, not a clean one.
+   `Claude review` Action ([workflow](.github/workflows/claude-review.yml),
+   [rules](.github/claude-review.md)) on every push from then on. It writes an
+   "AI review" section at the end of the PR description and comments each
+   finding inline.
+4. **Fix what it finds**, resolve each finding's thread, and push. It reviews
+   each push again. A PR is ready to merge when the latest review approves it:
+   `github-actions[bot]` approves the head commit once it finds no defects and
+   none of its threads is unresolved. A new push withdraws the approval.
 5. **Squash merge.** One commit per PR on `main`, titled with its number.
-
-A PR that touches only markdown, images or video is not reviewed: the check
-passes on its own.
 
 ### Screenshots and videos
 
