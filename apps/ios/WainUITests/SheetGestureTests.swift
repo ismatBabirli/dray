@@ -5,7 +5,7 @@ import XCTest
 /// a code block only scrolls it, and the left edge still goes back (#1415). Against a server
 /// holding the bot `TEST_RUNNER_WAIN_BOT`, with one task, whose chat ends on a code block wider
 /// than the screen starting `let WIDE`, with the microphone granted so the orb stays:
-///   xcrun simctl privacy <udid> grant microphone com.wainhq.wain.ios
+///   xcrun simctl privacy <udid> grant microphone com.plorigo.wain.ios
 ///   TEST_RUNNER_WAIN_URL=ws://127.0.0.1:… TEST_RUNNER_WAIN_TOKEN=… TEST_RUNNER_WAIN_BOT=Ops \
 ///   xcodebuild test -only-testing:WainUITests/SheetGestureTests
 final class SheetGestureTests: XCTestCase {
