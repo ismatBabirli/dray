@@ -1969,15 +1969,11 @@ macro_rules! table {
     };
 }
 
-/// What the Mac's server answers beyond the core: Remote access, which moved
-/// into it from the app, and the restart an update asks for.
+/// What the Mac's server answers beyond the core: the restart an update asks
+/// for, and dictation.
 #[cfg(feature = "desktop")]
 async fn dispatch_mac(cmd: &str, args: Value, sink: Sink) -> Answer {
     table! { cmd, args;
-        get_remote_access() => ok(crate::remote_access::get_remote_access());
-        set_remote_access(on: bool) => crate::remote_access::set_remote_access(sink, on).await;
-        remote_access_token() => crate::remote_access::remote_access_token().await;
-        remote_access_qr() => crate::remote_access::remote_access_qr().await;
         restart_when_idle() => ok(restart_when_idle().await);
         transcribe_upload(path: String) => crate::transcription::transcribe_upload(path).await;
     }
@@ -1991,15 +1987,7 @@ async fn dispatch(cmd: &str, args: Value, sink: Sink) -> Answer {
         return Err(Json::text(format!("unknown command {cmd}")));
     }
     #[cfg(feature = "desktop")]
-    if matches!(
-        cmd,
-        "get_remote_access"
-            | "set_remote_access"
-            | "remote_access_token"
-            | "remote_access_qr"
-            | "restart_when_idle"
-            | "transcribe_upload"
-    ) {
+    if matches!(cmd, "restart_when_idle" | "transcribe_upload") {
         return dispatch_mac(cmd, args, sink).await;
     }
     // The recorder and model live in the app, so a client with no microphone
@@ -2034,6 +2022,12 @@ async fn dispatch(cmd: &str, args: Value, sink: Sink) -> Answer {
         // not yet listening when it connected — `wain-serve` included, which
         // an app installed after it meets as This Mac.
         live_state() => ok(HUB.live.lock().unwrap_or_else(|e| e.into_inner()).payload());
+        // Remote access on every server, so an app can pair a phone with a
+        // `wain-serve` straight (#23). Only a client holding the token gets here.
+        get_remote_access() => ok(crate::remote_access::get_remote_access());
+        set_remote_access(on: bool) => crate::remote_access::set_remote_access(sink, on).await;
+        remote_access_token() => crate::remote_access::remote_access_token().await;
+        remote_access_qr(name: Option<String>) => crate::remote_access::remote_access_qr(name).await;
         // Sessions.
         send_msg(
             session_id: String, prompt: String, attachment_paths: Vec<String>,
@@ -2638,6 +2632,20 @@ mod tests {
         let err = dispatch("stop_task", json!({ "sessionId": 1 }), sink).await.unwrap_err();
         let err: Value = serde_json::from_str(&err.0).unwrap();
         assert!(err.as_str().unwrap().starts_with("invalid arguments to stop_task"));
+    }
+
+    /// A `wain-serve` answers Remote access the way the Mac's server does, so
+    /// an app can pair a phone with it (#23). Off here, so no address yet.
+    #[tokio::test]
+    async fn every_server_answers_remote_access() {
+        let sink = Sink::new(|_, _| {});
+        let now = dispatch("get_remote_access", Value::Null, sink.clone()).await.unwrap();
+        let now: Value = serde_json::from_str(&now.0).unwrap();
+        assert_eq!(now["on"], json!(false));
+        for args in [Value::Null, json!({ "name": "Hetzner box" })] {
+            let err = dispatch("remote_access_qr", args, sink.clone()).await.unwrap_err();
+            assert_eq!(err, Json::from(json!("Remote access has no address yet")));
+        }
     }
 
     /// Replies are serialized off the typed result; the JSON must read the same

@@ -104,11 +104,15 @@ pub async fn remote_access_token() -> Result<String, String> {
 
 /// The phone's pairing QR, as SVG: [`wain_proto::pair_link`] for this
 /// address. It carries the token, so it is asked for when the reader opens it,
-/// the same as Copy.
-pub async fn remote_access_qr() -> Result<String, String> {
+/// the same as Copy. `name` is what the asking app calls this server, so the
+/// phone names it the same; without one it is this machine's own name.
+pub async fn remote_access_qr(name: Option<String>) -> Result<String, String> {
     let address = get_remote_access().address.ok_or("Remote access has no address yet")?;
     let token = remote_access_token().await?;
-    let name = tokio::task::spawn_blocking(wain_proto::machine_name).await.map_err(|e| e.to_string())?;
+    let name = match name.filter(|n| !n.trim().is_empty()) {
+        Some(name) => name,
+        None => tokio::task::spawn_blocking(wain_proto::machine_name).await.map_err(|e| e.to_string())?,
+    };
     let code = qrcode::QrCode::new(wain_proto::pair_link(&address, &token, &name)).map_err(|e| e.to_string())?;
     Ok(code.render::<qrcode::render::svg::Color>().min_dimensions(176, 176).build())
 }
