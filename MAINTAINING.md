@@ -36,7 +36,7 @@ The repo is public, so these hold on purpose (set 26 Nov 2026):
 - **Dependabot alerts and private vulnerability reporting are on**, so a security report arrives under Security → Advisories, not as a public issue. Dependabot opens no pull requests.
 - **Interaction limits are off on purpose**: the site's Feedback link sends people to issues, and a limit would block new accounts there.
 - **GitHub Apps that reach this repo:** Claude (the review workflows) and coolify-self-hosted-ismat (site deploys). Xcode Cloud's access is left from a dropped Xcode Cloud setup and can go. Showing or changing an app's access asks for Ismat's password.
-- Nothing deploys on push: Coolify's auto-deploy is off and the repo has no webhooks or deploy keys. Ismat is the only collaborator, and the Actions token defaults to read and cannot approve pull requests.
+- Nothing deploys on push: Coolify's auto-deploy is off and the repo has no webhooks or deploy keys. Ismat is the only collaborator, and the Actions token defaults to read. It may approve pull requests (on since 27 Nov 2026), which the Claude review needs: a workflow approves only where it asks for `pull-requests: write`, and outside pull requests' workflows wait for Ismat.
 - **The `caveman-commit` skill isn't installed.** Write commit messages by hand: a short plain subject, then why.
 
 ## Releases
