@@ -18,7 +18,7 @@ describe("greetingOf", () => {
   it("draws the server's greeting, else an older server's welcome alone", () => {
     const asks = ["Hi!", "What should I call you?"];
     expect(greetingOf({ ...bot, welcome: "old", greeting: asks })).toEqual(asks);
-    expect(greetingOf({ ...bot, welcome: "Hi Yogesh!" })).toEqual(["Hi Yogesh!"]);
+    expect(greetingOf({ ...bot, welcome: "Hi Morgan!" })).toEqual(["Hi Morgan!"]);
     expect(greetingOf(bot)).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
-// Wain: retakes the docs' server-setup screenshots (apps/docs/content/images/server-*.png)
+// Retakes the docs' server-setup screenshots (apps/docs/content/images/server-*.png)
 // from the desktop's server-setup demo, each in both themes, cropped to its dialog at 2x.
-// Upstream's show Dray, so after a sync that changes these dialogs, run it again:
+// Run it again after a change to these dialogs:
 //
 //   cd apps/desktop && pnpm exec vite --port 1477 --strictPort &
 //   node scripts/docs-screenshots.mjs http://localhost:1477 apps/docs/content/images

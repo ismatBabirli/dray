@@ -3800,14 +3800,14 @@ mod tests {
         let from = MessageSender {
             session_id: "abc-123".into(),
             title: "Fan out".into(),
-            machine: Some("Yogesh's Mac".into()),
+            machine: Some("Morgan's Mac".into()),
             bot_id: None,
             routine: None,
             ..Default::default()
         };
         assert_eq!(
             attribute("go", Some(&from)),
-            "[message from the Wain session \"Fan out\" (abc-123) on Yogesh's Mac]\n\ngo"
+            "[message from the Wain session \"Fan out\" (abc-123) on Morgan's Mac]\n\ngo"
         );
     }
 

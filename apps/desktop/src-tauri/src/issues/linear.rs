@@ -780,7 +780,7 @@ mod tests {
             "updatedAt": "2026-08-27T06:11:15.154Z",
             "description": "Long body the prompt never sees.",
             "state": { "name": "In Progress", "type": "started", "color": "#f2c94c" },
-            "assignee": { "name": "Yogesh Dhakal", "avatarUrl": "https://x/y.png" },
+            "assignee": { "name": "Morgan Dhakal", "avatarUrl": "https://x/y.png" },
             "labels": { "nodes": [{ "name": "Feature", "color": "#bb87fc" }] },
             "attachments": { "nodes": [
                 { "url": "https://github.com/ismatbabirli/wain/pull/143" },
@@ -838,7 +838,7 @@ mod tests {
         // Sorted, and the document among them is no pull request.
         assert_eq!(issue.pull_requests, vec![12, 143]);
         assert_eq!(issue.labels.len(), 1);
-        assert_eq!(issue.assignee.unwrap().name, "Yogesh Dhakal");
+        assert_eq!(issue.assignee.unwrap().name, "Morgan Dhakal");
     }
 
     /// The point of reading fields out of a `Value`: a node stripped to almost

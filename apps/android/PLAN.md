@@ -165,7 +165,7 @@ library**, its Compose port from JitPack, pinned to a tag in
 hold the mark, tile and themed (monochrome) layer. The splash is the mark
 alone, white and 40dp wide (`splash_mark.xml`), with no tile. The mark carries no shadow, and the legacy
 `ic_launcher.png`s come from `python3 brand/build.py --install` with the rest
-(FORK.md); rerun it after moving the mark.
+(MAINTAINING.md); rerun it after moving the mark.
 
 ## Build and test
 

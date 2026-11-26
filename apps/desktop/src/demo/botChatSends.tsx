@@ -41,7 +41,7 @@ const bash = (callId: string, command: string, out: string) => [
 ];
 
 const CMD = `D=/private/tmp/images; wain session send ${SIDEBAR} "User feedback on the sidebar bot rows, screenshot at $D/8.png: the selected bot row's highlight sticks out past the edges the other sidebar items line up on. Also reduce the bot row's vertical padding."
-wain session new --project /Users/yogesh/Documents/ade --hidden --title "Bot prompt: relay feedback without adding steps" "Edit the Wain bot system prompt at apps/desktop/src-tauri/src/bots/bot_prompt.md. Problem: when a bot passes the user's feedback to one of its tasks with 'wain session send', it adds instructions the user never gave, like 'push to the PR', 'record a video' or 'open a PR'."`;
+wain session new --project /Users/morgan/Documents/ade --hidden --title "Bot prompt: relay feedback without adding steps" "Edit the Wain bot system prompt at apps/desktop/src-tauri/src/bots/bot_prompt.md. Problem: when a bot passes the user's feedback to one of its tasks with 'wain session send', it adds instructions the user never gave, like 'push to the PR', 'record a video' or 'open a PR'."`;
 
 const EVENTS: AgentEvent[] = [
   user("fix this and also reduce y padding in the bot item"),

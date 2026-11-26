@@ -105,12 +105,12 @@ describe("matchesPullSearch", () => {
   const pr = row({
     number: 1234,
     headRefName: "worktree-dusky-denim",
-    listing: listing({ title: "Bump Vite to v12", author: "Yogesh" }),
+    listing: listing({ title: "Bump Vite to v12", author: "Morgan" }),
   });
 
   it("matches title, author and branch, case aside", () => {
     expect(matchesPullSearch(pr, "vite")).toBe(true);
-    expect(matchesPullSearch(pr, "yogesh")).toBe(true);
+    expect(matchesPullSearch(pr, "morgan")).toBe(true);
     expect(matchesPullSearch(pr, "DUSKY")).toBe(true);
     expect(matchesPullSearch(pr, "nothing")).toBe(false);
   });

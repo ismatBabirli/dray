@@ -4,7 +4,7 @@ Architecture plan. Written against `fx.sh/docs/using-fx/{cli,acp,fx-ask,sessions
 and `configure-fx/{permissions,configuration}`, and against Wain as of `main`
 at `3f6b67d2`.
 
-**Captured live against `fx 0.0.9`** (`/Users/yogesh/.local/bin/fx`, Codex
+**Captured live against `fx 0.0.9`** (`/Users/morgan/.local/bin/fx`, Codex
 subscription as the active provider, a Vercel AI Gateway login beside it).
 Every wire value below was read off a running `fx acp`, not the docs. Captures
 under `harness/fx/fixtures/`; the README there says which probe produced each.

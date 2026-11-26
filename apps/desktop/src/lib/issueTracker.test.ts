@@ -47,8 +47,8 @@ describe("connectedTrackers", () => {
   it("reads each account independently", () => {
     const account = {
       tracker: "github" as const,
-      userId: "yogesharc",
-      userName: "Yogesh",
+      userId: "morganarc",
+      userName: "Morgan",
       orgName: "github.com",
     };
 

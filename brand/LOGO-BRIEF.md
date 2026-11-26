@@ -27,7 +27,7 @@ Professional developers. The app is quiet, precise and dense with information, l
 - Geometric, precise, vector-clean: consistent stroke weights, real curves, optical balance.
 
 ## Must not
-- Look like Dray's icon (Wain is a renamed fork of Dray): a black, blocky "D"-like shape on a white rounded square. Nothing derived from Dray's mark.
+- A black, blocky letter shape on a white rounded square.
 - Literal clip-art: wagon, cart, shopping cart, wheel, robot, brain, chat bubble, circuit, sparkle/AI-star.
 - Gradients, glow, 3D, photorealism, textures, words in the mark.
 

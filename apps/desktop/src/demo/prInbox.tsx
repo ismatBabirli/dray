@@ -39,7 +39,7 @@ const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOSt
 
 const listing = (over: Partial<PrListing>): PrListing => ({
   title: "",
-  author: "yogesharc",
+  author: "morganarc",
   authorAvatar: null,
   updatedAt: ago(30),
   additions: 40,
@@ -202,7 +202,7 @@ function detail(row: InboxRow): PullRequest {
             replies: [
               comment({
                 id: "PRRC_2",
-                author: "yogesharc",
+                author: "morganarc",
                 body: "agreed, will move it",
                 url: `${url}#discussion_r2`,
                 createdAt: ago(10),
@@ -221,7 +221,7 @@ function detail(row: InboxRow): PullRequest {
       }),
       comment({
         id: "IC_2",
-        author: "yogesharc",
+        author: "morganarc",
         body: "Looks good apart from the memo.",
         url: `${url}#issuecomment-2`,
         createdAt: ago(8),

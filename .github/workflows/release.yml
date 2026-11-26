@@ -70,7 +70,7 @@ jobs:
     steps:
       # Wain: GitHub's default Xcode, 16.4, gives up type-checking Wain Island's views
       # ("unable to type-check this expression in reasonable time"). Take the
-      # newest one on the image instead, nearer what upstream's own Mac runs.
+      # newest one on the image instead, nearer what development Macs run.
       - name: Select Xcode
         if: runner.environment == 'github-hosted'
         run: |
@@ -220,7 +220,7 @@ jobs:
     steps:
       # Wain: GitHub's default Xcode, 16.4, gives up type-checking Wain Island's views
       # ("unable to type-check this expression in reasonable time"). Take the
-      # newest one on the image instead, nearer what upstream's own Mac runs.
+      # newest one on the image instead, nearer what development Macs run.
       - name: Select Xcode
         if: runner.environment == 'github-hosted'
         run: |
@@ -299,7 +299,7 @@ jobs:
     steps:
       # Wain: GitHub's default Xcode, 16.4, gives up type-checking Wain Island's views
       # ("unable to type-check this expression in reasonable time"). Take the
-      # newest one on the image instead, nearer what upstream's own Mac runs.
+      # newest one on the image instead, nearer what development Macs run.
       - name: Select Xcode
         if: runner.environment == 'github-hosted'
         run: |

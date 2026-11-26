@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 /// Where the Download for macOS buttons land: the dmg starts on its own, and
-/// upstream's sponsor ask is gone (FORK-PLAN.md §5), so it only says thanks.
+/// the page only says thanks.
 /// `/download` itself lists every platform and asks for nothing.
 export default function DownloadThanks() {
   return (

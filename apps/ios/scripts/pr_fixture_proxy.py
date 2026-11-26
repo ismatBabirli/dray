@@ -30,7 +30,7 @@ def comment(author, body, kind="comment", path=None, resolved=False, replies=0, 
     return {"author": author, "avatar": f"https://github.com/{author}.png?size=40", "body": body,
             "createdAt": f"2026-11-10T10:{minute:02d}:00Z", "url": URL + f"#c{minute}", "kind": kind,
             "path": path, "resolved": resolved,
-            "replies": [comment("yogesharc", "Fixed.", minute=minute + 30) for _ in range(replies)]}
+            "replies": [comment("morganarc", "Fixed.", minute=minute + 30) for _ in range(replies)]}
 
 COMMENTS = [
     comment("mira-k", "Looks right on the SE now. Ship it.", "approved", minute=1),
@@ -46,7 +46,7 @@ PASSED = [check("build-macos", "success"), check("cargo test", "success"),
 
 def pr(**over):
     base = {"number": 812, "title": "Tighten session row spacing", "url": URL, "state": "OPEN", "isDraft": False,
-            "author": "yogesharc", "baseRefName": "main", "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN",
+            "author": "morganarc", "baseRefName": "main", "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN",
             "reviewDecision": "APPROVED", "checks": PASSED, "comments": COMMENTS,
             "additions": 142, "deletions": 38, "changedFiles": 6}
     base.update(over)

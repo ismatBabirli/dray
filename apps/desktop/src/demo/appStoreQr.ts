@@ -1,7 +1,7 @@
 /// Wain's App Store link (https://apps.apple.com/app/id6839484995) as a QR code:
 /// version 3, error level M, one string per row, 1 dark. Made once with the
 /// `qrcode` crate the CLI already uses, rather than a QR package here, since
-/// only this demo draws one. Upstream's encoded Dray's listing.
+/// only this demo draws one.
 export const APP_STORE_QR = [
   "11111110110010011111001111111",
   "10000010100110110010001000001",

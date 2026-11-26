@@ -6,8 +6,8 @@ const paths = (text: string) => findFilePaths(text).map((m) => m.path);
 
 describe("findFilePaths", () => {
   it("finds a path in a sentence", () => {
-    expect(paths("I changed /Users/yogesh/app/Footer.js for you")).toEqual([
-      "/Users/yogesh/app/Footer.js",
+    expect(paths("I changed /Users/morgan/app/Footer.js for you")).toEqual([
+      "/Users/morgan/app/Footer.js",
     ]);
   });
 

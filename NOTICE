@@ -1,12 +1,6 @@
 Wain
 Copyright 2026 Ismat Babirli
 
-Wain is based on Dray by Yogesh Dhakal (https://github.com/monorepo-labs/dray),
-licensed under the Apache License, Version 2.0. The full license text is in
-LICENSE.
-
-Wain renames Dray and modifies it. The files changed from Dray are every file in
-this repository: scripts/rebrand.mjs renames upstream's code to Wain, and the
-git history (branch upstream-renamed, trailer "Upstream:") records which
-upstream commit each change came from. "Dray" is used here only to describe
-where Wain comes from.
+This product includes software licensed under the Apache License, Version 2.0,
+whose text is in LICENSE. The files in this repository have been modified from
+that software.

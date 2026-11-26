@@ -152,7 +152,7 @@ test against a running `wain-serve` (add, refused token, `live_state`,
 `server_invoke`, token kept out of `servers.json`, reconnect, remove), which
 passes.
 
-In the real app, Yogesh added a scratch `wain-serve` through Settings and saw
+In the real app, a scratch `wain-serve` added through Settings showed
 a remote session stream and a remote image load, which covers the native glue
 the page mocks: `server_event` reaching `listen`, and `wainserver://` in
 WKWebView. Notifications and the badge were checked only through the logic

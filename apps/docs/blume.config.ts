@@ -25,8 +25,7 @@ export default defineConfig({
   // rewrite, reachable because the docs are served through wainhq.com.
   // `source` is registered through the snippet's queue, which replays before
   // the first pageview fires, so every docs event can be told from the site's.
-  // The key is read at build: upstream's project key was written here, and a
-  // fork that kept it sent its readers to upstream's analytics. Unset, none.
+  // The key is read at build; unset, the docs send no analytics.
   analytics: process.env.DOCS_POSTHOG_KEY ? [
     posthog({
       key: process.env.DOCS_POSTHOG_KEY,
@@ -49,7 +48,7 @@ export default defineConfig({
   github: { owner: "ismatbabirli", repo: "wain", dir: "apps/docs" },
   footer: {
     copyright: `© ${new Date().getFullYear()} Wain`,
-    socials: { x: "https://x.com/yogesharc" },
+    socials: { github: "https://github.com/ismatbabirli/wain" },
   },
   // Served at wainhq.com/docs through a rewrite in apps/web. The content
   // folder is not named `docs`, or every page would land at /docs/docs/….

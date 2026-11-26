@@ -4,10 +4,8 @@ A desktop home for your coding agents. Wain wraps coding-agent CLIs (Claude
 Code, Codex, pi, fx, Grok) in a native chat UI. Run many sessions at once. Each gets
 its own worktree, diff view, PR panel, issue panel and embedded browser.
 
-Wain is based on [Dray](https://github.com/monorepo-labs/dray) by Yogesh
-Dhakal, under the Apache License 2.0; see [NOTICE](NOTICE). Upstream's code is
-renamed by [scripts/rebrand.mjs](scripts/rebrand.mjs) on every sync, as
-[FORK-PLAN.md](FORK-PLAN.md) explains.
+Wain is open source under the Apache License 2.0; see [LICENSE](LICENSE) and
+[NOTICE](NOTICE).
 
 ## Layout
 

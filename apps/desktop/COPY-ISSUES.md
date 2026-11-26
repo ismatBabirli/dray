@@ -530,7 +530,7 @@ because it is the one that always has an answer. A GitHub issue is assigned to
 nobody far more often than not, so a line opening with the assignee opens with a
 blank on most rows.
 
-> {yogesh} opened this
+> {morgan} opened this
 
 **Priority is absent on a GitHub row**, not drawn as "no priority". GitHub has
 no priority field at all, so a glyph there would say the work is unprioritized
@@ -579,7 +579,7 @@ is a row they cannot judge.
 
 **Subtext** — with Linear's mark beside it
 
-> {Acme}, as {Yogesh}
+> {Acme}, as {Morgan}
 
 **Button**
 

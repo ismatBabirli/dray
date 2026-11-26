@@ -83,11 +83,9 @@ import type {
   UpdateStatus,
 } from "@/types/events";
 
-/// Where Wain comes from, credited in About (NOTICE says the same).
-const UPSTREAM_URL = "https://github.com/monorepo-labs/dray";
 const REPO_URL = "https://github.com/ismatbabirli/wain";
 const ISSUES_URL = `${REPO_URL}/issues/new`;
-/// People who sponsor Wain, drawn in About. Empty: upstream's sponsors back Dray, not Wain.
+/// People who sponsor Wain, drawn in About. Empty until Wain has any.
 const SUPPORTERS: { name: string; note: string; url: string; avatar?: string }[] = [];
 
 /// The app's preferences, such as they are.
@@ -278,17 +276,6 @@ export default function SettingsPage({
             <Section title="Feedback">
               <ContactBlock />
             </Section>
-            <p className="text-ui text-muted-foreground">
-              Based on{" "}
-              <button
-                type="button"
-                onClick={() => void openUrl(UPSTREAM_URL)}
-                className="cursor-pointer text-foreground underline-offset-4 hover:underline"
-              >
-                Dray
-              </button>{" "}
-              by Yogesh Dhakal
-            </p>
           </>
         ),
         changelog: <ChangelogSettings channel={updateChannel} />,

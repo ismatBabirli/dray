@@ -1,7 +1,6 @@
 /// Onboarding's sounds: a shimmer under the logo's light, made in code.
-/// Upstream follows it with a recorded song (#1567), which Wain drops. The shimmer was picked by
-/// ear (#1421) from takes that live in this file's history, as does the synth
-/// groove the song replaced.
+/// The shimmer was picked by ear (#1421) from takes that live in this file's
+/// history, as does the synth groove that came before it.
 ///
 /// Every voice stays above ~140Hz or leans on harmonics, since a laptop's
 /// speakers drop anything lower.
@@ -84,8 +83,8 @@ export function replayOnboardingMusic() {
   startOnboardingMusic(0);
 }
 
-/// Wain plays no song: upstream's sings "Welcome to Dray" (FORK.md). Never
-/// playing leaves `played` false, so the mute button never draws.
+/// Wain plays no onboarding song. Never playing leaves `played` false, so the
+/// mute button never draws.
 export function startOnboardingMusic(_fullAtMs: number) {}
 
 /// Decaying noise as an impulse: a large soft room.

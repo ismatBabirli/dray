@@ -39,7 +39,7 @@ describe("botItems", () => {
   it("keeps the conversation and the tasks, nothing else", () => {
     const items = botItems([
       user("start", true),
-      said("Hi Yogesh"),
+      said("Hi Morgan"),
       user("ship the pricing page"),
       call("c1", "ls -la"),
       result("c1", "a b c"),
@@ -225,7 +225,7 @@ describe("botItems", () => {
     const sent = "01a1d052-e620-74d4-8ef2-aa9965929e13";
     const started = "01a1d06c-7868-719b-b026-8ad0a260666b";
     const cmd = `D=/private/tmp/images; wain session send ${sent} "User feedback on the sidebar bot rows, screenshot at $D/8.png: make bot rows line up."
-wain session new --project /Users/yogesh/Documents/ade --hidden --title "Bot prompt: relay feedback without adding steps" "Edit the Wain bot system prompt. Problem: when a bot passes the user's feedback to one of its tasks with 'wain session send', it adds instructions the user never gave, like 'push to the PR'."`;
+wain session new --project /Users/morgan/Documents/ade --hidden --title "Bot prompt: relay feedback without adding steps" "Edit the Wain bot system prompt. Problem: when a bot passes the user's feedback to one of its tasks with 'wain session send', it adds instructions the user never gave, like 'push to the PR'."`;
     const items = botItems([
       call("c", cmd),
       result("c", `Delivered.\n${started}\nStarted "Bot prompt: relay feedback without adding steps" in worktree gentle-ochre-meadow`),

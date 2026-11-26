@@ -1395,8 +1395,8 @@ mod tests {
     #[test]
     fn pair_link_encodes_every_part() {
         assert_eq!(
-            pair_link("https://a.example.com", "ab12", "Yogesh's Mac"),
-            "wain://connect?url=wss%3A%2F%2Fa.example.com&token=ab12&name=Yogesh%27s%20Mac"
+            pair_link("https://a.example.com", "ab12", "Morgan's Mac"),
+            "wain://connect?url=wss%3A%2F%2Fa.example.com&token=ab12&name=Morgan%27s%20Mac"
         );
     }
 
