@@ -72,7 +72,8 @@ struct BotTabRoot: View {
             if let chat = store.botChat(b.server, b.bot).last {
                 TranscriptView(key: chat).id(chat)
             } else {
-                BotStartView(server: b.server, bot: b.bot) { nav.push(.session($0), on: .bot(ref)) }
+                // The start lists the new chat at once, so the branch above takes over: pushing it too stacked it twice.
+                BotStartView(server: b.server, bot: b.bot) { _ in }
             }
         } else {
             EmptyState(title: "Bot not found", message: "Its machine may be off or out of reach.") {

@@ -15,6 +15,7 @@ struct TranscriptView: View {
     @State private var editingBot = false
     @Environment(\.openTask) private var openTask
     @Environment(\.readOnly) private var readOnly
+    @Environment(\.scenePhase) private var phase
     /// The floating banner's height, kept clear above the first row so it never sits on "Load earlier".
     @State private var bannerHeight: CGFloat = 0
     /// Whether new rows scroll into view: dropped by the reader scrolling up (`FollowsBottom`).
@@ -190,6 +191,10 @@ struct TranscriptView: View {
         }
         .modifier(LocalServersButton(key: key, shown: bot == nil))
         .task { await open() }
+        // A reply landing in front of the reader is read; tabs keep hidden chats alive, so only the one on screen.
+        .onChange(of: "\(store.items[key]?.status ?? "") \(phase)") {
+            if store.items[key]?.status == "completed", phase == .active, Push.shared.viewing == key { Task { await store.open(key) } }
+        }
         .onChange(of: chatMark) { settleUnread() }
         .changesButton(key, shown: bot == nil)
         .prPanel(key)
