@@ -213,7 +213,7 @@ control on screen to call it.
 [transport.ts](src/lib/transport.ts) exports `invoke` and `listen` with
 Tauri's signatures. With no server named they are Tauri's. A server is named by
 the page URL — `?token=…` and optionally `&server=ws://…` (default
-`ws://127.0.0.1:7317`). Every `invoke`/`listen` import goes through it.
+`ws://127.0.0.1:7417`). Every `invoke`/`listen` import goes through it.
 
 `fileSrc` stands in for `convertFileSrc`, so local files load through the same
 door.
@@ -226,7 +226,7 @@ Desktop-only commands reject with `unknown command`; the UI logs some
 ```bash
 cd apps/desktop/src-tauri
 cargo build --no-default-features --features serve --bin wain-serve
-WAIN_HOME=/tmp/wain-serve-home ./target/debug/wain-serve --port 7317
+WAIN_HOME=/tmp/wain-serve-home ./target/debug/wain-serve --port 7417
 
 # a scripted turn
 cd .. && WAIN_HOME=/tmp/wain-serve-home node scripts/serve-smoke.mjs

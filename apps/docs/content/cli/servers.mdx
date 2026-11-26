@@ -49,7 +49,7 @@ A first install from `install.sh` runs this for you on any machine without the W
 
 ```bash
 wain server start
-wain server run --port 7317
+wain server run --port 7417
 wain server stop
 ```
 
@@ -57,7 +57,7 @@ On Linux, `start` installs a systemd user service, `wain.service`. If your user 
 
 On a Mac with no Wain app, `start` installs a login agent. Its log is `~/.wain/server.log`. It runs only while your user is logged in, so a headless Mac wants automatic login. For the app on another Mac to reach it, turn on Remote Login in System Settings → General → Sharing.
 
-`run` passes what follows to the server. Its one option is `--port`: the port it listens on, 7317 by default, or `0` to pick a free one.
+`run` passes what follows to the server. Its one option is `--port`: the port it listens on, 7417 by default, or `0` to pick a free one.
 
 `start` never restarts a server that is already running, since that stops its agents. After `wain update`, it prints the command that restarts it onto the new version.
 
@@ -143,7 +143,7 @@ The address is the line you log in with, or a `ws://` or `wss://` address, such 
 wain machine add vps root@203.0.113.7
 wain machine add vps ssh -p 2222 root@203.0.113.7
 wain machine add vps my-ssh-alias
-cat serve-token | wain machine add vps ws://127.0.0.1:7317
+cat serve-token | wain machine add vps ws://127.0.0.1:7417
 wain machine add --token-file token mac wss://….opentunnel.xyz
 ```
 

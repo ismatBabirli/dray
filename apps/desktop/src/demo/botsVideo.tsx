@@ -164,7 +164,7 @@ const SANDBOX_INFO: ServerInfo = {
   id: SANDBOX,
   name: "sandbox",
   named: true,
-  url: "ws://sandbox:7317",
+  url: "ws://sandbox:7417",
   ssh: null,
   on: true,
   status: "connected",

@@ -33,7 +33,7 @@ starting with `-` is refused, since it would parse as a flag.
 ```text
 ssh -o BatchMode=yes -o ConnectTimeout=10 -o ExitOnForwardFailure=yes
     -o ServerAliveInterval=15 -o ServerAliveCountMax=3
-    -L 127.0.0.1:<free>:127.0.0.1:7317 [-p N] -- <dest>  "sh -c '<script>'"
+    -L 127.0.0.1:<free>:127.0.0.1:7417 [-p N] -- <dest>  "sh -c '<script>'"
 ```
 
 The same login carries the tunnel and a short script, which prints marker
@@ -157,7 +157,7 @@ Live, from ignored tests in `ssh.rs` and `servers.rs` (each names its env var):
   started by the app and connected in 2.3s.
 - As a non-root user (`wain-test`, linger on, installed by the install line
   over its own login): the install's server could not start beside root's on
-  7317; with root's stopped, the app started the user's failed unit, connected,
+  7417; with root's stopped, the app started the user's failed unit, connected,
   and survived a killed pipe and off/on. Root's server was put back after.
 - Unknown host: the VPS by a `nip.io` name `known_hosts` does not list. A wrong
   fingerprint is refused, the shown one is written and the connect succeeds;
@@ -199,4 +199,4 @@ the setup output names `gh auth login`.
 
 ## Not here
 
-A second port when 7317 is taken by another user's server on one machine.
+A second port when 7417 is taken by another user's server on one machine.
