@@ -6359,7 +6359,7 @@ dependencies = [
 
 [[package]]
 name = "wain"
-version = "0.34.3"
+version = "0.35.0"
 dependencies = [
  "anyhow",
  "base64 0.23.1",
@@ -6424,6 +6424,7 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

@@ -621,9 +621,9 @@ const GROUPS: { title: string; scenarios: Scenario[] }[] = [
             serverInfo({
               id: "tail",
               name: "studio",
-              url: "ws://100.64.0.12:7317",
+              url: "ws://100.64.0.12:7417",
               status: "disconnected",
-              error: "could not reach ws://100.64.0.12:7317: Connection refused (os error 61)",
+              error: "could not reach ws://100.64.0.12:7417: Connection refused (os error 61)",
             }),
           ];
         },
@@ -674,7 +674,7 @@ const GROUPS: { title: string; scenarios: Scenario[] }[] = [
         drive: async (d) => {
           await d.click("Add server");
           await d.click("Use an address and token instead");
-          await d.type('input[placeholder="wss://…opentunnel.xyz"]', "100.64.0.12:7317");
+          await d.type('input[placeholder="wss://…opentunnel.xyz"]', "100.64.0.12:7417");
           await d.type('input[type="password"]', "4f1c9a7e2b6d0c3f8a5e1d7b9c2a4f6e");
           await d.type('input[placeholder="vps"]', "studio");
         },

@@ -129,8 +129,8 @@ mod tests {
         let listing: Listing = serde_json::from_value(json!({
             "token": "ab".repeat(32),
             "machines": [
-                { "id": "sb_1", "state": "running", "url": "wss://abc-7317.on.boat.dev" },
-                { "id": "sb_2", "state": "hibernating", "url": "wss://def-7317.on.boat.dev" },
+                { "id": "sb_1", "state": "running", "url": "wss://abc-7417.on.boat.dev" },
+                { "id": "sb_2", "state": "hibernating", "url": "wss://def-7417.on.boat.dev" },
             ],
         }))
         .unwrap();

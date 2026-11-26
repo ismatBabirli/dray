@@ -6,7 +6,8 @@
     "shortDescription": "Desktop app for coding agents",
     "externalBin": ["target/cli/wain-cli", "target/island-linux/wain-island"],
     "windows": {
-      "nsis": { "installMode": "currentUser" }
+      "nsis": { "installMode": "currentUser", "installerHooks": "windows/hooks.nsh" },
+      "wix": { "fragmentPaths": ["windows/run-key.wxs"], "componentRefs": ["WainRunKey"] }
     }
   }
 }

@@ -6,7 +6,7 @@ import XCTest
 ///
 /// Grant the microphone first, after any uninstall, or the system
 /// prompt takes the tap:
-///   xcrun simctl privacy booted grant microphone com.wainhq.wain.ios
+///   xcrun simctl privacy booted grant microphone com.plorigo.wain.ios
 /// and pass the server as SmokeTests does:
 ///   TEST_RUNNER_WAIN_URL=ws://127.0.0.1:… TEST_RUNNER_WAIN_TOKEN=… xcodebuild test …
 final class DictationTests: XCTestCase {

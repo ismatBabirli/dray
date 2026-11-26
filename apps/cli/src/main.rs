@@ -1990,7 +1990,7 @@ mod tests {
             &["wain", "send", SESSION, "hi"],
             &["wain", "share", "5173"],
             &["wain", "setup", "--install", "git"],
-            &["wain", "serve", "--port", "7317"],
+            &["wain", "serve", "--port", "7417"],
             &["wain", "service", "start"],
             &["wain", "tunnel"],
         ] {

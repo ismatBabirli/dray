@@ -32,7 +32,7 @@ import kotlin.math.sin
  * silence, listening to a voice, transcribing, and one orb walking through them all as a dictation
  * does. The voice is a synthetic speech envelope, since an emulator has no microphone to speak
  * into. Each row draws on the GPU shader and on the CPU path a phone before Android 13 takes.
- * `adb shell am start -n com.wain.app/com.wainhq.wain.ui.OrbDemoActivity`
+ * `adb shell am start -n com.plorigo.wain/com.wainhq.wain.ui.OrbDemoActivity`
  */
 class OrbDemoActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

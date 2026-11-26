@@ -3,7 +3,7 @@ import XCTest
 /// A swipe down on the short reply sheet closes it, keyboard and all, from the text or the
 /// header; a long text still scrolls under a swipe, and the header still takes it to full height.
 /// Against a server holding the task `TEST_RUNNER_WAIN_TASK`, with the microphone granted:
-///   xcrun simctl privacy <udid> grant microphone com.wainhq.wain.ios
+///   xcrun simctl privacy <udid> grant microphone com.plorigo.wain.ios
 ///   TEST_RUNNER_WAIN_URL=ws://127.0.0.1:… TEST_RUNNER_WAIN_TOKEN=… TEST_RUNNER_WAIN_TASK="<title>" \
 ///   xcodebuild test -only-testing:WainUITests/ReplySheetSwipeTests
 final class ReplySheetSwipeTests: XCTestCase {

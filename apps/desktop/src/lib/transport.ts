@@ -368,7 +368,7 @@ export async function listen<T>(event: string, handler: ServerEventCallback<T>):
 
 /** Stated again from serve.rs's `PROTOCOL`; the server refuses a mismatch by name. */
 const PROTOCOL = 1;
-const DEFAULT_SERVER = "ws://127.0.0.1:7317";
+const DEFAULT_SERVER = "ws://127.0.0.1:7417";
 
 type Remote = { url: string; token: string };
 

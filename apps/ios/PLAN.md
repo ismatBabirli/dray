@@ -169,7 +169,7 @@ from `project.yml`; the `.xcodeproj` is not committed, since a hand-merged
 cd apps/ios && xcodegen && open Wain.xcodeproj
 ```
 
-Bundle id `com.wainhq.wain.ios`, team `FBH9JL8MB9`.
+Bundle id `com.plorigo.wain.ios`, team `FBH9JL8MB9`.
 
 **To TestFlight** — with Xcode signed in to the team's Apple ID and the app
 record made in App Store Connect:

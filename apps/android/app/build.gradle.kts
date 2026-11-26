@@ -31,7 +31,7 @@ android {
     compileSdk { version = release(37) { minorApiLevel = 2 } }
 
     defaultConfig {
-        applicationId = "com.wain.app"
+        applicationId = "com.plorigo.wain"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

@@ -4,7 +4,7 @@
 // everything above the transport is the shipping code, talking to real agents.
 //
 //   WAIN_HOME=/tmp/l wain-serve --port 7320 &       # "Local Server"
-//   WAIN_HOME=/tmp/r wain-serve --port 7318 &       # a remote one
+//   WAIN_HOME=/tmp/r wain-serve --port 7418 &       # a remote one
 //   open "/demo/servers.html?local=$(cat /tmp/l/serve-token)&remote=$(cat /tmp/r/serve-token)"
 //
 // `&localUrl=` and `&remoteUrl=` move them; put a TCP proxy in front of the

@@ -3028,9 +3028,9 @@ mod tests {
 
     #[test]
     fn normalizes_what_a_reader_types() {
-        assert_eq!(normalize("127.0.0.1:7317").unwrap(), "ws://127.0.0.1:7317");
-        assert_eq!(normalize("http://box:7317/").unwrap(), "ws://box:7317");
-        assert_eq!(normalize(" ws://box:7317 ").unwrap(), "ws://box:7317");
+        assert_eq!(normalize("127.0.0.1:7417").unwrap(), "ws://127.0.0.1:7417");
+        assert_eq!(normalize("http://box:7417/").unwrap(), "ws://box:7417");
+        assert_eq!(normalize(" ws://box:7417 ").unwrap(), "ws://box:7417");
         assert_eq!(normalize("https://a-b.trycloudflare.com/").unwrap(), "wss://a-b.trycloudflare.com");
         assert_eq!(normalize("wss://a-b.trycloudflare.com").unwrap(), "wss://a-b.trycloudflare.com");
         assert!(normalize("").is_err());
@@ -3276,7 +3276,7 @@ mod tests {
 
     #[test]
     fn names_a_server_by_its_host() {
-        assert_eq!(default_name("ws://wain-vps:7317"), "wain-vps");
+        assert_eq!(default_name("ws://wain-vps:7417"), "wain-vps");
     }
 
     async fn next_event(rx: &mut mpsc::UnboundedReceiver<(String, Value)>, want: impl Fn(&str, &Value) -> bool) -> Value {
@@ -3332,7 +3332,7 @@ mod tests {
     /// Against a running `wain-serve`, in a throwaway `WAIN_HOME`:
     ///
     /// ```text
-    /// WAIN_TEST_SERVER=127.0.0.1:7318 WAIN_TEST_TOKEN=$(cat …/serve-token) \
+    /// WAIN_TEST_SERVER=127.0.0.1:7418 WAIN_TEST_TOKEN=$(cat …/serve-token) \
     ///   cargo test servers::tests::talks_to_a_live_server -- --ignored
     /// ```
     #[tokio::test(flavor = "multi_thread")]
@@ -3487,7 +3487,7 @@ mod tests {
 
         let port = conns()[0].live.clone().unwrap().0.rsplit(':').next().unwrap().to_string();
         let killed = std::process::Command::new("pkill")
-            .args(["-f", &format!("127.0.0.1:{port}:127.0.0.1:7317")])
+            .args(["-f", &format!("127.0.0.1:{port}:127.0.0.1:7417")])
             .status()
             .unwrap();
         assert!(killed.success(), "no ssh to kill");

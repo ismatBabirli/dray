@@ -27,7 +27,7 @@
 
 - [Download for Mac](https://downloads.wainhq.com/Wain_universal.dmg)
 - [All downloads](https://www.wainhq.com/download): Mac, Linux (beta: .deb and AppImage, x64 and arm64) and the server.
-- [iPhone app on the App Store](https://apps.apple.com/app/id6824145317)
+- [iPhone app on the App Store](https://apps.apple.com/app/id6839484995)
 - [Install on a server](https://www.wainhq.com/install.sh): `curl -fsSL https://www.wainhq.com/install.sh | sh`
 - [GitHub](https://github.com/ismatbabirli/wain)
 - [Docs](https://www.wainhq.com/docs)
