@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import Spinner from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { useCopied } from "@/hooks/useCopied";
-import { useWainAccount, useOrgLink } from "@/hooks/useOrgLink";
+import { useOrgLink } from "@/hooks/useOrgLink";
 import { boatAsleep, resumeBoat } from "@/lib/boat";
 import { relativeTime } from "@/lib/format";
 import { MACHINE } from "@/lib/platform";
@@ -49,6 +49,10 @@ type TrustHost = Extract<Fix, { kind: "trust_host" }>;
 /// Remote MCP's UI, dev builds only until Wain accounts land (#900).
 /// `wain_proto::REMOTE_MCP` is the server's half; flip both together.
 const REMOTE_MCP = import.meta.env.DEV;
+
+/// Link and Unlink from org, hidden until readers need orgs. Linking still
+/// runs through sign-in and `wain login`, so a linked row still names its org.
+const ORG_LINK_ACTIONS = false;
 
 const STAGE_LABELS: Record<Stage, string> = {
   connecting: "Connecting…",
@@ -124,7 +128,7 @@ function LinkAction({ link }: { link: OrgLink }) {
         Cancel
       </Button>
     );
-  if (!link.state || link.state.linked) return null;
+  if (!ORG_LINK_ACTIONS || !link.state || link.state.linked) return null;
   return (
     <Button variant="secondary" size="sm" onClick={() => void link.start()}>
       <Link2 className="size-3.5" />
@@ -238,7 +242,7 @@ export default function ServersSettings() {
               ) : undefined
             }
             onUnlink={
-              server.status === "connected" && link.state?.linked
+              ORG_LINK_ACTIONS && server.status === "connected" && link.state?.linked
                 ? () => {
                     setRenaming(null);
                     setConfirming(`unlink:${server.id}`);
@@ -492,8 +496,6 @@ function ThisMacRow() {
   const [pairing, setPairing] = useState(false);
   const connected = server?.status === "connected";
   const link = useOrgLink(LOCAL, connected);
-  // Signing in is what links This Mac, so Link is offered only once signed in.
-  const account = useWainAccount(connected);
   const [unlinking, setUnlinking] = useState(false);
 
   useEffect(() => {
@@ -540,10 +542,10 @@ function ThisMacRow() {
         setUnlinking(false);
         void link.unlink();
       }}
-      onUnlink={connected && link.state?.linked ? () => setUnlinking(true) : undefined}
+      onUnlink={ORG_LINK_ACTIONS && connected && link.state?.linked ? () => setUnlinking(true) : undefined}
       action={
         <>
-          {connected && (account?.user || link.state?.pending) && <LinkAction link={link} />}
+          {connected && <LinkAction link={link} />}
           {remote.on ? (
             <Button variant="secondary" size="sm" onClick={() => setOn(false)}>
               <GlobeOff />
