@@ -201,7 +201,7 @@ final class RoutineLabelTests: XCTestCase {
 
     func testRoutineReportDrawsItsLabel() throws {
         let lines = [
-            ("r", #"{"type":"user_message","text":"[from Morning PR sweep] two PRs","from":{"title":"Morning PR sweep","sessionId":"RUN-1"}}"#),
+            ("r", #"{"type":"user_message","text":"[from Morning PR sweep] two PRs","from":{"title":"Morning PR sweep","sessionId":"RUN-1","machine":null,"routine":true}}"#),
             ("a", #"{"type":"assistant_text","text":"Two PRs wait on your review."}"#),
             ("t", #"{"type":"user_message","text":"[from Fix login] done","from":{"title":"Fix login","sessionId":"task-1"}}"#),
             ("b", #"{"type":"assistant_text","text":"The login fix is in."}"#),
