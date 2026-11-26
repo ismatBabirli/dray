@@ -731,9 +731,9 @@ mod tests {
 
     #[test]
     fn normalizes_what_a_reader_types() {
-        assert_eq!(normalize("127.0.0.1:7317").unwrap(), "ws://127.0.0.1:7317");
-        assert_eq!(normalize("http://box:7317/").unwrap(), "ws://box:7317");
-        assert_eq!(normalize(" ws://box:7317 ").unwrap(), "ws://box:7317");
+        assert_eq!(normalize("127.0.0.1:7417").unwrap(), "ws://127.0.0.1:7417");
+        assert_eq!(normalize("http://box:7417/").unwrap(), "ws://box:7417");
+        assert_eq!(normalize(" ws://box:7417 ").unwrap(), "ws://box:7417");
         assert_eq!(normalize("https://a-b.trycloudflare.com/").unwrap(), "wss://a-b.trycloudflare.com");
         assert_eq!(normalize("wss://a-b.trycloudflare.com").unwrap(), "wss://a-b.trycloudflare.com");
         assert!(normalize("").is_err());
@@ -744,7 +744,7 @@ mod tests {
         let saved = |id: &str, name: &str| Saved {
             id: id.into(),
             name: name.into(),
-            url: format!("ws://{name}:7317"),
+            url: format!("ws://{name}:7417"),
             ssh: None,
             off: false,
             beta: false,

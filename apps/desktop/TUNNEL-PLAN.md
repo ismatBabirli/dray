@@ -11,7 +11,7 @@ the This Mac row.
 ## What was decided
 
 **The pipe is a Cloudflare quick tunnel.** `cloudflared tunnel --url
-http://127.0.0.1:7317`: no account, a random `*.trycloudflare.com` address,
+http://127.0.0.1:7417`: no account, a random `*.trycloudflare.com` address,
 Cloudflare promising no uptime. Nothing of ours runs anywhere. Cloudflare
 terminates TLS and sees the traffic; the token still gates every connection.
 
@@ -153,7 +153,7 @@ Add server. The token's copy asks Rust for it (`remote_access_token`), writes
 it to the clipboard and keeps a marker, not the text. `get_settings` carries
 none of it.
 
-**A dev build serves beside the release app**: port 7318 and
+**A dev build serves beside the release app**: port 7418 and
 `tunnel-url-dev`, since the two share `~/.wain` and its token.
 
 Measured: the in-process server through a real tunnel, in a throwaway

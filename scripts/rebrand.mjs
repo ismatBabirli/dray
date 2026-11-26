@@ -30,6 +30,10 @@ const RULES = [
   // Upstream's Apple team. Wain signs iOS and Island as Ismat's, and the site's
   // APNs default must name the team the push key belongs to.
   [/7WYP3LRDL8/g, "FBH9JL8MB9"],
+  // wain-serve's port, and dev's next to it, apart from Dray's so both run on one
+  // machine. Only a whole number: SVG paths and timestamps hold these digits too.
+  [/(?<![\d.])7317(?!\d)/g, "7417"],
+  [/(?<![\d.])7318(?!\d)/g, "7418"],
   // Upstream's App Store listing; Wain's own is "Wain: AI Coding Agents".
   [/id6824145317/g, "id6839484995"],
   [/DRAY/g, "WAIN"],
@@ -122,6 +126,8 @@ function selfTest() {
     ["https://github.com/Monorepo-Labs/dray/pull/1", "https://github.com/IsmatBabirli/wain/pull/1"],
     ["DEVELOPMENT_TEAM: 7WYP3LRDL8", "DEVELOPMENT_TEAM: FBH9JL8MB9"],
     ["https://apps.apple.com/app/id6824145317", "https://apps.apple.com/app/id6839484995"],
+    ["ws://127.0.0.1:7317 --port 7318 SERVE_PORT: u16 = 7317;", "ws://127.0.0.1:7417 --port 7418 SERVE_PORT: u16 = 7417;"],
+    ["0,0-.37317.63924 2.7318-28.745 1785213027317 wss://abc-7317.on", "0,0-.37317.63924 2.7318-28.745 1785213027317 wss://abc-7417.on"],
   ];
   for (const [from, to] of cases) assert.equal(rebrand(from), to);
 

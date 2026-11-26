@@ -6,12 +6,17 @@ export const REPO = "https://github.com/ismatbabirli/wain";
 /// it alone, the beta channel being the updater's and not this page's.
 export const DOWNLOAD = "https://downloads.wainhq.com/Wain_universal.dmg";
 
+/// The newest stable Windows installer and its MSI, on the dmg's R2 host under
+/// the names `windows-release.sh latest` copies each stable release to.
+export const WINDOWS_DOWNLOAD = "https://downloads.wainhq.com/Wain_x64-setup.exe";
+export const WINDOWS_MSI = "https://downloads.wainhq.com/Wain_x64.msi";
+
 /// The server install. `public/install.sh` resolves the newest `cli-v*` tag
 /// itself, so this line never needs a version in it.
 export const INSTALL_LINE = "curl -fsSL https://www.wainhq.com/install.sh | sh";
 
-/// The iPhone app on the App Store. Empty until Wain's own is published: the
-/// id that was here was upstream's app, and every iPhone link hides while this is "".
+/// The iPhone app on the App Store. Empty until Wain's own listing (id6839484995)
+/// is live: every iPhone link hides while this is "".
 export const APP_STORE = "";
 
 /// Where feedback goes: the repo's issues, until Wain has a social account of its own.

@@ -136,7 +136,7 @@ meeting a `wain-serve`:
   (default No). pi offers to install Node, then to start pi (default Yes), so a
   reader pressing Enter lands in pi's TUI and setup carries on when they leave
   it. Left as the vendors wrote them.
-- **One server per machine.** `wain-serve` binds `127.0.0.1:7317`, so a second
+- **One server per machine.** `wain-serve` binds `127.0.0.1:7417`, so a second
   user's server cannot start. Setup now checks the service stayed up and says
   so rather than claiming it runs. Stage 4 can read a port if this matters.
 - **Linger without sudo is refused** on Ubuntu 24.04; setup then prints the

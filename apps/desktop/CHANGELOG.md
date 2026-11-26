@@ -27,6 +27,33 @@ reads:
   to a line or two. A release with no highlights for an app gets the small
   card there instead, when it carries `notify`.
 
+## 0.35.0 · 2026-11-26 · notify
+
+### New
+
+- **Switch a task's harness mid-session.** Pick another harness in the
+  composer and your next message moves the task there, with everything
+  said so far.
+  ![A chat Claude Code answered, Codex picked in the composer for the next message](changelog/harness.png)
+  <!-- highlight: desktop -->
+- **Wain on Windows (beta).** Windows 10 and 11 on x64: download
+  `Wain_x64-setup.exe`, or `Wain_x64.msi` for machines managed per
+  machine. It updates itself like the Mac app. The installer is not
+  signed yet, so SmartScreen may warn. Sessions keep running after you
+  quit and come back at sign-in, and `irm https://www.wainhq.com/install.ps1 | iex`
+  installs the `wain` CLI and server.
+
+### Changed
+
+- **Wain's server listens on port 7417**, not 7317, so it runs beside a
+  Dray server on the same machine. A server you set up over SSH moves
+  to the new port when it updates. One added by address
+  (`wain machine add … ws://host:7317`) needs the new port.
+
+### Fixed
+
+- The model picker is wide enough for every agent, so the switch-agent
+  shortcut no longer runs past its edge.
 ## 0.34.3 · 2026-11-25
 
 The first release of Wain, made from Dray 0.34.3.

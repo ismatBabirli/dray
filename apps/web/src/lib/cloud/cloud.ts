@@ -6,7 +6,7 @@ import { boat, BoatError, listByLabel, type Sandbox } from "./boat";
 /// `wain=cloud` and listed by label, so nothing here keeps state. The contract
 /// is issue #857.
 
-const PORT = 7317;
+const PORT = 7417;
 const TTL_SECONDS = 900;
 const LABEL = { wain: "cloud" };
 const SNAPSHOT = "wain-cloud";

@@ -590,7 +590,7 @@ Sharing the same port from the same session again gives the same link.
 
 ```bash
 wain machine add vps root@203.0.113.7                   # or ssh -p 2222 …, or an ~/.ssh/config alias
-wain machine add --token-file t vps ws://127.0.0.1:7317  # a token from stdin works too
+wain machine add --token-file t vps ws://127.0.0.1:7417  # a token from stdin works too
 wain machine add --token-file t mac wss://….opentunnel.xyz   # a Mac, by its Remote access address
 wain machine ls                                          # name, address, connected or not; --json
 wain machine rename vps box                              # '' puts back the host

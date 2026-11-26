@@ -54,7 +54,7 @@ the server, which comes back when Wain next opens or at the next login.
 `main.rs` reads `--serve` before Tauri is touched. With it, the process never
 builds a window or an `NSApplication`: it runs `serve::run_mac`, which is
 `serve::run` with two differences — it listens on a random port rather than
-7317, and it serves remote access from the setting. With nothing it is the app.
+7417, and it serves remote access from the setting. With nothing it is the app.
 
 `headless`, `serve` and their dependencies (`zip`, `flate2`, the WebSocket
 server half) compile into the desktop build too. `wain-serve` stays as it is
@@ -71,12 +71,12 @@ without a new prompt. Each is a claim about macOS, not about our code.
 ### Where the server listens
 
 **The app reaches it on `127.0.0.1` at a port the server picks**, written to
-`<home>/serve-port`. Not 7317: that is the Linux server's port, and a
+`<home>/serve-port`. Not 7417: that is the Linux server's port, and a
 `wain-serve` run on this Mac for testing would take it. Not a unix socket:
 `servers.rs` speaks to every server through one TCP WebSocket client, and a
 second stream type is a second code path for one connection.
 
-**Remote access is a second listener**, on 7317 (7318 for dev) behind the
+**Remote access is a second listener**, on 7417 (7418 for dev) behind the
 tunnel, exactly what `remote_access.rs` runs in the app today, moved into the
 server whole. One hub feeds both.
 

@@ -13,7 +13,7 @@ pub enum MachineCommand {
     #[command(after_help = "wain machine add vps root@203.0.113.7
 wain machine add vps ssh -p 2222 root@203.0.113.7
 wain machine add vps my-ssh-alias
-cat serve-token | wain machine add vps ws://127.0.0.1:7317
+cat serve-token | wain machine add vps ws://127.0.0.1:7417
 wain machine add --token-file token mac wss://….opentunnel.xyz")]
     Add(Add),
     /// List the machines this one reaches and whether each answers.
@@ -226,9 +226,9 @@ mod tests {
         assert_eq!((add.name.as_str(), add.address.join(" ")), ("vps", "ssh -p 2222 root@box".into()));
         assert!(add.token_file.is_none());
 
-        let MachineCommand::Add(add) = machine(&["add", "--token-file", "t", "vps", "ws://box:7317"]) else { panic!() };
+        let MachineCommand::Add(add) = machine(&["add", "--token-file", "t", "vps", "ws://box:7417"]) else { panic!() };
         assert_eq!(add.token_file, Some(PathBuf::from("t")));
-        assert_eq!(add.address, ["ws://box:7317"]);
+        assert_eq!(add.address, ["ws://box:7417"]);
 
         assert!(Cli::try_parse_from(["wain", "machine", "add", "vps"]).is_err(), "no address");
     }

@@ -12,6 +12,8 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+pub mod login;
+
 /// Bumped when an old side would answer a new request *wrongly and silently* —
 /// the server refuses a version it doesn't know rather than guessing at it.
 ///
@@ -1334,7 +1336,7 @@ pub const AGENTS: [Agent; 6] = [
 ];
 
 /// The port `wain-serve` listens on unless told otherwise.
-pub const SERVE_PORT: u16 = 7317;
+pub const SERVE_PORT: u16 = 7417;
 
 /// The file in the Wain directory holding the server's Remote access
 /// address while it is on: what an SSH login reads, and the one origin the

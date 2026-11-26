@@ -101,19 +101,19 @@ describe("with WAIN_CLOUD_KEY", () => {
       noEnv: true,
       labels: { wain: "cloud" },
       ttlSeconds: 900,
-      hostedPorts: [{ port: 7317, public: true, localhost: true }],
+      hostedPorts: [{ port: 7417, public: true, localhost: true }],
       files: [
         { path: ".wain/serve-token", content: SERVE_TOKEN },
         { path: ".wain/cloud.json", content: JSON.stringify({ url: `${app.base}/api/cloud`, secret: MACHINE_SECRET }) },
       ],
     });
     first = boat.sandboxes.get(json.machine.id);
-    assert.deepEqual(json.machine, { id: first.id, state: "starting", url: `wss://${first.subdomain}-7317.on.boat.dev` });
+    assert.deepEqual(json.machine, { id: first.id, state: "starting", url: `wss://${first.subdomain}-7417.on.boat.dev` });
     assert.notEqual(MACHINE_SECRET, KEY);
     // Hosted again once running though the create already hosted it: boat
     // never starts a create's localhost relay (#1003).
     const host = await waitFor("the port hosted again", () => callsTo("POST", `/sandboxes/${first.id}/host`)[0]);
-    assert.deepEqual(host.body, { port: 7317, public: true, localhost: true });
+    assert.deepEqual(host.body, { port: 7417, public: true, localhost: true });
     assert.equal(host.status, 200);
   });
 
@@ -137,7 +137,7 @@ describe("with WAIN_CLOUD_KEY", () => {
     assert.ok(!json.machines.some((m) => m.id === other.id));
     for (const m of json.machines) {
       const s = boat.sandboxes.get(m.id);
-      assert.equal(m.url, `wss://${s.subdomain}-7317.on.boat.dev`);
+      assert.equal(m.url, `wss://${s.subdomain}-7417.on.boat.dev`);
     }
     assert.ok(boat.calls.some((c) => c.path === "/sandboxes" && c.query.includes("cursor=")));
   });
