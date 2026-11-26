@@ -9,6 +9,7 @@ import {
   serverForToken,
   showCode,
 } from "@/lib/link";
+import { requestOrigin } from "@/lib/origin";
 
 /// Open to anyone, so what it may store is capped. Far above any real use:
 /// a code lives ten minutes.
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
       if (isTaken(e)) continue;
       throw e;
     }
-    const origin = new URL(req.url).origin;
+    const origin = requestOrigin(req);
     return Response.json({
       deviceCode,
       userCode: showCode(userCode),

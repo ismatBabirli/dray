@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { backToApp, mintAppCode, readAppAuth } from "@/lib/app-auth";
+import { requestOrigin } from "@/lib/origin";
 
 /// Where the desktop app's Sign in opens the browser. Anyone not yet
 /// `confirmed` is sent to `/login`: signed out, to sign in with the provider
@@ -11,7 +12,7 @@ import { backToApp, mintAppCode, readAppAuth } from "@/lib/app-auth";
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const request = readAppAuth(url.searchParams);
-  if (!request) return Response.redirect(new URL("/login?error=broken_link", url.origin).toString(), 302);
+  if (!request) return Response.redirect(new URL("/login?error=broken_link", requestOrigin(req)).toString(), 302);
 
   if (url.searchParams.has("error")) return Response.redirect(backToApp(request, { error: "cancelled" }), 302);
 
@@ -21,7 +22,7 @@ export async function GET(req: Request) {
     url.searchParams.delete("confirmed");
     const next = `${url.pathname}${url.search}`;
     return Response.redirect(
-      new URL(`/login?next=${encodeURIComponent(next)}&via=${request.provider}`, url.origin).toString(),
+      new URL(`/login?next=${encodeURIComponent(next)}&via=${request.provider}`, requestOrigin(req)).toString(),
       302,
     );
   }
