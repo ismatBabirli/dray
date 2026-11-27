@@ -1,0 +1,10 @@
+Wain is a remote control for coding agents that run on the user's own computer. The app has no account and no content of its own: everything it shows comes from a machine running Wain (the Wain app for Mac, or the Wain server on Linux) that the user pairs with.
+
+To review the app, pair it with our demo machine:
+1. Open the app and tap Pair a machine.
+2. Tap Enter an address, and enter: DEMO_ADDRESS
+3. Enter the code: DEMO_CODE
+
+The demo machine holds sample bots and tasks. You can open a task, reply to it, answer a question card, and start a new task. Its agents run in a sandbox with no access to anything else.
+
+Wain is made by Ismat Babirli. It is built on open-source code under the Apache License 2.0, credited in Settings > Open source licences, with its own design, server and accounts. It is not affiliated with Anthropic, OpenAI, xAI or the other makers of the agents it names; users install those agents themselves, on their own machines.
