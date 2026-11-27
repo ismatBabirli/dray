@@ -36,6 +36,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
+import com.wainhq.wain.model.Licences
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -110,6 +112,8 @@ private sealed interface Page {
     data object Root : Page
     data object Servers : Page
     data class Server(val id: String) : Page
+    data object Licences : Page
+    data class Licence(val component: com.wainhq.wain.model.Licences.Component) : Page
 }
 
 /**
@@ -131,12 +135,14 @@ fun SettingsScreen(focus: String?, back: () -> Unit, dictation: () -> Unit = {},
                     value = if (com.wainhq.wain.push.Push.enabled && com.wainhq.wain.push.Push.available) "On" else "Off", onClick = notifications)
                 OpenBotRow()
             }
-            About()
+            About { pages.add(Page.Licences) }
         }
         Page.Servers -> SettingsPage("Servers", ::pop) {
             ServerCards(null, open = { pages.add(Page.Server(it)) }, all = {}, add = add)
         }
         is Page.Server -> ServerDetail(page.id, ::pop)
+        Page.Licences -> SettingsPage("Open source licences", ::pop) { LicenceList { pages.add(Page.Licence(it)) } }
+        is Page.Licence -> SettingsPage(page.component.name, ::pop) { LicenceText(page.component) }
     }
 }
 
@@ -193,9 +199,9 @@ private fun SettingsPage(title: String, back: () -> Unit, fill: Color = Wain.car
     }
 }
 
-/** Version, then the site's pages, each opening in the browser. */
+/** Version, then the site's pages, each opening in the browser, then the licences page. */
 @Composable
-private fun About() {
+private fun About(licences: () -> Unit) {
     val context = LocalContext.current
     RowGroup {
         SettingsRow("Version", value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", trailing = false)
@@ -207,6 +213,37 @@ private fun About() {
         )) {
             RowDivider()
             SettingsRow(label, external = true) { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+        }
+        RowDivider()
+        SettingsRow("Open source licences", onClick = licences)
+    }
+}
+
+/** A row per component the app ships, its licence beside it. */
+@Composable
+private fun LicenceList(open: (Licences.Component) -> Unit) {
+    val licences = Licences.load(LocalContext.current)
+    Text(
+        "Wain is open source under the Apache License 2.0, and it ships these libraries under their own licences. Tap one to read it.",
+        Modifier.padding(horizontal = 4.dp), style = Wain.Font.footnote.copy(color = Wain.secondary),
+    )
+    RowGroup {
+        licences.components.forEachIndexed { i, c ->
+            if (i > 0) RowDivider()
+            SettingsRow(c.name, value = c.licence) { open(c) }
+        }
+    }
+}
+
+/** One component's licence in full: which licence, whose copyright, then its text. */
+@Composable
+private fun LicenceText(c: Licences.Component) {
+    val text = Licences.load(LocalContext.current).licences[c.licence].orEmpty()
+    SelectionContainer {
+        Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(c.licence, style = Wain.Font.footnoteStrong.copy(color = Wain.secondary))
+            Text(c.copyright, style = Wain.Font.subhead)
+            Text(text, style = Wain.Font.subhead.copy(color = Wain.secondary))
         }
     }
 }
@@ -327,7 +364,7 @@ private fun SettingsRow(
 ) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 52.dp).then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(start = 16.dp, end = 14.dp),
+            .padding(start = 16.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

@@ -3,12 +3,14 @@ import SwiftUI
 import UIKit
 import UserNotifications
 
-/// Where Settings can go: a server's page, every server, Dictation, Notifications.
+/// Where Settings can go: a server's page, every server, Dictation, Notifications, the licences.
 enum SettingsPage: Hashable {
     case server(UUID)
     case servers
     case dictation
     case notifications
+    case licences
+    case licence(Licences.Component)
 }
 
 /// The one Settings screen: a card per server, then Add server, Dictation, Notifications
@@ -55,6 +57,8 @@ struct SettingsView: View {
                         Link(destination: URL(string: "https://wainhq.com/docs/reference/privacy")!) { SettingsRow("Privacy Policy", trailing: "arrow.up.right") }
                         RowDivider()
                         Link(destination: URL(string: "https://wainhq.com/terms")!) { SettingsRow("Terms of Service", trailing: "arrow.up.right") }
+                        RowDivider()
+                        NavigationLink(value: SettingsPage.licences) { SettingsRow("Open source licences") }
                     }
                     .buttonStyle(RowButtonStyle())
                 }
@@ -77,6 +81,8 @@ struct SettingsView: View {
                         .navigationBarTitleDisplayMode(.inline)
                 case .dictation: DictationSettings()
                 case .notifications: NotificationSettings()
+                case .licences: LicencesView()
+                case .licence(let c): LicenceView(component: c)
                 }
             }
             .task { await Releases.shared.refresh() }
