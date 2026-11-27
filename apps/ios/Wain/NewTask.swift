@@ -243,6 +243,8 @@ final class NewTask {
         sending = true
         failure = nil
         defer { sending = false }
+        // Read before a clone, which can run for minutes.
+        let sent = text
         var cwd = checkout
         if let offer = cloning {
             guard let made = await clone(offer, on: server) else { return nil }
@@ -251,7 +253,6 @@ final class NewTask {
         guard let cwd else { return nil }
         let opened = draftId
         let id = UUID().uuidString.lowercased()
-        let sent = text
         let base = basePick
         do {
             let outcome: SendOutcome = try await store.call(server, "send_msg", [
