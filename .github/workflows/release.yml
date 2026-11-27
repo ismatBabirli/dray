@@ -3,7 +3,7 @@ name: Release
 # Third-party actions are pinned to commit SHAs, for release-cli.yml's reason:
 # a tag can be moved by whoever owns the action, and this job holds the signing
 # and upload keys. The trailing comment is the readable version; bump both
-# together. desktop-setup and warm-cache.yml follow the same rule.
+# together. desktop-setup follows the same rule.
 
 # A tag is the whole trigger, and its shape picks the channel: `v0.3.0` is
 # stable, `v0.3.0-beta.1` is beta. Semver's own prerelease rule is what makes
@@ -59,7 +59,7 @@ permissions:
   contents: read
 
 env:
-  # Part of the cache key's environment, so it has to match warm-cache.yml.
+  # Part of every cached tree's fingerprints, so it has to stay put.
   CARGO_INCREMENTAL: 0
   # The release's tag: the one pushed, or the beta's.
   TAG: ${{ inputs.version && format('v{0}', inputs.version) || github.ref_name }}
@@ -228,10 +228,9 @@ jobs:
   # --target universal-apple-darwin` compiled the two one after the other, and
   # that was half the release; `bundle` lipos what these leave.
   #
-  # Same features, overlay configs and compile-time env as the universal build
-  # had, since `tauri build` runs cargo identically for one arch of a universal
-  # build and for that arch alone: the cache warm-cache.yml writes from the
-  # universal build fingerprints the same, and only `wain` itself compiles.
+  # Each leg caches its own target, saved by a beta's leg on `main` and read
+  # by every later beta and tag, so with nothing but `wain` changed only
+  # `wain` compiles (desktop-setup says what the key must hold for that).
   build:
     needs: pick
     if: github.event_name == 'push' || inputs.dry_run
@@ -253,12 +252,13 @@ jobs:
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      # Restores the cache warm-cache.yml wrote on `main`; see the action for
-      # why the two share it.
-      - uses: ./.github/actions/desktop-setup
+      # Restores the cache a beta's leg saved on `main`; see the action.
+      - id: setup
+        uses: ./.github/actions/desktop-setup
+        with:
+          target: ${{ matrix.target }}
 
-      # After the restore, whose key hashes Cargo.lock, so a beta hits the
-      # exact cache `main` warmed.
+      # After the restore, so the restored tree is the one `main` built.
       - name: Write the beta's version
         if: inputs.version
         env:
@@ -312,6 +312,16 @@ jobs:
           path: ${{ runner.temp }}/build.tar
           if-no-files-found: error
           retention-days: 1
+
+      # A beta runs on `main`, the one ref every later beta and tag can read
+      # a cache from, so its leg is what warms them. Only on a miss, since an
+      # entry is never overwritten, and last, so `bundle` has the binary
+      # first.
+      - if: github.ref == 'refs/heads/main' && steps.setup.outputs.cache-hit != 'true' && runner.environment == 'github-hosted'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ steps.setup.outputs.cache-path }}
+          key: ${{ steps.setup.outputs.cache-key }}
 
   # One universal bundle from the two arches, signed, notarized and checked,
   # then published — or, on a dry run, kept as an artifact.
@@ -608,10 +618,9 @@ jobs:
   # refuse Debian 12 and Ubuntu 22.04 outright. arm64 builds natively on
   # GitHub's arm runner rather than cross-compiling WebKitGTK's whole stack.
   #
-  # No cache. warm-cache.yml warms the Mac's, and a tag build's own cache is
-  # unreadable to the next tag (see there), so this compiles cold, beside the
-  # Mac jobs. `manifest` waits for it, so it can be what sets the release's
-  # length.
+  # Cached like the Mac legs: a beta on `main` saves the tree, every later
+  # beta and tag restores it. Cold, this was 32 minutes and set the release's
+  # length, `manifest` waiting for it.
   #
   # Held out of tag releases until the repo variable RELEASE_LINUX is `true`
   # (docs/releases.md). Skipped, it leaves no Linux file and no `linux-*`
@@ -713,7 +722,37 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
+      - id: rust
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
+
+      # The cargo cache, saved at the end of a beta on `main` as the Mac legs
+      # save theirs. Keyed off the locks without `wain`'s own version, which
+      # every beta and release bump changes; the bundles are left out.
+      - id: cache-key
+        env:
+          RUST: ${{ steps.rust.outputs.cachekey }}
+        run: |
+          set -euo pipefail
+          strip_root() { awk 'skip { skip = 0; next } /^name = "wain"$/ { skip = 1 } { print }' "$1"; }
+          lock=$( { strip_root apps/desktop/src-tauri/Cargo.lock; strip_root apps/cli/Cargo.lock; cat apps/island-linux/Cargo.lock; } | sha256sum | cut -c1-16)
+          prefix="linux-cargo-$RUNNER_ARCH-$RUST-"
+          {
+            echo "prefix=$prefix"
+            echo "key=$prefix$lock"
+            echo 'paths<<EOF'
+            # actions/cache expands the tildes itself.
+            # shellcheck disable=SC2088
+            printf '%s\n' '~/.cargo/registry/index' '~/.cargo/registry/cache' '~/.cargo/registry/src' \
+              '~/.cargo/git/db' "$RUNNER_TEMP/cef" 'apps/desktop/src-tauri/target' 'apps/cli/target' 'apps/island-linux/target' \
+              '!apps/desktop/src-tauri/target/release/bundle'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+      - id: cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ steps.cache-key.outputs.paths }}
+          key: ${{ steps.cache-key.outputs.key }}
+          restore-keys: ${{ steps.cache-key.outputs.prefix }}
       - run: pnpm install --frozen-lockfile
 
       # The Mac's step: the CLI the overlay hands the bundler, which puts it
@@ -849,6 +888,13 @@ jobs:
           # there to download.
           retention-days: ${{ github.event_name == 'push' && 1 || 7 }}
 
+      # Only on `main`, which every later beta and tag reads, and on a miss.
+      - if: github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ steps.cache-key.outputs.paths }}
+          key: ${{ steps.cache-key.outputs.key }}
+
   # The Windows app, x64: an NSIS installer and, on a stable release, an MSI.
   # NSIS installs per user with no admin prompt, so it is the one the site
   # links and the one an update runs unattended; the MSI is for machines
@@ -857,7 +903,7 @@ jobs:
   # The MSI is left out of a beta: WiX takes a version of numbers alone, and a
   # beta's `-beta.N` is not one.
   #
-  # No cache, for the Linux job's reason. Held out of tag releases until the
+  # Cached as the Linux job is. Held out of tag releases until the
   # repo variable RELEASE_WINDOWS is `true`, as Linux was; skipped, it leaves
   # no Windows file and no `windows-*` entry. A manual run builds it beside
   # the Linux files, as artifacts never attached or published.
@@ -899,7 +945,37 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
+      - id: rust
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
+
+      # The cargo cache, saved at the end of a beta on `main` as the Mac legs
+      # save theirs. Keyed off the locks without `wain`'s own version, which
+      # every beta and release bump changes; the bundles are left out.
+      - id: cache-key
+        env:
+          RUST: ${{ steps.rust.outputs.cachekey }}
+        run: |
+          set -euo pipefail
+          strip_root() { awk 'skip { skip = 0; next } /^name = "wain"$/ { skip = 1 } { print }' "$1"; }
+          lock=$( { strip_root apps/desktop/src-tauri/Cargo.lock; strip_root apps/cli/Cargo.lock; cat apps/island-linux/Cargo.lock; } | sha256sum | cut -c1-16)
+          prefix="windows-cargo-$RUNNER_ARCH-$RUST-"
+          {
+            echo "prefix=$prefix"
+            echo "key=$prefix$lock"
+            echo 'paths<<EOF'
+            # actions/cache expands the tildes itself.
+            # shellcheck disable=SC2088
+            printf '%s\n' '~/.cargo/registry/index' '~/.cargo/registry/cache' '~/.cargo/registry/src' \
+              '~/.cargo/git/db' 'apps/desktop/src-tauri/target' 'apps/cli/target' 'apps/island-linux/target' \
+              '!apps/desktop/src-tauri/target/release/bundle'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+      - id: cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ steps.cache-key.outputs.paths }}
+          key: ${{ steps.cache-key.outputs.key }}
+          restore-keys: ${{ steps.cache-key.outputs.prefix }}
       - run: pnpm install --frozen-lockfile
 
       # CEF's C++ wrapper builds with CMake's Ninja generator, and the runner
@@ -1067,6 +1143,13 @@ jobs:
             ${{ env.BUNDLE }}/msi/*.msi.sig
           if-no-files-found: error
           retention-days: ${{ github.event_name == 'push' && 1 || 7 }}
+
+      # Only on `main`, which every later beta and tag reads, and on a miss.
+      - if: github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ steps.cache-key.outputs.paths }}
+          key: ${{ steps.cache-key.outputs.key }}
 
   # `linux_tag`'s half of `manifest`: the files onto its release, and their
   # entries into each manifest already at that version. A manifest that moved

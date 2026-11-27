@@ -6,8 +6,8 @@ name: Warm CLI cache
 # every CLI release used to save four ~330MB entries under its own
 # `refs/tags/cli-v…` that no later tag could read, and compiled `wain-serve`'s
 # 250-odd crates cold each time. `main` is the one scope a tag can read, so
-# this saves there and the release only restores. warm-cache.yml does the same
-# for the app.
+# this saves there and the release only restores. The app's caches are saved
+# by its betas, which build on `main` (beta.yml).
 #
 # Steps, flags, env and key all live in .github/actions/cli-build, which the
 # release runs too.

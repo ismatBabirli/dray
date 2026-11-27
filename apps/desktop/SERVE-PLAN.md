@@ -73,8 +73,8 @@ cargo check --no-default-features --features serve --bin wain-serve --tests
 ```
 
 Nothing else compiles this build — there is no per-PR CI — so a desktop-only
-call slipped into the core rots it silently. The same line belongs in
-`warm-cache.yml` on main beside the desktop build.
+call slipped into the core rots it silently. Every beta on `main` now
+builds `wain-serve` (release-cli.yml), so such a call fails that beta.
 
 Extracting a `crates/wain-core` was the alternative. It moves ~50k lines, and
 `cargo test` in `src-tauri` stops exporting the core's ts-rs types (a crate's
