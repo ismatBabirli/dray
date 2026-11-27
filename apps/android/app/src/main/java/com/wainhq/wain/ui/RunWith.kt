@@ -75,148 +75,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 
-private enum class RunWithPage { Main, Attach, Models }
-
-/**
- * Everything a new task starts on, opened from any pick under the new task field: where it
- * runs, the agent, the model, and effort, fast mode and stance. iOS's RunWith.swift.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RunWithSheet(task: NewTask, dismiss: () -> Unit) {
-    val store = LocalStore.current
-    val scope = rememberCoroutineScope()
-    var page by remember { mutableStateOf(RunWithPage.Main) }
-    var branches by remember { mutableStateOf<BranchList?>(null) }
-    // Read off the save that failed, never `task.failure` on open: that may be an older start's.
-    var saveError by remember { mutableStateOf<String?>(null) }
-    val server = task.server
-    val cwd = task.cwd
-
-    LaunchedEffect(server, cwd) {
-        branches = null
-        if (server != null && cwd != null && task.bot == null) {
-            branches = runCatching { decodeOrNull<BranchList>(store.call(server, "list_branches", jsonOf("cwd" to cwd))) }.getOrNull()
-        }
-    }
-    LaunchedEffect(server, task.harness) { task.load() }
-
-    ModalBottomSheet(
-        dismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = Wain.card,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        // A page inside the sheet takes Back for itself, to step out to the picks.
-        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = page == RunWithPage.Main),
-    ) {
-        BackHandler(page != RunWithPage.Main) { page = RunWithPage.Main }
-        when (page) {
-            RunWithPage.Main -> PickSheet("Run with", done = dismiss) {
-                PickSection("Where") { WhereCard(task, branches) { page = RunWithPage.Attach } }
-                val agents = task.available.filter { it.available }
-                if (agents.isNotEmpty()) {
-                    PickSection("Agent") {
-                        ChipRow(focus = agents.indexOfFirst { it.harness == task.harness }) {
-                            items(agents, key = { it.harness }) { a ->
-                                PickChip(a.label, a.harness == task.harness, harness = a.harness) { task.pickHarness(a.harness) }
-                            }
-                        }
-                    }
-                }
-                PickSection("Model") {
-                    ModelChips(task.list, task.harness, task.modelId, task::pickModel) { page = RunWithPage.Models }
-                }
-                SettingsCard(task)
-                if (task.hasText) {
-                    PickCard {
-                        Row(
-                            Modifier.clickable(enabled = !task.sending) {
-                                scope.launch { if (task.saveDraft()) dismiss() else saveError = task.failure }
-                            }.rowFrame(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Wain.Space.s),
-                        ) {
-                            Icon(Icons.Outlined.Archive, null, Modifier.size(18.dp), tint = Wain.text)
-                            Text("Save draft", Modifier.weight(1f), style = Wain.Font.body)
-                            if (task.sending) CircularProgressIndicator(Modifier.size(18.dp), color = Wain.secondary, strokeWidth = 2.dp)
-                        }
-                    }
-                    saveError?.let { PickNote(sentence(it), Wain.destructive) }
-                }
-            }
-            RunWithPage.Attach -> server?.let { s ->
-                AttachProject(s, store.projects[s].orEmpty(), back = { page = RunWithPage.Main }) { list ->
-                    store.attached(s, list)
-                    task.pickProject(list.maxByOrNull { it.lastSelected }?.name)
-                    page = RunWithPage.Main
-                }
-            }
-            RunWithPage.Models -> ModelLibrary(task.list, task.harness) { page = RunWithPage.Main }
-        }
-    }
-}
-
-/** Server first: the project menu lists what the picked server holds. */
-@Composable
-private fun WhereCard(task: NewTask, branches: BranchList?, attach: () -> Unit) {
-    val store = LocalStore.current
-    PickCard {
-        val connected = task.connected
-        if (connected.isNotEmpty()) {
-            PickMenu("Server", task.server?.let { store.name(it) }.orEmpty(), connected.map { it.id to it.name }, task.server, task::pickServer)
-            PickDivider()
-        }
-        val bot = task.bot
-        val choices = task.projectChoices
-        when {
-            // Its folder is not a repo: no worktree to pick. A project picked here leaves the bot.
-            bot != null -> PickMenu("Project", bot.second.name, choices.map { it to it.label }, null, pick = { task.pick(it) })
-            choices.isEmpty() -> Row(
-                Modifier.alpha(if (task.server == null) 0.35f else 1f).clickable(enabled = task.server != null, onClick = attach).rowFrame(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Wain.Space.s),
-            ) {
-                Icon(Icons.Filled.Add, null, Modifier.size(18.dp), tint = Wain.text)
-                Text("Attach project", Modifier.weight(1f), style = Wain.Font.body)
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, Modifier.size(20.dp), tint = Wain.tertiary)
-            }
-            else -> {
-                PickMenu("Project", task.projectChoice?.label.orEmpty(), choices.map { it to it.label }, task.projectChoice, { task.pick(it) }) {
-                    HorizontalDivider(color = Wain.hairline)
-                    MenuItem("Attach project…", false, leading = { Icon(Icons.Filled.Add, null, Modifier.size(18.dp), tint = Wain.text) }) { it(); attach() }
-                }
-                PickDivider()
-                PickRow("Worktree", detail = if (task.worktree) branches?.defaultBase?.let { "from $it" } else null) {
-                    PickSwitch(task.worktree, set = task::pickWorktree)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SettingsCard(task: NewTask) {
-    val model = task.model
-    val effort = model != null && model.efforts.isNotEmpty()
-    val fast = Picks.offersFast(task.harness, model)
-    val stance = Picks.offersStances(task.harness)
-    if (!effort && !fast && !stance) return
-    PickCard {
-        if (effort && model != null) {
-            PickMenu("Effort", task.effort?.let { Picks.effortLabels[it] ?: it }.orEmpty(),
-                model.efforts.map { it to (Picks.effortLabels[it] ?: it) }, task.effort, task::pickEffort)
-        }
-        if (fast) {
-            if (effort) PickDivider()
-            PickRow("Fast mode") { PickSwitch(task.fast, set = task::pickFast) }
-        }
-        if (stance) {
-            if (effort || fast) PickDivider()
-            PickMenu("Permissions", task.stanceLabel, Picks.stances.filter { Picks.honours(task.harness, it.first) },
-                Picks.stanceFor(task.harness, task.stance), task::pickStance)
-        }
-    }
-}
+// The pieces every picks sheet is built from: the new task's pages, This task, the start box,
+// the bot sheet. They were Run with's, which the new task sheet replaced (#35).
 
 /** The shortlist lives on this phone, per agent; null until edited, which draws every model the server doesn't mark secondary. */
 private fun shortlist(context: Context, harness: String): List<String>? =
@@ -229,14 +89,20 @@ private fun saveShortlist(context: Context, harness: String, ids: List<String>) 
 
 private fun listed(m: Model, list: List<String>?) = list?.contains(m.id) ?: (m.secondary != true)
 
-/** An agent's shortlisted models as chips, and More models to edit the list. */
+/** The models a picker offers, id to label: the shortlist, the picked one, and "Default" where the agent runs its own. */
 @Composable
-fun ModelChips(models: List<Model>, harness: String, selected: String, pick: (String) -> Unit, more: () -> Unit) {
+fun shortlisted(models: List<Model>, harness: String, selected: String): List<Pair<String, String>> {
     val context = LocalContext.current
     val list = remember(harness, models) { shortlist(context, harness) }
     // pi and fx run their own default where nothing is picked, so that is a choice too.
-    val choices = (if (Picks.defaultModel[harness] == "") listOf("" to "Default") else emptyList()) +
+    return (if (Picks.defaultModel[harness] == "") listOf("" to "Default") else emptyList()) +
         models.filter { listed(it, list) || it.id == selected }.map { it.id to it.label }
+}
+
+/** An agent's shortlisted models as chips, and More models to edit the list. */
+@Composable
+fun ModelChips(models: List<Model>, harness: String, selected: String, pick: (String) -> Unit, more: () -> Unit) {
+    val choices = shortlisted(models, harness, selected)
     ChipRow(focus = choices.indexOfFirst { it.first == selected }) {
         items(choices, key = { it.first }) { (id, label) -> PickChip(label, id == selected) { pick(id) } }
         if (models.isNotEmpty()) item("more") { PickChip("More models", false, onClick = more) }

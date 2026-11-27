@@ -7,18 +7,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.wainhq.wain.model.AgentAvailability
 import com.wainhq.wain.model.Model
+import com.wainhq.wain.model.CloneOffer
 import com.wainhq.wain.model.Picks
 import com.wainhq.wain.model.SessionKey
 import com.wainhq.wain.net.ConnState
+import com.wainhq.wain.ui.sentence
 import com.wainhq.wain.wire.Bot
 import com.wainhq.wain.wire.Project
 import com.wainhq.wain.wire.SessionItem
+import com.wainhq.wain.wire.WainError
 import com.wainhq.wain.wire.decodeList
 import com.wainhq.wain.wire.decodeOrNull
 import com.wainhq.wain.wire.get
 import com.wainhq.wain.wire.jsonOf
 import com.wainhq.wain.wire.sentFrom
 import com.wainhq.wain.wire.wireJson
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import java.io.File
@@ -146,10 +150,35 @@ class NewTask(private val store: Store, context: Context) {
             // An unread availability lets Start stand: `send_msg` refuses a missing agent itself, in words.
             val agentOk = agent?.available == true || server?.let { agentsFailed[it] } == true
             val modelsOk = models[modelsKey] != null || modelsFailed[modelsKey] == true
-            return !sending && hasText && cwd != null && agentOk && modelsOk
+            return !sending && hasText && (cwd != null || clone != null && bot == null) && agentOk && modelsOk
         }
 
-    fun aim(at: Bot, on: String) { bot = on to at }
+    /** Run by a bot: it starts in the bot's own folder, so a clone picked before is dropped. */
+    fun aim(at: Bot, on: String) {
+        clone = null
+        bot = on to at
+    }
+
+    /**
+     * A project another machine holds and this one lacks, picked to clone: Start clones it onto
+     * the picked machine first, then runs there. Any other machine or project pick drops it.
+     */
+    var clone by mutableStateOf<CloneOffer?>(null)
+        private set
+
+    fun pickClone(offer: CloneOffer) {
+        leavePlace()
+        clone = offer
+    }
+
+    /** The worktree's base the reader picked ("Start from"); null is the default branch, fetched fresh. */
+    var worktreeBase by mutableStateOf<String?>(null)
+
+    /** The base a worktree starts from: Start from's pick, else an opened draft's `--base`. */
+    val base: String? get() = worktreeBase ?: draftBase
+
+    /** The clone's latest progress line while Clone and start runs it. */
+    val cloneLine: String? get() = clone?.let { c -> server?.let { store.cloneProgress[it]?.get(c.slug) } }
 
     /** Run by Me: off the bot, staying on its machine. */
     fun runByMe() { bot?.let { pickServer(it.first) } }
@@ -171,11 +200,15 @@ class NewTask(private val store: Store, context: Context) {
     private fun leavePlace() {
         draftFolder = null
         draftBase = null
+        clone = null
+        worktreeBase = null
     }
 
     /** Fills the dock from a saved draft, on its own picks. iOS's `NewTask.open`. */
     fun open(draft: DraftItem, on: String) {
         bot = null
+        // A Start from picked for another task never overrides the draft's own base.
+        worktreeBase = null
         text = draft.prompt
         draftId = on to draft.id
         draft.project?.let { projectName = it }
@@ -274,44 +307,68 @@ class NewTask(private val store: Store, context: Context) {
     /** The argument set `useSessions.ts` sends for a new session, stance and fast narrowed to what this agent and model honour. */
     suspend fun start(): SessionKey? {
         val server = server ?: return null
-        val cwd = cwd ?: return null
         if (!ready) return null
         sending = true
         failure = null
-        val id = UUID.randomUUID().toString().lowercase()
+        // Every pick is taken now: a clone can run for minutes, and the reader may move the
+        // sheet's picks meanwhile. The task starts as it was asked, in the clone's own checkout.
+        val c = clone
+        val aimed = bot != null
         val sent = text
         val opened = draftId
+        val args = arrayOf(
+            "prompt" to sent,
+            "attachmentPaths" to emptyList<String>(),
+            "harness" to harness,
+            "model" to modelId,
+            "effort" to effort,
+            "permissionMode" to Picks.stanceFor(harness, stance),
+            "fast" to (fast && Picks.offersFast(harness, model)),
+            "branch" to null,
+            "useWorktree" to (worktree && !aimed),
+            "worktreeName" to null,
+            // Start from, or a draft's `--base`, resolved by the server as `wain session new --base` does.
+            "baseRef" to (if (worktree && !aimed) base else null),
+            "isNewSession" to true,
+        )
+        val picked = cwd
+        val id = UUID.randomUUID().toString().lowercase()
+        var step = if (c != null) "clone" else "start"
         return try {
-            val reply = store.call(server, "send_msg", jsonOf(
-                "sessionId" to id,
-                "prompt" to sent,
-                "attachmentPaths" to emptyList<String>(),
-                "harness" to harness,
-                "model" to modelId,
-                "effort" to effort,
-                "permissionMode" to Picks.stanceFor(harness, stance),
-                "fast" to (fast && Picks.offersFast(harness, model)),
-                "cwd" to cwd,
-                "branch" to null,
-                "useWorktree" to (worktree && bot == null),
-                "worktreeName" to null,
-                // A draft's `--base`, resolved by the server as `wain session new --base` does.
-                "baseRef" to (if (worktree && bot == null) draftBase else null),
-                "isNewSession" to true,
-                *sentFrom(),
-            ))
+            val cwd = c?.let { cloneOnto(server, it) } ?: picked ?: return null
+            step = "start"
+            val reply = store.call(server, "send_msg", jsonOf("sessionId" to id, "cwd" to cwd, *args, *sentFrom()))
             decodeOrNull<SessionItem>(reply["snapshot"])?.let { store.created(server, it) }
             bot = null
+            worktreeBase = null
             dropDraft(opened)
             // Words added while the start was out were never sent, so they stay.
             if (text == sent) text = ""
             SessionKey(server, id)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            failure = e.message ?: "The server didn't answer."
+            failure = "Couldn't $step. " + sentence(e.message ?: "The server didn't answer.")
             null
         } finally {
             sending = false
         }
+    }
+
+    /**
+     * `clone_github_repo` on `server`, then the clone as the pick: it answers the machine's whole
+     * project list, the clone found in it by its slug. Long, since a big repository takes minutes.
+     */
+    private suspend fun cloneOnto(server: String, c: CloneOffer): String {
+        store.cloneProgress[server] = store.cloneProgress[server].orEmpty() - c.slug
+        val list = decodeList<Project>(store.call(server, "clone_github_repo", jsonOf("slug" to c.slug), timeoutMs = 1_800_000))
+        store.attached(server, list)
+        val made = list.firstOrNull { it.remote.equals(c.remote, ignoreCase = true) }
+            ?: list.firstOrNull { it.path.trimEnd('/').endsWith("/${c.name}") }
+            ?: throw WainError("The clone finished but ${c.name} isn't among this machine's projects.")
+        // The sheet shows the clone as the project, unless the reader has picked elsewhere meanwhile.
+        if (clone == c) pick(ProjectChoice(made.name, made.path))
+        return made.path
     }
 
     /** Saves the text as a draft in Wain's sidebar, on these picks, and clears it. */
@@ -338,14 +395,14 @@ class NewTask(private val store: Store, context: Context) {
                 "permissionMode" to Picks.stanceFor(harness, stance),
                 "fast" to (fast && Picks.offersFast(harness, model)),
                 "useWorktree" to worktree,
-                "base" to draftBase,
+                "base" to base,
             )))
             dropDraft(opened)
             store.draftsRevision++
             if (text == saved) text = ""
             true
         } catch (e: Exception) {
-            failure = e.message ?: "The server didn't answer."
+            failure = "Couldn't save the draft. " + sentence(e.message ?: "The server didn't answer.")
             false
         } finally {
             sending = false
