@@ -1,0 +1,31 @@
+Wain puts the coding agents running on your Mac or server in your pocket. Start a task, follow it as it works, answer when it asks, and merge the pull request when it's done, without going back to your desk.
+
+Your agents keep running on your own machine. The phone connects to it and drives it from there, so your code and transcripts stay where they are.
+
+WAITING ON YOU
+Home shows what needs you across all your machines: questions to answer, permissions to grant, pull requests ready to merge, and tasks that went quiet. Answer each one right on its card.
+
+BOTS
+Chat with your bots. A bot takes your message to the right task, starts new ones, and tells you when the work is done.
+
+TASKS
+Every task on every machine, live. Open one to follow its transcript as it runs, reply, queue the next message, or stop it.
+
+START A TASK
+Pick a machine, a project and an agent, say what you want, and send. Dictate it if you'd rather talk, with your phone's speech recognition or on your Mac.
+
+MERGE FROM YOUR PHONE
+See when a task's pull request is ready, and merge it from Home.
+
+ROUTINES
+See what your bots run next, and pause or delete a routine.
+
+NOTIFICATIONS
+Get an alert when a task finishes or an agent needs you. Answer a question or a permission request right from the alert.
+
+Works with the agent command-line tools Wain runs: Claude Code, Codex, Grok Build, pi, fx and OpenCode.
+
+GETTING STARTED
+Wain for Android needs a machine running Wain: the Wain app for Mac with Remote access on, or the Wain server on Linux. Pair by scanning the QR code it shows, or enter its address. Get Wain at wainhq.com.
+
+No ads, no analytics, no tracking.

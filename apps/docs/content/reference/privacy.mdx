@@ -1,13 +1,13 @@
 ---
 title: Privacy
-description: Wain's privacy policy. What the desktop app, Wain accounts and wainhq.com collect, where it is kept, what is never sent, and how to delete your account.
+description: Wain's privacy policy. What the desktop app, the phone apps, Wain accounts and wainhq.com collect, where it is kept, what is never sent, and how to delete your account.
 sidebar:
   order: 4
 ---
 
-This is Wain's privacy policy. It covers the Wain desktop app, the `wain` command line and server, Wain accounts, and wainhq.com with these docs. Wain is run by Ismat Babirli; "we" and "us" here mean him. Write to [support@wainhq.com](mailto:support@wainhq.com) about anything on this page.
+This is Wain's privacy policy. It covers the Wain desktop app, the Wain apps for iPhone, iPad and Android, the `wain` command line and server, Wain accounts, and wainhq.com with these docs. Wain is run by Ismat Babirli; "we" and "us" here mean him. Write to [support@wainhq.com](mailto:support@wainhq.com) about anything on this page.
 
-Last updated: 25 November 2026.
+Last updated: 27 November 2026.
 
 In short:
 
@@ -18,7 +18,7 @@ In short:
 
 ## No analytics
 
-Wain's builds send no usage events, error reports or surveys, from the app, the background server or the Linux server. The source code can send anonymous usage events when it is built with an analytics key; Wain's releases are built without one. If that ever changes, this page will say so first, and you will be able to turn it off by setting `WAIN_NO_ANALYTICS`.
+Wain's builds send no usage events, error reports or surveys, from the app, the background server, the Linux server or the phone apps. The source code can send anonymous usage events when it is built with an analytics key; Wain's releases are built without one. If that ever changes, this page will say so first, and you will be able to turn it off by setting `WAIN_NO_ANALYTICS`.
 
 When something breaks, the details stay on your machine, in `~/.wain`. An agent line Wain could not read, for one, is kept in `~/.wain/parse_failures.jsonl`.
 
@@ -29,6 +29,8 @@ When something breaks, the details stay on your machine, in `~/.wain`. An agent 
 - Session titles, project names, branch names, issue titles.
 - Server names and addresses, ports and links.
 - Screens and recordings.
+
+The one exception is a phone alert, once you turn alerts on: it carries a task's title and a line about it. See [Phone alerts](#phone-alerts).
 
 Your agents talk to their own providers, as they do in a terminal; see [Other connections Wain makes](#other-connections-wain-makes).
 
@@ -65,6 +67,24 @@ Change your name and username in your account settings on wainhq.com. To delete 
 
 You can ask us for a copy of what your account holds, to correct it, or to delete it, by writing to [support@wainhq.com](mailto:support@wainhq.com). We answer within 30 days. If you live in the EU or the UK, you can also complain to your data protection authority.
 
+## Wain for iPhone, iPad and Android
+
+The phone apps have no account and send no analytics. They connect to the machines you pair, directly or through Remote access, to wainhq.com for alerts, and to Wain's GitHub repository to see whether a paired machine runs an older Wain than the newest one.
+
+The phone keeps each paired machine's name, address and access token: on iPhone in the Keychain, on Android encrypted with the Android Keystore. Your picks, such as which machines to show, stay on the phone too.
+
+- **Camera.** Used only to scan a machine's pairing QR code. Nothing is recorded or sent.
+- **Microphone.** Used only for dictation. On iPhone, Apple's speech models turn what you say into text on the phone, or the recording goes to your own Mac to be read there. On Android, the phone's speech recognition does it: on the phone where Android offers that, otherwise through the phone's speech service, usually Google's.
+- **Photos.** On iPhone, Wain asks to add to your photos only when you save a picture.
+
+### Phone alerts
+
+Alerts are off until you allow them. Once you do, the phone sends wainhq.com its push token from Apple or Google. wainhq.com seals that token into a handle only it can read, and the phone gives the handle to the machines you pair. When a task finishes or an agent needs you, your machine sends the alert to wainhq.com with that handle, and wainhq.com passes it to Apple or Google, who deliver it.
+
+An alert holds the task's title, a line about what happened and, for a question, its options. wainhq.com stores neither the token nor the alert, and logs no alert text. To cap how many alerts one phone gets, it keeps a count under a one-way hash of the token, for about a day.
+
+On Android, alerts arrive through Firebase Cloud Messaging. Firebase gives the app an installation ID when it first opens, which Google uses to deliver alerts.
+
 ## Other connections Wain makes
 
 Wain connects to the network for:
@@ -85,6 +105,7 @@ Dictation runs on your Mac. Your voice never leaves it.
 - **netcup**, in Austria, hosts wainhq.com, these docs and the database that holds Wain accounts, on a server we run.
 - **Contabo**, in Germany, hosts the mail server for wainhq.com addresses, on a server we run. Mail you send to support@wainhq.com is kept there.
 - **GitHub** and **Google** sign you in, when you choose them. GitHub also hosts Wain's source code and releases.
+- **Apple** and **Google** deliver [phone alerts](#phone-alerts), through Apple Push Notification service and Firebase Cloud Messaging.
 
 We sell no data, show no ads, and share nothing beyond these services.
 
