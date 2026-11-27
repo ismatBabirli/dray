@@ -1,7 +1,7 @@
 import XCTest
 
 /// The #825 screens on the four tabs against a real server: pairs through a
-/// `wain://connect` link, then walks Tasks, a session, New task, Run with and
+/// `wain://connect` link, then walks Tasks, a session, New task and its pages, and
 /// the empty states, attaching a screenshot of each. Export them with
 /// `xcrun xcresulttool export attachments`. Against the homes
 /// `scripts/redesign_seed.py` makes, `studio` first and `empty` second; its
@@ -244,9 +244,9 @@ final class RedesignTests: XCTestCase {
         snap(app, "reply-answered")
     }
 
-    /// Run with from New task's Agent row: the model chips, the project menu, and a branch switch over
-    /// uncommitted files. Wants `thinking-orbs` on the server holding a `fix-reconnect` branch and dirty files.
-    func testRunWithSheet() throws {
+    /// New task's Agent and Project pages, and a branch switch over uncommitted files.
+    /// Wants `thinking-orbs` on the server holding a `fix-reconnect` branch and dirty files.
+    func testNewTaskPages() throws {
         let app = try pair()
         let compose = app.buttons["newTask"]
         XCTAssertTrue(compose.waitForExistence(timeout: 20))
@@ -255,21 +255,23 @@ final class RedesignTests: XCTestCase {
         let agent = app.buttons["row.Agent"]
         XCTAssertTrue(agent.waitForExistence(timeout: 10), "New task has no Agent row")
         snap(app, "picks-new-task")
-        agent.tap()
-        XCTAssertTrue(app.staticTexts["Run with"].waitForExistence(timeout: 5), "the Agent row opened no sheet")
+        app.openAgent()
         XCTAssertTrue(app.buttons["More models"].waitForExistence(timeout: 15), "no model chips")
+        XCTAssertFalse(app.buttons["row.Machine"].exists, "the Agent page asks for the machine again")
         sleep(1)
-        snap(app, "picks-run-with")
+        snap(app, "picks-agent")
+        app.back()
 
-        last(app.buttons.matching(identifier: "row.Project")).tap()
-        let orbs = menuItem(app, "thinking-orbs")
-        XCTAssertTrue(orbs.exists, "no thinking-orbs in the project menu")
-        XCTAssertTrue(app.buttons["Attach project…"].exists, "no Attach inside the project menu")
-        snap(app, "picks-project-menu")
+        app.openProject()
+        let orbs = app.buttons["thinking-orbs"]
+        XCTAssertTrue(orbs.waitForExistence(timeout: 5), "no thinking-orbs on the Project page")
+        XCTAssertTrue(app.buttons["Clone from GitHub"].exists, "no Clone from GitHub on the Project page")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Attach a folder")).firstMatch.exists)
+        snap(app, "picks-project-page")
         orbs.tap()
+        XCTAssertTrue(app.buttons["row.Project"].staticTexts["thinking-orbs"].waitForExistence(timeout: 5), "the pick never landed")
 
-        // The sheet under this one has a switch of the same name.
-        let worktree = last(app.switches.matching(identifier: "Worktree"))
+        let worktree = app.switches["Worktree"]
         if worktree.value as? String == "On" { worktree.tap() }
         let branch = app.buttons["row.Branch"]
         XCTAssertTrue(branch.waitForExistence(timeout: 10), "worktree off shows no branch row")
@@ -289,8 +291,8 @@ final class RedesignTests: XCTestCase {
         app.buttons["Bring changes"].tap()
         XCTAssertTrue(app.staticTexts["main"].waitForExistence(timeout: 15))
         worktree.tap()
-        app.buttons["Done"].tap()
-        XCTAssertTrue(app.staticTexts["Run with"].waitForNonExistence(timeout: 5))
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.buttons["startTask"].waitForNonExistence(timeout: 5))
     }
 
     /// An open menu's item: the last of its name, since the sheet under it can hold the same one.

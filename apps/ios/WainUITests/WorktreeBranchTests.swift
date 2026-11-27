@@ -1,6 +1,6 @@
 import XCTest
 
-/// Run with's branch picks against a scratch `wain-serve` and a repo holding a
+/// New task's branch picks against a scratch `wain-serve` and a repo holding a
 /// branch in every place the worktree picker sorts by: main behind its remote,
 /// `feature/remote-only`, `local-only`, `shared` in both and just behind, and
 /// `local-two` for the checkout switch, with an untracked file to make it ask.
@@ -18,7 +18,7 @@ final class WorktreeBranchTests: XCTestCase {
 
     /// Worktree off: the branch row switches the checkout, asking first about the untracked file.
     func test5SwitchCheckout() throws {
-        let app = try openRunWith()
+        let app = try openNewTask()
         setWorktree(app, on: false)
         let row = app.buttons[top: "row.Branch"]
         row.tap()
@@ -38,10 +38,10 @@ final class WorktreeBranchTests: XCTestCase {
 
     /// Back from the branch list, the sheet's title sits where it was, not under an empty bar.
     func test0BackKeepsSheet() throws {
-        let app = try openRunWith()
+        let app = try openNewTask()
         setWorktree(app, on: true)
-        let done = app.buttons[top: "Done"]
-        let top = done.frame.minY
+        let bar = app.navigationBars["New task"]
+        let top = bar.frame.minY
         app.buttons["row.Start from"].tap()
         XCTAssertTrue(app.navigationBars["Start from"].waitForExistence(timeout: 5))
         // Picked from a search, which is what left the bar behind.
@@ -52,11 +52,11 @@ final class WorktreeBranchTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Start from"].waitForNonExistence(timeout: 5))
         sleep(1)
         snap(app, "0-back")
-        XCTAssertEqual(done.frame.minY, top, accuracy: 2, "sheet moved down after the page")
+        XCTAssertEqual(bar.frame.minY, top, accuracy: 2, "sheet moved down after the page")
     }
 
     private func start(from branch: String, search: String? = nil) throws {
-        let app = try openRunWith()
+        let app = try openNewTask()
         setWorktree(app, on: true)
         let row = app.buttons["row.Start from"]
         XCTAssertTrue(row.waitForExistence(timeout: 15), "no Start from row")
@@ -73,9 +73,10 @@ final class WorktreeBranchTests: XCTestCase {
         XCTAssertTrue(pick.waitForExistence(timeout: 5), "\(branch) not listed")
         pick.tap()
         XCTAssertTrue(row.staticTexts[branch].waitForExistence(timeout: 5), "row does not say \(branch)")
-        app.useHaiku()
         snap(app, "\(branch)-picked")
-        app.buttons[top: "Done"].tap()
+        app.openAgent()
+        app.useHaiku()
+        app.back()
 
         let prompt = app.composer
         XCTAssertTrue(prompt.waitForExistence(timeout: 5))
@@ -87,19 +88,19 @@ final class WorktreeBranchTests: XCTestCase {
         snap(app, "\(branch)-started")
     }
 
-    /// Launches with only the server under test, and opens Run with on the
+    /// Launches with only the server under test, and opens New task on the
     /// project, attaching it by path the first time.
-    private func openRunWith() throws -> XCUIApplication {
+    private func openNewTask() throws -> XCUIApplication {
         let env = ProcessInfo.processInfo.environment
         guard let url = env["WAIN_URL"], let token = env["WAIN_TOKEN"], let project = env["WAIN_PROJECT"] else {
             throw XCTSkip("set TEST_RUNNER_WAIN_URL, TEST_RUNNER_WAIN_TOKEN and TEST_RUNNER_WAIN_PROJECT")
         }
         let app = XCUIApplication.openNewTask(url: url, token: token)
-        app.openRunWith()
-        let attach = app.buttons["Attach project"]
-        if attach.waitForExistence(timeout: 5) {
-            attach.tap()
-            app.attach(path: project)
+        let name = (project as NSString).lastPathComponent
+        if !app.buttons["row.Project"].staticTexts[name].waitForExistence(timeout: 5) {
+            app.openProject()
+            let row = app.buttons[name]
+            if row.waitForExistence(timeout: 5) { row.tap() } else { app.attach(path: project) }
         }
         return app
     }

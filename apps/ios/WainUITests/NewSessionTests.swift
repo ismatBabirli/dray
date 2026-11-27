@@ -14,16 +14,15 @@ final class NewSessionTests: XCTestCase {
             throw XCTSkip("set TEST_RUNNER_WAIN_PROJECT")
         }
         let app = try openNewTask()
-        app.openRunWith()
-        attachProject(app)
-        XCTAssertTrue(app.buttons["Enter path"].waitForExistence(timeout: 15))
-        snap(app, "1-attach")
+        app.openProject()
+        snap(app, "1-project")
         app.attach(path: project)
 
+        app.openAgent()
         app.useHaiku()
         app.pick("row.Permissions", "Ask every time")
-        snap(app, "2-run-with")
-        app.buttons[top: "Done"].tap()
+        snap(app, "2-agent")
+        app.back()
 
         let prompt = app.composer
         XCTAssertTrue(prompt.waitForExistence(timeout: 5))
@@ -45,8 +44,8 @@ final class NewSessionTests: XCTestCase {
             throw XCTSkip("set TEST_RUNNER_WAIN_CLONE to a small repo of the server's GitHub account")
         }
         let app = try openNewTask()
-        app.openRunWith()
-        attachProject(app)
+        app.openProject()
+        app.buttons["Clone from GitHub"].tap()
 
         // Rows are lazy: one below the fold does not exist until searched for.
         let search = app.searchFields["Search repositories"]
@@ -72,12 +71,6 @@ final class NewSessionTests: XCTestCase {
             throw XCTSkip("set TEST_RUNNER_WAIN_URL and TEST_RUNNER_WAIN_TOKEN")
         }
         return .openNewTask(url: url, token: token)
-    }
-
-    /// Run with's Attach page: the row where nothing is attached yet, else the project menu's last item.
-    private func attachProject(_ app: XCUIApplication) {
-        let row = app.buttons["Attach project"]
-        if row.waitForExistence(timeout: 5) { row.tap() } else { app.pick("row.Project", "Attach project…") }
     }
 
     private func snap(_ app: XCUIApplication, _ name: String) {
@@ -115,22 +108,35 @@ extension XCUIApplication {
         return app
     }
 
-    /// New task's Agent row opens Run with.
-    func openRunWith() {
-        buttons["row.Agent"].tap()
-        XCTAssertTrue(staticTexts["Run with"].waitForExistence(timeout: 5), "no Run with sheet")
+    /// New task's Project row pushes its page.
+    func openProject() {
+        buttons["row.Project"].tap()
+        XCTAssertTrue(navigationBars["Project"].waitForExistence(timeout: 5), "no Project page")
     }
 
-    /// From the Attach page: types the folder in and waits for Run with to name it.
+    /// New task's Agent row pushes its page.
+    func openAgent() {
+        buttons["row.Agent"].tap()
+        XCTAssertTrue(navigationBars["Agent"].waitForExistence(timeout: 5), "no Agent page")
+    }
+
+    /// Back to New task from a page it pushed.
+    func back() {
+        navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(buttons["startTask"].waitForExistence(timeout: 5), "not back on New task")
+    }
+
+    /// From the Project page: types the folder in, and lands back on New task with it picked.
     func attach(path: String) {
-        let enter = buttons["Enter path"]
-        XCTAssertTrue(enter.waitForExistence(timeout: 15))
-        enter.tap()
+        let row = buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Attach a folder")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15), "no Attach a folder row")
+        row.tap()
         let field = alerts.textFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.typeText(path)
         alerts.buttons["Attach"].tap()
-        XCTAssertTrue(staticTexts[(path as NSString).lastPathComponent].waitForExistence(timeout: 15), "project never attached")
+        let name = (path as NSString).lastPathComponent
+        XCTAssertTrue(buttons["row.Project"].staticTexts[name].waitForExistence(timeout: 15), "project never attached")
     }
 
     /// A fresh install lists Haiku under More models only, so it is switched on there first.
@@ -161,7 +167,7 @@ extension XCUIApplication {
 }
 
 extension XCUIElementQuery {
-    /// The match on the front sheet: New task under Run with holds rows of the same names, out of reach.
+    /// The match on the front sheet: a sheet over New task can hold a row or button of the same name, out of reach.
     subscript(top key: String) -> XCUIElement {
         let all = matching(NSPredicate(format: "identifier == %@ OR label == %@", key, key))
         XCTAssertTrue(all.firstMatch.waitForExistence(timeout: 15), "no \(key)")

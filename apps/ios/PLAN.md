@@ -74,14 +74,18 @@ phone reads and drives it over the same WebSocket the desktop uses
   of the reader's. Both are overlays, so neither moves a row.
 - **New task** from the compose button at the top right of Home and Tasks:
   a sheet with the composer's field and mic, then Run by (Me, or a bot, whose
-  folder the words go to), Project, Agent, Machine and Worktree, and Start
-  task. Save keeps it as a draft (`create_draft`); Cancel with words offers
-  Save draft, Discard or Keep editing. The Agent row opens **Run with**: server (where two hold the
-  project), project with Attach inside its menu, worktree, the agent and its
-  model as chips, effort, fast mode and stance. Double-tapping a model stars
-  it, on this phone, per agent; starred ones lead. With the worktree off a
-  Branch row switches the checkout at once (`checkout_branch`), asking
-  Bring or Stash first where files are uncommitted, as the desktop does.
+  folder the words go to), Machine, Project, Worktree and Agent, and Start
+  task (#35). Save keeps it as a draft (`create_draft`); Cancel with words offers
+  Save draft, Discard or Keep editing. Project pushes a page: the machine's
+  projects, then the other connected machines' GitHub repos it lacks, each with
+  Clone, then Clone from GitHub and Attach a folder. A Clone pick clones nothing
+  yet: the button reads Clone and start, and starting runs `clone_github_repo`
+  first, then the task in the new checkout; a failed clone keeps the sheet open
+  with the reason. Agent pushes a page of the machine's agents and the model as
+  chips, effort, fast mode and stance; nothing picked on the sheet is asked
+  again. With the worktree on a Start from row picks its base; off, a Branch
+  row switches the checkout at once (`checkout_branch`), asking Bring or Stash
+  first where files are uncommitted, as the desktop does.
   On an iPad or an unfolded Duo the tabs become a sidebar
   (`.sidebarAdaptable`, iOS 18): Home, each bot under Bots, All tasks and each
   project, Routines, with the chosen one beside it.
@@ -295,7 +299,7 @@ arrived on is the answer.
 
 **A server can be switched off on the phone alone** (`Server.on`, saved with
 the list and read as on where absent). Off drops its connection and everything
-held of it, so its tasks, cards, banners and Run with rows go; nothing is sent,
+held of it, so its tasks, cards, banners and New task rows go; nothing is sent,
 and its tasks keep running there. Everything the list reasons about reads
 `store.live`, never `store.servers`, or an off server comes back as a stuck
 "Connecting".
