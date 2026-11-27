@@ -80,8 +80,30 @@ jobs:
       # extras cancels the run when it fails.
       actions: write
 
+  # The app's beta is out once its manifest is written, whatever Linux or
+  # Windows did: a failed leg fails `app` but never holds back `manifest`.
+  # So the CLI waits on that one job, as release-cli's own gate does.
+  manifest:
+    needs: app
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          got="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs" --paginate \
+            --jq '.jobs[] | select(.name == "app / manifest") | .conclusion')"
+          echo "app / manifest: ${got:-not run}"
+          [ "$got" = success ]
+
+  # Spelled out: a job is skipped by default when anything up its chain
+  # failed, and `app` fails with a Linux or Windows leg.
   cli:
-    needs: [version, app]
+    needs: [version, manifest]
+    if: ${{ !cancelled() && needs.version.result == 'success' && needs.manifest.result == 'success' }}
     uses: ./.github/workflows/release-cli.yml
     with:
       version: ${{ needs.version.outputs.cli }}
@@ -94,10 +116,12 @@ jobs:
   # install.sh and the app read the newest 100 releases for the CLI's, and two
   # betas a merge would push every stable one out of that window. So only the
   # newest three of each kind stay, release and tag; their files on R2 stay
-  # too, since a manifest may still name them.
+  # too, since a manifest may still name them. Only after a beta shipped
+  # whole, whose tags are then the newest: a run of failed betas, tagged but
+  # never released, would otherwise prune away every beta that did ship.
   prune:
-    needs: [app, cli]
-    if: ${{ !cancelled() }}
+    needs: cli
+    if: ${{ !cancelled() && needs.cli.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
