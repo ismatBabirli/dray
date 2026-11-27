@@ -1,55 +1,51 @@
 {
-  "version": "0.37.0",
-  "notes": "### New\n\n- **Pair a phone with any of your servers.** In Settings → Servers, a\n  server's **⋯** menu has **Pair a phone…**. It shows that server's\n  pairing code, or offers **Turn on public address** first when it has\n  none.\n\n### Improved\n\n- Servers keep Claude Code's and Codex's latest usage readings, the\n  5-hour and weekly windows, so the iPhone and Android apps can show\n  how close each agent is to its limit and when it resets. A reading\n  arrives while a task on that agent runs.",
-  "pub_date": "2026-11-27T07:29:53.624Z",
+  "version": "0.37.1-beta.2",
+  "notes": "",
+  "pub_date": "2026-11-27T08:46:29.433Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkFhSVltZXd6RGlyRkhiVjEyUEJiUlNLdGdraWRNYldyQThqTCtVUmQ1dSsxaHQ4T1N4S1IwQlVyT0JNbkxrc3hXODRuaVFIVHRMRnh4aENydUV3UkE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY0NTkwCWZpbGU6V2Fpbi5hcHAudGFyLmd6CXZlcnNpb246MC4zNy4wCnM1ekdQcTAzR2N4RXJ0QkhQbjhSSmlJaEdoTUR5R2JuV1RUQzdTNCs3V1BFRm93QmxlS3NoZUxzczE4VHFZZEdnN2dQa1I5aUcrL0lscHdyL2h6dUNRPT0K",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkVoaExIczliaFl1TVJWQ0s0ZFAyRHlMdkRFQ0FMN2JsVnNGOHBnSTJlREJ5TlI0R29KTGo0T0xDNyttZmJLSE0rbkdqRnRZNnp4Mkp0amhZRFVYOEFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY5MTgyCWZpbGU6V2Fpbi5hcHAudGFyLmd6CXZlcnNpb246MC4zNy4xLWJldGEuMgptcDQ2cXJMZHIzV3ljU05WVWRjNmw2VDIzRURiRDVoRkRKRENZbzJrdlVUY29QMEc4N0pQV21LeGo3S3BZSFRFVC9tOUNPQzJ4ak4vdVRMUVFKcjNBUT09Cg==",
+      "url": "https://downloads.wainhq.com/v0.37.1-beta.2/Wain_universal.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkFhSVltZXd6RGlyRkhiVjEyUEJiUlNLdGdraWRNYldyQThqTCtVUmQ1dSsxaHQ4T1N4S1IwQlVyT0JNbkxrc3hXODRuaVFIVHRMRnh4aENydUV3UkE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY0NTkwCWZpbGU6V2Fpbi5hcHAudGFyLmd6CXZlcnNpb246MC4zNy4wCnM1ekdQcTAzR2N4RXJ0QkhQbjhSSmlJaEdoTUR5R2JuV1RUQzdTNCs3V1BFRm93QmxlS3NoZUxzczE4VHFZZEdnN2dQa1I5aUcrL0lscHdyL2h6dUNRPT0K",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkVoaExIczliaFl1TVJWQ0s0ZFAyRHlMdkRFQ0FMN2JsVnNGOHBnSTJlREJ5TlI0R29KTGo0T0xDNyttZmJLSE0rbkdqRnRZNnp4Mkp0amhZRFVYOEFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY5MTgyCWZpbGU6V2Fpbi5hcHAudGFyLmd6CXZlcnNpb246MC4zNy4xLWJldGEuMgptcDQ2cXJMZHIzV3ljU05WVWRjNmw2VDIzRURiRDVoRkRKRENZbzJrdlVUY29QMEc4N0pQV21LeGo3S3BZSFRFVC9tOUNPQzJ4ak4vdVRMUVFKcjNBUT09Cg==",
+      "url": "https://downloads.wainhq.com/v0.37.1-beta.2/Wain_universal.app.tar.gz"
     },
     "darwin-aarch64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkFhSVltZXd6RGlyRkhiVjEyUEJiUlNLdGdraWRNYldyQThqTCtVUmQ1dSsxaHQ4T1N4S1IwQlVyT0JNbkxrc3hXODRuaVFIVHRMRnh4aENydUV3UkE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY0NTkwCWZpbGU6V2Fpbi5hcHAudGFyLmd6CXZlcnNpb246MC4zNy4wCnM1ekdQcTAzR2N4RXJ0QkhQbjhSSmlJaEdoTUR5R2JuV1RUQzdTNCs3V1BFRm93QmxlS3NoZUxzczE4VHFZZEdnN2dQa1I5aUcrL0lscHdyL2h6dUNRPT0K",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkVoaExIczliaFl1TVJWQ0s0ZFAyRHlMdkRFQ0FMN2JsVnNGOHBnSTJlREJ5TlI0R29KTGo0T0xDNyttZmJLSE0rbkdqRnRZNnp4Mkp0amhZRFVYOEFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY5MTgyCWZpbGU6V2Fpbi5hcHAudGFyLmd6CXZlcnNpb246MC4zNy4xLWJldGEuMgptcDQ2cXJMZHIzV3ljU05WVWRjNmw2VDIzRURiRDVoRkRKRENZbzJrdlVUY29QMEc4N0pQV21LeGo3S3BZSFRFVC9tOUNPQzJ4ak4vdVRMUVFKcjNBUT09Cg==",
+      "url": "https://downloads.wainhq.com/v0.37.1-beta.2/Wain_universal.app.tar.gz"
     },
     "darwin-x86_64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkFhSVltZXd6RGlyRkhiVjEyUEJiUlNLdGdraWRNYldyQThqTCtVUmQ1dSsxaHQ4T1N4S1IwQlVyT0JNbkxrc3hXODRuaVFIVHRMRnh4aENydUV3UkE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY0NTkwCWZpbGU6V2Fpbi5hcHAudGFyLmd6CXZlcnNpb246MC4zNy4wCnM1ekdQcTAzR2N4RXJ0QkhQbjhSSmlJaEdoTUR5R2JuV1RUQzdTNCs3V1BFRm93QmxlS3NoZUxzczE4VHFZZEdnN2dQa1I5aUcrL0lscHdyL2h6dUNRPT0K",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_universal.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkVoaExIczliaFl1TVJWQ0s0ZFAyRHlMdkRFQ0FMN2JsVnNGOHBnSTJlREJ5TlI0R29KTGo0T0xDNyttZmJLSE0rbkdqRnRZNnp4Mkp0amhZRFVYOEFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY5MTgyCWZpbGU6V2Fpbi5hcHAudGFyLmd6CXZlcnNpb246MC4zNy4xLWJldGEuMgptcDQ2cXJMZHIzV3ljU05WVWRjNmw2VDIzRURiRDVoRkRKRENZbzJrdlVUY29QMEc4N0pQV21LeGo3S3BZSFRFVC9tOUNPQzJ4ak4vdVRMUVFKcjNBUT09Cg==",
+      "url": "https://downloads.wainhq.com/v0.37.1-beta.2/Wain_universal.app.tar.gz"
     },
     "linux-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkRqaVJOOE44cStiVmZ5dG0ydkxLVXcrRlVxZDIxdytNTEVibEF5Y3doSUQ2SDlkNmkwaWhESjBoeWNUTStJc2ZVVE92QStScmpqUFYrOXFSdVZsT3dzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY0MjE2CWZpbGU6V2Fpbl8wLjM3LjBfYWFyY2g2NC5BcHBJbWFnZQl2ZXJzaW9uOjAuMzcuMApIRjFhai9Lb3JmQmxMRFhpMzkxZURPb1lwTG5XTmhZRFFsUlc3UGZqek5vYWg5OXltNGVlbzJjMkNsTll4a2dlNHI3UG9xNk8rSEpaZU50VjBEQUJDdz09Cg==",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_0.37.0_aarch64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkxYR2U5TzR4dXlJRHFlS3gyUURDM3BSOVNFWEhPSm9KY0VqSlI0bDJETTF6M1FLcythcHg5OXNOc2MzbjJsanVPMWVxSmNudXM3NXppSmJ1OGNVd0FZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY4MzEwCWZpbGU6V2Fpbl8wLjM3LjEtYmV0YS4yX2FhcmNoNjQuQXBwSW1hZ2UJdmVyc2lvbjowLjM3LjEtYmV0YS4yCkNuQ2ZSczdFY2liOXJKZ0pNOGZ2YzZjS2dBOWg3UndFNmx2YzBmYklFTFhVd0wvVTNEUjBCOFN4NUNEREUwM0dLNVg1K0t4UDVTWnEyeThHTnhmSEN3PT0K",
+      "url": "https://downloads.wainhq.com/v0.37.1-beta.2/Wain_0.37.1-beta.2_aarch64.AppImage"
     },
     "linux-aarch64-appimage": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkRqaVJOOE44cStiVmZ5dG0ydkxLVXcrRlVxZDIxdytNTEVibEF5Y3doSUQ2SDlkNmkwaWhESjBoeWNUTStJc2ZVVE92QStScmpqUFYrOXFSdVZsT3dzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY0MjE2CWZpbGU6V2Fpbl8wLjM3LjBfYWFyY2g2NC5BcHBJbWFnZQl2ZXJzaW9uOjAuMzcuMApIRjFhai9Lb3JmQmxMRFhpMzkxZURPb1lwTG5XTmhZRFFsUlc3UGZqek5vYWg5OXltNGVlbzJjMkNsTll4a2dlNHI3UG9xNk8rSEpaZU50VjBEQUJDdz09Cg==",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_0.37.0_aarch64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkxYR2U5TzR4dXlJRHFlS3gyUURDM3BSOVNFWEhPSm9KY0VqSlI0bDJETTF6M1FLcythcHg5OXNOc2MzbjJsanVPMWVxSmNudXM3NXppSmJ1OGNVd0FZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY4MzEwCWZpbGU6V2Fpbl8wLjM3LjEtYmV0YS4yX2FhcmNoNjQuQXBwSW1hZ2UJdmVyc2lvbjowLjM3LjEtYmV0YS4yCkNuQ2ZSczdFY2liOXJKZ0pNOGZ2YzZjS2dBOWg3UndFNmx2YzBmYklFTFhVd0wvVTNEUjBCOFN4NUNEREUwM0dLNVg1K0t4UDVTWnEyeThHTnhmSEN3PT0K",
+      "url": "https://downloads.wainhq.com/v0.37.1-beta.2/Wain_0.37.1-beta.2_aarch64.AppImage"
     },
     "linux-aarch64-deb": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkpkUEZod0ZnMkxkWHhpSVJmbHNIbkpMUTZRR3FIQjlsTVB6WHo4SHBhL3V2ZllYZUtoeTc5YU14NzhVcWxNR2c1eEVsUVdEakYvT3krWXFCRm4yeVFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY0MjE2CWZpbGU6V2Fpbl8wLjM3LjBfYXJtNjQuZGViCXZlcnNpb246MC4zNy4wCkNkd256UVN5bExVTVg4QTdDV0k3RFJkSUh3d21JSVVHaXgydXRyUUljY0c4a3MvL0JTYTVhRFBJSktHcHUxTTFTSTRrTXVUbkZSUnBQWXZuaEtJdEN3PT0K",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_0.37.0_arm64.deb"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkZSVVBLc0R6WWVEZk0wblVnV1Yxak1NY3pWeFBFbXFRR2V0c0JseGNEU3JWMEF0dE9wS254bHphL1Zyalp1UVJQbXQ0QTlCa3VpVUh1d1VNNHRYendzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY4MzEwCWZpbGU6V2Fpbl8wLjM3LjEtYmV0YS4yX2FybTY0LmRlYgl2ZXJzaW9uOjAuMzcuMS1iZXRhLjIKUG1QanQyVEFQNUQ3V2Q5VE4wTHI4eHVLV0VzV2NkN2ozaE5Od2dVQnpET0lhb2NocHZsYTFRbmZqMmZ1dlBEd2dyUnhETzVjNlNGZWh2NGtJYjFVRGc9PQo=",
+      "url": "https://downloads.wainhq.com/v0.37.1-beta.2/Wain_0.37.1-beta.2_arm64.deb"
     },
     "linux-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQk5Hc2pXSXkwZFpBWXJiV1FmM3U4NHdGV2RNNVMyNFNwTE83em1qTWpkMDgvM04xZDdueCthcjRNalp3YUE2dHkzT3FiaHFoYVB5ZTV0bTB1dDZtR0FZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY0ODI1CWZpbGU6V2Fpbl8wLjM3LjBfYW1kNjQuQXBwSW1hZ2UJdmVyc2lvbjowLjM3LjAKeGpmV3FuNWRGcWxqNGY0VG9GaFNyMmtXcWFLN0ljYk5zZmJKSXpsbG5kNndzdGgwMEk1WHNZekpqQUVXYy9HWmd6NWFGbE51OUVzTjJUOTcwaWp3Q1E9PQo=",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_0.37.0_amd64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQk9JVFlIYndWNndHc0RaNFVaYXl3cWQvVHNHVVV6aDlWRVNvYTRuY2U3Q05MRG82WHFSNDFKSDdBU0JlMzRBaCtlaFRvVE1vRVkvNVdFaUtmOStRMndjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY4OTA1CWZpbGU6V2Fpbl8wLjM3LjEtYmV0YS4yX2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4zNy4xLWJldGEuMgp6TzhHZDFmRGk2eXBOQTRwdnRhYU9ad3VHSzNrYnlrSzBFUGtvTXlta25xQ0JvaXY2dlNWT1NCL1BlaFMzYnNVMGEzc1YzSU1Ob0gvUzBQYnByYVlEdz09Cg==",
+      "url": "https://downloads.wainhq.com/v0.37.1-beta.2/Wain_0.37.1-beta.2_amd64.AppImage"
     },
     "linux-x86_64-appimage": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQk5Hc2pXSXkwZFpBWXJiV1FmM3U4NHdGV2RNNVMyNFNwTE83em1qTWpkMDgvM04xZDdueCthcjRNalp3YUE2dHkzT3FiaHFoYVB5ZTV0bTB1dDZtR0FZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY0ODI1CWZpbGU6V2Fpbl8wLjM3LjBfYW1kNjQuQXBwSW1hZ2UJdmVyc2lvbjowLjM3LjAKeGpmV3FuNWRGcWxqNGY0VG9GaFNyMmtXcWFLN0ljYk5zZmJKSXpsbG5kNndzdGgwMEk1WHNZekpqQUVXYy9HWmd6NWFGbE51OUVzTjJUOTcwaWp3Q1E9PQo=",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_0.37.0_amd64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQk9JVFlIYndWNndHc0RaNFVaYXl3cWQvVHNHVVV6aDlWRVNvYTRuY2U3Q05MRG82WHFSNDFKSDdBU0JlMzRBaCtlaFRvVE1vRVkvNVdFaUtmOStRMndjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY4OTA1CWZpbGU6V2Fpbl8wLjM3LjEtYmV0YS4yX2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4zNy4xLWJldGEuMgp6TzhHZDFmRGk2eXBOQTRwdnRhYU9ad3VHSzNrYnlrSzBFUGtvTXlta25xQ0JvaXY2dlNWT1NCL1BlaFMzYnNVMGEzc1YzSU1Ob0gvUzBQYnByYVlEdz09Cg==",
+      "url": "https://downloads.wainhq.com/v0.37.1-beta.2/Wain_0.37.1-beta.2_amd64.AppImage"
     },
     "linux-x86_64-deb": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQktBOXpRNEpMSUhrZTBRSktQdStDUkNXR2VWTXdGZDh0V09LUkN4dnVTemtNME53aHhHYjVYajJ3V1hHeklmaWdtTW5ZMzZ6b1o4V1FNVVlYVHFSTWdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY0ODI1CWZpbGU6V2Fpbl8wLjM3LjBfYW1kNjQuZGViCXZlcnNpb246MC4zNy4wClNhb2w3TkdqSCtiOFIwVzBTbVBXbkZoR2hoQUtQbkxYS0FyZlVjMFBBUG9oSTV6MGFrNUNwSlQvOHQ2NUVoanQ0bXVmRXEvdWo3d2lJVGw5ZU5ndkFnPT0K",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_0.37.0_amd64.deb"
-    },
-    "windows-x86_64-msi": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkpHWC9VR3VIZXdlZ01qc0ZSQ3VibDhoR2hsNnRyZzFiZEN1YXl1emhrVzhxNXVmTnpycDQ3cW8rOVJjTnVJTGNXVVRUbmJWQTJNOGNEdGpSNWJwb1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY1MDQ2CWZpbGU6V2Fpbl8wLjM3LjBfeDY0X2VuLVVTLm1zaQl2ZXJzaW9uOjAuMzcuMAptV1BXTE9OZVJtMWdCYXUrMURaNURjZkZ0U1U3cjhMMldHcGd4S0pNWlh6Zm95eG5Ya2pPOE13MStnNzlrOWlDWXA3ZEJQNzRlOGF3aGtYczNENXpDQT09Cg==",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_0.37.0_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkp3cmQxamtMbWk5VXFFTEhxQ0VMREFNZTN6Tmp1MjRjajdrS0tlMzFuUHFYZExpOGdMMjJWcmN1LzRQd2ZUU1BSVVF1M0ZkaHg4MExGYmdxL3cxUHdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY4OTA1CWZpbGU6V2Fpbl8wLjM3LjEtYmV0YS4yX2FtZDY0LmRlYgl2ZXJzaW9uOjAuMzcuMS1iZXRhLjIKaXNzYlNHWG41bVJUaTVSMjRCZ2VVeDZiNFAxV29laE1UUmtLVkorU1Jtb0UxVUZIa2RkaDZOTkxKTXZQazFGY1BjcXNrZE5lNzJkZUcyNFM4MkNPRHc9PQo=",
+      "url": "https://downloads.wainhq.com/v0.37.1-beta.2/Wain_0.37.1-beta.2_amd64.deb"
     },
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkl5K0t5elRNc2RpWE4xWUluaGVIQ3Vyb2FPTWxVR1JzTmdqSFFzcjY2NExoelhVQjhSRkhld0M4bUVLKzBFR05odVE1V1BoVVQwTENJY0JwVXlnQkEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY1MDQ2CWZpbGU6V2Fpbl8wLjM3LjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMzcuMApPbVdFcEJVWS9KU05tOUdXblUxWVRrR1hoNzlXS1lYNUdPOTQ0Z3RtY2RSVE00QkpxemdnTHZWSGYyQzZ6ODVrMW5mWEFtSEVVZUtIZUptUFpMUGpDUT09Cg==",
-      "url": "https://downloads.wainhq.com/v0.37.0/Wain_0.37.0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTSHJmQWVnK2VxQkQrSUwwU0VCVXpKL3pWTUxVVnNUVXJ2TlVQaHRzbHFCdWNDQ2dHVktDU1FJMUdlb2ozb3YzaHpJM2VtQ016eHdHcmtPZkdEcVpabzJHRFVHZis3TmdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NzY5MTE1CWZpbGU6V2Fpbl8wLjM3LjEtYmV0YS4yX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM3LjEtYmV0YS4yCjdKSTBoL0tZdTBTamMzdXUyVzc5ZWdhTzlaVStoZ3Q1RjVQVjZGVC9RTzRzdU56MmxydGt2TzE5WHJpVWw2aVd5dFlwYlkrQkpTL1U3Y0RjQVJkS0JnPT0K",
+      "url": "https://downloads.wainhq.com/v0.37.1-beta.2/Wain_0.37.1-beta.2_x64-setup.exe"
     }
   }
 }
