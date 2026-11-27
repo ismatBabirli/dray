@@ -27,6 +27,22 @@ reads:
   to a line or two. A release with no highlights for an app gets the small
   card there instead, when it carries `notify`.
 
+## 0.37.0 · 2026-11-27 · notify
+
+### New
+
+- **Pair a phone with any of your servers.** In Settings → Servers, a
+  server's **⋯** menu has **Pair a phone…**. It shows that server's
+  pairing code, or offers **Turn on public address** first when it has
+  none.
+
+### Improved
+
+- Servers keep Claude Code's and Codex's latest usage readings, the
+  5-hour and weekly windows, so the iPhone and Android apps can show
+  how close each agent is to its limit and when it resets. A reading
+  arrives while a task on that agent runs.
+
 ## 0.36.0 · 2026-11-26 · notify
 
 ### New
