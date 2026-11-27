@@ -17,8 +17,7 @@ name: Beta
 
 on:
   push:
-    # Temporary: the first beta runs from this branch before merge.
-    branches: [main, feature/beta-from-main-39]
+    branches: [main]
     # What reaches neither the app nor the CLI.
     paths-ignore:
       - "*.md"
