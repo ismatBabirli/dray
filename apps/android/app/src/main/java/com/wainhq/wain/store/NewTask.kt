@@ -153,7 +153,11 @@ class NewTask(private val store: Store, context: Context) {
             return !sending && hasText && (cwd != null || clone != null && bot == null) && agentOk && modelsOk
         }
 
-    fun aim(at: Bot, on: String) { bot = on to at }
+    /** Run by a bot: it starts in the bot's own folder, so a clone picked before is dropped. */
+    fun aim(at: Bot, on: String) {
+        clone = null
+        bot = on to at
+    }
 
     /**
      * A project another machine holds and this one lacks, picked to clone: Start clones it onto
