@@ -1,0 +1,123 @@
+# A beta of the app and the CLI from every push to `main`, so a change can be
+# tried as soon as it lands. Stable releases stay tag-driven (release.yml).
+#
+# A beta is the next patch plus this workflow's run number: `v0.37.1-beta.12`
+# and `cli-v0.21.1-beta.12` after 0.37.0 and 0.21.0 (beta-version.sh), written
+# into the build and never committed. Semver sorts it below 0.37.1, so beta
+# users move onto the next stable release when it ships.
+#
+# The tags are made here with the Actions token, which the "release tags:
+# admin only" ruleset lets through for beta tags alone. A tag made that way
+# starts no workflow, so release.yml and release-cli.yml are called instead.
+# The CLI waits for the app's manifest, as release-cli's gate would.
+#
+# One beta at a time, and only the newest waiting: a burst of merges builds
+# the one running and the last. Nothing is cancelled mid-publish.
+name: Beta
+
+on:
+  push:
+    # Temporary: the first beta runs from this branch before merge.
+    branches: [main, feature/beta-from-main-39]
+    # What reaches neither the app nor the CLI.
+    paths-ignore:
+      - "*.md"
+      - "apps/desktop/docs/**"
+      - "apps/web/**"
+      - "apps/docs/**"
+      - "apps/android/**"
+      - "apps/upload-worker/**"
+      - "charts/**"
+
+concurrency:
+  group: beta
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      app: ${{ steps.next.outputs.app }}
+      cli: ${{ steps.next.outputs.cli }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - id: next
+        run: .github/scripts/beta-version.sh next "$GITHUB_RUN_NUMBER" | tee -a "$GITHUB_OUTPUT"
+
+      # A re-run finds its own tags and goes on. A tag on another commit means
+      # the beta number was used before, which stops the run.
+      - name: Tag the commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP: ${{ steps.next.outputs.app }}
+          CLI: ${{ steps.next.outputs.cli }}
+        run: |
+          set -euo pipefail
+          R="repos/${GITHUB_REPOSITORY}/git"
+          for t in "v$APP" "cli-v$CLI"; do
+            if at="$(gh api "$R/ref/tags/$t" --jq .object.sha 2>/dev/null)"; then
+              [ "$at" = "$GITHUB_SHA" ] || { echo "::error::$t already names $at"; exit 1; }
+            else
+              gh api "$R/refs" -f ref="refs/tags/$t" -f sha="$GITHUB_SHA" --silent
+            fi
+            echo "$t: $GITHUB_SHA"
+          done
+
+  app:
+    needs: version
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ needs.version.outputs.app }}
+      cli_version: ${{ needs.version.outputs.cli }}
+    secrets: inherit
+    permissions:
+      contents: write
+      # extras cancels the run when it fails.
+      actions: write
+
+  cli:
+    needs: [version, app]
+    uses: ./.github/workflows/release-cli.yml
+    with:
+      version: ${{ needs.version.outputs.cli }}
+    secrets: inherit
+    permissions:
+      contents: write
+
+  # install.sh and the app read the newest 100 releases for the CLI's, and two
+  # betas a merge would push every stable one out of that window. So only the
+  # newest three of each kind stay, release and tag; their files on R2 stay
+  # too, since a manifest may still name them.
+  prune:
+    needs: [app, cli]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          KEEP: 3
+        run: |
+          set -euo pipefail
+          R="${GITHUB_REPOSITORY}"
+          tags="$(gh api "repos/$R/git/matching-refs/tags/" --paginate --jq '.[].ref | ltrimstr("refs/tags/")')"
+          for kind in v cli-v; do
+            # Betas alone, so `sort -V` never meets the stable release it
+            # would wrongly put below them.
+            old="$(printf '%s\n' "$tags" | grep -E "^${kind}[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$" | sort -V | head -n "-$KEEP" || true)"
+            for t in $old; do
+              if gh release view "$t" --repo "$R" >/dev/null 2>&1; then
+                gh release delete "$t" --repo "$R" --cleanup-tag --yes
+              else
+                gh api -X DELETE "repos/$R/git/refs/tags/$t"
+              fi
+              echo "pruned $t"
+            done
+          done

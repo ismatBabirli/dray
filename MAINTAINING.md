@@ -31,7 +31,7 @@ The repo is public, so these hold on purpose (set 26 Nov 2026):
 
 - **Every outside pull request's workflows wait for Ismat's approval** (`fork-pr-contributor-approval: all_external_contributors`), not only a first-timer's.
 - **Ruleset "main stays":** `main` cannot be deleted or force-pushed, by anyone. Ordinary pushes go through.
-- **Ruleset "release tags: admin only":** only a repo admin creates, moves or deletes `v*` and `cli-v*`, so no token or app can start a release.
+- **Ruleset "release tags: admin only":** only a repo admin creates, moves or deletes `v*` and `cli-v*`, so no token or app can start a stable release. Beta tags (`v*-beta.*`, `cli-v*-beta.*`) are left out (27 Nov 2026), so `beta.yml` can tag and prune its betas with the Actions token.
 - **Every action is pinned to a full commit SHA, and GitHub refuses one that isn't** (`sha_pinning_required`). Pages' own build of the updater feed still runs under it. Pin a new action the way the others are, the version in a trailing comment.
 - **Dependabot alerts and private vulnerability reporting are on**, so a security report arrives under Security → Advisories, not as a public issue. Dependabot opens no pull requests.
 - **Interaction limits are off on purpose**: the site's Feedback link sends people to issues, and a limit would block new accounts there.
@@ -42,6 +42,7 @@ The repo is public, so these hold on purpose (set 26 Nov 2026):
 ## Releases
 
 - **Versions go on from 0.35.0** for the app (`vX.Y.Z`) and 0.19.1 for the CLI and server (`cli-vX.Y.Z`).
+- **Every push to `main` ships a beta** of the app and the CLI (`beta.yml`, since 27 Nov 2026), so a merge can be tried on the beta channel about 40 minutes later. Stable releases are still the admin's tags. How it works: [releases.md](apps/desktop/docs/releases.md).
 - **The first releases** are `cli-v0.18.2` and `v0.34.3` (25 Nov 2026). `CLI_PUBLISH_GATE=off` let the CLI publish before any app release existed; it was deleted once `v0.34.3` shipped, so the gate guards later releases again. Setting it back to `off` is the way out when the gate waits on an app release that will not come.
 - **A release, start to end, took 34 minutes** on Intel Macs with a warm cache (Mac builds 24). `warm-cache.yml` must have finished on the commit's `Cargo.lock` first, or the Mac builds go cold and take ~36.
 - **The dmg is signed but not notarized; the app inside is, ticket stapled.** Gatekeeper judges the app when it opens. Notarizing the dmg too would quiet `spctl` on the dmg itself.

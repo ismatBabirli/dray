@@ -10,6 +10,11 @@ name: Release
 # that work end to end — the updater compares versions, and `0.3.0-beta.1` is
 # older than `0.3.0`, so a beta user lands on the stable release when it ships.
 #
+# beta.yml calls this on every push to `main` with `version`, a beta version
+# the files on `main` don't carry: each job writes it into its checkout, and
+# `TAG` names the tag beta.yml already made. Called from a push, the run reads
+# as one (`github.event_name` is the caller's), so it publishes as a tag does.
+#
 # A manual run builds the Linux and Windows files alone — an AppImage and a
 # .deb for each of x86_64 and arm64, the NSIS installer and MSI for x64 — as
 # workflow artifacts never attached or published: the way to check both still
@@ -39,6 +44,16 @@ on:
         description: Publish Linux alone for this existing release, e.g. v0.30.14
         type: string
         default: ""
+  workflow_call:
+    inputs:
+      version:
+        description: The app's beta version, e.g. 0.37.1-beta.4
+        type: string
+        required: true
+      cli_version:
+        description: The bundled CLI's, e.g. 0.21.1-beta.4
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -46,6 +61,8 @@ permissions:
 env:
   # Part of the cache key's environment, so it has to match warm-cache.yml.
   CARGO_INCREMENTAL: 0
+  # The release's tag: the one pushed, or the beta's.
+  TAG: ${{ inputs.version && format('v{0}', inputs.version) || github.ref_name }}
 
 jobs:
   # The release Mac when it is online, GitHub's Macs otherwise.
@@ -88,14 +105,21 @@ jobs:
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      - name: Write the beta's version
+        if: inputs.version
+        env:
+          V: ${{ inputs.version }}
+          C: ${{ inputs.cli_version }}
+        run: .github/scripts/beta-version.sh set-app "$V" && .github/scripts/beta-version.sh set-cli "$C"
+
       # The manifest's version is the app's, not the tag's — a tag that names a
       # version the conf doesn't carry publishes a manifest no client considers
       # newer, and the release silently reaches nobody. Fail loudly instead.
       - if: github.event_name == 'push'
         run: |
           V="$(jq -r .version apps/desktop/src-tauri/tauri.conf.json)"
-          if [ "v$V" != "${GITHUB_REF_NAME}" ]; then
-            echo "tag ${GITHUB_REF_NAME} does not match tauri.conf.json version v$V" >&2
+          if [ "v$V" != "${TAG}" ]; then
+            echo "tag ${TAG} does not match tauri.conf.json version v$V" >&2
             exit 1
           fi
 
@@ -233,6 +257,15 @@ jobs:
       # why the two share it.
       - uses: ./.github/actions/desktop-setup
 
+      # After the restore, whose key hashes Cargo.lock, so a beta hits the
+      # exact cache `main` warmed.
+      - name: Write the beta's version
+        if: inputs.version
+        env:
+          V: ${{ inputs.version }}
+          C: ${{ inputs.cli_version }}
+        run: .github/scripts/beta-version.sh set-app "$V" && .github/scripts/beta-version.sh set-cli "$C"
+
       # tauri-build copies the sidecar named for this triple next to the
       # binary while compiling, and fails if there is none; the bundler then
       # ships `wain-cli-universal-apple-darwin`, which `extras` builds. So the
@@ -307,6 +340,14 @@ jobs:
           if [ -n "$X" ]; then echo "DEVELOPER_DIR=$X/Contents/Developer" >> "$GITHUB_ENV"; echo "Xcode: $X"; fi
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # `tauri bundle` and the staging below read the version off the conf.
+      - name: Write the beta's version
+        if: inputs.version
+        env:
+          V: ${{ inputs.version }}
+          C: ${{ inputs.cli_version }}
+        run: .github/scripts/beta-version.sh set-app "$V" && .github/scripts/beta-version.sh set-cli "$C"
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -510,7 +551,7 @@ jobs:
           set -euo pipefail
           : "${AWS_ACCESS_KEY_ID:?}" "${R2_ACCOUNT_ID:?}" "${R2_BUCKET:?}"
           put() {
-            aws s3 cp "$RUNNER_TEMP/release/$1" "s3://${R2_BUCKET}/${GITHUB_REF_NAME}/$1" \
+            aws s3 cp "$RUNNER_TEMP/release/$1" "s3://${R2_BUCKET}/${TAG}/$1" \
               --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
               --cache-control "public, max-age=31536000, immutable"
           }
@@ -532,10 +573,10 @@ jobs:
         run: |
           set -euo pipefail
           R="repos/${GITHUB_REPOSITORY}/releases"
-          if ! ID="$(gh api "$R/tags/${GITHUB_REF_NAME}" --jq .id 2>/dev/null)"; then
+          if ! ID="$(gh api "$R/tags/${TAG}" --jq .id 2>/dev/null)"; then
             # Wain: no target_commitish. The tag exists, so GitHub ignores it, and on
             # this repo the Actions token is refused (403) whenever it is sent.
-            ID="$(gh api "$R" -f tag_name="${GITHUB_REF_NAME}" -f name="${GITHUB_REF_NAME}" \
+            ID="$(gh api "$R" -f tag_name="${TAG}" -f name="${TAG}" \
               -f body="$NOTES" -F draft=false \
               -F prerelease="$PRERELEASE" -F generate_release_notes=true --jq .id)"
           fi
@@ -590,12 +631,19 @@ jobs:
     runs-on: ${{ matrix.runner }}
     env:
       # The release this build belongs to. A manual run's ref is a branch.
-      TAG: ${{ inputs.linux_tag || github.ref_name }}
+      TAG: ${{ inputs.linux_tag || (inputs.version && format('v{0}', inputs.version)) || github.ref_name }}
       BUNDLE: apps/desktop/src-tauri/target/release/bundle
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.linux_tag }}
+
+      - name: Write the beta's version
+        if: inputs.version
+        env:
+          V: ${{ inputs.version }}
+          C: ${{ inputs.cli_version }}
+        run: .github/scripts/beta-version.sh set-app "$V" && .github/scripts/beta-version.sh set-cli "$C"
 
       # Checked before a 20-minute compile: the release has to exist and be
       # published, and its tag has to carry its own version, or the manifest
@@ -833,11 +881,18 @@ jobs:
       run:
         shell: bash
     env:
-      TAG: ${{ github.ref_name }}
       BUNDLE: apps/desktop/src-tauri/target/release/bundle
       SIGN_COMMAND: ${{ vars.WINDOWS_SIGN_COMMAND }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # Also what drops the MSI below, a beta's version holding a `-`.
+      - name: Write the beta's version
+        if: inputs.version
+        env:
+          V: ${{ inputs.version }}
+          C: ${{ inputs.cli_version }}
+        run: .github/scripts/beta-version.sh set-app "$V" && .github/scripts/beta-version.sh set-cli "$C"
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -1021,6 +1076,10 @@ jobs:
     needs: linux
     if: inputs.linux_tag != ''
     runs-on: ubuntu-latest
+    # The manifest job's group: this writes `updates` too.
+    concurrency:
+      group: updates-branch
+      cancel-in-progress: false
     permissions:
       contents: write
     env:
@@ -1106,6 +1165,13 @@ jobs:
     needs: [bundle, linux, windows]
     if: ${{ !cancelled() && needs.bundle.result == 'success' && github.event_name == 'push' }}
     runs-on: ubuntu-latest
+    # One writer of `updates` at a time: a beta from `main` and a stable tag
+    # often finish together, and the push that lost the race failed the job.
+    # A third one arriving cancels the one waiting, which beta.yml's own
+    # concurrency keeps from happening between betas.
+    concurrency:
+      group: updates-branch
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
@@ -1156,7 +1222,7 @@ jobs:
         run: |
           set -euo pipefail
           : "${DOWNLOADS_URL:?}" "${DMG:?}"
-          gh release download "${GITHUB_REF_NAME}" \
+          gh release download "${TAG}" \
             --repo "${GITHUB_REPOSITORY}" \
             --pattern latest.json --output release.json --clobber
 
@@ -1176,8 +1242,8 @@ jobs:
           # Every Linux file's entries (see linux-release.sh), each file
           # attached to the release here, where the release is known to exist.
           if [ "$HAS_LINUX" = true ]; then
-            "$L" files "$LINUX" | xargs gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber
-            "$L" entries manifest.json "$LINUX" "${DOWNLOADS_URL%/}/${GITHUB_REF_NAME}"
+            "$L" files "$LINUX" | xargs gh release upload "${TAG}" --repo "${GITHUB_REPOSITORY}" --clobber
+            "$L" entries manifest.json "$LINUX" "${DOWNLOADS_URL%/}/${TAG}"
           fi
           # Windows the same way (windows-release.sh), except that nothing
           # here may stop the Mac's manifest: a failure leaves Windows out
@@ -1186,8 +1252,8 @@ jobs:
           WIN_OK=false
           if [ "$HAS_WINDOWS" = true ]; then
             cp manifest.json windows.json
-            if "$W" files "$WINDOWS" | xargs gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber \
-              && "$W" entries windows.json "$WINDOWS" "${DOWNLOADS_URL%/}/${GITHUB_REF_NAME}"; then
+            if "$W" files "$WINDOWS" | xargs gh release upload "${TAG}" --repo "${GITHUB_REPOSITORY}" --clobber \
+              && "$W" entries windows.json "$WINDOWS" "${DOWNLOADS_URL%/}/${TAG}"; then
               mv windows.json manifest.json
               WIN_OK=true
             else
@@ -1238,7 +1304,7 @@ jobs:
           # channel — leaves nothing staged, and an empty commit would fail
           # the job over a push that had nothing to say.
           git diff --cached --quiet || {
-            git commit -m "release ${GITHUB_REF_NAME}"
+            git commit -m "release ${TAG}"
             git push
           }
 
@@ -1248,16 +1314,16 @@ jobs:
           # release means this one did not win. A server-side copy of the key
           # the bundle job uploaded; nothing is re-sent.
           if [ "$(jq -r '.version // empty' stable.json 2>/dev/null)" = "$NEW" ]; then
-            aws s3 cp "s3://${R2_BUCKET}/${GITHUB_REF_NAME}/${DMG}" "s3://${R2_BUCKET}/Wain_universal.dmg" \
+            aws s3 cp "s3://${R2_BUCKET}/${TAG}/${DMG}" "s3://${R2_BUCKET}/Wain_universal.dmg" \
               --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
               --metadata-directive REPLACE \
               --content-type application/x-apple-diskimage \
               --cache-control "public, max-age=300"
             if [ "$HAS_LINUX" = true ]; then
-              "$L" latest "$LINUX" "${GITHUB_REF_NAME}"
+              "$L" latest "$LINUX" "${TAG}"
             fi
             if [ "$WIN_OK" = true ]; then
-              "$W" latest "$WINDOWS" "${GITHUB_REF_NAME}" \
+              "$W" latest "$WINDOWS" "${TAG}" \
                 || echo "::warning title=Windows downloads not moved::Wain_x64-setup.exe and Wain_x64.msi still name the previous release."
             fi
           fi
