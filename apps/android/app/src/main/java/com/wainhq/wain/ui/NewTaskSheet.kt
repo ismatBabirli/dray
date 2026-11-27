@@ -244,13 +244,15 @@ private fun Picks(
             if (task.hasText && task.clone == null) Text("Save draft", Modifier.clip(CircleShape).clickable(enabled = !task.sending) {
                 scope.launch { if (task.saveDraft()) dismiss() }
             }.padding(horizontal = 16.dp, vertical = 12.dp), style = Wain.Font.footnote.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium))
+            // Faded through its colours rather than `alpha`, whose layer dropped the fill here beside Save draft.
+            val dim = if (task.ready) 1f else 0.4f
             Row(
-                Modifier.height(44.dp).widthIn(max = 260.dp).clip(CircleShape).background(Wain.primary).alpha(if (task.ready) 1f else 0.4f)
+                Modifier.height(44.dp).widthIn(max = 260.dp).clip(CircleShape).background(Wain.primary.copy(alpha = dim))
                     .clickable(enabled = task.ready, onClick = start).padding(horizontal = 24.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                val ink = Wain.Font.footnote.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = Wain.onPrimary)
+                val ink = Wain.Font.footnote.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = Wain.onPrimary.copy(alpha = dim))
                 if (task.sending) {
                     CircularProgressIndicator(Modifier.size(16.dp), color = Wain.onPrimary, strokeWidth = 2.dp)
                     // `clone_progress` while the clone runs: git's own lines, which say how far it is.
