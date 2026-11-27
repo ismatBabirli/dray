@@ -30,8 +30,13 @@ reads and drives it over the same WebSocket the desktop and iOS use
   exactly one (`Store.machine`, kept per device), each with its health and
   Retry, then Usage, Pair a machine and Settings.
 - **New task** is an extended FAB on Home and Tasks (the rail's button on a
-  tablet), opening a sheet over `NewTask`: the prompt and its mic, Run by (Me
-  or a bot, the aim-at-bot path), project, agent, machine, worktree, Save draft.
+  tablet), opening a sheet over `NewTask` (#35): the prompt and its mic, then
+  Run by (Me or a bot, the aim-at-bot path), Machine, Project, Worktree (with
+  Start from or Branch under it) and Agent, each asked once. Project and Agent
+  swap the sheet to a page with a back arrow. Project lists the machine's
+  projects, then other connected machines' repos it lacks (`cloneOffers`, by
+  `remote`); one picked reads "Clone and start", which runs
+  `clone_github_repo` on the machine first.
 - **Usage** (`wire/Usage.kt`, `model/Usage.kt`): `live_state.usage` and
   `usage_changed`, one reading per agent per server. A reading's headline is
   its five-hour window, else its fullest; a window may carry no figure (spent

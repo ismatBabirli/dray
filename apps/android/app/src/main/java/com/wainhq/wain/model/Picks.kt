@@ -1,5 +1,7 @@
 package com.wainhq.wain.model
 
+import com.wainhq.wain.wire.Project
+
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -17,7 +19,53 @@ data class Model(
 data class AgentAvailability(val harness: String, val available: Boolean = false, val label: String = harness, val reason: String = "")
 
 @Serializable
-data class BranchList(val current: String? = null, val branches: List<String> = emptyList(), val defaultBase: String? = null, val dirty: Int = 0)
+data class BranchList(
+    val current: String? = null,
+    val branches: List<String> = emptyList(),
+    /** On a remote with no local copy; absent from an older server's list. */
+    val remoteBranches: List<String> = emptyList(),
+    val defaultBase: String? = null,
+    val dirty: Int = 0,
+) {
+    /** `origin/main` as the branch it names. */
+    val defaultBranch: String? get() = defaultBase?.substringAfter('/')
+
+    /** A repo with no remote and one branch has nothing to start a worktree from. Picks.swift's. */
+    val offersWorktreeBase: Boolean get() = defaultBase != null || branches.size + remoteBranches.size > 1
+
+    /** "Start from"'s choices for a filter: the default branch apart, then local, then remote-only, names starting with it first. */
+    fun worktreeOptions(query: String): Triple<String?, List<String>, List<String>> {
+        val q = query.trim().lowercase()
+        fun keep(b: String) = q.isEmpty() || q in b.lowercase()
+        fun rank(names: List<String>) = names.filter { it != defaultBranch && keep(it) }.sortedBy { !it.lowercase().startsWith(q) }
+        return Triple(defaultBranch?.takeIf { keep(it) }, rank(branches), rank(remoteBranches))
+    }
+}
+
+/**
+ * A project another connected machine holds and the picked one lacks: its GitHub slug, the
+ * folder it clones to, and where it was seen. `remote` is the server's key for it.
+ */
+data class CloneOffer(val slug: String, val name: String, val machine: String, val remote: String = "github.com/$slug")
+
+/** `Project.remote` is git's origin as `host/owner/repo`, lowercased: only a GitHub one has a slug `gh` can clone. */
+fun githubSlug(remote: String?): String? = remote?.removePrefix("github.com/")?.takeIf { it != remote && it.count { c -> c == '/' } == 1 }
+
+/**
+ * New task's "On your other machines": every other machine's GitHub projects whose `remote` no
+ * project `here` has, one per repo, in the machines' order. A project with no GitHub remote is never offered.
+ */
+fun cloneOffers(here: List<Project>, others: List<Pair<String, List<Project>>>): List<CloneOffer> {
+    val held = here.mapNotNull { it.remote?.lowercase() }.toMutableSet()
+    return others.flatMap { (machine, projects) ->
+        projects.mapNotNull { p ->
+            val remote = p.remote?.lowercase() ?: return@mapNotNull null
+            val slug = githubSlug(remote) ?: return@mapNotNull null
+            if (!held.add(remote)) null else CloneOffer(slug, slug.substringAfterLast('/'), machine, remote)
+        }
+    }
+}
+
 
 @Serializable
 data class GithubRepo(val slug: String, val description: String? = null, val path: String? = null)

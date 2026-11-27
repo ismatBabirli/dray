@@ -7,12 +7,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.wainhq.wain.model.AgentAvailability
 import com.wainhq.wain.model.Model
+import com.wainhq.wain.model.CloneOffer
 import com.wainhq.wain.model.Picks
 import com.wainhq.wain.model.SessionKey
 import com.wainhq.wain.net.ConnState
 import com.wainhq.wain.wire.Bot
 import com.wainhq.wain.wire.Project
 import com.wainhq.wain.wire.SessionItem
+import com.wainhq.wain.wire.WainError
 import com.wainhq.wain.wire.decodeList
 import com.wainhq.wain.wire.decodeOrNull
 import com.wainhq.wain.wire.get
@@ -146,10 +148,28 @@ class NewTask(private val store: Store, context: Context) {
             // An unread availability lets Start stand: `send_msg` refuses a missing agent itself, in words.
             val agentOk = agent?.available == true || server?.let { agentsFailed[it] } == true
             val modelsOk = models[modelsKey] != null || modelsFailed[modelsKey] == true
-            return !sending && hasText && cwd != null && agentOk && modelsOk
+            return !sending && hasText && (cwd != null || clone != null && bot == null) && agentOk && modelsOk
         }
 
     fun aim(at: Bot, on: String) { bot = on to at }
+
+    /**
+     * A project another machine holds and this one lacks, picked to clone: Start clones it onto
+     * the picked machine first, then runs there. Any other machine or project pick drops it.
+     */
+    var clone by mutableStateOf<CloneOffer?>(null)
+        private set
+
+    fun pickClone(offer: CloneOffer) {
+        leavePlace()
+        clone = offer
+    }
+
+    /** The worktree's base the reader picked ("Start from"); null is the default branch, fetched fresh. */
+    var worktreeBase by mutableStateOf<String?>(null)
+
+    /** The clone's latest progress line while Clone and start runs it. */
+    val cloneLine: String? get() = clone?.let { c -> server?.let { store.cloneProgress[it]?.get(c.slug) } }
 
     /** Run by Me: off the bot, staying on its machine. */
     fun runByMe() { bot?.let { pickServer(it.first) } }
@@ -171,6 +191,8 @@ class NewTask(private val store: Store, context: Context) {
     private fun leavePlace() {
         draftFolder = null
         draftBase = null
+        clone = null
+        worktreeBase = null
     }
 
     /** Fills the dock from a saved draft, on its own picks. iOS's `NewTask.open`. */
@@ -274,10 +296,19 @@ class NewTask(private val store: Store, context: Context) {
     /** The argument set `useSessions.ts` sends for a new session, stance and fast narrowed to what this agent and model honour. */
     suspend fun start(): SessionKey? {
         val server = server ?: return null
-        val cwd = cwd ?: return null
         if (!ready) return null
         sending = true
         failure = null
+        clone?.let { c ->
+            try {
+                cloneOnto(server, c)
+            } catch (e: Exception) {
+                failure = e.message ?: "The clone didn't finish."
+                sending = false
+                return null
+            }
+        }
+        val cwd = cwd ?: run { sending = false; return null }
         val id = UUID.randomUUID().toString().lowercase()
         val sent = text
         val opened = draftId
@@ -296,7 +327,7 @@ class NewTask(private val store: Store, context: Context) {
                 "useWorktree" to (worktree && bot == null),
                 "worktreeName" to null,
                 // A draft's `--base`, resolved by the server as `wain session new --base` does.
-                "baseRef" to (if (worktree && bot == null) draftBase else null),
+                "baseRef" to (if (worktree && bot == null) worktreeBase ?: draftBase else null),
                 "isNewSession" to true,
                 *sentFrom(),
             ))
@@ -312,6 +343,20 @@ class NewTask(private val store: Store, context: Context) {
         } finally {
             sending = false
         }
+    }
+
+    /**
+     * `clone_github_repo` on `server`, then the clone as the pick: it answers the machine's whole
+     * project list, the clone found in it by its slug. Long, since a big repository takes minutes.
+     */
+    private suspend fun cloneOnto(server: String, c: CloneOffer) {
+        store.cloneProgress[server] = store.cloneProgress[server].orEmpty() - c.slug
+        val list = decodeList<Project>(store.call(server, "clone_github_repo", jsonOf("slug" to c.slug), timeoutMs = 1_800_000))
+        store.attached(server, list)
+        val made = list.firstOrNull { it.remote.equals(c.remote, ignoreCase = true) }
+            ?: list.firstOrNull { it.path.trimEnd('/').endsWith("/${c.name}") }
+            ?: throw WainError("The clone finished but ${c.name} isn't among this machine's projects.")
+        pick(ProjectChoice(made.name, made.path))
     }
 
     /** Saves the text as a draft in Wain's sidebar, on these picks, and clears it. */
@@ -338,7 +383,7 @@ class NewTask(private val store: Store, context: Context) {
                 "permissionMode" to Picks.stanceFor(harness, stance),
                 "fast" to (fast && Picks.offersFast(harness, model)),
                 "useWorktree" to worktree,
-                "base" to draftBase,
+                "base" to (worktreeBase ?: draftBase),
             )))
             dropDraft(opened)
             store.draftsRevision++

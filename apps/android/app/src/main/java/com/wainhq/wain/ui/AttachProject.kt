@@ -61,7 +61,7 @@ private data class Unavailable(val kind: String, val detail: String?)
  * A repo already on the server attaches straight away. iOS's `AttachProjectView` in NewTask.swift.
  */
 @Composable
-fun AttachProject(server: String, projects: List<Project>, back: () -> Unit, attached: (List<Project>) -> Unit) {
+fun AttachProject(server: String, projects: List<Project>, back: () -> Unit, enterPath: Boolean = false, attached: (List<Project>) -> Unit) {
     val store = LocalStore.current
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -74,7 +74,8 @@ fun AttachProject(server: String, projects: List<Project>, back: () -> Unit, att
     var confirming by remember { mutableStateOf<GithubRepo?>(null) }
     var cloning by remember { mutableStateOf<String?>(null) }
     var failure by remember { mutableStateOf<String?>(null) }
-    var typing by remember { mutableStateOf(false) }
+    // "Attach a folder" opens straight on the path; "Clone from GitHub" on the repositories.
+    var typing by remember { mutableStateOf(enterPath) }
     var path by remember { mutableStateOf("") }
     val place = store.name(server)
     val here = projects.map { it.path }.toSet()
@@ -234,9 +235,9 @@ private fun RepoRow(r: GithubRepo, here: Boolean, cloning: String?, progress: St
 }
 
 @Composable
-private fun SearchField(value: String, change: (String) -> Unit) {
+internal fun SearchField(value: String, hint: String = "Search repositories", change: (String) -> Unit) {
     Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(Wain.Radius.md)).background(Wain.raised).padding(horizontal = 14.dp, vertical = 10.dp)) {
-        if (value.isEmpty()) Text("Search repositories", style = Wain.Font.body.copy(color = Wain.tertiary))
+        if (value.isEmpty()) Text(hint, style = Wain.Font.body.copy(color = Wain.tertiary))
         BasicTextField(value, change, Modifier.fillMaxWidth(), textStyle = Wain.Font.body, singleLine = true, cursorBrush = SolidColor(Wain.text))
     }
 }
