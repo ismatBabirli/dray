@@ -18,6 +18,17 @@ on:
       - "cli-v*"
   # So the matrix can be proved without minting a tag; publishes nothing.
   workflow_dispatch:
+  # beta.yml, on every push to `main`, after the app's beta is out: each job
+  # writes `version` into its checkout, and `TAG` names the tag beta.yml made.
+  workflow_call:
+    inputs:
+      version:
+        description: The CLI's beta version, e.g. 0.21.1-beta.4
+        type: string
+        required: true
+
+env:
+  TAG: ${{ inputs.version && format('cli-v{0}', inputs.version) || github.ref_name }}
 
 # Read by default. Only the publish job below widens it, so a compromised
 # action in the build matrix — which is where every third-party dependency runs
@@ -41,6 +52,12 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      - name: Write the beta's version
+        if: inputs.version
+        env:
+          V: ${{ inputs.version }}
+        run: .github/scripts/beta-version.sh set-cli "$V"
+
       - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
 
       # The shared crate too — it is a separate cargo project, so the CLI's own
@@ -59,11 +76,11 @@ jobs:
       # binary that reads as out of date forever and reinstalls on every run.
       # Only a tag push can be checked; a dispatch run has no version to compare.
       - name: Check the tag matches the crate version
-        if: startsWith(github.ref, 'refs/tags/cli-v')
+        if: startsWith(github.ref, 'refs/tags/cli-v') || inputs.version
         working-directory: apps/cli
         run: |
-          grep -qx "version = \"${GITHUB_REF_NAME#cli-v}\"" Cargo.toml || {
-            echo "::error::tag $GITHUB_REF_NAME does not match the version in apps/cli/Cargo.toml"
+          grep -qx "version = \"${TAG#cli-v}\"" Cargo.toml || {
+            echo "::error::tag $TAG does not match the version in apps/cli/Cargo.toml"
             exit 1
           }
 
@@ -111,6 +128,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # Read into wain-serve too (WAIN_CLI_VERSION). The cache key leaves the
+      # version out, so this costs no cache hit.
+      - name: Write the beta's version
+        if: inputs.version
+        shell: bash
+        env:
+          V: ${{ inputs.version }}
+        run: .github/scripts/beta-version.sh set-cli "$V"
 
       # Restores what warm-cli-cache.yml saved on `main`; see the action for
       # why the two share it.
@@ -183,6 +209,8 @@ jobs:
   # until the app release speaking it is out, so both tags can be pushed at
   # once and the builds still overlap. Beside the matrix, never ahead of it.
   # See the script for the rule and its cap.
+  # A beta skips it, its ref being `main`: beta.yml starts the CLI only once
+  # the app's manifest is written, which is what the wait is for.
   gate:
     if: startsWith(github.ref, 'refs/tags/cli-v')
     runs-on: ubuntu-latest
@@ -211,8 +239,13 @@ jobs:
 
   publish:
     needs: [test, build, gate]
-    # A dispatch run proves the matrix and stops here; only a tag publishes.
-    if: startsWith(github.ref, 'refs/tags/cli-v')
+    # A dispatch run proves the matrix and stops here; only a tag or a beta
+    # publishes. A skipped `gate` would skip this too, so for a beta the
+    # results are spelled out.
+    if: >-
+      ${{ !cancelled() && needs.test.result == 'success' && needs.build.result == 'success'
+      && ((startsWith(github.ref, 'refs/tags/cli-v') && needs.gate.result == 'success')
+      || (inputs.version && needs.gate.result == 'skipped')) }}
     runs-on: ubuntu-latest
 
     # The one job that needs it, and it runs no third-party code but the
@@ -241,13 +274,16 @@ jobs:
       - name: Read the channel off the tag
         id: channel
         run: |
-          case "${GITHUB_REF_NAME#cli-v}" in
+          case "${TAG#cli-v}" in
             *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;;
             *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;;
           esac
 
+      # A beta's tag exists already (beta.yml made it), so no commitish is
+      # sent: on this repo the Actions token is refused whenever one is.
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
+          tag_name: ${{ env.TAG }}
           files: |
             artifacts/*.tar.gz
             artifacts/*.tar.gz.sha256
