@@ -8,8 +8,9 @@
 #
 # The tags are made here with the Actions token, which the "release tags:
 # admin only" ruleset lets through for beta tags alone. A tag made that way
-# starts no workflow, so release.yml and release-cli.yml are called instead.
-# The CLI waits for the app's manifest, as release-cli's gate would.
+# starts no workflow, so release.yml and release-cli.yml are called instead,
+# side by side; the CLI's gate holds its publish until the app's manifest is
+# written, so a protocol change never reaches servers ahead of the app.
 #
 # One beta at a time, and only the newest waiting: a burst of merges builds
 # the one running and the last. Nothing is cancelled mid-publish.
@@ -80,37 +81,18 @@ jobs:
       # extras cancels the run when it fails.
       actions: write
 
-  # The app's beta is out once its manifest is written, whatever Linux or
-  # Windows did: a failed leg fails `app` but never holds back `manifest`.
-  # So the CLI waits on that one job, as release-cli's own gate does.
-  manifest:
-    needs: app
-    if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-    steps:
-      - env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          got="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs" --paginate \
-            --jq '.jobs[] | select(.name == "app / manifest") | .conclusion')"
-          echo "app / manifest: ${got:-not run}"
-          [ "$got" = success ]
-
-  # Spelled out: a job is skipped by default when anything up its chain
-  # failed, and `app` fails with a Linux or Windows leg.
+  # Beside `app`, not after it: its gate waits for `app / manifest` alone, so
+  # a failed Linux or Windows leg, which fails `app` but never holds back the
+  # manifest, still lets the CLI beta out.
   cli:
-    needs: [version, manifest]
-    if: ${{ !cancelled() && needs.version.result == 'success' && needs.manifest.result == 'success' }}
+    needs: version
     uses: ./.github/workflows/release-cli.yml
     with:
       version: ${{ needs.version.outputs.cli }}
     secrets: inherit
     permissions:
       contents: write
-      # Its gate's, checked at start though a beta skips the gate.
+      # Its gate reads this run's jobs.
       actions: read
 
   # install.sh and the app read the newest 100 releases for the CLI's, and two

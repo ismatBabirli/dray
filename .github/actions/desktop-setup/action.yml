@@ -1,12 +1,18 @@
 name: Desktop build setup
 description: >
-  pnpm, Rust with both Apple targets, the cargo cache and the CEF build tools.
-  One place, so release.yml and warm-cache.yml meet on the same cache key —
-  runner, toolchain and target list all feed it.
+  pnpm, Rust with both Apple targets, the cargo cache and the CEF build tools,
+  for one of release.yml's Mac build legs. A beta's leg, on `main`, saves the
+  cache under the key this restores, so the next beta and the next release
+  find it.
+
+inputs:
+  target:
+    description: The leg's target triple. Each leg caches only what it builds.
+    required: true
 
 outputs:
   cache-key:
-    description: The exact key this run looked for, for warm-cache to save under.
+    description: The exact key this run looked for, for the leg to save under.
     value: ${{ steps.cache.outputs.cache-primary-key }}
   cache-hit:
     description: Whether that exact key already exists.
@@ -53,9 +59,25 @@ runs:
     # match: true`: 40 crates per target for ~8 minutes a target. Tar restores
     # mtimes as saved, so keeping `src` keeps the order. The cost is a larger
     # entry and a target dir nothing prunes but GitHub's 10 GB LRU eviction.
+    #
+    # The key holds what the build scripts are rerun on: `cc` prints
+    # `rerun-if-env-changed=DEVELOPER_DIR`, so a cache built under another
+    # Xcode reran every C build script and rebuilt 67 crates downstream, ten
+    # minutes a leg, under an exact hit. And it leaves out `wain`'s own
+    # version, which a beta and every release bump change and which rebuilds
+    # `wain` alone, so a version change still hits.
     - id: paths
       shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+        RUST: ${{ steps.rust.outputs.cachekey }}
       run: |
+        strip_root() { awk 'skip { skip = 0; next } /^name = "wain"$/ { skip = 1 } { print }' "$1"; }
+        lock=$(strip_root apps/desktop/src-tauri/Cargo.lock | shasum -a 256 | cut -c1-16)
+        xcode=$(xcodebuild -version | tr -cd 'A-Za-z0-9.')
+        prefix="darwin-cargo-$RUNNER_ARCH-$RUST-$xcode-$TARGET-"
+        echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
+        echo "key=$prefix$lock" >> "$GITHUB_OUTPUT"
         {
           echo 'paths<<EOF'
           printf '%s\n' '~/.cargo/registry/index' '~/.cargo/registry/cache' \
@@ -64,11 +86,10 @@ runs:
           echo 'EOF'
         } >> "$GITHUB_OUTPUT"
 
-    # Restore only. Saving is warm-cache.yml's, on `main` — the one scope a tag
-    # build can read from; a tag build saving would write under its own ref
-    # that nothing reads again. The version bump in every release changes
-    # Cargo.lock, so the exact key misses once per release by design and the
-    # prefix restore carries the tree across; only `wain` itself moved.
+    # Restore only. The leg saves, on `main` alone: the one scope a tag build
+    # can read from, where a tag saving would write under its own ref that
+    # nothing reads again. A dependency change misses the exact key once, and
+    # the prefix restore carries the tree across until that beta saves.
     # Skipped on the release Mac. Its runners set CARGO_BUILD_BUILD_DIR to a
     # folder outside the checkout, so checkout's `git clean` never reaches the
     # intermediates and they persist between runs; a restore would only lay
@@ -80,8 +101,8 @@ runs:
         path: ${{ steps.paths.outputs.paths }}
         # Wain: per host arch. Build scripts and proc-macros only run where they were built,
         # so an arm64 cache restored on an Intel Mac still recompiled all 445 crates.
-        key: darwin-cargo-${{ runner.arch }}-${{ steps.rust.outputs.cachekey }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
-        restore-keys: darwin-cargo-${{ runner.arch }}-${{ steps.rust.outputs.cachekey }}-
+        key: ${{ steps.paths.outputs.key }}
+        restore-keys: ${{ steps.paths.outputs.prefix }}
 
     # Capped, so an install that hangs fails the job rather than holding it.
     - shell: bash

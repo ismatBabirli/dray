@@ -209,12 +209,14 @@ jobs:
   # until the app release speaking it is out, so both tags can be pushed at
   # once and the builds still overlap. Beside the matrix, never ahead of it.
   # See the script for the rule and its cap.
-  # A beta skips it, its ref being `main`: beta.yml starts the CLI only once
-  # the app's manifest is written, which is what the wait is for.
+  #
+  # A beta always waits, for its own app beta: beta.yml builds both at once in
+  # one run, so the wait is for that run's `app / manifest` job. Capped past
+  # Windows' 60 minutes, which `manifest` waits on.
   gate:
-    if: startsWith(github.ref, 'refs/tags/cli-v')
+    if: startsWith(github.ref, 'refs/tags/cli-v') || inputs.version
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 75
     # `actions: read` for the app's Release run, and nothing else.
     permissions:
       contents: read
@@ -226,6 +228,7 @@ jobs:
           filter: blob:none
 
       - id: decide
+        if: '!inputs.version'
         env:
           GH_TOKEN: ${{ github.token }}
         run: .github/scripts/cli-publish-gate.sh decide "$GITHUB_REF_NAME"
@@ -237,15 +240,29 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: .github/scripts/cli-publish-gate.sh wait "${{ steps.decide.outputs.app-tag }}" "${{ steps.decide.outputs.protocol }}"
 
+      # A failed or skipped manifest fails this, and nothing publishes. The
+      # job is listed only once it is queued, so silence means keep waiting.
+      - name: Wait for the app beta's manifest
+        if: inputs.version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          while :; do
+            got="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs" --paginate \
+              --jq '.jobs[] | select(.name == "app / manifest") | "\(.status) \(.conclusion)"')"
+            case "$got" in
+              "completed success") echo "app / manifest: done"; exit 0 ;;
+              completed*) echo "::error::app / manifest ended ${got#completed }, so the CLI beta stays unpublished"; exit 1 ;;
+            esac
+            sleep 30
+          done
+
   publish:
     needs: [test, build, gate]
     # A dispatch run proves the matrix and stops here; only a tag or a beta
-    # publishes. A skipped `gate` would skip this too, so for a beta the
-    # results are spelled out.
-    if: >-
-      ${{ !cancelled() && needs.test.result == 'success' && needs.build.result == 'success'
-      && ((startsWith(github.ref, 'refs/tags/cli-v') && needs.gate.result == 'success')
-      || (inputs.version && needs.gate.result == 'skipped')) }}
+    # publishes.
+    if: startsWith(github.ref, 'refs/tags/cli-v') || inputs.version
     runs-on: ubuntu-latest
 
     # The one job that needs it, and it runs no third-party code but the
