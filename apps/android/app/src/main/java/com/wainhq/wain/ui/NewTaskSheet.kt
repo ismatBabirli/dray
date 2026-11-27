@@ -120,8 +120,9 @@ fun NewTaskSheet(started: (SessionKey) -> Unit, dismiss: () -> Unit) {
         }
     }
 
+    // In the store's scope: a clone can outlast the sheet, which may be swiped away meanwhile.
     fun start() {
-        scope.launch {
+        store.scope.launch {
             val key = task.start() ?: return@launch
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             dismiss()
@@ -235,7 +236,7 @@ private fun Picks(
                 .joinToString(" · ")) { open(TaskPage.Agent) }
 
         task.failure?.let {
-            Text((if (task.clone != null) "Couldn't clone. " else "Couldn't start. ") + sentence(it),
+            Text(it,
                 Modifier.padding(horizontal = 24.dp, vertical = 8.dp), style = Wain.Font.footnote.copy(color = Wain.destructive))
         }
         Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -287,7 +288,7 @@ private fun BranchLine(task: NewTask, branches: BranchList, set: (BranchList) ->
     }
 
     if (task.worktree) {
-        if (branches.offersWorktreeBase) PickLine({}, "Start from", task.worktreeBase ?: branches.defaultBranch ?: branches.current.orEmpty(), onClick = pickBase)
+        if (branches.offersWorktreeBase) PickLine({}, "Start from", task.base ?: branches.defaultBranch ?: branches.current.orEmpty(), onClick = pickBase)
         return
     }
     val current = branches.current ?: return
