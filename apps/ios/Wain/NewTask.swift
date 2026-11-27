@@ -61,6 +61,8 @@ final class NewTask {
     var failure: String?
     /// The draft this text came from, removed once it starts or is saved again.
     var draftId: (server: UUID, id: String)?
+    /// A repo from another machine, cloned onto the picked one when the task starts; held with that machine.
+    private var clonePick: (server: UUID, offer: CloneOffer)?
 
     init(store: Store) { self.store = store }
 
@@ -96,6 +98,17 @@ final class NewTask {
     }
     /// The checkout the picks speak for.
     var place: String { "\(server?.uuidString ?? "")|\(cwd ?? "")" }
+    /// The repo picked to clone onto the picked machine, if it is still that machine.
+    var cloning: CloneOffer? { bot == nil ? clonePick.flatMap { $0.server == server ? $0.offer : nil } : nil }
+    /// The checkout the branch rows read: none while the project is still to be cloned.
+    var checkout: String? { cloning == nil ? cwd : nil }
+
+    /// The other connected machines' repos the picked one lacks, one row per repo.
+    var cloneOffers: [CloneOffer] {
+        guard let server else { return [] }
+        let others = store.machines.filter { $0.id != server && store.serverState[$0.id] == .connected }
+        return offersToClone(here: held, others: others.map { ($0.name, store.projects[$0.id] ?? []) })
+    }
 
     /// The project menu: a name per repo, split by folder where the server holds two of that name.
     var projectChoices: [ProjectChoice] {
@@ -121,6 +134,8 @@ final class NewTask {
         bot = nil
         pickedServer = server
         projectPath = nil
+        clonePick = nil
+        failure = nil
     }
 
     func pick(_ choice: ProjectChoice?) {
@@ -130,11 +145,22 @@ final class NewTask {
         bot = nil
         projectName = choice.name
         projectPath = choice.path
+        clonePick = nil
+        failure = nil
+    }
+
+    /// Picks a repo to clone without cloning it: the start clones, so a stray pick costs nothing.
+    func pickClone(_ offer: CloneOffer) {
+        guard let server else { return }
+        clonePick = (server, offer)
+        // A failed clone's reason speaks for that pick alone.
+        failure = nil
     }
 
     /// Opens a saved draft with the picks it was saved on, so starting it or saving it again keeps them.
     func open(_ draft: DraftItem, on server: UUID) {
         bot = nil
+        clonePick = nil
         text = draft.prompt
         draftId = (server, draft.id)
         if let name = draft.project { projectName = name }
@@ -162,7 +188,7 @@ final class NewTask {
 
     var ready: Bool {
         // An unread availability lets Start stand: `send_msg` refuses a missing agent itself, in words.
-        !sending && hasText && cwd != nil && (agent?.available == true || server.map(agentsFailed.contains) == true)
+        !sending && hasText && (checkout != nil || cloning != nil) && (agent?.available == true || server.map(agentsFailed.contains) == true)
             && (models[modelsKey] != nil || modelsFailed.contains(modelsKey))
     }
 
@@ -213,13 +239,20 @@ final class NewTask {
     /// The argument set `useSessions.ts` sends for a new session, with the
     /// stance and fast mode narrowed to what this agent and model honour.
     func start() async -> SessionKey? {
-        guard let server, let cwd, ready else { return nil }
+        guard let server, ready else { return nil }
         sending = true
         failure = nil
         defer { sending = false }
+        // Read before a clone, which can run for minutes.
+        let sent = text
+        var cwd = checkout
+        if let offer = cloning {
+            guard let made = await clone(offer, on: server) else { return nil }
+            cwd = made
+        }
+        guard let cwd else { return nil }
         let opened = draftId
         let id = UUID().uuidString.lowercased()
-        let sent = text
         let base = basePick
         do {
             let outcome: SendOutcome = try await store.call(server, "send_msg", [
@@ -257,11 +290,33 @@ final class NewTask {
         }
     }
 
+    /// Clones the picked repo onto `server` and picks the checkout it makes, answering its path.
+    /// A failure stays on the sheet, said in the server's words.
+    private func clone(_ offer: CloneOffer, on server: UUID) async -> String? {
+        store.cloneProgress[server]?[offer.slug] = nil
+        do {
+            // A clone runs as long as the repository is big; `clone_progress` arrives meanwhile.
+            let list: [Project] = try await store.call(server, "clone_github_repo", ["slug": .string(offer.slug)],
+                                                       timeout: .seconds(1800))
+            store.attached(server, list)
+            guard let made = list.first(where: { $0.remote?.lowercased() == "github.com/" + offer.slug.lowercased() })
+                ?? list.max(by: { $0.lastSelected < $1.lastSelected }) else { return nil }
+            if clonePick?.server == server && clonePick?.offer == offer { clonePick = nil }
+            projectName = made.name
+            projectPath = made.path
+            return made.path
+        } catch {
+            failure = error.localizedDescription
+            Haptic.error()
+            return nil
+        }
+    }
+
     /// Saves the text as a draft in Wain's sidebar, on these picks, and clears it.
     func saveDraft() async -> Bool {
         guard !sending else { return false }
-        guard let server, let cwd, hasText else {
-            failure = "Pick a project first."
+        guard let server, let cwd = checkout, hasText else {
+            failure = cloning == nil ? "Pick a project first." : "A draft needs a project on the machine: start it to clone."
             return false
         }
         sending = true

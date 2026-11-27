@@ -104,10 +104,10 @@ final class DesignTests: XCTestCase {
         prompt.tap()
         prompt.typeText("Add a dark mode toggle to the settings page")
         snap(app, "18-new-task-typed")
-        app.buttons["row.Agent"].tap()
+        app.openAgent()
         sleep(1)
-        snap(app, "19-run-with")
-        app.buttons["Done"].tap()
+        snap(app, "19-agent")
+        app.back()
         app.buttons["Cancel"].tap()
         // On a phone the dialog is a popover off Cancel, and its Keep editing is a tap outside it.
         let keep = app.buttons["Keep editing"]

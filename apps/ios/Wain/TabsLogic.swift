@@ -90,6 +90,33 @@ func routineOrder<T>(_ rows: [T], paused: (T) -> Bool, next: (T) -> Date?) -> [T
     }.map(\.element)
 }
 
+// MARK: New task
+
+/// A repo on another machine that the picked one has no checkout of.
+struct CloneOffer: Hashable, Identifiable {
+    let slug: String
+    let name: String
+    /// The machine it was seen on, for the row's subtitle.
+    let machine: String
+    var id: String { slug }
+}
+
+/// The Project page's "On your other machines": each GitHub repo another machine has a checkout of
+/// and this one does not, first machine named. `remote` is the server's host-and-path key
+/// (`github.com/owner/repo`); one with none, or on another host, is never offered, since the
+/// clone goes through `gh`.
+func offersToClone(here: [Project], others: [(machine: String, projects: [Project])]) -> [CloneOffer] {
+    var seen = Set(here.compactMap { $0.remote?.lowercased() })
+    return others.flatMap { m in
+        m.projects.compactMap { p -> CloneOffer? in
+            guard let remote = p.remote?.lowercased(), remote.hasPrefix("github.com/"),
+                  seen.insert(remote).inserted else { return nil }
+            let slug = String(remote.dropFirst("github.com/".count))
+            return CloneOffer(slug: slug, name: slug.split(separator: "/").last.map(String.init) ?? slug, machine: m.machine)
+        }
+    }
+}
+
 // MARK: Usage
 
 extension UsageReading {

@@ -77,6 +77,23 @@ final class TabsLogicTests: XCTestCase {
         XCTAssertEqual(ordered, ["soon", "later", "unscheduled", "paused-soon", "paused-late"])
     }
 
+    // MARK: New task
+
+    /// Other machines' GitHub repos this one lacks, one row per repo, the first machine named;
+    /// none without a remote or on another host.
+    func testCloneOffers() {
+        func p(_ name: String, _ remote: String?) -> Project { Project(path: "/x/\(name)", name: name, lastSelected: "", remote: remote) }
+        let offers = offersToClone(here: [p("wain", "github.com/acme/wain"), p("notes", nil)], others: [
+            ("vps-1", [p("api", "github.com/acme/api"), p("wain", "GitHub.com/ACME/wain"), p("scratch", nil),
+                       p("lab", "gitlab.com/acme/lab")]),
+            ("studio", [p("docs", "github.com/acme/docs"), p("api", "github.com/acme/api")]),
+        ])
+        XCTAssertEqual(offers.map(\.slug), ["acme/api", "acme/docs"])
+        XCTAssertEqual(offers.map(\.machine), ["vps-1", "studio"])
+        XCTAssertEqual(offers[0].name, "api")
+        XCTAssertTrue(offersToClone(here: [], others: [("vps-1", [p("scratch", nil)])]).isEmpty)
+    }
+
     // MARK: Usage
 
     private func reading(_ harness: String, five: Double?, weekly: Double? = nil, limited: Bool? = nil, resets: String = "2026-11-26T14:00:00Z") -> UsageReading {

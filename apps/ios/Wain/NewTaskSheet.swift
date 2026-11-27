@@ -2,14 +2,13 @@ import SwiftUI
 
 /// A new task, opened from the compose button on Home and Tasks: the words, by
 /// typing or the mic, then who runs it, where, and on what. "Run by" a bot sends
-/// the words to that bot's folder instead, which is what starts its chat. Every
-/// other pick lives in Run with, behind the Agent row.
+/// the words to that bot's folder instead, which is what starts its chat. Project
+/// and Agent each push a page of their own; nothing is asked twice.
 struct NewTaskSheet: View {
     @Environment(Store.self) private var store
     @Environment(NewTask.self) private var task
     @Environment(\.dismiss) private var dismiss
     let started: (SessionKey) -> Void
-    @State private var picking = false
     @State private var confirming = false
 
     private var idle: Bool { Dictations.shared.state(.newSession) == .idle }
@@ -19,28 +18,17 @@ struct NewTaskSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Space.l) {
+                    // Locked while starting: a clone can take minutes, and the start runs on the picks it began with.
                     Composer(draft: .newSession, placeholder: task.bot.map { "Message \($0.bot.name)" } ?? "What should it do?",
                              form: true)
+                        .disabled(task.sending)
                     if let failure = task.failure {
                         Text(sentence(failure)).font(Theme.Font.footnote).foregroundStyle(Theme.destructive)
                             .padding(.horizontal, Theme.Space.xs)
                     }
+                    // Machine before Project: the Project page lists what the picked machine holds.
                     PickCard {
                         runBy
-                        PickDivider()
-                        if task.bot == nil {
-                            project
-                            PickDivider()
-                        }
-                        Button { picking = true } label: {
-                            PickRow("Agent") {
-                                Text([task.model?.label ?? "Default", task.effort.map { Picks.effortLabels[$0] ?? $0 }]
-                                    .compactMap { $0 }.joined(separator: " · "))
-                                    .foregroundStyle(Theme.secondary)
-                                Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.tertiary)
-                            }
-                        }
-                        .accessibilityIdentifier("row.Agent")
                         if !task.connected.isEmpty {
                             PickDivider()
                             PickMenu("Machine", value: task.server.map(store.name(of:)) ?? "") {
@@ -49,10 +37,41 @@ struct NewTaskSheet: View {
                                 }
                             }
                         }
-                        if task.bot == nil, !task.projectChoices.isEmpty {
+                        if task.bot == nil {
                             PickDivider()
-                            PickRow("Worktree") { PickSwitch(label: "Worktree", isOn: $task.worktree) }
+                            NavigationLink { ProjectPage(task: task) } label: {
+                                PickRow("Project") {
+                                    Text(task.cloning?.name ?? task.projectChoice?.label ?? "None").foregroundStyle(Theme.secondary)
+                                    chevron
+                                }
+                            }
+                            .disabled(task.server == nil)
+                            .accessibilityIdentifier("row.Project")
+                            if task.cloning != nil || !task.projectChoices.isEmpty {
+                                PickDivider()
+                                WorktreeRows(task: task)
+                            }
                         }
+                        PickDivider()
+                        NavigationLink { AgentPage(task: task) } label: {
+                            PickRow("Agent") {
+                                Text([task.model?.label ?? "Default", task.effort.map { Picks.effortLabels[$0] ?? $0 }]
+                                    .compactMap { $0 }.joined(separator: " · "))
+                                    .foregroundStyle(Theme.secondary)
+                                chevron
+                            }
+                        }
+                        .accessibilityIdentifier("row.Agent")
+                    }
+                    .disabled(task.sending)
+                    if let offer = task.cloning, let server = task.server {
+                        Label {
+                            Text("\(offer.name) isn't on \(store.name(of: server)) yet. Starting clones \(offer.slug) into ~/wain/\(offer.name) first, then the task runs there.")
+                        } icon: {
+                            Image(systemName: "arrow.down.to.line").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.link)
+                        }
+                        .font(Theme.Font.footnote).foregroundStyle(Theme.tertiary)
+                        .padding(.horizontal, Theme.Space.l)
                     }
                 }
                 .padding(Theme.Space.l)
@@ -65,9 +84,7 @@ struct NewTaskSheet: View {
                         dismiss()
                         started(key)
                     }
-                } label: {
-                    if task.sending { ProgressView().tint(Theme.page) } else { Text(task.bot.map { "Send to \($0.bot.name)" } ?? "Start task") }
-                }
+                } label: { startLabel }
                 .buttonStyle(CapsuleButtonStyle(height: 52))
                 .disabled(!task.ready || !idle)
                 .padding(.horizontal, Theme.Space.l)
@@ -77,18 +94,20 @@ struct NewTaskSheet: View {
             .navigationTitle("New task")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // No way out mid-start: a clone dropped half way would still start its task after a Discard.
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { task.hasText ? confirming = true : dismiss() }
+                        .disabled(task.sending)
                 }
                 // A bot's folder holds no drafts: its words are a message, not a task to start later.
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { if await task.saveDraft() { dismiss() } } }
-                        .disabled(!task.hasText || task.bot != nil || task.sending || !idle)
+                        .disabled(!task.hasText || task.bot != nil || task.cloning != nil || task.sending || !idle)
                 }
             }
             .background(Theme.card.ignoresSafeArea())
             .confirmationDialog("Keep this task?", isPresented: $confirming, titleVisibility: .visible) {
-                if task.bot == nil { Button("Save draft") { Task { if await task.saveDraft() { dismiss() } } } }
+                if task.bot == nil && task.cloning == nil { Button("Save draft") { Task { if await task.saveDraft() { dismiss() } } } }
                 Button("Discard", role: .destructive) {
                     Dictations.shared.cancel(.newSession)
                     task.discard()
@@ -98,10 +117,10 @@ struct NewTaskSheet: View {
             }
         }
         .task(id: "\(task.server?.uuidString ?? "")|\(task.harness)") { await task.load() }
-        .sheet(isPresented: $picking) { RunWithSheet(task: task) }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.card)
+        .interactiveDismissDisabled(task.sending)
         // A recording left running would have no Done once the sheet goes: stopped and kept, its words here next time.
         .onDisappear {
             if Dictations.shared.state(.newSession) == .recording { Task { await Dictations.shared.stop(store, draft: .newSession) } }
@@ -127,22 +146,23 @@ struct NewTaskSheet: View {
         }
     }
 
-    @ViewBuilder private var project: some View {
-        if task.projectChoices.isEmpty {
-            Button { picking = true } label: {
-                PickRow("Project") {
-                    Text("Attach one").foregroundStyle(Theme.secondary)
-                    Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.tertiary)
+    private var chevron: some View {
+        Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.tertiary)
+    }
+
+    /// Start, or Clone and start where the project is still to be cloned; a clone in flight shows git's own line.
+    @ViewBuilder private var startLabel: some View {
+        if task.sending {
+            HStack(spacing: Theme.Space.s) {
+                ProgressView().tint(Theme.page)
+                if let offer = task.cloning, let server = task.server {
+                    Text(store.cloneProgress[server]?[offer.slug] ?? "Cloning \(offer.name)…").lineLimit(1)
                 }
             }
-            .disabled(task.server == nil)
-            .accessibilityIdentifier("row.Project")
+        } else if let bot = task.bot {
+            Text("Send to \(bot.bot.name)")
         } else {
-            PickMenu("Project", value: task.projectChoice?.label ?? "") {
-                Picker("Project", selection: Binding(get: { task.projectChoice }, set: task.pick)) {
-                    ForEach(task.projectChoices, id: \.self) { Text($0.label).tag(Optional($0)) }
-                }
-            }
+            Text(task.cloning == nil ? "Start task" : "Clone and start")
         }
     }
 }

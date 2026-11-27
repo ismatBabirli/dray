@@ -277,7 +277,7 @@ final class Store {
         reshare()
     }
 
-    /// The servers that are on, which is every one the list, Run with and banners reason about.
+    /// The servers that are on, which is every one the list, New task and banners reason about.
     var live: [Server] { servers.filter(\.on) }
 
     /// Off drops the connection and all held of it, so its tasks, cards and banners go;
