@@ -243,7 +243,8 @@ jobs:
         run: .github/scripts/cli-publish-gate.sh wait "${{ steps.decide.outputs.app-tag }}" "${{ steps.decide.outputs.protocol }}"
 
       # A failed or skipped manifest fails this, and nothing publishes. The
-      # job is listed only once it is queued, so silence means keep waiting.
+      # job is listed only once it is queued, so silence means keep waiting,
+      # and so does a failed read: one 502 in an hour of polls is no verdict.
       - name: Wait for the app beta's manifest
         if: inputs.version
         env:
@@ -252,7 +253,7 @@ jobs:
           set -euo pipefail
           while :; do
             got="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs" --paginate \
-              --jq '.jobs[] | select(.name == "app / manifest") | "\(.status) \(.conclusion)"')"
+              --jq '.jobs[] | select(.name == "app / manifest") | "\(.status) \(.conclusion)"')" || got="read failed"
             case "$got" in
               "completed success") echo "app / manifest: done"; exit 0 ;;
               completed*) echo "::error::app / manifest ended ${got#completed }, so the CLI beta stays unpublished"; exit 1 ;;
