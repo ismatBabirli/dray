@@ -89,6 +89,8 @@ jobs:
     secrets: inherit
     permissions:
       contents: write
+      # Its gate's, checked at start though a beta skips the gate.
+      actions: read
 
   # install.sh and the app read the newest 100 releases for the CLI's, and two
   # betas a merge would push every stable one out of that window. So only the
