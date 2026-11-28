@@ -19,7 +19,11 @@ import { invoke } from "@/lib/transport";
 
 import type { SurveyIdentity } from "@/types/events";
 
-/// Starts PostHog, or does nothing where Rust refuses. Called once, at startup.
+/// The SDK once started, so the usage switch can stop it mid-run.
+let started: { set_config(c: { disable_surveys: boolean }): void; opt_out_capturing(): void } | null = null;
+
+/// Starts PostHog, or does nothing where Rust refuses. Called at startup, and
+/// again when the usage switch comes back on in a run that never started it.
 export async function startSurveys(): Promise<void> {
   try {
     const identity = await invoke<SurveyIdentity | null>("analytics_identity");
@@ -49,9 +53,23 @@ export async function startSurveys(): Promise<void> {
       disable_session_recording: true,
       loaded: (ph) => ph.setPersonProperties(identity.personProperties),
     });
+    started = posthog;
   } catch (e) {
     // Best effort, like every other analytics path: the one thing worse than a
     // survey never appearing is the app failing because one could not.
     console.error("[surveys]", e);
   }
+}
+
+/// Follows Settings → Privacy's usage switch. Off stops surveys and anything
+/// the SDK would send; on again starts it in a run that never had it, and
+/// otherwise waits for the next launch, since re-initialising a live SDK is
+/// not supported.
+export async function setSurveysAllowed(on: boolean): Promise<void> {
+  if (on) {
+    if (!started) await startSurveys();
+    return;
+  }
+  started?.set_config({ disable_surveys: true });
+  started?.opt_out_capturing();
 }

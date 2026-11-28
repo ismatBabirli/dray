@@ -622,21 +622,33 @@ enum BrowserTarget {
 
 /// Reports a render error the frontend's crash screen caught: React's error
 /// code and the component stack as `name@bundle:line:col` frames of our own
-/// bundle. The frontend already drops anything else; this keeps only frames
-/// spelled from that alphabet too, so no message text or path can reach the
-/// event whatever the caller sends (see [`analytics::error`]).
+/// bundle. [`analytics::bundle_frames`] keeps only frames spelled from that
+/// alphabet, so no message text or path can reach the event whatever the
+/// caller sends (see [`analytics::error`]).
 #[cfg_attr(feature = "desktop", tauri::command)]
 fn track_render_error(code: Option<u32>, frames: Vec<String>) {
-    let frames: Vec<String> = frames
-        .into_iter()
-        .filter(|f| {
-            f.len() <= 120
-                && f.contains(".js:")
-                && f.chars().all(|c| c.is_ascii_alphanumeric() || "_$.@:-".contains(c))
-        })
-        .take(8)
-        .collect();
-    analytics::error("render", serde_json::json!({ "react_code": code, "frames": frames }));
+    let value = code.map_or("Render error".into(), |c| format!("React error #{c}"));
+    analytics::exception(
+        "render",
+        "RenderError",
+        &value,
+        analytics::bundle_frames(frames),
+        serde_json::json!({ "react_code": code }),
+    );
+}
+
+/// Reports an uncaught error or rejected promise in the webview: the error's
+/// constructor name and its frames of our own bundle, never its message. A
+/// name that is not a plain identifier is sent as `Error`, since a thrown
+/// non-`Error` value can be anything.
+#[cfg_attr(feature = "desktop", tauri::command)]
+fn track_js_error(name: String, rejection: bool, frames: Vec<String>) {
+    let plain = name.len() <= 40
+        && name.starts_with(|c: char| c.is_ascii_alphabetic())
+        && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
+    let name = if plain { name.as_str() } else { "Error" };
+    let value = if rejection { "Unhandled promise rejection" } else { "Uncaught error" };
+    analytics::exception("uncaught", name, value, analytics::bundle_frames(frames), serde_json::json!({}));
 }
 
 /// The slash commands available in a directory, for the harness that will run

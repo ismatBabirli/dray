@@ -117,6 +117,11 @@ function Setup({ agents, github, onNext }: { agents: AgentSetup; github: GithubS
             onAct={github.act}
           />
         </div>
+        {/* Told before much use, since both switches start on. */}
+        <p className="ob-in mt-6 text-[13px] leading-[18px] text-white/40" style={{ animationDelay: "160ms" }}>
+          Wain sends anonymous usage counts and crash reports, never your code or prompts. Turn them off in{" "}
+          <span className="text-white/70">Settings → Privacy</span>.
+        </p>
       </div>
     </main>
   );

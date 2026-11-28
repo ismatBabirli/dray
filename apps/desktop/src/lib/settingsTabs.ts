@@ -13,6 +13,7 @@ export const ALL_SETTINGS_TABS = [
   "island",
   "composer",
   "breaks",
+  "privacy",
   "changelog",
   "about",
 ] as const;

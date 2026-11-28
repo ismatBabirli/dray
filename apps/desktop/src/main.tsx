@@ -5,7 +5,7 @@ import App from "./App";
 import AccountGate from "@/components/AccountGate";
 import CrashScreen from "@/components/CrashScreen";
 import Onboarding from "@/components/onboarding/Onboarding";
-import { trackActiveDay } from "@/lib/analytics";
+import { trackActiveDay, trackJsError } from "@/lib/analytics";
 import { copyChipText } from "@/lib/chipCopy";
 import { onFocusChange } from "@/lib/focus";
 import { cancelsWindow, runUnhandledEscape } from "@/lib/escape";
@@ -31,8 +31,11 @@ noteUseDay();
 
 // Here for the same reason, and not in an effect for the same reason: the SDK
 // lives for the process, and a mount that runs twice would initialise it twice.
-// It refuses itself under WAIN_NO_ANALYTICS, so this is unconditional.
+// It refuses itself when Rust says no, so this is unconditional.
 void startSurveys();
+// Crash reports for what no error boundary sees. Rust reads the switch.
+window.addEventListener("error", (e) => trackJsError(e.error, false));
+window.addEventListener("unhandledrejection", (e) => trackJsError(e.reason, true));
 startAgentUpdateChecks();
 void applyIsland();
 // A path drawn as an `@name` chip copies as the path, wherever it is selected.

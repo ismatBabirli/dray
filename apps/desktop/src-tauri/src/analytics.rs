@@ -7,12 +7,15 @@
 //! uses, and whether the build is failing under them in a way nothing else
 //! would ever tell us.
 //!
-//! **`WAIN_NO_ANALYTICS` is the only opt-out.** Settings has no switch, and a
-//! stored `analytics_enabled: false` from a build that had one is ignored. The
-//! install id is minted on first use by [`settings::ensure_install_id`] and
-//! never cleared. A uuid v4 rather than the v7 used for session ids elsewhere:
-//! v7 embeds the moment it was minted, which for an identifier meant to say
-//! nothing is one more thing it says.
+//! **Two switches, both on by default** (Settings → Privacy): usage data
+//! (`analytics_enabled`) and crash reports (`crash_reports_enabled`), read from
+//! `settings.json` on every send, so the app and the Mac's background server
+//! obey a change at once. `WAIN_NO_ANALYTICS` or `DO_NOT_TRACK` turns both off
+//! for the run. The install id is minted on first use by
+//! [`settings::ensure_install_id`] and cleared when both switches go off. A uuid
+//! v4 rather than the v7 used for session ids elsewhere: v7 embeds the moment
+//! it was minted, which for an identifier meant to say nothing is one more
+//! thing it says.
 //!
 //! **No transport plugin.** `reqwest` is already here for Linear, and PostHog's
 //! capture API is one POST, so an event is a request rather than a queue with a
@@ -77,10 +80,75 @@ fn api_key() -> Option<&'static str> {
 /// is a task outliving the thing it was reporting about.
 const TIMEOUT: Duration = Duration::from_secs(10);
 
-/// Whether the environment has turned reporting off for this run — the only
-/// opt-out there is.
+/// The variable that turned reporting off for this run, if one did.
+///
+/// `DO_NOT_TRACK` is the shared convention many CLIs honour; `0` or empty reads
+/// as unset, since some shells export it that way to mean "track".
+fn env_lock() -> Option<&'static str> {
+    if std::env::var_os("WAIN_NO_ANALYTICS").is_some() {
+        return Some("WAIN_NO_ANALYTICS");
+    }
+    std::env::var("DO_NOT_TRACK")
+        .is_ok_and(|v| !v.is_empty() && v != "0")
+        .then_some("DO_NOT_TRACK")
+}
+
 fn env_opt_out() -> bool {
-    std::env::var_os("WAIN_NO_ANALYTICS").is_some()
+    env_lock().is_some()
+}
+
+/// Crash events answer to the crash switch; everything else to usage.
+fn is_crash(event: &str) -> bool {
+    matches!(event, "error" | "$exception")
+}
+
+/// Whether `event` may go: the environment, then its switch, read fresh.
+async fn consented(event: &str) -> bool {
+    !env_opt_out()
+        && settings::read_checked()
+            .await
+            .is_some_and(|s| if is_crash(event) { s.crash_reports_enabled } else { s.analytics_enabled })
+}
+
+/// Settings → Privacy, as drawn: the stored switches, and the variable that
+/// overrides both for this run.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, export_to = "events.ts")]
+#[serde(rename_all = "camelCase")]
+pub struct PrivacySettings {
+    pub usage: bool,
+    pub crash_reports: bool,
+    pub locked_by: Option<String>,
+}
+
+fn privacy_view(settings: &settings::AppSettings) -> PrivacySettings {
+    PrivacySettings {
+        usage: settings.analytics_enabled,
+        crash_reports: settings.crash_reports_enabled,
+        locked_by: env_lock().map(str::to_string),
+    }
+}
+
+#[cfg_attr(feature = "desktop", tauri::command)]
+pub async fn privacy_settings() -> PrivacySettings {
+    privacy_view(&settings::read().await)
+}
+
+/// Saves both switches. With both off the install id goes too, so nothing on
+/// disk names an install that asked not to be counted; turning one back on
+/// mints a fresh id, a new person, which is honest about the gap.
+#[cfg_attr(feature = "desktop", tauri::command)]
+pub async fn set_privacy_settings(usage: bool, crash_reports: bool) -> Result<PrivacySettings, String> {
+    let saved = settings::update(|s| {
+        s.analytics_enabled = usage;
+        s.crash_reports_enabled = crash_reports;
+        if !usage && !crash_reports {
+            s.install_id = None;
+        }
+    })
+    .await
+    .map_err(|e| format!("{e:#}"))?;
+    Ok(privacy_view(&saved))
 }
 
 /// What the webview needs to speak to PostHog for itself.
@@ -111,9 +179,9 @@ pub struct SurveyIdentity {
 ///
 /// The SDK on the other side exists for **surveys**, which are drawn by
 /// `posthog-js` and by nothing else — there is no way to render one from here.
-/// It captures no events of its own. `None` on exactly the grounds [`send`]
-/// refuses on — no key compiled in, or `WAIN_NO_ANALYTICS` — plus an install id
-/// that could not be persisted.
+/// It captures no events of its own. `None` on the grounds [`send`] refuses a
+/// usage event on — no key compiled in, the environment, or the usage switch
+/// off — plus an install id that could not be persisted.
 #[cfg_attr(feature = "desktop", tauri::command)]
 pub async fn analytics_identity() -> Option<SurveyIdentity> {
     // Same order as `send`: no key compiled in is the ordinary case for a local
@@ -121,7 +189,8 @@ pub async fn analytics_identity() -> Option<SurveyIdentity> {
     // reading the settings file to find that out.
     let key = api_key()?;
 
-    if env_opt_out() {
+    // Surveys answer to the usage switch: a survey is a usage question.
+    if env_opt_out() || !settings::read_checked().await?.analytics_enabled {
         return None;
     }
 
@@ -149,7 +218,7 @@ pub async fn analytics_identity() -> Option<SurveyIdentity> {
     })
 }
 
-/// Enqueues one event, or drops it under `WAIN_NO_ANALYTICS`.
+/// Enqueues one event, or drops it where its switch or the environment says no.
 ///
 /// Deliberately **not** `async` and takes no `AppHandle`: an event is
 /// fire-and-forget, and a call that had to be awaited would put a file read and
@@ -157,8 +226,8 @@ pub async fn analytics_identity() -> Option<SurveyIdentity> {
 /// lets the sites that report features call this — several are synchronous
 /// commands with no handle in reach.
 ///
-/// The opt-out is read inside the spawned half, on every call, so a new call
-/// site cannot forget to ask.
+/// The switches and the environment are read inside the spawned half, on every
+/// call, so a new call site cannot forget to ask.
 ///
 /// `event` is `&'static str` because every one is a literal, and taking it by
 /// value is what keeps the spawned future `'static` without an allocation.
@@ -386,6 +455,67 @@ pub fn error(kind: &'static str, properties: Value) {
     track("error", error_properties(kind, properties));
 }
 
+/// Reports a crash to PostHog Error Tracking as an `$exception`: the
+/// [`error`] rule holds, so `value` is a fixed phrase per kind and never the
+/// error's own message, and every frame is our own code.
+///
+/// Frames go outermost first, the order Error Tracking draws them in; `custom`
+/// frames, since a minified bundle frame has no source map to resolve against
+/// and a Rust `Location` needs none.
+pub fn exception(kind: &'static str, error_type: &str, value: &str, frames: Vec<Value>, properties: Value) {
+    track("$exception", exception_properties(kind, error_type, value, frames, properties));
+}
+
+fn exception_properties(kind: &'static str, error_type: &str, value: &str, frames: Vec<Value>, properties: Value) -> Value {
+    let mut props = error_properties(kind, properties);
+    props["$exception_list"] = json!([{
+        "type": error_type,
+        "value": value,
+        "mechanism": { "handled": false, "synthetic": false },
+        "stacktrace": { "type": "raw", "frames": frames },
+    }]);
+    props
+}
+
+/// One frame of our own code in Error Tracking's `custom` shape.
+pub fn frame(lang: &str, function: &str, file: &str, line: Option<u32>, col: Option<u32>) -> Value {
+    json!({
+        "platform": "custom",
+        "lang": lang,
+        "function": function,
+        "filename": file,
+        "lineno": line,
+        "colno": col,
+        "resolved": true,
+        "in_app": true,
+    })
+}
+
+/// Frames from the webview, `name@bundle.js:line:col` innermost first, as
+/// Error Tracking frames outermost first. Anything spelled outside that
+/// alphabet is dropped, so a path or message text cannot ride along.
+pub fn bundle_frames(frames: Vec<String>) -> Vec<Value> {
+    let mut out: Vec<Value> = frames
+        .iter()
+        .filter(|f| {
+            f.len() <= 120
+                && f.contains(".js:")
+                && f.chars().all(|c| c.is_ascii_alphanumeric() || "_$.@:-".contains(c))
+        })
+        .take(8)
+        .filter_map(|f| {
+            let (function, rest) = f.split_once('@')?;
+            let mut parts = rest.rsplitn(3, ':');
+            let col = parts.next()?.parse().ok();
+            let line = parts.next()?.parse().ok();
+            let file = parts.next()?;
+            Some(frame("javascript", function, file, line, col))
+        })
+        .collect();
+    out.reverse();
+    out
+}
+
 /// The merge [`error`] sends, split out because it is the one part of that call
 /// a test can hold: the kind goes in **last**, so a call site carrying one of
 /// its own cannot rename what the breakdown is read by. The opposite of
@@ -416,13 +546,19 @@ pub fn install_panic_hook() {
     let previous = std::panic::take_hook();
 
     std::panic::set_hook(Box::new(move |info| {
-        error(
+        let thread = std::thread::current().name().unwrap_or("unnamed").to_string();
+        let at = info.location().map(|at| (trim_source_path(at.file()), at.line(), at.column()));
+        let frames = at
+            .map(|(file, line, col)| vec![frame("rust", &thread, file, Some(line), Some(col))])
+            .unwrap_or_default();
+        exception(
             "panic",
+            "panic",
+            &at.map_or("panic".into(), |(file, line, _)| format!("panic at {file}:{line}")),
+            frames,
             json!({
-                "location": info
-                    .location()
-                    .map(|at| format!("{}:{}", trim_source_path(at.file()), at.line())),
-                "thread": std::thread::current().name().map(str::to_string),
+                "location": at.map(|(file, line, _)| format!("{file}:{line}")),
+                "thread": thread,
             }),
         );
 
@@ -464,13 +600,13 @@ fn trim_source_path(file: &str) -> &str {
 async fn send(event: &'static str, daily_key: Option<String>, properties: Value) {
     let Some(key) = api_key() else {
         // A dev build has no key, so this is the only way to see what it would send.
-        if cfg!(debug_assertions) && !env_opt_out() {
+        if cfg!(debug_assertions) && consented(event).await {
             eprintln!("[analytics] would send {event} {properties}");
         }
         return;
     };
 
-    if env_opt_out() {
+    if !consented(event).await {
         return;
     }
 
@@ -627,6 +763,53 @@ mod tests {
 
         assert_eq!(props["kind"], json!("parse_failure"));
         assert_eq!(props["stage"], json!("map"));
+    }
+
+    /// The shape PostHog's Error Tracking parses (cymbal's `Exception` and
+    /// `custom` frame); a wrong one is ingested as a plain event and makes no
+    /// issue, silently.
+    #[test]
+    fn an_exception_is_shaped_for_error_tracking() {
+        let props = exception_properties(
+            "panic",
+            "panic",
+            "panic at src/session.rs:12",
+            vec![frame("rust", "main", "src/session.rs", Some(12), Some(5))],
+            json!({ "thread": "main" }),
+        );
+
+        let exception = &props["$exception_list"][0];
+        assert_eq!(props["kind"], json!("panic"));
+        assert_eq!(exception["type"], json!("panic"));
+        assert_eq!(exception["stacktrace"]["type"], json!("raw"));
+        let f = &exception["stacktrace"]["frames"][0];
+        assert_eq!(f["platform"], json!("custom"));
+        assert_eq!(f["function"], json!("main"));
+        assert_eq!(f["lineno"], json!(12));
+    }
+
+    /// Webview frames arrive innermost first and leave outermost first, and a
+    /// frame spelled with anything a path or message could carry is dropped.
+    #[test]
+    fn bundle_frames_keep_our_own_code_only() {
+        let frames = bundle_frames(vec![
+            "inner@index-a1.js:1:200".into(),
+            "/Users/me/secret/project.js:1:2".into(),
+            "outer@index-a1.js:3:40".into(),
+        ]);
+
+        assert_eq!(frames.len(), 2);
+        assert_eq!(frames[0]["function"], json!("outer"));
+        assert_eq!(frames[0]["filename"], json!("index-a1.js"));
+        assert_eq!(frames[0]["lineno"], json!(3));
+        assert_eq!(frames[1]["colno"], json!(200));
+    }
+
+    #[test]
+    fn crash_events_answer_to_the_crash_switch() {
+        assert!(is_crash("$exception"));
+        assert!(is_crash("error"));
+        assert!(!is_crash("app_started"));
     }
 
     /// What the webview `$set`s as person properties, and the whole reason

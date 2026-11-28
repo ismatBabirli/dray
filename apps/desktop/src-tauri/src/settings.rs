@@ -28,12 +28,12 @@ static SETTINGS_LOCK: Mutex<()> = Mutex::const_new(());
 #[ts(export, export_to = "events.ts")]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
-    /// The old in-app analytics switch, **read by nothing**: Settings offers no
-    /// opt-out any more, so a stored `false` is ignored and `WAIN_NO_ANALYTICS`
-    /// is the only way off. Kept so an older build sharing `~/.wain` still finds
-    /// the field it reads, and so a rewrite here carries its value through.
+    /// Settings → Privacy's "Share usage data". On unless turned off.
     #[serde(default = "enabled_by_default")]
     pub analytics_enabled: bool,
+    /// Settings → Privacy's "Send crash reports". On unless turned off.
+    #[serde(default = "enabled_by_default")]
+    pub crash_reports_enabled: bool,
     /// A random id for this install, or `None` where nothing has ever been
     /// reported from it. Minted lazily by [`ensure_install_id`] on the first
     /// event.
@@ -113,6 +113,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             analytics_enabled: enabled_by_default(),
+            crash_reports_enabled: enabled_by_default(),
             install_id: None,
             linear_account: None,
             transcription: TranscriptionSettings::default(),
@@ -136,6 +137,13 @@ pub async fn read() -> AppSettings {
         eprintln!("[settings read err] {e:#}");
         AppSettings::default()
     })
+}
+
+/// Like [`read`], but `None` where the file is there and cannot be read or
+/// parsed: the Privacy switches are consent, and a broken file must not read as
+/// both of them on. A missing file is still the defaults.
+pub async fn read_checked() -> Option<AppSettings> {
+    read_from(&config_dir().await.ok()?).await.ok()
 }
 
 /// Takes the directory so a test can round-trip against a tempdir rather than
@@ -185,26 +193,29 @@ pub async fn update(edit: impl FnOnce(&mut AppSettings)) -> Result<AppSettings> 
 
 /// This install's id, minted and persisted on first use.
 ///
-/// Every install gets one, a stored `analytics_enabled: false` included: the
-/// only opt-out is `WAIN_NO_ANALYTICS`, which [`crate::analytics`] checks before
-/// asking. Minting goes through [`update`], so a malformed file is recovered
-/// rather than silencing analytics for good, and an unreadable one is left
-/// untouched.
+/// Minted only while one of the Privacy switches is on, checked under the same
+/// lock that mints, so a send racing the reader turning both off cannot write
+/// an id back after the switch cleared it. [`crate::analytics`] checks the
+/// switches and the environment before asking. Minting goes through
+/// [`update`], so a malformed file is recovered rather than silencing analytics
+/// for good, and an unreadable one is left untouched.
 ///
 /// **A failed write answers `None`**: nothing caches this, so an id that did not
 /// reach disk would be re-minted on the very next event and every event would
 /// arrive as a different person. No events beats a fabricated population.
 pub async fn ensure_install_id() -> Option<String> {
-    // The common case, without the lock. Ids are never cleared, so a read that
-    // finds one is right however stale; one that finds none re-checks under it.
+    // The common case, without the lock: an id is cleared only with both
+    // switches off, and a send that read them on a moment ago may still use it.
     if let Some(id) = read().await.install_id {
         return Some(id);
     }
 
     let minted = update(|settings| {
-        settings
-            .install_id
-            .get_or_insert_with(|| Uuid::new_v4().to_string());
+        if settings.analytics_enabled || settings.crash_reports_enabled {
+            settings
+                .install_id
+                .get_or_insert_with(|| Uuid::new_v4().to_string());
+        }
     })
     .await;
 
@@ -281,6 +292,7 @@ mod tests {
         let dir = tempdir();
         let off = AppSettings {
             analytics_enabled: false,
+            crash_reports_enabled: false,
             install_id: Some("2f1c…".into()),
             linear_account: None,
             transcription: TranscriptionSettings::default(),
@@ -340,6 +352,7 @@ mod tests {
         let settings = read_from(&dir).await.unwrap();
 
         assert!(settings.analytics_enabled);
+        assert!(settings.crash_reports_enabled);
         assert_eq!(settings.install_id, None);
     }
 
