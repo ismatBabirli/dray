@@ -430,12 +430,13 @@ export type AgentUpdate = { harness: Harness, label: string, current: string, la
  */
 export type AppSettings = { 
 /**
- * The old in-app analytics switch, **read by nothing**: Settings offers no
- * opt-out any more, so a stored `false` is ignored and `WAIN_NO_ANALYTICS`
- * is the only way off. Kept so an older build sharing `~/.wain` still finds
- * the field it reads, and so a rewrite here carries its value through.
+ * Settings → Privacy's "Share usage data". On unless turned off.
  */
 analyticsEnabled: boolean, 
+/**
+ * Settings → Privacy's "Send crash reports". On unless turned off.
+ */
+crashReportsEnabled: boolean, 
 /**
  * A random id for this install, or `None` where nothing has ever been
  * reported from it. Minted lazily by [`ensure_install_id`] on the first
@@ -1805,6 +1806,12 @@ orgs: Array<string>, prs: Array<SearchedPr>, };
  * a GitHub repo, and the tab is the only place the app can say so.
  */
 export type PrUnavailable = { "kind": "no_cli" } | { "kind": "not_authenticated" } | { "kind": "no_remote" } | { "kind": "other", "detail": string };
+
+/**
+ * Settings → Privacy, as drawn: the stored switches, and the variable that
+ * overrides both for this run.
+ */
+export type PrivacySettings = { usage: boolean, crashReports: boolean, lockedBy: string | null, };
 
 /**
  * A directory the user attached, and the root a session runs in. Distinct from

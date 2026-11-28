@@ -7,26 +7,50 @@ sidebar:
 
 This is Wain's privacy policy. It covers the Wain desktop app, the `wain` command line and server, Wain accounts, and wainhq.com with these docs. Wain is run by Ismat Babirli; "we" and "us" here mean him. Write to [support@wainhq.com](mailto:support@wainhq.com) about anything on this page.
 
-Last updated: 25 November 2026.
+Last updated: 28 November 2026.
 
 In short:
 
 - Your prompts, code, transcripts and files stay on your own machines.
-- Wain sends no analytics: no usage events, no error reports, no surveys.
+- The desktop app sends anonymous usage counts and crash reports, on by default. Turn either off in **Settings → Privacy**.
 - A [Wain account](#your-wain-account) holds your name, email address and the machines you sign in on.
 - We sell nothing, show no ads and do not track you across other apps or sites.
 
-## No analytics
+## Usage data and crash reports
 
-Wain's builds send no usage events, error reports or surveys, from the app, the background server or the Linux server. The source code can send anonymous usage events when it is built with an analytics key; Wain's releases are built without one. If that ever changes, this page will say so first, and you will be able to turn it off by setting `WAIN_NO_ANALYTICS`.
+The Wain desktop app, on Mac, Linux and Windows, and its background server send two kinds of anonymous reports to [PostHog](https://posthog.com), which stores them for us in the US. Both are on by default. Turn either off in **Settings → Privacy**. The change applies at once, to the app and its background server.
 
-When something breaks, the details stay on your machine, in `~/.wain`. An agent line Wain could not read, for one, is kept in `~/.wain/parse_failures.jsonl`.
+**Usage data** says how many people use Wain and which parts of it:
+
+- That the app started, and that you used it on a given day.
+- That a session started: which agent, model, effort and permission mode, and whether it runs in a worktree, on another server, or for a bot or a routine.
+- Which features get used, by name: dictation, forking, merging a pull request, opening the browser, and the like.
+- That a bot or a routine was created.
+- The app's version, your operating system and your processor type.
+
+**Crash reports** say where Wain broke:
+
+- The place in Wain's own code, as a file and line of Wain's source, and the version.
+- The kind of error, such as `TypeError`, never its message.
+- An agent line Wain could not read, by agent and stage, never the line.
+- A failed update, by the kind of failure.
+
+Each report carries a random id made on your machine, so one install counts once. The id is not tied to your Wain account, name or email. PostHog is set not to store your IP address: it reads it once to note the country, then drops it. Turning both switches off also deletes the id from your machine, and turning one on again makes a new one.
+
+While usage data is on, Wain may now and then show a short survey in the app. Your answers go to PostHog under the same id.
+
+To turn everything off for one run, whatever the switches say, start Wain with `WAIN_NO_ANALYTICS` or `DO_NOT_TRACK=1` set. See [Data on disk](/reference/data#environment-variables).
+
+The `wain` command, the standalone server (`wain-serve`) and the iPhone and Android apps send none of this.
+
+The full details of an error stay on your machine, in `~/.wain`. An agent line Wain could not read, for one, is kept in `~/.wain/parse_failures.jsonl`.
 
 ## What never leaves your machine
 
 - Your prompts, the agent's replies, and anything else in a transcript.
 - Code, file names and file paths.
 - Session titles, project names, branch names, issue titles.
+- Error messages and stack traces beyond Wain's own code.
 - Server names and addresses, ports and links.
 - Screens and recordings.
 
@@ -84,6 +108,7 @@ Dictation runs on your Mac. Your voice never leaves it.
 - **Cloudflare** runs the domain's DNS and carries traffic to wainhq.com.
 - **netcup**, in Austria, hosts wainhq.com, these docs and the database that holds Wain accounts, on a server we run.
 - **Contabo**, in Germany, hosts the mail server for wainhq.com addresses, on a server we run. Mail you send to support@wainhq.com is kept there.
+- **PostHog**, in the US, receives the usage data and crash reports described above.
 - **GitHub** and **Google** sign you in, when you choose them. GitHub also hosts Wain's source code and releases.
 
 We sell no data, show no ads, and share nothing beyond these services.

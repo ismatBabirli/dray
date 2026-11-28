@@ -24,7 +24,7 @@ The folder is readable by your user alone, and Wain does not upload it. For what
 | `account.json` | Your Wain sign-in: who you are signed in as, and the credential that proves it to wainhq.com (`0600`). Signing out deletes it. See [Sign in](/get-started/install#sign-in). |
 | `org-link.json` | This machine's link to your org at wainhq.com, with its own credential (`0600`). See [Link to an org](/cli/servers#link-to-an-org). |
 | `push.json` | The iPhones that asked this server for alerts, by a sealed handle, and which kinds each turned off. |
-| `settings.json` | The analytics install id, your dictation model and microphone, the Linear account name, and whether Remote access and **Share these servers** are on. |
+| `settings.json` | Your **Settings → Privacy** switches and the random id reports carry, your dictation model and microphone, the Linear account name, and whether Remote access and **Share these servers** are on. |
 | `credentials.json` | Your Linear API key and the tokens for servers you added by address. Readable by your user alone (`0600`). |
 | `servers.json` | The remote servers in Settings → Servers, or the machines `wain machine` added on a server with no app: name, address, channel. Tokens are in `credentials.json`, not here. |
 | `server-cache/` | What the app last saw of each remote server's sessions, so they stay in the sidebar while it is offline. |
@@ -74,12 +74,13 @@ You rarely need these. Set them in the environment that launches Wain or the `wa
 WAIN_HOME=~/wain-test /Applications/Wain.app/Contents/MacOS/wain
 ```
 
-The app passes `WAIN_HOME` and `WAIN_NO_ANALYTICS` on to the background server it starts.
+The app passes `WAIN_HOME`, `WAIN_NO_ANALYTICS` and `DO_NOT_TRACK` on to the background server it starts.
 
 | Variable | Read by | What it does |
 |---|---|---|
 | `WAIN_HOME` | App, server, `wain` | Uses another folder instead of `~/.wain`, with its own sessions, settings and socket. Two Wain servers must never share one folder: each overwrites the other's session list. On a Mac, the browser profiles and Chromium stay in `~/.wain` either way. |
-| `WAIN_NO_ANALYTICS` | App, server | Turns analytics off for that run, and is the only way to. Any value counts, even `0`. See [Privacy](/reference/privacy). |
+| `WAIN_NO_ANALYTICS` | App, server | Turns usage data and crash reports off for that run, whatever **Settings → Privacy** says. Any value counts, even `0`. See [Privacy](/reference/privacy). |
+| `DO_NOT_TRACK` | App, server | The same, for the convention many tools share. Any value but empty or `0` counts. |
 | `WAIN_ENDPOINT` | `wain` | Which Wain the CLI talks to: a socket path. Wain sets it for every agent it runs, so an agent's `wain` calls reach the right app. |
 | `WAIN_SESSION_ID` | `wain` | The session the CLI acts for. Wain sets it for every agent it runs. |
 | `WAIN_CHANNEL` | `install.sh` | `stable` (default) or `beta`. Which releases the installer picks. |

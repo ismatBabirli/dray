@@ -12,6 +12,7 @@ import {
   KeyIcon,
   NewspaperIcon,
   ServerStackIcon,
+  ShieldCheckIcon,
 } from "@heroicons/react/16/solid";
 import { ArrowLeft, Check, ChevronDown, RotateCcw, Star } from "lucide-react";
 
@@ -64,6 +65,7 @@ import { SettingsHeaderSlot } from "@/components/settings/headerAction";
 import ServersSettings from "@/components/settings/ServersSettings";
 import HandoffSettings from "@/components/settings/HandoffSettings";
 import SettingRow from "@/components/settings/SettingRow";
+import PrivacySettings from "@/components/settings/PrivacySettings";
 import ShortcutsSettings from "@/components/settings/ShortcutsSettings";
 import SpacesSettings from "@/components/settings/SpacesSettings";
 import TranscriptionSettings from "@/components/settings/TranscriptionSettings";
@@ -201,6 +203,11 @@ export default function SettingsPage({
         breaks: (
           <Section>
             <BreakRows />
+          </Section>
+        ),
+        privacy: (
+          <Section>
+            <PrivacySettings />
           </Section>
         ),
         shortcuts: <ShortcutsSettings onOpenIsland={() => goTo("island")} />,
@@ -1437,6 +1444,7 @@ const TAB_LOOKS: Record<SettingsTab, { label: string; Icon: typeof PaintBrushIco
   island: { label: "Island", Icon: ComputerDesktopIcon },
   composer: { label: "Composer", Icon: ChatBubbleBottomCenterTextIcon },
   breaks: { label: "Breaks", Icon: ClockIcon },
+  privacy: { label: "Privacy", Icon: ShieldCheckIcon },
   changelog: { label: "Changelog", Icon: NewspaperIcon },
   about: { label: "About", Icon: InformationCircleIcon },
 };
@@ -1456,6 +1464,7 @@ const TAB_SUBTITLES: Partial<Record<SettingsTab, string>> = {
   servers: "Ask your bot or any session to set one up for you. No need to add each by hand.",
   // Nothing on the island says it has a menu.
   island: "Right-click the island to change these from the island itself.",
+  privacy: "What Wain sends to help fix and improve it. Your prompts, code and files never leave your machine.",
 };
 
 /// The page's groups as a list down the left, standing where the sidebar

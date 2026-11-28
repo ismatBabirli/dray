@@ -98,7 +98,7 @@ static PENDING: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
 pub async fn ensure() -> Result<()> {
     let exe = crate::serve::executable().context("no path to this binary")?;
     let log = crate::store::get_home_app_dir().await?.join(crate::serve::SERVER_LOG);
-    let env: Vec<(&str, String)> = ["WAIN_HOME", "WAIN_NO_ANALYTICS"]
+    let env: Vec<(&str, String)> = ["WAIN_HOME", "WAIN_NO_ANALYTICS", "DO_NOT_TRACK"]
         .into_iter()
         .filter_map(|k| std::env::var(k).ok().filter(|v| !v.is_empty()).map(|v| (k, v)))
         .collect();

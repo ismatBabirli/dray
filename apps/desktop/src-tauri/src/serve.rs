@@ -2167,6 +2167,9 @@ async fn dispatch(cmd: &str, args: Value, sink: Sink) -> Answer {
         analytics_identity() => ok(crate::analytics::analytics_identity().await);
         track_feature(feature: String, target: Option<crate::BrowserTarget>) => ok(crate::track_feature(feature, target));
         track_render_error(code: Option<u32>, frames: Vec<String>) => ok(crate::track_render_error(code, frames));
+        track_js_error(name: String, rejection: bool, frames: Vec<String>) => ok(crate::track_js_error(name, rejection, frames));
+        privacy_settings() => ok(crate::analytics::privacy_settings().await);
+        set_privacy_settings(usage: bool, crash_reports: bool) => crate::analytics::set_privacy_settings(usage, crash_reports).await;
         track_active_day() => ok(crate::analytics::track_active_day());
         // The panel opening, which nothing else reaches the server for; counted
         // by `island_used` off the connection, so the call itself does nothing.
